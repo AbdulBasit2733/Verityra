@@ -1,0 +1,206 @@
+"use client"
+
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Loader2, CheckCircle2, Lock, ArrowRight, CreditCard } from "lucide-react"
+import { registerFreeTestAction, createRazorpayOrderAction, verifyPaymentAndRegisterAction } from "@/actions/registration-actions"
+
+declare global {
+  interface Window {
+    Razorpay?: any
+  }
+}
+
+export function TestRegistrationButton({
+  testSeriesId,
+  isFree,
+  priceInRupees,
+  isRegistered,
+  isSignedIn,
+}: {
+  testSeriesId: string
+  isFree: boolean
+  priceInRupees: number
+  isRegistered: boolean
+  isSignedIn: boolean
+}) {
+  const router = useRouter()
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
+
+  if (!isSignedIn) {
+    return (
+      <Button
+        onClick={() => router.push(`/signin?callbackUrl=/tests/${testSeriesId}`)}
+        className="w-full bg-[#0784B5] hover:bg-[#0784B5]/90 text-white font-semibold text-sm"
+      >
+        Sign In to Register
+        <ArrowRight className="ml-2 h-4 w-4" />
+      </Button>
+    )
+  }
+
+  if (isRegistered) {
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium">
+          <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+          <span>You have active access to this test series.</span>
+        </div>
+        <Button
+          onClick={() => router.push(`/student/tests/${testSeriesId}`)}
+          className="w-full bg-[#0784B5] hover:bg-[#0784B5]/90 text-white font-semibold text-sm"
+        >
+          Open Candidate Workspace
+          <ArrowRight className="ml-2 h-4 w-4" />
+        </Button>
+      </div>
+    )
+  }
+
+  async function handleFreeRegistration() {
+    setLoading(true)
+    setError(null)
+    setSuccess(null)
+
+    try {
+      const result = await registerFreeTestAction(testSeriesId)
+      if (!result.success) {
+        setError(result.error || "Failed to register.")
+        setLoading(false)
+        return
+      }
+
+      setSuccess(result.message || "Registered successfully!")
+      setLoading(false)
+      setTimeout(() => {
+        router.push(`/student/tests/${testSeriesId}`)
+        router.refresh()
+      }, 1200)
+    } catch {
+      setError("An unexpected error occurred during registration.")
+      setLoading(false)
+    }
+  }
+
+  async function handlePaidCheckout() {
+    setLoading(true)
+    setError(null)
+    setSuccess(null)
+
+    try {
+      const orderResult = await createRazorpayOrderAction(testSeriesId)
+      if (!orderResult.success || !orderResult.data) {
+        setError(orderResult.error || "Failed to generate payment order.")
+        setLoading(false)
+        return
+      }
+
+      const { orderId, amount, currency, keyId, testTitle } = orderResult.data
+
+      // If Razorpay SDK is loaded in browser
+      if (typeof window !== "undefined" && window.Razorpay && keyId && !keyId.includes("placeholder")) {
+        const options = {
+          key: keyId,
+          amount,
+          currency,
+          name: "Verityra",
+          description: testTitle,
+          order_id: orderId,
+          handler: async function (response: any) {
+            const verifyResult = await verifyPaymentAndRegisterAction({
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature,
+              testSeriesId,
+            })
+
+            if (verifyResult.success) {
+              setSuccess("Payment successful! Access granted.")
+              setTimeout(() => {
+                router.push(`/student/tests/${testSeriesId}`)
+                router.refresh()
+              }, 1200)
+            } else {
+              setError(verifyResult.error || "Payment verification failed.")
+            }
+          },
+          theme: {
+            color: "#0784B5",
+          },
+        }
+
+        const rzp = new window.Razorpay(options)
+        rzp.open()
+        setLoading(false)
+      } else {
+        // Dev mode simulation: simulate immediate server verification
+        const verifyResult = await verifyPaymentAndRegisterAction({
+          razorpayOrderId: orderId,
+          razorpayPaymentId: "pay_simulated_" + Date.now(),
+          razorpaySignature: "sig_simulated_" + Date.now(),
+          testSeriesId,
+        })
+
+        if (verifyResult.success) {
+          setSuccess("Payment verified in development mode! Access unlocked.")
+          setTimeout(() => {
+            router.push(`/student/tests/${testSeriesId}`)
+            router.refresh()
+          }, 1200)
+        } else {
+          setError(verifyResult.error || "Payment failed.")
+        }
+        setLoading(false)
+      }
+    } catch (err) {
+      console.error(err)
+      setError("An error occurred during payment processing.")
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="space-y-3">
+      {error && (
+        <Alert variant="destructive" className="py-2 text-xs">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {success && (
+        <Alert className="py-2 text-xs border-emerald-500 bg-emerald-50 text-emerald-800">
+          <CheckCircle2 className="h-4 w-4 text-emerald-600 mr-2" />
+          <AlertDescription>{success}</AlertDescription>
+        </Alert>
+      )}
+
+      {isFree ? (
+        <Button
+          onClick={handleFreeRegistration}
+          disabled={loading}
+          className="w-full bg-[#0784B5] hover:bg-[#0784B5]/90 text-white font-semibold text-sm"
+        >
+          {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+          Register for Free Test
+        </Button>
+      ) : (
+        <Button
+          onClick={handlePaidCheckout}
+          disabled={loading}
+          className="w-full bg-[#0784B5] hover:bg-[#0784B5]/90 text-white font-semibold text-sm flex items-center justify-center gap-2"
+        >
+          {loading ? (
+            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+          ) : (
+            <CreditCard className="h-4 w-4 mr-1" />
+          )}
+          Unlock Test Series — ₹{priceInRupees}
+        </Button>
+      )}
+    </div>
+  )
+}

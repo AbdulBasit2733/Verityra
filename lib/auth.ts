@@ -1,0 +1,163 @@
+import { NextAuthOptions } from "next-auth"
+import CredentialsProvider from "next-auth/providers/credentials"
+import GoogleProvider from "next-auth/providers/google"
+import { prisma, isDatabaseConnected } from "@/lib/prisma"
+import bcrypt from "bcryptjs"
+import { Role, UserStatus } from "@prisma/client"
+
+export const authOptions: NextAuthOptions = {
+  session: {
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
+  pages: {
+    signIn: "/signin",
+    error: "/signin",
+  },
+  providers: [
+    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+      ? [
+          GoogleProvider({
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+            allowDangerousEmailAccountLinking: false,
+          }),
+        ]
+      : []),
+    CredentialsProvider({
+      name: "Credentials",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error("Please enter both email and password.")
+        }
+
+        const normalizedEmail = credentials.email.toLowerCase().trim()
+        const dbConnected = await isDatabaseConnected()
+
+        if (dbConnected) {
+          const user = await prisma.user.findUnique({
+            where: { email: normalizedEmail },
+          })
+
+          if (!user || !user.passwordHash) {
+            throw new Error("Invalid email or password.")
+          }
+
+          if (user.status === UserStatus.SUSPENDED) {
+            throw new Error("Your account has been suspended. Please contact support.")
+          }
+
+          const isValid = await bcrypt.compare(credentials.password, user.passwordHash)
+          if (!isValid) {
+            throw new Error("Invalid email or password.")
+          }
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            image: user.image,
+            role: user.role,
+            status: user.status,
+          }
+        }
+
+        // Demo / offline fallback for development before PostgreSQL is running
+        if (
+          normalizedEmail === (process.env.ADMIN_INITIAL_EMAIL || "admin@verityra.com").toLowerCase() &&
+          credentials.password === (process.env.ADMIN_INITIAL_PASSWORD || "AdminSecurePassword123!")
+        ) {
+          return {
+            id: "admin-demo-user-id",
+            email: normalizedEmail,
+            name: process.env.ADMIN_INITIAL_NAME || "Verityra Admin (Local Dev)",
+            image: null,
+            role: Role.ADMIN,
+            status: UserStatus.ACTIVE,
+          }
+        }
+
+        if (
+          normalizedEmail === "student@verityra.com" &&
+          credentials.password === "StudentSecurePassword123!"
+        ) {
+          return {
+            id: "student-demo-user-id",
+            email: "student@verityra.com",
+            name: "Demo Student",
+            image: null,
+            role: Role.STUDENT,
+            status: UserStatus.ACTIVE,
+          }
+        }
+
+        throw new Error("Invalid email or password. (Database is currently offline, you can use demo credentials).")
+      },
+    }),
+  ],
+  callbacks: {
+    async signIn({ user, account }) {
+      if (account?.provider === "google") {
+        const dbConnected = await isDatabaseConnected()
+        if (dbConnected && user.email) {
+          const normalizedEmail = user.email.toLowerCase().trim()
+          let existingUser = await prisma.user.findUnique({
+            where: { email: normalizedEmail },
+          })
+
+          if (!existingUser) {
+            // New Google registration: MUST ALWAYS BE STUDENT ROLE ONLY
+            existingUser = await prisma.user.create({
+              data: {
+                email: normalizedEmail,
+                name: user.name ?? "Google User",
+                image: user.image,
+                role: Role.STUDENT,
+                status: UserStatus.ACTIVE,
+                emailVerified: new Date(),
+                profile: {
+                  create: {},
+                },
+              },
+            })
+          }
+
+          if (existingUser.status === UserStatus.SUSPENDED) {
+            return false
+          }
+
+          user.id = existingUser.id
+          user.role = existingUser.role
+          user.status = existingUser.status
+        }
+      }
+      return true
+    },
+    async jwt({ token, user, trigger, session }) {
+      if (user) {
+        token.id = user.id
+        token.role = user.role
+        token.status = user.status
+      }
+
+      if (trigger === "update" && session?.name) {
+        token.name = session.name
+      }
+
+      return token
+    },
+    async session({ session, token }) {
+      if (session.user && token) {
+        session.user.id = token.id as string
+        session.user.role = token.role as Role
+        session.user.status = token.status as UserStatus
+      }
+      return session
+    },
+  },
+  secret: process.env.NEXTAUTH_SECRET,
+}
