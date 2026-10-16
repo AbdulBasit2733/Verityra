@@ -3,19 +3,22 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ArrowLeft, Loader2, CheckCircle2, ShieldAlert, BookOpen } from "lucide-react"
+import { Separator } from "@/components/ui/separator"
+import { useConfirm } from "@/components/providers/confirm-dialog-provider"
+import { useGlobalError } from "@/components/providers/error-dialog-provider"
+import { toast } from "@/components/ui/sonner"
+import { ArrowLeft, Loader2, ShieldAlert } from "lucide-react"
 import { createTestSeriesAction } from "@/actions/test-series-actions"
 import { TestSeriesStatus } from "@prisma/client"
 
 export default function CreateTestSeriesPage() {
   const router = useRouter()
+  const confirm = useConfirm()
+  const { showError } = useGlobalError()
 
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
@@ -23,7 +26,7 @@ export default function CreateTestSeriesPage() {
   const [maxMarks, setMaxMarks] = useState<number>(100)
   const [durationMinutes, setDurationMinutes] = useState<number>(180)
   const [maxAttempts, setMaxAttempts] = useState<number>(3)
-  const [status, setStatus] = useState<TestSeriesStatus>(TestSeriesStatus.DRAFT)
+  const [status] = useState<TestSeriesStatus>(TestSeriesStatus.DRAFT)
   const [studentInstructions, setStudentInstructions] = useState(
     `1. Read questions carefully and number responses in clear alignment with the question paper.
 2. Maintain margins on the prescribed answer sheet template.
@@ -39,12 +42,20 @@ export default function CreateTestSeriesPage() {
   )
 
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+
+    const confirmed = await confirm({
+      title: "Create New Test Series Specification?",
+      description: `This will create "${title}" in DRAFT status with ${maxAttempts} default attempts and isolated student/evaluator instructions.`,
+      confirmText: "Create Test Series",
+      cancelText: "Review Details",
+      badgeText: "Catalog Configuration",
+    })
+    if (!confirmed) return
+
     setLoading(true)
-    setError(null)
 
     try {
       const res = await createTestSeriesAction({
@@ -60,201 +71,214 @@ export default function CreateTestSeriesPage() {
       })
 
       if (!res.success) {
-        setError(res.error || "Failed to create test series.")
+        showError({
+          title: "Test Series Creation Failed",
+          message: res.error || "Failed to create test series.",
+          code: "CREATE_SERIES_ERR",
+        })
         setLoading(false)
         return
       }
 
+      toast.success("Test series created", {
+        description: `"${title}" is ready for question paper and margin template uploads.`,
+      })
       router.push(`/admin/test-series/${res.data?.id || ""}`)
       router.refresh()
     } catch {
-      setError("An unexpected server error occurred.")
+      showError({
+        title: "Unexpected Server Error",
+        message: "An unexpected server error occurred while creating the test series.",
+        code: "SYS_ERR",
+      })
       setLoading(false)
     }
   }
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
-      <Link
-        href="/admin/test-series"
-        className="inline-flex items-center text-xs font-medium text-[#4B6375] hover:text-[#0784B5] transition-colors"
-      >
-        <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
-        Back to Test Series List
-      </Link>
-
-      <div>
-        <h1 className="text-2xl font-extrabold text-[#0B192C]">Create Test Series</h1>
-        <p className="text-xs text-[#4B6375] mt-1">
-          Configure examination rules, attempt limits, and establish separate student vs evaluator instruction boundaries.
+    <div className="space-y-6 max-w-4xl">
+      {/* Flat Page Header */}
+      <div className="space-y-1">
+        <Link
+          href="/admin/test-series"
+          className="inline-flex items-center text-xs font-semibold text-slate-500 hover:text-[#2A6AED] transition-colors mb-1"
+        >
+          <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
+          Back to Test Series List
+        </Link>
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-[#0F172A] tracking-tight">
+          Create Test Series
+        </h1>
+        <p className="text-xs sm:text-sm text-[#64748B]">
+          Configure examination rules, attempt limits, and establish separate student vs. evaluator instruction boundaries.
         </p>
       </div>
 
-      <Card className="border-[#D5E5F2] bg-white shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-base text-[#0B192C]">Test Series Specification</CardTitle>
-          <CardDescription className="text-xs text-[#4B6375]">
-            All fields will be validated server-side.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {error && (
-            <Alert variant="destructive" className="mb-4 py-2 text-xs">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
+      <Separator className="bg-slate-200" />
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <Label htmlFor="title" className="text-xs font-semibold text-[#0B192C]">
-                Test Series Title
+      {/* Flat Form Layout — No Heavy Card Wrapper */}
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="title" className="text-xs font-bold text-[#0F172A]">
+              Test Series Title
+            </Label>
+            <Input
+              id="title"
+              required
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g. UPSC CSE Mains 2026 GS Paper II Full Mock"
+              className="h-10 rounded-lg border-slate-200 bg-white text-xs sm:text-sm"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="description" className="text-xs font-bold text-[#0F172A]">
+              Syllabus & Scope Description
+            </Label>
+            <Textarea
+              id="description"
+              required
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Overview of topics, eligibility, question count, and examination format..."
+              rows={3}
+              className="rounded-lg border-slate-200 bg-white text-xs sm:text-sm"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="price" className="text-xs font-bold text-[#0F172A]">
+                Price in INR (₹)
               </Label>
               <Input
-                id="title"
+                id="price"
+                type="number"
+                min={0}
+                step={1}
                 required
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. UPSC CSE Mains 2026 GS Paper II Full Mock"
-                className="mt-1 border-[#D5E5F2] text-xs h-9"
+                value={price}
+                onChange={(e) => setPrice(Number(e.target.value))}
+                placeholder="0 for free"
+                className="h-10 rounded-lg border-slate-200 bg-white text-xs sm:text-sm"
               />
+              <span className="text-[11px] text-slate-400 block">0 = Free Enrollment</span>
             </div>
 
-            <div>
-              <Label htmlFor="description" className="text-xs font-semibold text-[#0B192C]">
-                Syllabus & Scope Description
+            <div className="space-y-1.5">
+              <Label htmlFor="maxMarks" className="text-xs font-bold text-[#0F172A]">
+                Maximum Total Marks
               </Label>
-              <Textarea
-                id="description"
+              <Input
+                id="maxMarks"
+                type="number"
+                min={1}
                 required
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Overview of topics, eligibility, question count, and examination format..."
-                rows={3}
-                className="mt-1 border-[#D5E5F2] text-xs"
+                value={maxMarks}
+                onChange={(e) => setMaxMarks(Number(e.target.value))}
+                className="h-10 rounded-lg border-slate-200 bg-white text-xs sm:text-sm"
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-              <div>
-                <Label htmlFor="price" className="text-xs font-semibold text-[#0B192C]">
-                  Price in INR (₹)
-                </Label>
-                <Input
-                  id="price"
-                  type="number"
-                  min={0}
-                  step={1}
-                  required
-                  value={price}
-                  onChange={(e) => setPrice(Number(e.target.value))}
-                  placeholder="0 for free"
-                  className="mt-1 border-[#D5E5F2] text-xs h-9"
-                />
-                <span className="text-[10px] text-[#4B6375]">0 = Free Registration</span>
-              </div>
-
-              <div>
-                <Label htmlFor="maxMarks" className="text-xs font-semibold text-[#0B192C]">
-                  Maximum Total Marks
-                </Label>
-                <Input
-                  id="maxMarks"
-                  type="number"
-                  min={1}
-                  required
-                  value={maxMarks}
-                  onChange={(e) => setMaxMarks(Number(e.target.value))}
-                  className="mt-1 border-[#D5E5F2] text-xs h-9"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="durationMinutes" className="text-xs font-semibold text-[#0B192C]">
-                  Duration (Minutes)
-                </Label>
-                <Input
-                  id="durationMinutes"
-                  type="number"
-                  min={10}
-                  required
-                  value={durationMinutes}
-                  onChange={(e) => setDurationMinutes(Number(e.target.value))}
-                  className="mt-1 border-[#D5E5F2] text-xs h-9"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="maxAttempts" className="text-xs font-semibold text-[#0784B5]">
-                  Max Attempts Allowed
-                </Label>
-                <Input
-                  id="maxAttempts"
-                  type="number"
-                  min={1}
-                  max={5}
-                  required
-                  value={maxAttempts}
-                  onChange={(e) => setMaxAttempts(Number(e.target.value))}
-                  className="mt-1 border-[#0784B5] text-xs h-9 font-bold text-[#0784B5]"
-                />
-                <span className="text-[10px] text-[#0784B5] font-medium">Default: 3 attempts</span>
-              </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="durationMinutes" className="text-xs font-bold text-[#0F172A]">
+                Duration (Minutes)
+              </Label>
+              <Input
+                id="durationMinutes"
+                type="number"
+                min={10}
+                required
+                value={durationMinutes}
+                onChange={(e) => setDurationMinutes(Number(e.target.value))}
+                className="h-10 rounded-lg border-slate-200 bg-white text-xs sm:text-sm"
+              />
             </div>
 
-            {/* TWO SEPARATE INSTRUCTION SYSTEMS */}
-            <div className="pt-2 border-t border-[#D5E5F2] space-y-4">
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <Label htmlFor="studentInstructions" className="text-xs font-bold text-[#0B192C]">
-                    A. Student-Facing Instructions (Public to Candidates)
-                  </Label>
-                  <span className="text-[11px] text-[#4B6375]">Displayed on test & workspace</span>
-                </div>
-                <Textarea
-                  id="studentInstructions"
-                  required
-                  value={studentInstructions}
-                  onChange={(e) => setStudentInstructions(e.target.value)}
-                  rows={4}
-                  className="mt-1 border-[#D5E5F2] text-xs leading-relaxed font-sans"
-                />
-              </div>
-
-              <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-200 space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="privateEvaluationInstructions" className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
-                    <ShieldAlert className="h-4 w-4 text-amber-700" />
-                    B. Private Evaluation Instructions (CONFIDENTIAL — For Evaluator Only)
-                  </Label>
-                  <span className="text-[10px] font-bold text-amber-800 bg-amber-200/80 px-2 py-0.5 rounded uppercase">
-                    Never leaked to students
-                  </span>
-                </div>
-                <p className="text-[11px] text-amber-800">
-                  Provide exact marking criteria, partial credit formulas, acceptable alternative answers, and uncertainty thresholds.
-                </p>
-                <Textarea
-                  id="privateEvaluationInstructions"
-                  required
-                  value={privateEvaluationInstructions}
-                  onChange={(e) => setPrivateEvaluationInstructions(e.target.value)}
-                  rows={4}
-                  className="border-amber-300 text-xs bg-white text-[#0B192C] leading-relaxed font-mono"
-                />
-              </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="maxAttempts" className="text-xs font-bold text-[#2A6AED]">
+                Max Attempts Allowed
+              </Label>
+              <Input
+                id="maxAttempts"
+                type="number"
+                min={1}
+                max={5}
+                required
+                value={maxAttempts}
+                onChange={(e) => setMaxAttempts(Number(e.target.value))}
+                className="h-10 rounded-lg border-blue-200 bg-white text-xs sm:text-sm font-bold text-[#2A6AED]"
+              />
+              <span className="text-[11px] text-[#2A6AED] font-semibold block">
+                Default: 3 attempts
+              </span>
             </div>
+          </div>
+        </div>
 
-            <Button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-[#0784B5] hover:bg-[#0784B5]/90 text-white font-semibold text-xs h-10 mt-4"
-            >
-              {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              Save Test Series & Proceed to Document Uploads
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+        <Separator className="bg-slate-200" />
+
+        {/* TWO SEPARATE INSTRUCTION SYSTEMS */}
+        <div className="space-y-5">
+          <div className="space-y-1.5">
+            <div className="flex flex-wrap items-center justify-between gap-1">
+              <Label htmlFor="studentInstructions" className="text-xs font-bold text-[#0F172A]">
+                A. Student-Facing Instructions (Public to Candidates)
+              </Label>
+              <span className="text-[11px] text-slate-400">Displayed on test & workspace</span>
+            </div>
+            <Textarea
+              id="studentInstructions"
+              required
+              value={studentInstructions}
+              onChange={(e) => setStudentInstructions(e.target.value)}
+              rows={4}
+              className="rounded-lg border-slate-200 bg-white text-xs sm:text-sm leading-relaxed"
+            />
+          </div>
+
+          <div className="border-l-4 border-amber-500 bg-amber-50/40 pl-4 py-3 space-y-2.5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <Label
+                htmlFor="privateEvaluationInstructions"
+                className="text-xs font-bold text-amber-900 flex items-center gap-1.5"
+              >
+                <ShieldAlert className="h-4 w-4 text-amber-700 shrink-0" />
+                B. Private Evaluation Instructions (CONFIDENTIAL — For Evaluator Only)
+              </Label>
+              <span className="text-[10px] font-bold text-amber-800 bg-amber-200/80 px-2 py-0.5 rounded uppercase">
+                Never exposed to students
+              </span>
+            </div>
+            <p className="text-xs text-amber-800 leading-relaxed">
+              Provide exact marking criteria, partial credit formulas, acceptable alternative answers, and uncertainty thresholds.
+            </p>
+            <Textarea
+              id="privateEvaluationInstructions"
+              required
+              value={privateEvaluationInstructions}
+              onChange={(e) => setPrivateEvaluationInstructions(e.target.value)}
+              rows={4}
+              className="rounded-lg border-amber-300 text-xs bg-white text-slate-900 leading-relaxed font-mono"
+            />
+          </div>
+        </div>
+
+        <Separator className="bg-slate-200" />
+
+        <div className="flex justify-end">
+          <Button
+            type="submit"
+            disabled={loading}
+            className="w-full sm:w-auto bg-[#2A6AED] hover:bg-[#1E55C7] text-white font-semibold text-xs sm:text-sm h-10 px-6 rounded-lg"
+          >
+            {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+            Save Test Series & Proceed to Document Uploads
+          </Button>
+        </div>
+      </form>
     </div>
   )
 }

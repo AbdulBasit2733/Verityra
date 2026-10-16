@@ -96,115 +96,112 @@ export default async function TestDetailsPage({
     <div className="flex min-h-screen flex-col bg-white">
       <Navbar />
 
-      <main className="flex-1 py-10 bg-[#F2F7FA]">
+      <main className="flex-1 py-12 lg:py-16 bg-slate-50/60">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <Link
             href="/tests"
-            className="inline-flex items-center text-xs font-medium text-[#4B6375] hover:text-[#0784B5] mb-6 transition-colors"
+            className="inline-flex items-center text-sm font-semibold text-slate-500 hover:text-[#2A6AED] mb-8 transition-colors"
           >
-            <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
+            <ArrowLeft className="mr-2 h-4 w-4" />
             Back to All Test Series
           </Link>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
             {/* Main content col */}
-            <div className="lg:col-span-8 space-y-6">
-              <Card className="border-[#D5E5F2] bg-white shadow-sm">
-                <CardHeader className="space-y-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    {isFree ? (
-                      <Badge className="bg-emerald-600 text-white font-semibold text-xs border-0">
-                        Free Test Series
-                      </Badge>
-                    ) : (
-                      <Badge className="bg-[#0784B5] text-white font-semibold text-xs border-0">
-                        ₹{priceInRupees}
-                      </Badge>
-                    )}
-                    <Badge variant="outline" className="text-xs border-[#9BD4E4] text-[#0784B5] bg-[#CADEEF]/20">
-                      Standard Subjective Format
+            <div className="lg:col-span-8 space-y-8">
+              <div className="rounded-3xl border border-slate-200/80 bg-white p-8 sm:p-10 shadow-card space-y-6">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  {isFree ? (
+                    <Badge className="bg-emerald-600 text-white font-bold text-xs border-0 px-3 py-1">
+                      Free Test Series
                     </Badge>
-                  </div>
+                  ) : (
+                    <Badge className="bg-[#2A6AED] text-white font-bold text-xs border-0 px-3 py-1">
+                      ₹{priceInRupees}
+                    </Badge>
+                  )}
+                  <Badge variant="outline" className="text-xs font-semibold border-blue-200 text-[#2A6AED] bg-blue-50">
+                    Standard Subjective Format
+                  </Badge>
+                </div>
 
-                  <CardTitle className="text-2xl sm:text-3xl font-extrabold text-[#0B192C]">
-                    {testSeries.title}
-                  </CardTitle>
-                  <CardDescription className="text-sm text-[#4B6375] leading-relaxed">
-                    {testSeries.description}
-                  </CardDescription>
+                <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight">
+                  {testSeries.title}
+                </h1>
+                <p className="text-base text-slate-600 leading-relaxed">
+                  {testSeries.description}
+                </p>
 
-                  <div className="grid grid-cols-3 gap-4 pt-4 border-t border-[#D5E5F2] text-xs">
-                    <div>
-                      <span className="text-[#4B6375] block">Duration</span>
-                      <span className="font-bold text-[#0B192C] flex items-center gap-1 mt-0.5">
-                        <Clock className="h-3.5 w-3.5 text-[#0784B5]" />
-                        {testSeries.durationMinutes} Minutes
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-[#4B6375] block">Maximum Marks</span>
-                      <span className="font-bold text-[#0B192C] flex items-center gap-1 mt-0.5">
-                        <Award className="h-3.5 w-3.5 text-[#0784B5]" />
-                        {testSeries.maxMarks} Marks
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-[#4B6375] block">Attempt Allowance</span>
-                      <span className="font-bold text-[#0784B5] flex items-center gap-1 mt-0.5">
-                        <CheckCircle2 className="h-3.5 w-3.5 text-[#0784B5]" />
-                        {testSeries.maxAttempts} Attempts Max
-                      </span>
-                    </div>
+                <div className="grid grid-cols-3 gap-6 pt-6 border-t border-slate-100 text-sm">
+                  <div>
+                    <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 block">Duration</span>
+                    <span className="font-bold text-slate-900 flex items-center gap-1.5 mt-1">
+                      <Clock className="h-4 w-4 text-[#2A6AED]" />
+                      {testSeries.durationMinutes} Mins
+                    </span>
                   </div>
-                </CardHeader>
-              </Card>
+                  <div>
+                    <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 block">Maximum Marks</span>
+                    <span className="font-bold text-slate-900 flex items-center gap-1.5 mt-1">
+                      <Award className="h-4 w-4 text-[#2A6AED]" />
+                      {testSeries.maxMarks} Marks
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 block">Attempt Limit</span>
+                    <span className="font-bold text-[#2A6AED] flex items-center gap-1.5 mt-1">
+                      <CheckCircle2 className="h-4 w-4 text-[#2A6AED]" />
+                      {testSeries.maxAttempts} Attempts
+                    </span>
+                  </div>
+                </div>
+              </div>
 
               {/* Student Instructions */}
-              <Card className="border-[#D5E5F2] bg-white shadow-sm">
-                <CardHeader>
-                  <CardTitle className="text-lg text-[#0B192C] flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-[#0784B5]" />
+              <div className="rounded-3xl border border-slate-200/80 bg-white p-8 sm:p-10 shadow-card space-y-6">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2.5">
+                    <FileText className="h-5 w-5 text-[#2A6AED]" />
                     Candidate Instructions & Answer Guidelines
-                  </CardTitle>
-                  <CardDescription className="text-xs text-[#4B6375]">
+                  </h2>
+                  <p className="text-sm text-slate-500 mt-1">
                     Read thoroughly before attempting and submitting your answer sheets
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="rounded-xl bg-[#F2F7FA] p-4 text-xs text-[#0B192C] whitespace-pre-line leading-relaxed font-sans border border-[#D5E5F2]">
-                    {testSeries.studentInstructions}
-                  </div>
+                  </p>
+                </div>
 
-                  <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-2.5">
-                    <AlertCircle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-semibold">Three-Attempt Policy:</p>
-                      <p className="mt-0.5 leading-relaxed text-amber-800">
-                        You can submit up to 3 accepted handwritten responses for this test. Each submission is evaluated individually against the rubric so you can iteratively refine your writing.
-                      </p>
-                    </div>
+                <div className="rounded-2xl bg-slate-50 p-6 text-sm text-slate-800 whitespace-pre-line leading-relaxed font-sans border border-slate-200/80">
+                  {testSeries.studentInstructions}
+                </div>
+
+                <div className="p-5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-sm flex items-start gap-3.5">
+                  <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-bold">Three-Attempt Policy:</p>
+                    <p className="mt-1 leading-relaxed text-amber-800 text-xs sm:text-sm">
+                      You can submit up to 3 accepted handwritten responses for this test. Each submission is evaluated individually against the rubric so you can iteratively refine your writing.
+                    </p>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
 
               {/* Answer Sheet Template Info */}
               {testSeries.templates && testSeries.templates.length > 0 && (
-                <Card className="border-[#D5E5F2] bg-white shadow-sm">
-                  <CardHeader>
-                    <CardTitle className="text-base text-[#0B192C] flex items-center gap-2">
-                      <Download className="h-4 w-4 text-[#0784B5]" />
+                <div className="rounded-3xl border border-slate-200/80 bg-white p-8 sm:p-10 shadow-card space-y-5">
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2.5">
+                      <Download className="h-5 w-5 text-[#2A6AED]" />
                       Prescribed Answer Sheet Template
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
+                    </h3>
+                  </div>
+                  <div className="space-y-3">
                     {testSeries.templates.map((tpl: any) => (
                       <div
                         key={tpl.id}
-                        className="flex items-center justify-between p-3 rounded-lg border border-[#D5E5F2] bg-[#F2F7FA] text-xs"
+                        className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-2xl border border-slate-200 bg-slate-50 gap-4"
                       >
                         <div>
-                          <p className="font-semibold text-[#0B192C]">{tpl.title}</p>
-                          <p className="text-[11px] text-[#4B6375]">
+                          <p className="font-bold text-slate-900 text-sm">{tpl.title}</p>
+                          <p className="text-xs text-slate-500 mt-0.5">
                             {tpl.templateRequired ? "Mandatory for this examination" : "Recommended format"}
                           </p>
                         </div>
@@ -213,73 +210,72 @@ export default async function TestDetailsPage({
                             href={tpl.fileUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#0784B5] text-white font-medium hover:bg-[#0784B5]/90 text-xs"
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#2A6AED] text-white font-semibold hover:bg-[#1E55C7] text-xs shadow-xs"
                           >
-                            <Download className="h-3.5 w-3.5" />
+                            <Download className="h-4 w-4" />
                             Download Template
                           </a>
                         ) : (
-                          <Badge variant="outline" className="border-[#9BD4E4] text-[#4B6375]">
+                          <Badge variant="outline" className="border-blue-200 text-[#2A6AED] bg-blue-50">
                             Register to Download
                           </Badge>
                         )}
                       </div>
                     ))}
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               )}
             </div>
 
             {/* Registration Card Sidebar */}
             <div className="lg:col-span-4">
-              <div className="sticky top-24 space-y-6">
-                <Card className="border-[#9BD4E4] bg-white shadow-md">
-                  <CardHeader>
-                    <CardTitle className="text-base text-[#0B192C]">
+              <div className="sticky top-28 space-y-6">
+                <div className="rounded-3xl border border-slate-200/90 bg-white p-8 shadow-card space-y-6">
+                  <div>
+                    <h3 className="text-xl font-bold text-slate-900">
                       Candidate Enrollment
-                    </CardTitle>
-                    <CardDescription className="text-xs text-[#4B6375]">
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-1 leading-relaxed">
                       {isFree
                         ? "Free enrollment with full access to question paper and 3 evaluations."
                         : "One-time payment for complete evaluation and leaderboard ranking."}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-baseline justify-between border-b border-[#D5E5F2] pb-3">
-                      <span className="text-xs text-[#4B6375]">Enrollment Fee:</span>
-                      <span className="text-2xl font-extrabold text-[#0784B5]">
-                        {isFree ? "FREE" : `₹${priceInRupees}`}
-                      </span>
-                    </div>
+                    </p>
+                  </div>
 
-                    <TestRegistrationButton
-                      testSeriesId={testSeries.id}
-                      isFree={isFree}
-                      priceInRupees={priceInRupees}
-                      isRegistered={isRegistered}
-                      isSignedIn={!!user}
-                    />
+                  <div className="flex items-baseline justify-between border-b border-slate-100 pb-4">
+                    <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Enrollment Fee:</span>
+                    <span className="text-3xl font-black text-[#2A6AED]">
+                      {isFree ? "FREE" : `₹${priceInRupees}`}
+                    </span>
+                  </div>
 
-                    <div className="text-[11px] text-[#4B6375] space-y-1.5 pt-2">
-                      <p className="flex items-center gap-1.5">
-                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                        Official answer sheet template included
-                      </p>
-                      <p className="flex items-center gap-1.5">
-                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                        Question-by-question scoring breakdown
-                      </p>
-                      <p className="flex items-center gap-1.5">
-                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                        Up to 3 iterations per registered test
-                      </p>
-                      <p className="flex items-center gap-1.5">
-                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                        Eligible for published live leaderboard
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
+                  <TestRegistrationButton
+                    testSeriesId={testSeries.id}
+                    isFree={isFree}
+                    priceInRupees={priceInRupees}
+                    isRegistered={isRegistered}
+                    isSignedIn={!!user}
+                  />
+
+                  <div className="text-xs text-slate-600 space-y-2.5 pt-2">
+                    <p className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                      Official answer sheet template included
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                      Question-by-question scoring breakdown
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                      Up to 3 iterations per registered test
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                      Eligible for published live leaderboard
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

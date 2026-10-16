@@ -1,5 +1,11 @@
 import assert from "node:assert/strict"
-import { registerSchema, loginSchema } from "../lib/validations/auth"
+import {
+  registerSchema,
+  loginSchema,
+  studentProfileSchema,
+  adminProfileSchema,
+  changePasswordSchema,
+} from "../lib/validations/auth"
 import { aiEvaluationResponseSchema } from "../lib/ai/evaluation-schema"
 import crypto from "crypto"
 
@@ -57,6 +63,45 @@ test("Auth: Mismatched password and confirmPassword are rejected", () => {
   }
   const result = registerSchema.safeParse(mismatch)
   assert.equal(result.success, false)
+})
+
+test("Auth: Student and Admin profile schemas validate inputs properly", () => {
+  const validStudent = {
+    name: "Pooja Hegde",
+    educationLevel: "LL.B",
+    institution: "National Law University",
+    targetExam: "Judicial Services",
+    phoneNumber: "+91 9876543210",
+    bio: "Focusing on procedural law and criminal jurisprudence.",
+  }
+  const sRes = studentProfileSchema.safeParse(validStudent)
+  assert.equal(sRes.success, true)
+
+  const validAdmin = {
+    name: "Lead Controller",
+    phoneNumber: "+91 11 2345 6789",
+    bio: "Lead Controller of Examinations.",
+  }
+  const aRes = adminProfileSchema.safeParse(validAdmin)
+  assert.equal(aRes.success, true)
+})
+
+test("Auth: Change password schema validates requirements and matches confirmation", () => {
+  const validChange = {
+    currentPassword: "OldPassword123!",
+    newPassword: "NewSecurePassword999!",
+    confirmPassword: "NewSecurePassword999!",
+  }
+  const validRes = changePasswordSchema.safeParse(validChange)
+  assert.equal(validRes.success, true)
+
+  const mismatchChange = {
+    currentPassword: "OldPassword123!",
+    newPassword: "NewSecurePassword999!",
+    confirmPassword: "WrongConfirmation!",
+  }
+  const mismatchRes = changePasswordSchema.safeParse(mismatchChange)
+  assert.equal(mismatchRes.success, false)
 })
 
 // 2. STRICT THREE-ATTEMPT ENFORCEMENT SIMULATION

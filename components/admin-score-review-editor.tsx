@@ -2,14 +2,17 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Loader2, CheckCircle2, ShieldCheck, AlertTriangle, FileText, ArrowRight } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
+import { DataTable, DataTableColumn } from "@/components/ui/data-table"
+import { useConfirm } from "@/components/providers/confirm-dialog-provider"
+import { useGlobalError } from "@/components/providers/error-dialog-provider"
+import { toast } from "@/components/ui/sonner"
+import { Loader2, ShieldCheck, FileText } from "lucide-react"
 import { adminReviewScoreAction } from "@/actions/evaluation-actions"
 
 export function AdminScoreReviewEditor({
@@ -22,34 +25,49 @@ export function AdminScoreReviewEditor({
   fileUrl: string
 }) {
   const router = useRouter()
+  const confirm = useConfirm()
+  const { showError } = useGlobalError()
 
   const [questions, setQuestions] = useState<any[]>(initialEvaluation.questions || [])
   const [adminNotes, setAdminNotes] = useState(initialEvaluation.adminNotes || "")
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
 
   // Recalculate total dynamically based on edited question scores
-  const calculatedTotal = questions.reduce((acc, q) => acc + (parseFloat(q.marksAwarded) || 0), 0)
-  const percentage = Number(((calculatedTotal / initialEvaluation.maxMarks) * 100).toFixed(2))
+  const calculatedTotal = questions.reduce(
+    (acc, q) => acc + (parseFloat(q.marksAwarded) || 0),
+    0
+  )
+  const percentage = Number(
+    ((calculatedTotal / initialEvaluation.maxMarks) * 100).toFixed(2)
+  )
 
-  function handleScoreChange(index: number, newScore: number) {
-    const updated = [...questions]
-    updated[index] = { ...updated[index], marksAwarded: newScore }
-    setQuestions(updated)
+  function handleScoreChange(questionId: string, newScore: number, maxMarks: number) {
+    const clamped = Math.max(0, Math.min(maxMarks, newScore))
+    setQuestions((prev) =>
+      prev.map((q) => (q.id === questionId ? { ...q, marksAwarded: clamped } : q))
+    )
   }
 
-  function handleNotesChange(index: number, notes: string) {
-    const updated = [...questions]
-    updated[index] = { ...updated[index], adminNotes: notes }
-    setQuestions(updated)
+  function handleNotesChange(questionId: string, notes: string) {
+    setQuestions((prev) =>
+      prev.map((q) => (q.id === questionId ? { ...q, adminNotes: notes } : q))
+    )
   }
 
   async function handleSaveReview(e: React.FormEvent) {
     e.preventDefault()
+
+    const confirmed = await confirm({
+      title: "Save Adjusted Scores & Finalize Evaluation?",
+      description: `This will set the candidate's total score to ${calculatedTotal} / ${initialEvaluation.maxMarks} (${percentage}%) and record an immutable entry in the administrative audit log.`,
+      confirmText: "Approve & Write Audit Log",
+      cancelText: "Continue Editing",
+      variant: "default",
+      badgeText: "Audited Score Override",
+    })
+    if (!confirmed) return
+
     setLoading(true)
-    setError(null)
-    setSuccess(null)
 
     try {
       const adjustments = questions.map((q) => ({
@@ -61,136 +79,177 @@ export function AdminScoreReviewEditor({
       const res = await adminReviewScoreAction(submissionId, adjustments, adminNotes)
 
       if (!res.success) {
-        setError(res.error || "Failed to update review.")
+        showError({
+          title: "Score Review Update Failed",
+          message: res.error || "Failed to update evaluation review.",
+          code: "SCORE_REVIEW_ERR",
+        })
         setLoading(false)
         return
       }
 
-      setSuccess("Evaluation score adjusted and finalized with audit trail!")
+      toast.success("Evaluation score finalized", {
+        description: `Total updated to ${calculatedTotal}/${initialEvaluation.maxMarks} (${percentage}%) with audit log recorded.`,
+      })
       setLoading(false)
       router.refresh()
     } catch {
-      setError("An unexpected server error occurred.")
+      showError({
+        title: "Unexpected Server Error",
+        message: "An unexpected server error occurred while saving score adjustments.",
+        code: "SYS_ERR",
+      })
       setLoading(false)
     }
   }
 
+  const columns: DataTableColumn<any>[] = [
+    {
+      id: "questionNumber",
+      header: "Question",
+      sortable: true,
+      sortAccessor: (q) => q.questionNumber,
+      searchAccessor: (q) =>
+        `${q.questionNumber} ${q.feedback || ""} ${q.missingConcepts || ""} ${q.adminNotes || ""}`,
+      className: "w-24 font-bold text-[#2A6AED]",
+      cell: (q) => q.questionNumber,
+    },
+    {
+      id: "maxMarks",
+      header: "Max Marks",
+      sortable: true,
+      sortAccessor: (q) => q.maxMarks,
+      className: "w-28 font-semibold text-slate-700",
+      cell: (q) => `${q.maxMarks} Marks`,
+    },
+    {
+      id: "marksAwarded",
+      header: "Awarded Marks",
+      sortable: true,
+      sortAccessor: (q) => Number(q.marksAwarded),
+      className: "w-36",
+      cell: (q) => (
+        <Input
+          type="number"
+          step={0.5}
+          min={0}
+          max={q.maxMarks}
+          value={q.marksAwarded}
+          onChange={(e) =>
+            handleScoreChange(q.id, parseFloat(e.target.value) || 0, q.maxMarks)
+          }
+          className="border-slate-200 bg-white h-9 w-24 text-xs sm:text-sm font-bold text-[#2A6AED] rounded-lg"
+        />
+      ),
+    },
+    {
+      id: "feedback",
+      header: "Evaluator Feedback & Missing Concepts",
+      sortable: false,
+      className: "whitespace-normal min-w-[260px]",
+      cell: (q) => (
+        <div className="space-y-1">
+          <p className="text-xs sm:text-sm text-[#0F172A] leading-relaxed">{q.feedback}</p>
+          {q.missingConcepts && (
+            <p className="text-[11px] text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 italic inline-block">
+              Missing: {q.missingConcepts}
+            </p>
+          )}
+        </div>
+      ),
+    },
+    {
+      id: "adminNotes",
+      header: "Admin Override Notes",
+      sortable: false,
+      className: "min-w-[200px]",
+      cell: (q) => (
+        <Input
+          value={q.adminNotes || ""}
+          onChange={(e) => handleNotesChange(q.id, e.target.value)}
+          placeholder="Audit reason..."
+          className="border-slate-200 bg-white h-9 text-xs rounded-lg"
+        />
+      ),
+    },
+  ]
+
   return (
     <form onSubmit={handleSaveReview} className="space-y-6">
-      {error && (
-        <Alert variant="destructive" className="py-2 text-xs">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
-      {success && (
-        <Alert className="py-2 text-xs border-emerald-500 bg-emerald-50 text-emerald-800">
-          <CheckCircle2 className="h-4 w-4 text-emerald-600 mr-2" />
-          <AlertDescription>{success}</AlertDescription>
-        </Alert>
-      )}
-
-      {/* Answer Sheet Access Bar */}
-      <div className="flex items-center justify-between p-3.5 rounded-xl bg-white border border-[#D5E5F2] shadow-sm">
-        <div className="flex items-center gap-2 text-xs">
-          <FileText className="h-4 w-4 text-[#0784B5]" />
-          <span className="font-semibold text-[#0B192C]">Student Handwritten Scan:</span>
-          <span className="text-[#4B6375]">Protected Private Storage</span>
-        </div>
-        <a
-          href={fileUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0784B5] text-white text-xs font-semibold hover:bg-[#0784B5]/90"
-        >
-          <FileText className="h-3.5 w-3.5" />
-          Open Student Answer Sheet
-        </a>
-      </div>
-
-      {/* Score Summary Box */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="border-[#D5E5F2] bg-white p-4 shadow-sm">
-          <span className="text-xs text-[#4B6375] block">Calculated Total</span>
-          <span className="text-2xl font-extrabold text-[#0784B5]">
+      {/* Flat Divided Summary & Booklet Strip — Replaces 4 Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-slate-200 border-y border-slate-200 bg-slate-50/40">
+        <div className="py-3.5 px-4 sm:px-5">
+          <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">
+            Calculated Total
+          </span>
+          <span className="text-xl sm:text-2xl font-extrabold text-[#2A6AED] mt-0.5 block">
             {calculatedTotal} / {initialEvaluation.maxMarks}
           </span>
-        </Card>
-        <Card className="border-[#D5E5F2] bg-white p-4 shadow-sm">
-          <span className="text-xs text-[#4B6375] block">Calculated Percentage</span>
-          <span className="text-2xl font-extrabold text-emerald-600">{percentage}%</span>
-        </Card>
-        <Card className="border-[#D5E5F2] bg-white p-4 shadow-sm">
-          <span className="text-xs text-[#4B6375] block">Evaluation Status</span>
-          <span className="text-sm font-bold text-[#0B192C] block mt-1">
-            {initialEvaluation.status}
+        </div>
+
+        <div className="py-3.5 px-4 sm:px-5">
+          <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">
+            Calculated Percentage
           </span>
-        </Card>
+          <span className="text-xl sm:text-2xl font-extrabold text-emerald-600 mt-0.5 block">
+            {percentage}%
+          </span>
+        </div>
+
+        <div className="py-3.5 px-4 sm:px-5">
+          <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">
+            Evaluation Status
+          </span>
+          <Badge
+            variant="outline"
+            className="mt-1 border-blue-200 bg-[#EFF6FF] text-[#2A6AED] text-xs font-semibold"
+          >
+            {initialEvaluation.status}
+          </Badge>
+        </div>
+
+        <div className="py-3.5 px-4 sm:px-5 flex items-center justify-between sm:justify-center">
+          <a
+            href={fileUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center justify-center gap-1.5 h-9 px-4 rounded-lg bg-[#2A6AED] text-white text-xs font-semibold hover:bg-[#1E55C7] transition-colors w-full"
+          >
+            <FileText className="h-3.5 w-3.5" />
+            Open Scanned Booklet
+          </a>
+        </div>
       </div>
 
-      {/* Question scoring table */}
-      <Card className="border-[#D5E5F2] bg-white shadow-sm overflow-hidden">
-        <CardHeader className="py-4 border-b border-[#D5E5F2]">
-          <CardTitle className="text-sm font-bold text-[#0B192C]">
+      {/* Question-wise Score Adjustment DataTable */}
+      <div className="space-y-2">
+        <div>
+          <h3 className="text-sm sm:text-base font-bold text-[#0F172A]">
             Question-wise Score Adjustment & Override
-          </CardTitle>
-          <CardDescription className="text-xs text-[#4B6375]">
-            Verify each question score against student scan and rubric. Changes are recorded in AuditLog.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader className="bg-[#CADEEF]/20 text-xs font-semibold text-[#0B192C]">
-              <TableRow>
-                <TableHead className="w-[80px]">Question</TableHead>
-                <TableHead className="w-[100px]">Max Marks</TableHead>
-                <TableHead className="w-[140px]">Awarded Marks</TableHead>
-                <TableHead>Feedback & Concepts</TableHead>
-                <TableHead className="w-[220px]">Admin Override Notes</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody className="text-xs">
-              {questions.map((q, index) => (
-                <TableRow key={q.id}>
-                  <TableCell className="font-bold text-[#0784B5]">{q.questionNumber}</TableCell>
-                  <TableCell className="font-semibold">{q.maxMarks}</TableCell>
-                  <TableCell>
-                    <Input
-                      type="number"
-                      step={0.5}
-                      min={0}
-                      max={q.maxMarks}
-                      value={q.marksAwarded}
-                      onChange={(e) => handleScoreChange(index, parseFloat(e.target.value) || 0)}
-                      className="border-[#D5E5F2] h-8 text-xs font-bold text-[#0784B5]"
-                    />
-                  </TableCell>
-                  <TableCell className="text-[#4B6375] space-y-1">
-                    <p>{q.feedback}</p>
-                    {q.missingConcepts && (
-                      <p className="text-[11px] text-amber-800 italic">
-                        Missing: {q.missingConcepts}
-                      </p>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Input
-                      value={q.adminNotes || ""}
-                      onChange={(e) => handleNotesChange(index, e.target.value)}
-                      placeholder="Audit reason..."
-                      className="border-[#D5E5F2] h-8 text-xs"
-                    />
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+          </h3>
+          <p className="text-xs text-[#64748B]">
+            Verify each question score against the student scan and marking rubric. All edits are clamped to [0, maxMarks] and logged in AuditLog.
+          </p>
+        </div>
 
-      {/* Overall Admin Audit Notes */}
-      <Card className="border-[#D5E5F2] bg-white shadow-sm p-4 space-y-2">
-        <Label className="text-xs font-bold text-[#0B192C]">
+        <DataTable
+          data={questions}
+          columns={columns}
+          keyExtractor={(q) => q.id}
+          searchPlaceholder="Search questions or feedback notes..."
+          defaultSortColumn="questionNumber"
+          defaultSortDirection="asc"
+          defaultPageSize={10}
+          emptyTitle="No question evaluations found"
+          emptyDescription="No question records match your search query."
+        />
+      </div>
+
+      <Separator className="bg-slate-200" />
+
+      {/* Flat Overall Admin Audit Notes */}
+      <div className="space-y-2">
+        <Label className="text-xs sm:text-sm font-bold text-[#0F172A]">
           Overall Admin Review Audit Justification
         </Label>
         <Textarea
@@ -198,18 +257,24 @@ export function AdminScoreReviewEditor({
           onChange={(e) => setAdminNotes(e.target.value)}
           placeholder="Record justification for score adjustments or confirmation of review..."
           rows={3}
-          className="border-[#D5E5F2] text-xs"
+          className="border-slate-200 bg-white text-xs sm:text-sm rounded-lg"
         />
-      </Card>
+      </div>
 
-      <Button
-        type="submit"
-        disabled={loading}
-        className="w-full bg-[#0784B5] hover:bg-[#0784B5]/90 text-white font-semibold text-xs h-10"
-      >
-        {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <ShieldCheck className="h-4 w-4 mr-2" />}
-        Save Adjusted Scores & Approve Result (Write Audit Log)
-      </Button>
+      <div className="flex justify-end">
+        <Button
+          type="submit"
+          disabled={loading}
+          className="w-full sm:w-auto bg-[#2A6AED] hover:bg-[#1E55C7] text-white font-semibold text-xs sm:text-sm h-10 px-6 rounded-lg"
+        >
+          {loading ? (
+            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+          ) : (
+            <ShieldCheck className="h-4 w-4 mr-2" />
+          )}
+          Save Adjusted Scores & Approve Result (Write Audit Log)
+        </Button>
+      </div>
     </form>
   )
 }

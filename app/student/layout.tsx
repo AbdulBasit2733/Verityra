@@ -1,0 +1,20 @@
+import { getCurrentUser } from "@/lib/auth-guard"
+import { PortalShell } from "@/components/portal-shell"
+
+export default async function StudentLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  const user = await getCurrentUser()
+
+  return (
+    <PortalShell
+      role="STUDENT"
+      userName={user?.name}
+      userEmail={user?.email}
+    >
+      {children}
+    </PortalShell>
+  )
+}

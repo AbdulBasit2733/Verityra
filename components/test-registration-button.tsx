@@ -35,7 +35,7 @@ export function TestRegistrationButton({
     return (
       <Button
         onClick={() => router.push(`/signin?callbackUrl=/tests/${testSeriesId}`)}
-        className="w-full bg-[#0784B5] hover:bg-[#0784B5]/90 text-white font-semibold text-sm"
+        className="w-full bg-[#2A6AED] hover:bg-[#1E55C7] text-white font-semibold text-sm h-12 rounded-xl shadow-md shadow-blue-500/20"
       >
         Sign In to Register
         <ArrowRight className="ml-2 h-4 w-4" />
@@ -45,14 +45,14 @@ export function TestRegistrationButton({
 
   if (isRegistered) {
     return (
-      <div className="space-y-2">
-        <div className="flex items-center gap-2 p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium">
+      <div className="space-y-3">
+        <div className="flex items-center gap-2.5 p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold">
           <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
           <span>You have active access to this test series.</span>
         </div>
         <Button
           onClick={() => router.push(`/student/tests/${testSeriesId}`)}
-          className="w-full bg-[#0784B5] hover:bg-[#0784B5]/90 text-white font-semibold text-sm"
+          className="w-full bg-[#2A6AED] hover:bg-[#1E55C7] text-white font-semibold text-sm h-12 rounded-xl shadow-md shadow-blue-500/20"
         >
           Open Candidate Workspace
           <ArrowRight className="ml-2 h-4 w-4" />
@@ -129,7 +129,7 @@ export function TestRegistrationButton({
             }
           },
           theme: {
-            color: "#0784B5",
+            color: "#2A6AED",
           },
         }
 
@@ -164,15 +164,15 @@ export function TestRegistrationButton({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {error && (
-        <Alert variant="destructive" className="py-2 text-xs">
+        <Alert variant="destructive" className="py-3 text-sm rounded-xl">
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
       {success && (
-        <Alert className="py-2 text-xs border-emerald-500 bg-emerald-50 text-emerald-800">
+        <Alert className="py-3 text-sm border-emerald-500 bg-emerald-50 text-emerald-800 rounded-xl">
           <CheckCircle2 className="h-4 w-4 text-emerald-600 mr-2" />
           <AlertDescription>{success}</AlertDescription>
         </Alert>
@@ -182,7 +182,7 @@ export function TestRegistrationButton({
         <Button
           onClick={handleFreeRegistration}
           disabled={loading}
-          className="w-full bg-[#0784B5] hover:bg-[#0784B5]/90 text-white font-semibold text-sm"
+          className="w-full bg-[#2A6AED] hover:bg-[#1E55C7] text-white font-semibold text-sm h-12 rounded-xl shadow-md shadow-blue-500/20"
         >
           {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
           Register for Free Test
@@ -191,7 +191,7 @@ export function TestRegistrationButton({
         <Button
           onClick={handlePaidCheckout}
           disabled={loading}
-          className="w-full bg-[#0784B5] hover:bg-[#0784B5]/90 text-white font-semibold text-sm flex items-center justify-center gap-2"
+          className="w-full bg-[#2A6AED] hover:bg-[#1E55C7] text-white font-semibold text-sm h-12 rounded-xl shadow-md shadow-blue-500/20 flex items-center justify-center gap-2"
         >
           {loading ? (
             <Loader2 className="h-4 w-4 animate-spin mr-2" />

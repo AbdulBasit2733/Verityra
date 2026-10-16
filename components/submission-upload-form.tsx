@@ -4,10 +4,11 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { UploadCloud, Loader2, CheckCircle2, Lock, AlertCircle, FileText } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { useConfirm } from "@/components/providers/confirm-dialog-provider"
+import { useGlobalError } from "@/components/providers/error-dialog-provider"
+import { toast } from "@/components/ui/sonner"
+import { UploadCloud, Loader2, Lock, FileText } from "lucide-react"
 import { submitAnswerSheetAction } from "@/actions/submission-actions"
 
 export function SubmissionUploadForm({
@@ -20,142 +21,165 @@ export function SubmissionUploadForm({
   maxAttempts: number
 }) {
   const router = useRouter()
+  const confirm = useConfirm()
+  const { showError } = useGlobalError()
   const [file, setFile] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
 
   const isLimitReached = attemptsUsed >= maxAttempts
   const nextAttempt = attemptsUsed + 1
 
   if (isLimitReached) {
     return (
-      <Card className="border-red-200 bg-red-50/50 shadow-sm">
-        <CardContent className="p-6 text-center space-y-3">
-          <div className="h-12 w-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto">
-            <Lock className="h-6 w-6" />
+      <div className="border-y border-red-200 bg-red-50/40 py-6 px-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-start gap-3.5">
+          <div className="h-10 w-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+            <Lock className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="font-bold text-sm text-red-900">Attempt Limit Reached</h3>
-            <p className="text-xs text-red-700 mt-1 max-w-md mx-auto">
-              You have completed all {maxAttempts} allowable handwritten submissions for this test series. Further uploads are blocked. Your evaluated answer sheets and itemized rubric scores remain accessible below.
+            <h3 className="font-bold text-sm sm:text-base text-red-900">
+              3-Attempt Quota Exhausted ({attemptsUsed} / {maxAttempts} Used)
+            </h3>
+            <p className="text-xs sm:text-sm text-red-700 mt-0.5 leading-relaxed">
+              You have completed all {maxAttempts} allowable handwritten submissions for this test series. Further uploads are locked.
             </p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+        <Badge variant="outline" className="border-red-300 text-red-700 bg-white shrink-0 w-fit">
+          Locked by 3-Attempt Invariant
+        </Badge>
+      </div>
     )
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!file) {
-      setError("Please select your scanned answer sheet file.")
+      toast.warning("No answer booklet selected", {
+        description: "Please select your scanned PDF or image booklet before submitting.",
+      })
       return
     }
 
+    const confirmed = await confirm({
+      title: `Submit Handwritten Attempt #${nextAttempt} of ${maxAttempts}?`,
+      description: `Uploading "${file.name}" will consume 1 of your ${
+        maxAttempts - attemptsUsed
+      } remaining attempts for this test series. Please verify all pages are legible and upright.`,
+      confirmText: `Submit Attempt #${nextAttempt}`,
+      cancelText: "Review File",
+      variant: "default",
+      badgeText: `Attempt ${nextAttempt} of ${maxAttempts}`,
+    })
+    if (!confirmed) return
+
     setLoading(true)
-    setError(null)
-    setSuccess(null)
 
     try {
       const formData = new FormData()
       formData.append("testSeriesId", testSeriesId)
       formData.append("file", file)
 
-      // Execute Server Action directly on server
       const result = await submitAnswerSheetAction(formData)
 
       if (!result.success) {
-        setError(result.error || "Submission failed.")
+        showError({
+          title: "Answer Sheet Submission Rejected",
+          message: result.error || "Unable to process your handwritten submission.",
+          code: "SUBMISSION_REJECTED",
+        })
         setLoading(false)
         return
       }
 
-      setSuccess(result.message || `Attempt ${result.data?.attemptNumber} submitted and evaluated successfully!`)
+      toast.success(`Attempt #${result.data?.attemptNumber || nextAttempt} Evaluated`, {
+        description:
+          result.message ||
+          "Your handwritten booklet has been encrypted, stored, and evaluated.",
+      })
       setFile(null)
       setLoading(false)
-
       router.refresh()
     } catch (err) {
       console.error(err)
-      setError("An unexpected error occurred during submission.")
+      showError({
+        title: "Unexpected Upload Error",
+        message: "An unexpected network or server error occurred during submission.",
+        code: "UPLOAD_EXCEPTION",
+      })
       setLoading(false)
     }
   }
 
   return (
-    <Card className="border-[#9BD4E4] bg-white shadow-sm">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-base text-[#0B192C] flex items-center gap-2">
-            <UploadCloud className="h-5 w-5 text-[#0784B5]" />
-            Submit Attempt {nextAttempt} of {maxAttempts}
-          </CardTitle>
-          <span className="text-xs font-semibold text-[#0784B5] bg-[#CADEEF]/40 px-2.5 py-0.5 rounded-full">
-            {maxAttempts - attemptsUsed} Remaining
-          </span>
-        </div>
-        <CardDescription className="text-xs text-[#4B6375]">
-          Upload your scanned handwritten response (PDF or clear image pages). Max file size: 25MB.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {error && (
-          <Alert variant="destructive" className="mb-4 py-2 text-xs">
-            <AlertCircle className="h-4 w-4 mr-2" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-
-        {success && (
-          <Alert className="mb-4 py-2 text-xs border-emerald-500 bg-emerald-50 text-emerald-800">
-            <CheckCircle2 className="h-4 w-4 text-emerald-600 mr-2" />
-            <AlertDescription>{success}</AlertDescription>
-          </Alert>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="border-2 border-dashed border-[#CADEEF] rounded-xl p-6 text-center hover:border-[#39ACE7] transition-colors bg-[#F2F7FA]/50">
-            <FileText className="h-8 w-8 text-[#0784B5] mx-auto mb-2 opacity-70" />
-            <div className="space-y-1">
-              <Label htmlFor="answerSheetFile" className="text-xs font-semibold text-[#0784B5] cursor-pointer hover:underline">
-                {file ? file.name : "Click to select handwritten answer sheet (PDF / JPG / PNG)"}
-              </Label>
-              <Input
-                id="answerSheetFile"
-                type="file"
-                accept=".pdf,image/jpeg,image/png,image/webp"
-                onChange={(e) => setFile(e.target.files?.[0] || null)}
-                className="hidden"
-              />
-              <p className="text-[11px] text-[#4B6375]">
-                {file
-                  ? `Selected: ${(file.size / (1024 * 1024)).toFixed(2)} MB`
-                  : "Ensure all pages are oriented upright and handwriting is clearly legible."}
-              </p>
-            </div>
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="flex items-center gap-2.5">
+          <UploadCloud className="h-4.5 w-4.5 text-[#2A6AED] shrink-0" />
+          <div>
+            <h3 className="text-sm sm:text-base font-bold text-[#0F172A]">
+              Submit Attempt #{nextAttempt} of {maxAttempts}
+            </h3>
+            <p className="text-xs text-[#64748B]">
+              Upload your scanned handwritten response booklet (PDF or clear image pages, max 25MB).
+            </p>
           </div>
+        </div>
+        <Badge
+          variant="outline"
+          className="text-[11px] font-semibold text-[#2A6AED] bg-[#EFF6FF] border-blue-200 w-fit"
+        >
+          {maxAttempts - attemptsUsed} Attempt{maxAttempts - attemptsUsed === 1 ? "" : "s"} Remaining
+        </Badge>
+      </div>
 
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <label
+          htmlFor="answerSheetFile"
+          className="flex flex-col items-center justify-center border-2 border-dashed border-slate-300 hover:border-[#2A6AED] bg-slate-50/50 hover:bg-[#EFF6FF]/30 rounded-xl p-6 sm:p-8 text-center transition-colors cursor-pointer group"
+        >
+          <div className="h-11 w-11 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-[#2A6AED] mb-2.5">
+            <FileText className="h-5 w-5" />
+          </div>
+          <div className="space-y-1">
+            <p className="text-xs sm:text-sm font-bold text-[#0F172A] group-hover:text-[#2A6AED] transition-colors">
+              {file ? file.name : "Click to select scanned handwritten answer sheet"}
+            </p>
+            <Input
+              id="answerSheetFile"
+              type="file"
+              accept=".pdf,image/jpeg,image/png,image/webp"
+              onChange={(e) => setFile(e.target.files?.[0] || null)}
+              className="hidden"
+            />
+            <p className="text-[11px] sm:text-xs text-[#64748B]">
+              {file
+                ? `File size: ${(file.size / (1024 * 1024)).toFixed(2)} MB • Ready for encrypted submission`
+                : "PDF, JPG, PNG or WEBP up to 25MB • Upright orientation recommended"}
+            </p>
+          </div>
+        </label>
+
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <p className="text-[11px] text-[#64748B]">
+            * Submitting consumes 1 attempt allowance. Invalid file formats rejected prior to storage do not consume an attempt.
+          </p>
           <Button
             type="submit"
             disabled={!file || loading}
-            className="w-full bg-[#0784B5] hover:bg-[#0784B5]/90 text-white font-semibold text-xs h-10"
+            className="w-full sm:w-auto bg-[#2A6AED] hover:bg-[#1E55C7] text-white font-semibold text-xs sm:text-sm h-10 px-6 rounded-lg shrink-0"
           >
             {loading ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                Encrypting & Evaluating Answer Sheet...
+                Encrypting & Evaluating...
               </>
             ) : (
-              `Confirm & Submit Attempt ${nextAttempt}`
+              `Confirm & Submit Attempt #${nextAttempt}`
             )}
           </Button>
-
-          <p className="text-[11px] text-[#4B6375] text-center">
-            * Note: Submitting consumes one attempt. Please ensure you have reviewed your pages before confirming.
-          </p>
-        </form>
-      </CardContent>
-    </Card>
+        </div>
+      </form>
+    </div>
   )
 }

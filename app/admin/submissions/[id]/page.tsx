@@ -1,10 +1,10 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { prisma, isDatabaseConnected } from "@/lib/prisma"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
 import { AdminScoreReviewEditor } from "@/components/admin-score-review-editor"
-import { ArrowLeft, User, BookOpen, AlertTriangle } from "lucide-react"
+import { ArrowLeft } from "lucide-react"
 
 export const dynamic = "force-dynamic"
 
@@ -44,14 +44,18 @@ export default async function AdminSubmissionReviewPage({
         fileUrl: "/api/files/download?file=submissions/demo/sample-attempt.pdf",
         submittedAt: new Date(),
         user: { name: "Aarav Sharma", email: "aarav@example.com" },
-        testSeries: { title: "UPSC Civil Services General Studies Paper I Mock", maxMarks: 250 },
+        testSeries: {
+          title: "UPSC Civil Services General Studies Paper I Mock",
+          maxMarks: 250,
+        },
         evaluation: {
           id: "eval-1",
           totalMarksAwarded: 184.5,
           maxMarks: 250,
           percentage: 73.8,
           status: "REVIEW_REQUIRED",
-          generalFeedback: "Overall solid presentation. Flagged for review due to question 2 diagram handwriting ambiguity.",
+          generalFeedback:
+            "Overall solid presentation. Flagged for review due to question 2 diagram handwriting ambiguity.",
           uncertaintyFlag: true,
           questions: [
             {
@@ -79,36 +83,48 @@ export default async function AdminSubmissionReviewPage({
   }
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
-      <Link
-        href="/admin/submissions"
-        className="inline-flex items-center text-xs font-medium text-[#4B6375] hover:text-[#0784B5] transition-colors"
-      >
-        <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
-        Back to Submissions Queue
-      </Link>
+    <div className="space-y-6 max-w-5xl">
+      {/* Flat Page Header — No Card Wrapper */}
+      <div className="space-y-3">
+        <Link
+          href="/admin/submissions"
+          className="inline-flex items-center text-xs font-semibold text-slate-500 hover:text-[#2A6AED] transition-colors"
+        >
+          <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
+          Back to Submissions Queue
+        </Link>
 
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Badge className="bg-[#0784B5] text-white text-[10px] border-0">
-              Attempt #{submission.attemptNumber}
-            </Badge>
-            <span className="text-xs text-[#4B6375]">
-              Submitted on {new Date(submission.submittedAt).toLocaleString()}
-            </span>
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge className="bg-[#2A6AED] text-white text-[11px] font-bold border-0 px-2.5 py-0.5 rounded-lg">
+                Attempt #{submission.attemptNumber}
+              </Badge>
+              <span className="text-xs text-[#64748B] font-medium">
+                Submitted on {new Date(submission.submittedAt).toLocaleString()}
+              </span>
+            </div>
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-[#0F172A] tracking-tight">
+              Review Candidate Answer Sheet
+            </h1>
+            <p className="text-xs sm:text-sm text-[#64748B]">
+              {submission.testSeries?.title}
+            </p>
           </div>
-          <h1 className="text-2xl font-extrabold text-[#0B192C]">
-            Review Candidate Answer Sheet
-          </h1>
-        </div>
 
-        <div className="text-right">
-          <p className="text-xs text-[#4B6375]">Candidate</p>
-          <p className="font-bold text-[#0B192C]">{submission.user?.name}</p>
-          <p className="text-[11px] text-[#4B6375]">{submission.user?.email}</p>
+          <div className="sm:text-right border-l sm:border-l-0 pl-3 sm:pl-0 border-slate-200">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              Candidate Identity
+            </p>
+            <p className="font-bold text-[#0F172A] text-xs sm:text-sm mt-0.5">
+              {submission.user?.name}
+            </p>
+            <p className="text-[11px] text-[#64748B]">{submission.user?.email}</p>
+          </div>
         </div>
       </div>
+
+      <Separator className="bg-slate-200" />
 
       {submission.evaluation ? (
         <AdminScoreReviewEditor
@@ -117,9 +133,9 @@ export default async function AdminSubmissionReviewPage({
           fileUrl={submission.fileUrl}
         />
       ) : (
-        <Card className="border-[#D5E5F2] bg-white p-8 text-center text-xs text-[#4B6375]">
+        <div className="border-y border-slate-200 py-10 text-center text-xs sm:text-sm text-[#64748B]">
           Evaluation has not been initialized for this submission yet.
-        </Card>
+        </div>
       )}
     </div>
   )

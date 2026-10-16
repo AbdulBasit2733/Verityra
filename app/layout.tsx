@@ -1,12 +1,16 @@
-import { Inter } from "next/font/google"
+import { Poppins } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/components/auth-provider"
+import { ConfirmDialogProvider } from "@/components/providers/confirm-dialog-provider"
+import { ErrorDialogProvider } from "@/components/providers/error-dialog-provider"
+import { Toaster } from "@/components/ui/sonner"
 import { cn } from "@/lib/utils"
 
-const inter = Inter({
+const poppins = Poppins({
   subsets: ["latin"],
-  variable: "--font-sans",
+  weight: ["300", "400", "500", "600", "700", "800"],
+  variable: "--font-poppins",
   display: "swap",
 })
 
@@ -22,12 +26,20 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className={cn("antialiased", inter.variable, "font-sans")}>
-      <body className="min-h-screen bg-white text-[#0B192C]">
+    <html lang="en" suppressHydrationWarning className={cn("antialiased", poppins.variable)}>
+      <body className="min-h-screen bg-background text-foreground">
         <ThemeProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            <ConfirmDialogProvider>
+              <ErrorDialogProvider>
+                {children}
+                <Toaster />
+              </ErrorDialogProvider>
+            </ConfirmDialogProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>
   )
 }
+
