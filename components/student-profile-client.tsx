@@ -26,6 +26,7 @@ import {
   CheckCircle2,
 } from "lucide-react"
 import { updateStudentProfileAction, changePasswordAction } from "@/actions/auth-actions"
+import { PageHeader } from "@/components/ui/page-header"
 
 interface StudentProfileProps {
   initialData: {
@@ -186,67 +187,24 @@ export function StudentProfileClient({ initialData }: StudentProfileProps) {
 
   return (
     <div className="space-y-6 max-w-4xl">
-      {/* Flat Page Header */}
-      <div className="space-y-1">
-        <Link
-          href="/student/dashboard"
-          className="inline-flex items-center text-xs font-semibold text-slate-500 hover:text-[#2A6AED] transition-colors mb-1"
-        >
-          <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
-          Back to Candidate Dashboard
+      {/* Page Header */}
+      <PageHeader
+        icon={User}
+        title="Candidate Profile & Settings"
+        subtitle="Viewing: Personal Credentials, Target Exam & Security Settings"
+        showRefresh={false}
+      >
+        <Link href="/student/dashboard">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-10 px-3.5 rounded-xl border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-2xs"
+          >
+            <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
+            Back to Dashboard
+          </Button>
         </Link>
-        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-[#0F172A] tracking-tight">
-          Candidate Profile & Account Settings
-        </h1>
-        <p className="text-xs sm:text-sm text-[#64748B]">
-          Manage your academic credentials, examination focus, and account security credentials.
-        </p>
-      </div>
-
-      {/* Flat Divided Identity Strip */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-y border-slate-200 py-4 px-1">
-        <div className="flex items-center gap-3.5">
-          <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-[#2A6AED] to-[#1D4ED8] text-white font-bold text-base flex items-center justify-center shrink-0 shadow-xs">
-            {initials}
-          </div>
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-base font-bold text-[#0F172A] truncate">{displayName}</h2>
-              <Badge className="bg-[#EFF6FF] text-[#2A6AED] border border-blue-200 text-[10px] font-semibold px-2 py-0">
-                Verified Candidate
-              </Badge>
-            </div>
-            <p className="text-xs text-[#64748B] truncate flex items-center gap-1.5 mt-0.5">
-              <Mail className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-              {displayEmail}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-xs border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-100">
-          <div>
-            <span className="text-slate-400 font-semibold uppercase text-[10px] tracking-wider block">
-              Target Focus
-            </span>
-            <span className="font-bold text-[#0F172A]">{targetExam || "UPSC / State PCS"}</span>
-          </div>
-          <div>
-            <span className="text-slate-400 font-semibold uppercase text-[10px] tracking-wider block">
-              Submission Allowance
-            </span>
-            <span className="font-bold text-[#2A6AED]">3 Attempts / Series</span>
-          </div>
-          <div>
-            <span className="text-slate-400 font-semibold uppercase text-[10px] tracking-wider block">
-              Member Since
-            </span>
-            <span className="font-medium text-slate-700 flex items-center gap-1">
-              <Calendar className="h-3 w-3 text-slate-400" />
-              {formattedJoinDate}
-            </span>
-          </div>
-        </div>
-      </div>
+      </PageHeader>
 
       {/* Tabs Interface */}
       <Tabs defaultValue="academic" className="w-full space-y-6">

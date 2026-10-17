@@ -9,10 +9,10 @@ export async function POST(req: NextRequest) {
     const signature = req.headers.get("x-razorpay-signature")
     const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET
 
-    // Signature verification
+    // Signature verification with HMAC SHA-256
     if (webhookSecret && webhookSecret !== "placeholder_webhook_secret") {
       if (!signature) {
-        return NextResponse.json({ error: "Missing signature" }, { status: 400 })
+        return NextResponse.json({ error: "Missing x-razorpay-signature header" }, { status: 400 })
       }
 
       const expectedSignature = crypto
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
     })
 
     if (existingEvent && existingEvent.status === WebhookStatus.PROCESSED) {
-      return NextResponse.json({ received: true, note: "Event already processed" })
+      return NextResponse.json({ received: true, note: "Idempotent skip: Event already processed" })
     }
 
     // Record webhook event as RECEIVED
@@ -56,12 +56,17 @@ export async function POST(req: NextRequest) {
       update: {},
     })
 
-    // Handle payment.captured or order.paid
+    // 2. Handle payment.captured or order.paid
     if (eventType === "order.paid" || eventType === "payment.captured") {
       const paymentEntity = payload.payload?.payment?.entity
       const orderEntity = payload.payload?.order?.entity
       const razorpayOrderId = paymentEntity?.order_id || orderEntity?.id
       const razorpayPaymentId = paymentEntity?.id
+      const paymentMethod = paymentEntity?.method || null
+      const bankReference =
+        paymentEntity?.acquirer_data?.rrn ||
+        paymentEntity?.acquirer_data?.bank_transaction_id ||
+        null
 
       if (razorpayOrderId) {
         const paymentRecord = await prisma.payment.findUnique({
@@ -99,6 +104,119 @@ export async function POST(req: NextRequest) {
                 status: PaymentStatus.COMPLETED,
                 razorpayPaymentId: razorpayPaymentId || paymentRecord.razorpayPaymentId,
                 registrationId: registration.id,
+                paymentMethod,
+                bankReference,
+              },
+            })
+
+            await tx.paymentLedger.create({
+              data: {
+                paymentId: paymentRecord.id,
+                eventType: "WEBHOOK_PAYMENT_CAPTURED",
+                actorType: "GATEWAY_WEBHOOK",
+                actorId: "razorpay",
+                details: `Gateway event '${eventType}' verified payment capture of ₹${paymentRecord.amount / 100} via ${paymentMethod || "standard gateway"}.`,
+                rawPayload: JSON.stringify({ eventId, razorpayPaymentId, bankReference }),
+              },
+            })
+
+            await tx.webhookEvent.update({
+              where: { eventId },
+              data: {
+                status: WebhookStatus.PROCESSED,
+                processedAt: new Date(),
+              },
+            })
+          })
+        }
+      }
+    }
+
+    // 3. Handle payment.failed
+    if (eventType === "payment.failed") {
+      const paymentEntity = payload.payload?.payment?.entity
+      const razorpayOrderId = paymentEntity?.order_id
+      const failureReason =
+        paymentEntity?.error_description ||
+        paymentEntity?.error_reason ||
+        "Payment rejected by issuing bank or network drop."
+
+      if (razorpayOrderId) {
+        const paymentRecord = await prisma.payment.findUnique({
+          where: { razorpayOrderId },
+        })
+
+        if (paymentRecord && paymentRecord.status !== PaymentStatus.COMPLETED) {
+          await prisma.$transaction(async (tx) => {
+            await tx.payment.update({
+              where: { id: paymentRecord.id },
+              data: {
+                status: PaymentStatus.FAILED,
+                failureReason,
+              },
+            })
+
+            await tx.paymentLedger.create({
+              data: {
+                paymentId: paymentRecord.id,
+                eventType: "PAYMENT_FAILED",
+                actorType: "GATEWAY_WEBHOOK",
+                actorId: "razorpay",
+                details: `Gateway reported payment failure: ${failureReason}`,
+                rawPayload: JSON.stringify(paymentEntity),
+              },
+            })
+
+            await tx.webhookEvent.update({
+              where: { eventId },
+              data: {
+                status: WebhookStatus.PROCESSED,
+                processedAt: new Date(),
+              },
+            })
+          })
+        }
+      }
+    }
+
+    // 4. Handle refund.processed or refund.created
+    if (eventType === "refund.processed" || eventType === "refund.created") {
+      const refundEntity = payload.payload?.refund?.entity
+      const razorpayPaymentId = refundEntity?.payment_id
+
+      if (razorpayPaymentId) {
+        const paymentRecord = await prisma.payment.findUnique({
+          where: { razorpayPaymentId },
+        })
+
+        if (paymentRecord) {
+          await prisma.$transaction(async (tx) => {
+            await tx.payment.update({
+              where: { id: paymentRecord.id },
+              data: {
+                status: PaymentStatus.REFUNDED,
+                amountRefunded: refundEntity?.amount || paymentRecord.amount,
+              },
+            })
+
+            if (paymentRecord.registrationId) {
+              await tx.testRegistration.update({
+                where: { id: paymentRecord.registrationId },
+                data: {
+                  status: RegistrationStatus.CANCELLED,
+                  maxAttempts: 0,
+                },
+              })
+            }
+
+            await tx.paymentLedger.create({
+              data: {
+                paymentId: paymentRecord.id,
+                eventType: "WEBHOOK_REFUND_PROCESSED",
+                actorType: "GATEWAY_WEBHOOK",
+                actorId: "razorpay",
+                details: `Razorpay webhook confirmed refund of ₹${(refundEntity?.amount || paymentRecord.amount) / 100}. Access cancelled.`,
+                rawPayload: JSON.stringify(refundEntity),
               },
             })
 

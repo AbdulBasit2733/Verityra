@@ -1,0 +1,54 @@
+import { runAuthTests } from "./auth.test"
+import { runTestSeriesTests } from "./test-series.test"
+import { runRegistrationTests } from "./registration.test"
+import { runSubmissionTests } from "./submissions.test"
+import { runEvaluationTests } from "./evaluation.test"
+import { runPaymentTests } from "./payments.test"
+import { TestResult } from "./test-utils"
+
+console.log("================================================================================")
+console.log("                    VERITYRA MODULAR TEST RUNNER")
+console.log("================================================================================")
+
+const startTime = Date.now()
+const results: TestResult[] = []
+
+try {
+  results.push(runAuthTests())
+  results.push(runTestSeriesTests())
+  results.push(runRegistrationTests())
+  results.push(runSubmissionTests())
+  results.push(runEvaluationTests())
+  results.push(runPaymentTests())
+} catch (err: any) {
+  console.error("FATAL ERROR IN TEST SUITE RUNNER:", err)
+  process.exit(1)
+}
+
+const elapsedMs = Date.now() - startTime
+
+console.log("\n================================================================================")
+console.log("                           FINAL TEST EXECUTION SUMMARY")
+console.log("================================================================================")
+
+let totalPassed = 0
+let totalFailed = 0
+
+for (const res of results) {
+  totalPassed += res.passed
+  totalFailed += res.failed
+  const statusIcon = res.failed === 0 ? "✓ PASS" : "✗ FAIL"
+  console.log(`[${statusIcon}] ${res.suiteName.padEnd(55)}: ${res.passed} passed, ${res.failed} failed`)
+}
+
+console.log("--------------------------------------------------------------------------------")
+console.log(`TOTAL TESTS: ${totalPassed + totalFailed} | PASSED: ${totalPassed} | FAILED: ${totalFailed} | DURATION: ${elapsedMs}ms`)
+console.log("================================================================================")
+
+if (totalFailed > 0) {
+  console.error(`\nTest run failed with ${totalFailed} failing assertions. See above output for details.`)
+  process.exit(1)
+} else {
+  console.log("\nAll modular test suites passed successfully!")
+  process.exit(0)
+}

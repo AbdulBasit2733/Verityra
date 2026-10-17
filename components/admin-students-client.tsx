@@ -5,7 +5,10 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { DataTable, DataTableColumn, DataTableFilter } from "@/components/ui/data-table"
 import { FormattedDate } from "@/components/ui/date-picker"
+import { PageHeader } from "@/components/ui/page-header"
+import { KpiStatCard } from "@/components/ui/kpi-stat-card"
 import { AdminExtraAttemptDialog } from "@/components/admin-extra-attempt-dialog"
+import { AlertTriangle, ShieldCheck, Users } from "lucide-react"
 
 export interface AdminStudentRegistrationRow {
   id: string
@@ -37,8 +40,12 @@ export function AdminStudentsClient({
         `${r.studentName} ${r.studentEmail} ${r.testTitle}`,
       cell: (r) => (
         <div>
-          <span className="font-bold text-[#0F172A] block">{r.studentName}</span>
-          <span className="text-[11px] text-[#64748B]">{r.studentEmail}</span>
+          <span className="font-bold text-slate-900 dark:text-slate-100 block">
+            {r.studentName}
+          </span>
+          <span className="text-[11px] text-slate-500 dark:text-slate-400">
+            {r.studentEmail}
+          </span>
         </div>
       ),
     },
@@ -48,7 +55,7 @@ export function AdminStudentsClient({
       sortable: true,
       sortAccessor: (r) => r.testTitle,
       cell: (r) => (
-        <span className="font-semibold text-[#0F172A] max-w-xs truncate block">
+        <span className="font-semibold text-slate-900 dark:text-slate-100 max-w-xs truncate block">
           {r.testTitle}
         </span>
       ),
@@ -63,15 +70,15 @@ export function AdminStudentsClient({
         return (
           <div className="w-40 space-y-1.5">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-bold text-[#0F172A]">
+              <span className="font-bold text-slate-900 dark:text-slate-100">
                 {r.attemptsUsed} / {r.maxAttempts} used
               </span>
               <Badge
                 variant="outline"
                 className={
                   isExhausted
-                    ? "border-red-200 text-red-700 bg-red-50 text-[10px] font-semibold px-1.5 py-0"
-                    : "border-blue-200 text-[#2A6AED] bg-[#EFF6FF] text-[10px] font-semibold px-1.5 py-0"
+                    ? "border-red-200 dark:border-red-900 text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/50 text-[10px] font-semibold px-2 py-0 rounded-full"
+                    : "border-blue-200 dark:border-blue-900 text-[#2A6AED] dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 text-[10px] font-semibold px-2 py-0 rounded-full"
                 }
               >
                 {isExhausted ? "Exhausted" : "Active"}
@@ -93,9 +100,9 @@ export function AdminStudentsClient({
       sortAccessor: (r) => r.maxAttempts,
       cell: (r) => (
         <div className="flex items-center gap-1.5">
-          <span className="font-bold text-[#0F172A]">{r.maxAttempts} allowed</span>
+          <span className="font-bold text-slate-900 dark:text-slate-100">{r.maxAttempts} allowed</span>
           {r.maxAttempts > 3 && (
-            <Badge className="bg-amber-100 text-amber-800 border-0 text-[10px] font-bold">
+            <Badge className="bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border-0 text-[10px] font-bold rounded-full">
               Overridden
             </Badge>
           )}
@@ -104,14 +111,14 @@ export function AdminStudentsClient({
     },
     {
       id: "registeredAt",
-      header: "Registered Date",
+      header: "Enrolled Date",
       sortable: true,
       sortAccessor: (r) => new Date(r.registeredAt),
-      cell: (r) => <FormattedDate date={r.registeredAt} />,
+      cell: (r) => <FormattedDate date={r.registeredAt} includeTime />,
     },
     {
-      id: "override",
-      header: "Audited Override",
+      id: "action",
+      header: "Attempt Override",
       headerClassName: "text-right",
       className: "text-right",
       cell: (r) => (
@@ -125,66 +132,91 @@ export function AdminStudentsClient({
     },
   ]
 
+  const distinctTestTitles = React.useMemo(() => {
+    const set = new Set<string>()
+    for (const r of registrations) {
+      if (r.testTitle) set.add(r.testTitle)
+    }
+    return Array.from(set).sort()
+  }, [registrations])
+
   const filters: DataTableFilter<AdminStudentRegistrationRow>[] = [
     {
-      id: "quota",
+      id: "status",
       label: "Quota Status",
-      accessor: (r) => (r.attemptsUsed >= r.maxAttempts ? "EXHAUSTED" : "AVAILABLE"),
+      accessor: (r) =>
+        r.attemptsUsed >= r.maxAttempts
+          ? "EXHAUSTED"
+          : r.maxAttempts > 3
+            ? "OVERRIDDEN"
+            : "ACTIVE",
       options: [
-        { label: "Attempts Available", value: "AVAILABLE" },
+        { label: "Active Quota", value: "ACTIVE" },
         { label: "Quota Exhausted", value: "EXHAUSTED" },
+        { label: "Overridden Limit", value: "OVERRIDDEN" },
       ],
     },
+    ...(distinctTestTitles.length > 1
+      ? [
+          {
+            id: "testSeries",
+            label: "Test Series Paper",
+            accessor: (r: AdminStudentRegistrationRow) => r.testTitle,
+            options: distinctTestTitles.map((title) => ({
+              label: title,
+              value: title,
+            })),
+          },
+        ]
+      : []),
     {
-      id: "allowance",
-      label: "Allowance Tier",
-      accessor: (r) => (r.maxAttempts > 3 ? "OVERRIDDEN" : "DEFAULT"),
+      id: "attemptUsage",
+      label: "Attempts Tier",
+      accessor: (r) => {
+        if (r.attemptsUsed === 0) return "NONE"
+        if (r.attemptsUsed >= r.maxAttempts) return "MAX"
+        return "IN_PROGRESS"
+      },
       options: [
-        { label: "Standard (3 Attempts)", value: "DEFAULT" },
-        { label: "Audited Override (4+ Attempts)", value: "OVERRIDDEN" },
+        { label: "0 Attempts Consumed", value: "NONE" },
+        { label: "In Progress (1-2 Used)", value: "IN_PROGRESS" },
+        { label: "Quota Reached (Max)", value: "MAX" },
       ],
     },
   ]
 
   return (
     <div className="space-y-6">
-      {/* Flat Page Header */}
-      <div className="space-y-1">
-        <p className="text-[11px] font-bold uppercase tracking-wider text-[#2A6AED]">
-          3-Attempt Governance & Exceptions
-        </p>
-        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-[#0F172A] tracking-tight">
-          Candidate Registrations & Overrides
-        </h1>
-        <p className="text-xs sm:text-sm text-[#64748B]">
-          Review candidate enrollments, track 3-attempt consumption, and grant audited exceptional attempt allowances.
-        </p>
-      </div>
+      {/* Page Header */}
+      <PageHeader
+        icon={Users}
+        title="Candidate Directory & Attempt Overrides"
+        subtitle="Viewing: All Enrolled Students & Attempt Quotas"
+      />
 
-      {/* Flat Divided Summary Strip */}
-      <div className="grid grid-cols-3 divide-x divide-slate-200 border-y border-slate-200 bg-slate-50/40">
-        <div className="py-3.5 px-4 sm:px-6">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-            Total Registrations
-          </span>
-          <p className="text-lg sm:text-xl font-extrabold text-[#0F172A]">
-            {registrations.length}
-          </p>
-        </div>
-        <div className="py-3.5 px-4 sm:px-6">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-            Quota Exhausted
-          </span>
-          <p className="text-lg sm:text-xl font-extrabold text-red-600">{exhaustedCount}</p>
-        </div>
-        <div className="py-3.5 px-4 sm:px-6">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-            Audited Overrides
-          </span>
-          <p className="text-lg sm:text-xl font-extrabold text-amber-600">
-            {overriddenCount}
-          </p>
-        </div>
+      {/* KPI Stat Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <KpiStatCard
+          label="Total Enrollments"
+          value={registrations.length}
+          subtext="Active exam candidate slots"
+          icon={Users}
+          variant="blue"
+        />
+        <KpiStatCard
+          label="Quotas Exhausted"
+          value={exhaustedCount}
+          subtext="Candidates at maximum 3 attempts"
+          icon={AlertTriangle}
+          variant="rose"
+        />
+        <KpiStatCard
+          label="Overrides Granted"
+          value={overriddenCount}
+          subtext="Audited exceptions (> 3 attempts)"
+          icon={ShieldCheck}
+          variant="amber"
+        />
       </div>
 
       {/* Interactive DataTable */}
@@ -192,15 +224,16 @@ export function AdminStudentsClient({
         data={registrations}
         columns={columns}
         keyExtractor={(r) => r.id}
-        searchPlaceholder="Search candidate name, email, or enrolled test series..."
+        searchPlaceholder="Search candidate name, email, or test series..."
         filters={filters}
         dateAccessor={(r) => r.registeredAt}
-        dateFilterLabel="Registered Date"
+        dateFilterLabel="Enrollment Date"
         defaultSortColumn="registeredAt"
         defaultSortDirection="desc"
         defaultPageSize={10}
-        emptyTitle="No student registrations found"
-        emptyDescription="No candidate enrollments match your current search or filter settings."
+        showSerialNumber={true}
+        emptyTitle="No enrolled candidates found"
+        emptyDescription="Adjust your search query or filters to view student enrollments."
       />
     </div>
   )

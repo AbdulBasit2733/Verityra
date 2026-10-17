@@ -107,23 +107,82 @@
 
 ---
 
+### Phase 6: Admin Payments & Financials Subsystem & 7-Day Return Engine `[x]`
+- [x] **Sidebar Navigation & Active Indicator**:
+  - Added `Payments & Financials` (`CreditCard` icon) to `adminNavItems` in `components/portal-shell.tsx` with active primary blue pill styling.
+- [x] **Admin Payments Dashboard (`app/admin/payments/page.tsx`, `components/admin-payments-client.tsx`)**:
+  - Built page with `PageHeader`, 4 `KpiStatCard` metrics (`Net Collected Revenue`, `Completed Transactions`, `7-Day Refund Claims`, `Pending Inquiries`).
+  - Integrated `DataTable` with multi-tier filtering (full-text search, status dropdown, 7-day refund eligibility filter, interactive DateFilterPicker).
+  - Implemented sequential `Sr.` row numbering, copyable monospace Razorpay order/payment badges, and global pagination.
+- [x] **7-Day Return Policy & Attempt Forfeiture Engine**:
+  - Implemented `AdminRefundDialog` enforcing strict 7-day refund window.
+  - Built attempt consumption warning when `attemptsUsed > 0` requiring explicit forfeiture acknowledgement before unlocking refund.
+  - Built `adminTriggerRefundAction` in `actions/payment-actions.ts` executing atomic database updates (`Payment.status = REFUNDED`, `PaymentRefund` record, `TestRegistration.status = CANCELLED`, `maxAttempts = 0`).
+- [x] **Immutable Transaction Audit Ledger (`components/admin-payment-ledger-sheet.tsx`)**:
+  - Built slide-over drawer displaying chronological gateway webhooks, actor attribution, and formatted raw JSON payloads.
+- [x] **Fault-Tolerance & Auto-Reconciler**:
+  - Enhanced webhook handler (`app/api/webhooks/razorpay/route.ts`) with idempotency and failed event logging.
+  - Built client recovery endpoint (`app/api/payments/verify-status/route.ts`).
+  - Built background reconciliation action (`reconcilePendingPaymentsAction`).
+- [x] **Live Supabase PostgreSQL Database Sync**:
+  - Pushed updated schema with `PaymentRefund`, `PaymentLedger`, and `RefundReason` via `pnpm prisma db push --accept-data-loss`.
+
+---
+
+### Phase 7: Modular Domain Testing Architecture `[x]`
+- [x] **Domain Test Suites Decomposition (`tests/*`)**:
+  - Built `tests/test-utils.ts`: Shared `TestSuite` runner with assertion tracking and formatted summary.
+  - Built `tests/auth.test.ts`: 11 tests for registration schema, entropy, passwords, profile updates, and RBAC.
+  - Built `tests/test-series.test.ts`: 7 tests for slugification, pricing, attempt defaults, instruction isolation, and test windows.
+  - Built `tests/registration.test.ts`: 5 tests for free/paid enrollment criteria, attempt initialization, duplicate prevention, and order payloads.
+  - Built `tests/submissions.test.ts`: 5 tests for MIME types, file sizes, zero-attempt penalty on upload failure, strict 3-attempt ceiling, and deadline enforcement.
+  - Built `tests/evaluation.test.ts`: 6 tests for Gemini structured output schema, mark clamping, percentage calculation precision, and human-in-the-loop review routing.
+  - Built `tests/payments.test.ts`: 8 tests for HMAC SHA-256 signature verification, 7-day refund policy boundaries, attempt forfeiture guard, idempotency keys, and audit ledger integrity.
+- [x] **Master Test Orchestrator (`tests/run-all.ts`)**:
+  - Built unified test runner executing all 42 tests across 6 domain suites with execution timings and consolidated status dashboard.
+  - Configured `package.json` `"test": "tsx tests/run-all.ts"`.
+
+### Phase 8: Interactive Data Actions & Master Table Ecosystem `[x]`
+- [x] **Universal Table Master Standard (`components/ui/data-table.tsx`)**:
+  - Implemented full-text client search across multi-field accessors (`searchAccessor`, `sortAccessor`).
+  - Implemented 3-way column sorting (ascending, descending, neutral) with numeric-aware and date-aware comparators.
+  - Implemented faceted dropdown filters with dynamic option sets and active filter badges with one-click dismiss.
+  - Implemented date range filtering with preset shortcuts (`Today`, `Last 7 Days`, `Last 30 Days`, `Specific Date`, `All Time`).
+  - Implemented serial numbering column (`#`), column visibility toggling, and global pagination with configurable page sizes (5, 10, 20, 50).
+- [x] **Student Panel Actions (`app/student/*`)**:
+  - `StudentDashboardClient`: Search enrolled papers, sort by completion/attempts/marks/duration, filter by completion status, marks weightage (Full Mock vs Sectional), and score tiers (High, Average, Needs Improvement, Pending).
+  - `StudentWorkspaceClient`: Tabbed workspace with numeric-aware sorted question scoring table, score band filters, legibility filters, attempt switcher, and downloadable PDF/margin sheet resources.
+  - `StudentProfileClient`: Tabbed candidate profile settings, credential update with security audit, and academic examination target management.
+- [x] **Admin Panel Actions (`app/admin/*`)**:
+  - `AdminOverviewClient`: Multi-tab data tables for candidate submissions and immutable administrative audit logs with dynamic test title and action type filters.
+  - `AdminPaymentsClient`: Search candidate name/email/order/payment IDs, filter by captured/refunded/failed status, dynamic test series paper, and 7-day refund window eligibility; trigger audited refund dialog with attempt forfeiture guard; slide-over audit ledger.
+  - `AdminStudentsClient`: Search candidate directory, sort by attempts used and enrolled date, filter by active/exhausted/overridden quotas, dynamic test paper filter, and attempt consumption tiers; trigger attempt override dialog.
+  - `AdminSubmissionsClient`: Filter submissions by review status, confidence flags, dynamic test paper, attempt number, and score tiers; quick download booklet and inspect action.
+  - `AdminTestSeriesClient`: Quick publish/unpublish action toggle with `useConfirm()`, preview candidate view, edit/manage, filter by publication status, pricing tiers, and marks weightage.
+  - `AdminProfileClient`: Tabbed administrative profile settings, credential update, and audit log history.
+- [x] **Public & Student Test Catalog & Leaderboard**:
+  - `TestCatalogClient`: Search catalog, filter by pricing (All, Free, Paid) and exam stream (UPSC, State PCS, Judiciary), sort by newest/price/marks/duration, grid vs table view toggle, and synchronized pagination.
+  - `LeaderboardClient`: Top 3 podium cards (🥇, 🥈, 🥉), candidate search, dynamic test paper filter, attempt number filter, score brackets (≥ 75%, 60-74%, 50-59%, < 50%), and date accessor.
+
+---
+
 ## 3. Active Roadmap & Future Milestones `[ ]`
 
-### Phase 6: Annotation & Visual Evaluation Enhancements `[ ]`
+### Phase 9: Annotation & Visual Evaluation Enhancements `[ ]`
 - [ ] **Canvas-Based Digital Ink Overlay**:
   - Overlay educator margin marks, ticks, and underline callouts directly on scanned candidate PDF pages.
   - Support high-resolution zoom and page-by-page side-by-side comparison between Attempt 1 and Attempt 2.
 - [ ] **Comprehensive PDF Evaluation Report Export**:
   - Generate downloadable consolidated evaluation scorecard (PDF) featuring question-wise marks, model rubric comparisons, and educator remarks.
 
-### Phase 7: Analytics & Cohort Benchmarking `[ ]`
+### Phase 9: Analytics & Cohort Benchmarking `[ ]`
 - [ ] **Candidate Progression Analytics**:
   - Chart attempt score trajectories across Attempts 1, 2, and 3 to visualize candidate mastery curves.
   - Dimension-level radar charts (Conceptual Depth vs. Structure vs. Policy Citations vs. Presentation).
 - [ ] **Batch Test Series Archiving**:
   - Support scheduled archival of completed test series batches with permanent read-only leaderboard snapshots.
 
-### Phase 8: Communication & Transactional Alerts `[ ]`
+### Phase 10: Communication & Transactional Alerts `[ ]`
 - [ ] **Transactional Notification Service**:
   - Automated transactional email / SMS alerts upon submission evaluation completion or administrative review escalation.
   - Attempt quota threshold reminders (e.g., "1 Attempt Remaining for UPSC GS Mock 1").
@@ -133,10 +192,12 @@
 ## 4. Verification & Quality Assurance Checklist
 
 Every code commit and feature addition must satisfy:
-- [x] `pnpm test` passes 13/13 business logic tests.
+- [x] `pnpm test` passes all 42 critical business logic tests across 6 domain suites.
 - [x] `pnpm run typecheck` reports 0 TypeScript errors.
 - [x] `pnpm run build` compiles 100% of static and dynamic App Router routes with zero warnings.
 - [x] Public marketing pages strictly adhere to Invariant #1 (Zero-AI Marketing).
 - [x] Attempt counters are protected by database unique constraints and atomic transactions.
 - [x] Client components using `useSearchParams()` are wrapped in `<React.Suspense>`.
 - [x] All new UI elements are tested in both Light Mode (`#FFFFFF`) and Dark Mode (`#0B1120`).
+- [x] 7-day refund policy, attempt forfeiture guards, and immutable audit ledgers verified in financial tests.
+- [x] Zero duplicate `.md` files across the codebase.

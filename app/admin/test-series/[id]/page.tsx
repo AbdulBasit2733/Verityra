@@ -2,10 +2,13 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { prisma, isDatabaseConnected } from "@/lib/prisma"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AdminTestDocumentForms, AdminPublishToggles } from "@/components/admin-test-actions"
-import { ArrowLeft, FileText, ShieldCheck, UploadCloud } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
+import { KpiStatCard } from "@/components/ui/kpi-stat-card"
+import { ArrowLeft, Award, BookOpen, CreditCard, FileCheck2, FileText, ShieldCheck, UploadCloud, Users } from "lucide-react"
 import { TestSeriesStatus } from "@prisma/client"
 
 export const dynamic = "force-dynamic"
@@ -66,87 +69,87 @@ export default async function AdminTestSeriesDetailPage({
 
   return (
     <div className="space-y-6 max-w-5xl">
-      {/* Flat Page Header — No Card Wrapper */}
-      <div className="space-y-3">
-        <Link
-          href="/admin/test-series"
-          className="inline-flex items-center text-xs font-semibold text-slate-500 hover:text-[#2A6AED] transition-colors"
-        >
-          <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
-          Back to Test Series List
+      {/* Page Header */}
+      <PageHeader
+        icon={BookOpen}
+        title={testSeries.title}
+        subtitle={`Viewing: ${testSeries.slug} · Status: ${testSeries.status}`}
+        showRefresh={false}
+      >
+        <Link href="/admin/test-series">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-10 px-3.5 rounded-xl border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-2xs"
+          >
+            <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
+            Back to Catalog
+          </Button>
         </Link>
+      </PageHeader>
 
-        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
-          <div className="space-y-1.5">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge
-                variant="outline"
-                className={
-                  testSeries.isPublished
-                    ? "border-emerald-200 text-emerald-700 bg-emerald-50 text-[11px] font-semibold"
-                    : "border-slate-200 text-slate-600 bg-slate-50 text-[11px] font-semibold"
-                }
-              >
-                {testSeries.status}
-              </Badge>
-              {testSeries.resultsPublished && (
-                <Badge className="bg-purple-600 text-white text-[11px] font-semibold border-0 px-2.5 py-0.5 rounded-lg">
-                  Results Live
-                </Badge>
-              )}
-            </div>
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-[#0F172A] tracking-tight">
-              {testSeries.title}
-            </h1>
-          </div>
-
-          <AdminPublishToggles
-            testSeriesId={testSeries.id}
-            isPublished={testSeries.isPublished}
-            resultsPublished={testSeries.resultsPublished}
-          />
+      {/* Publication Controls Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Badge
+            variant="outline"
+            className={
+              testSeries.isPublished
+                ? "border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 text-xs font-semibold rounded-full"
+                : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-900 text-xs font-semibold rounded-full"
+            }
+          >
+            {testSeries.status}
+          </Badge>
+          {testSeries.resultsPublished && (
+            <Badge className="bg-purple-600 text-white text-xs font-semibold border-0 px-3 py-1 rounded-full shadow-2xs">
+              Results Live
+            </Badge>
+          )}
         </div>
+
+        <AdminPublishToggles
+          testSeriesId={testSeries.id}
+          isPublished={testSeries.isPublished}
+          resultsPublished={testSeries.resultsPublished}
+        />
       </div>
 
-      {/* Flat Divided Meta Strip — Replaces 4 Individual KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-slate-200 border-y border-slate-200 bg-slate-50/40">
-        <div className="py-3.5 px-4 sm:px-5">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-            Price
-          </span>
-          <span className="text-lg sm:text-xl font-extrabold text-[#2A6AED]">
-            {isFree ? "FREE" : `₹${priceInRupees}`}
-          </span>
-        </div>
-        <div className="py-3.5 px-4 sm:px-5">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-            Max Marks
-          </span>
-          <span className="text-lg sm:text-xl font-extrabold text-[#0F172A]">
-            {testSeries.maxMarks} Marks
-          </span>
-        </div>
-        <div className="py-3.5 px-4 sm:px-5">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-            Enrolled Candidates
-          </span>
-          <span className="text-lg sm:text-xl font-extrabold text-[#2A6AED]">
-            {testSeries._count?.registrations || 0}
-          </span>
-        </div>
-        <div className="py-3.5 px-4 sm:px-5">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-            Submissions
-          </span>
-          <span className="text-lg sm:text-xl font-extrabold text-emerald-600">
-            {testSeries._count?.submissions || 0}
-          </span>
-        </div>
+      {/* KPI Stat Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <KpiStatCard
+          label="Registration Fee"
+          value={isFree ? "FREE" : `₹${priceInRupees}`}
+          subtext="Enrollment price tier"
+          icon={CreditCard}
+          variant="blue"
+        />
+        <KpiStatCard
+          label="Maximum Marks"
+          value={`${testSeries.maxMarks} Marks`}
+          subtext="Total syllabus weightage"
+          icon={Award}
+          variant="indigo"
+        />
+        <KpiStatCard
+          label="Enrolled Aspirants"
+          value={testSeries._count?.registrations || 0}
+          subtext="Active student registrations"
+          icon={Users}
+          variant="emerald"
+        />
+        <KpiStatCard
+          label="Answer Sheets"
+          value={testSeries._count?.submissions || 0}
+          subtext="Submitted attempts for review"
+          icon={FileCheck2}
+          variant="amber"
+        />
       </div>
 
       {/* Tabs for Document Uploads & Instruction Isolation */}
       <Tabs defaultValue="assets" className="space-y-6">
-        <TabsList variant="line" className="border-b border-slate-200 w-full justify-start">
+        <TabsList variant="line" className="border-b border-slate-200 dark:border-slate-800 w-full justify-start">
           <TabsTrigger value="assets" className="text-xs sm:text-sm font-semibold px-4 py-2">
             <UploadCloud className="h-3.5 w-3.5 mr-1.5" />
             Question Papers & Margin Templates
@@ -160,27 +163,27 @@ export default async function AdminTestSeriesDetailPage({
         <TabsContent value="assets" className="space-y-6 pt-1">
           <AdminTestDocumentForms testSeriesId={testSeries.id} />
 
-          <Separator className="bg-slate-200" />
+          <Separator className="bg-slate-200 dark:bg-slate-800" />
 
-          {/* Flat Attached Documents Lists */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 divide-y md:divide-y-0 md:divide-x divide-slate-200">
-            <div className="space-y-3 md:pr-6">
-              <h3 className="text-sm font-bold text-[#0F172A]">
+          {/* Attached Documents Lists */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs space-y-3">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
                 Attached Question Papers ({testSeries.papers?.length || 0})
               </h3>
               {testSeries.papers?.length > 0 ? (
-                <div className="divide-y divide-slate-200 border-y border-slate-200">
+                <div className="divide-y divide-slate-100 dark:divide-slate-800 border-t border-slate-100 dark:border-slate-800 pt-1">
                   {testSeries.papers.map((p: any) => (
                     <div key={p.id} className="py-3 flex items-center justify-between gap-2 text-xs">
                       <div>
-                        <span className="font-bold text-[#0F172A] block">{p.title}</span>
-                        <span className="text-[11px] text-[#64748B]">Max Marks: {p.maxMarks}</span>
+                        <span className="font-bold text-slate-900 dark:text-slate-100 block">{p.title}</span>
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400">Max Marks: {p.maxMarks}</span>
                       </div>
                       <a
                         href={p.fileUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-[#2A6AED] font-bold hover:underline shrink-0"
+                        className="text-[#2A6AED] dark:text-blue-400 font-bold hover:underline shrink-0"
                       >
                         View PDF
                       </a>
@@ -188,21 +191,21 @@ export default async function AdminTestSeriesDetailPage({
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-[#64748B]">No question papers uploaded yet.</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">No question papers uploaded yet.</p>
               )}
             </div>
 
-            <div className="space-y-3 pt-6 md:pt-0 md:pl-6">
-              <h3 className="text-sm font-bold text-[#0F172A]">
+            <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs space-y-3">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
                 Attached Margin Templates ({testSeries.templates?.length || 0})
               </h3>
               {testSeries.templates?.length > 0 ? (
-                <div className="divide-y divide-slate-200 border-y border-slate-200">
+                <div className="divide-y divide-slate-100 dark:divide-slate-800 border-t border-slate-100 dark:border-slate-800 pt-1">
                   {testSeries.templates.map((t: any) => (
                     <div key={t.id} className="py-3 flex items-center justify-between gap-2 text-xs">
                       <div>
-                        <span className="font-bold text-[#0F172A] block">{t.title}</span>
-                        <span className="text-[11px] text-[#64748B]">
+                        <span className="font-bold text-slate-900 dark:text-slate-100 block">{t.title}</span>
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400">
                           {t.templateRequired ? "Mandatory for students" : "Optional format"}
                         </span>
                       </div>
@@ -210,7 +213,7 @@ export default async function AdminTestSeriesDetailPage({
                         href={t.fileUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-[#2A6AED] font-bold hover:underline shrink-0"
+                        className="text-[#2A6AED] dark:text-blue-400 font-bold hover:underline shrink-0"
                       >
                         View Template
                       </a>
@@ -218,30 +221,30 @@ export default async function AdminTestSeriesDetailPage({
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-[#64748B]">No answer templates uploaded yet.</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">No answer templates uploaded yet.</p>
               )}
             </div>
           </div>
         </TabsContent>
 
         <TabsContent value="instructions" className="space-y-6 pt-1">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 divide-y md:divide-y-0 md:divide-x divide-slate-200">
-            <div className="space-y-2 md:pr-6">
-              <h4 className="text-xs font-bold text-[#0F172A] uppercase tracking-wider">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs space-y-2">
+              <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider">
                 Student-Facing Instructions (Public)
               </h4>
-              <p className="text-xs sm:text-sm text-[#64748B] whitespace-pre-line leading-relaxed">
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 whitespace-pre-line leading-relaxed">
                 {testSeries.studentInstructions}
               </p>
             </div>
 
-            <div className="space-y-2 pt-6 md:pt-0 md:pl-6">
-              <h4 className="text-xs font-bold text-amber-900 flex items-center gap-1.5 uppercase tracking-wider">
-                <ShieldCheck className="h-4 w-4 text-amber-700 shrink-0" />
+            <div className="rounded-2xl border border-amber-200 dark:border-amber-900 bg-amber-50/40 dark:bg-amber-950/30 p-5 shadow-xs space-y-2">
+              <h4 className="text-xs font-bold text-amber-900 dark:text-amber-300 flex items-center gap-1.5 uppercase tracking-wider">
+                <ShieldCheck className="h-4 w-4 text-amber-700 dark:text-amber-400 shrink-0" />
                 Private Evaluator Instructions (Strictly Confidential)
               </h4>
-              <div className="border-l-4 border-amber-500 bg-amber-50/40 pl-3.5 py-2.5">
-                <p className="text-xs text-amber-950 font-mono whitespace-pre-line leading-relaxed">
+              <div className="border-l-4 border-amber-500 pl-3.5 py-1">
+                <p className="text-xs text-amber-950 dark:text-amber-200 font-mono whitespace-pre-line leading-relaxed">
                   {testSeries.privateEvaluationInstructions}
                 </p>
               </div>

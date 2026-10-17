@@ -15,8 +15,10 @@ Candidates practice under authentic examination conditions: downloading margin-a
 - **Strict Three-Attempt Limit**: Atomically enforced limit (maximum 3 accepted submissions per registration) with UI locking.
 - **Multimodal AI Evaluation**: Google Gemini evaluation pipeline with structured Zod schema validation, score clamping, and uncertainty flagging for educator review.
 - **Score Review & Audits**: Admin review portal to adjust marks, add educator notes, and log changes in `AuditLog`.
-- **Razorpay Payments**: Server-created orders, digital HMAC signature verification, and idempotent webhook handling.
+- **Razorpay Payments & Financials**: Server-created orders, digital HMAC signature verification, idempotent webhooks, and dedicated Admin Payments dashboard (`/admin/payments`).
+- **7-Day Return Policy & Attempt Guard**: Admin-triggered 7-day refund engine with attempt forfeiture check and immutable `PaymentLedger` audit trail.
 - **Transparent Leaderboard**: Finalized rankings with deterministic tie-breaking.
+- **Modular Domain Testing Architecture**: 42 business invariants validated across 6 domain test suites (`auth`, `test-series`, `registration`, `submissions`, `evaluation`, `payments`).
 
 ## Technology Stack
 
@@ -27,7 +29,8 @@ Candidates practice under authentic examination conditions: downloading margin-a
 - **Authentication**: NextAuth.js (Credentials + Google OAuth)
 - **Storage**: Private Supabase Storage / Secure Local Vault
 - **Evaluation**: Google Gemini Multimodal API (`gemini-2.5-flash`)
-- **Payments**: Razorpay
+- **Payments**: Razorpay Node SDK
+- **Testing**: Native assert + TSX runner (42 modular domain tests)
 
 ## Quick Start (Development)
 
@@ -56,6 +59,9 @@ Candidates practice under authentic examination conditions: downloading margin-a
 5. **Run Critical Tests**:
    ```bash
    pnpm test
+   # Or run individual module tests:
+   # pnpm tsx tests/auth.test.ts
+   # pnpm tsx tests/payments.test.ts
    ```
 
 6. **Build for Production**:

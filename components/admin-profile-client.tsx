@@ -27,6 +27,7 @@ import {
   BookOpen,
 } from "lucide-react"
 import { updateAdminProfileAction, changePasswordAction } from "@/actions/auth-actions"
+import { PageHeader } from "@/components/ui/page-header"
 
 interface AdminProfileProps {
   initialData: {
@@ -180,68 +181,24 @@ export function AdminProfileClient({ initialData }: AdminProfileProps) {
 
   return (
     <div className="space-y-6 max-w-4xl">
-      {/* Flat Page Header */}
-      <div className="space-y-1">
-        <Link
-          href="/admin"
-          className="inline-flex items-center text-xs font-semibold text-slate-500 hover:text-[#2A6AED] transition-colors mb-1"
-        >
-          <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
-          Back to Admin Overview
+      {/* Page Header */}
+      <PageHeader
+        icon={User}
+        title="Administrator Profile & Settings"
+        subtitle="Viewing: Master Credentials, Governance Audit Log & Security Preferences"
+        showRefresh={false}
+      >
+        <Link href="/admin">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-10 px-3.5 rounded-xl border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-2xs"
+          >
+            <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
+            Back to Admin Overview
+          </Button>
         </Link>
-        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-[#0F172A] tracking-tight">
-          Administrator Profile & Platform Settings
-        </h1>
-        <p className="text-xs sm:text-sm text-[#64748B]">
-          Manage your administrative identity, governance credentials, and security preferences.
-        </p>
-      </div>
-
-      {/* Flat Divided Identity Strip */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-y border-slate-200 py-4 px-1">
-        <div className="flex items-center gap-3.5">
-          <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-[#1E55C7] to-[#0F172A] text-white font-bold text-base flex items-center justify-center shrink-0 shadow-xs border border-blue-400/20">
-            {initials}
-          </div>
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-base font-bold text-[#0F172A] truncate">{displayName}</h2>
-              <Badge className="bg-[#EFF6FF] text-[#2A6AED] border border-blue-200 text-[10px] font-bold px-2 py-0">
-                <ShieldCheck className="h-3 w-3 mr-1 text-[#2A6AED]" />
-                Platform Administrator
-              </Badge>
-            </div>
-            <p className="text-xs text-[#64748B] truncate flex items-center gap-1.5 mt-0.5">
-              <Mail className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-              {displayEmail}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-xs border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-100">
-          <div>
-            <span className="text-slate-400 font-semibold uppercase text-[10px] tracking-wider block">
-              Governance Tier
-            </span>
-            <span className="font-bold text-[#0F172A]">Superadmin (Full RBAC)</span>
-          </div>
-          <div>
-            <span className="text-slate-400 font-semibold uppercase text-[10px] tracking-wider block">
-              Audit Actions
-            </span>
-            <span className="font-bold text-[#2A6AED]">{initialData.totalReviewsPerformed} Logged</span>
-          </div>
-          <div>
-            <span className="text-slate-400 font-semibold uppercase text-[10px] tracking-wider block">
-              Admin Since
-            </span>
-            <span className="font-medium text-slate-700 flex items-center gap-1">
-              <Calendar className="h-3 w-3 text-slate-400" />
-              {formattedJoinDate}
-            </span>
-          </div>
-        </div>
-      </div>
+      </PageHeader>
 
       {/* Tabs Interface */}
       <Tabs defaultValue="profile" className="w-full space-y-6">

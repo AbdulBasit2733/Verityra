@@ -105,6 +105,7 @@ The platform deliberately avoids exposing public JSON REST endpoints (`/api/test
 | [`auth-actions.ts`](file:///d:/Abdul%20Basit/Freelance/Verityra/verityra4/actions/auth-actions.ts) | `registerStudentAction`<br>`requestPasswordResetAction`<br>`resetPasswordAction`<br>`getStudentProfileAction`<br>`updateStudentProfileAction`<br>`getAdminProfileAction`<br>`updateAdminProfileAction`<br>`changePasswordAction` | Public / Session | Salted bcrypt hash; unique email verification; audited credential changes. |
 | [`test-series-actions.ts`](file:///d:/Abdul%20Basit/Freelance/Verityra/verityra4/actions/test-series-actions.ts) | `createTestSeriesAction`<br>`updateTestSeriesAction`<br>`deleteTestSeriesAction`<br>`togglePublishTestSeriesAction`<br>`uploadPaperAction`<br>`uploadTemplateAction` | `Role.ADMIN` strictly | Multi-table atomic cascade; validation of max marks and duration. |
 | [`registration-actions.ts`](file:///d:/Abdul%20Basit/Freelance/Verityra/verityra4/actions/registration-actions.ts) | `enrollFreeTestAction`<br>`createPaymentOrderAction`<br>`verifyPaymentAndEnrollAction` | `Role.STUDENT` / `Role.ADMIN` | Idempotent upsert on `(userId, testSeriesId)`; Razorpay signature verification. |
+| [`payment-actions.ts`](file:///d:/Abdul%20Basit/Freelance/Verityra/verityra4/actions/payment-actions.ts) | `getAdminPaymentsAction`<br>`adminTriggerRefundAction`<br>`getPaymentLedgerAction`<br>`reconcilePendingPaymentsAction` | `Role.ADMIN` strictly | 7-day policy verification; atomic refund execution; attempt forfeiture; immutable `PaymentLedger` audit logging. |
 | [`submission-actions.ts`](file:///d:/Abdul%20Basit/Freelance/Verityra/verityra4/actions/submission-actions.ts) | `submitAnswerSheetAction`<br>`getSubmissionDetailsAction` | Authenticated Candidate | Strict 3-attempt database lock; background evaluation orchestration. |
 | [`evaluation-actions.ts`](file:///d:/Abdul%20Basit/Freelance/Verityra/verityra4/actions/evaluation-actions.ts) | `adminAdjustScoreAction`<br>`adminGrantExtraAttemptAction`<br>`triggerManualReevaluationAction` | `Role.ADMIN` strictly | Immutable `AuditLog` creation; recalculation of total marks and percentages. |
 | [`leaderboard-actions.ts`](file:///d:/Abdul%20Basit/Freelance/Verityra/verityra4/actions/leaderboard-actions.ts) | `getLeaderboardAction`<br>`getSeriesLeaderboardAction` | Public / Authenticated | Finalized, published evaluations only; deterministic tie-breaking. |
@@ -129,6 +130,9 @@ erDiagram
 
     TestRegistration ||--o{ Submission : "tracks attempts 1-3"
     TestRegistration ||--o{ Payment : "funded by"
+
+    Payment ||--o| PaymentRefund : "refunded via"
+    Payment ||--o{ PaymentLedger : "audited by"
 
     Submission ||--o| Evaluation : "evaluated as"
     Evaluation ||--o{ QuestionScore : "itemizes"
@@ -238,7 +242,9 @@ flowchart LR
 
 ---
 
-## 9. Payment & Razorpay Ingestion Architecture
+## 9. Payment, Refund & Financial Audit Architecture
+
+### 9.1. Razorpay Ingestion Flow & Signature Verification
 
 ```mermaid
 sequenceDiagram
@@ -262,6 +268,7 @@ sequenceDiagram
     
     alt Signature Matches
         RegAction->>DB: Atomic Transaction [UPDATE Payment(COMPLETED), INSERT TestRegistration]
+        RegAction->>DB: INSERT PaymentLedger(eventType: "PAYMENT_CAPTURED")
         RegAction-->>Candidate: { success: true, redirect: "/student/tests/[id]" }
     else Signature Invalid
         RegAction-->>Candidate: { success: false, error: "TAMPERED_PAYMENT" }
@@ -270,19 +277,59 @@ sequenceDiagram
     opt Asynchronous Webhook Reconciliation
         RZP->>WH: POST /api/webhooks/razorpay (payment.captured)
         WH->>WH: Verify X-Razorpay-Signature header
-        WH->>DB: Upsert Payment & TestRegistration idempotently
+        WH->>DB: Upsert Payment, Registration & PaymentLedger idempotently
     end
 ```
+
+### 9.2. Admin-Triggered 7-Day Refund Policy & Attempt Forfeiture Engine
+
+Verityra enforces a strict **7-Day Return Policy** triggered by administrators via [`actions/payment-actions.ts`](file:///d:/Abdul%20Basit/Freelance/Verityra/verityra4/actions/payment-actions.ts):
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Admin as Controller / Admin
+    participant PayAction as payment-actions.ts
+    participant RZP as Razorpay API
+    participant DB as PostgreSQL (Prisma $transaction)
+
+    Admin->>PayAction: adminTriggerRefundAction(paymentId, reason, adminNotes, confirmedForfeiture)
+    Note over PayAction: 1. Validate Admin session (requireAdmin)
+    Note over PayAction: 2. Check 7-Day window: (now - createdAt) <= 7 * 24 * 60 * 60 * 1000
+    Note over PayAction: 3. Attempt Forfeiture Guard: if attemptsUsed > 0 && !confirmedForfeiture -> REJECT
+    
+    PayAction->>RZP: payments.refund(razorpayPaymentId, { amount, notes })
+    RZP-->>PayAction: { id: refund_id, status: "processed" }
+    
+    PayAction->>DB: Atomic prisma.$transaction([
+    Note over DB: UPDATE Payment SET status = REFUNDED, amountRefunded = amount
+    Note over DB: INSERT PaymentRefund(refundId, reason, adminId, amount)
+    Note over DB: UPDATE TestRegistration SET status = CANCELLED, maxAttempts = 0
+    Note over DB: INSERT PaymentLedger(eventType: "REFUND_PROCESSED")
+    Note over DB: INSERT AuditLog(action: "PAYMENT_REFUNDED")
+    PayAction->>DB: ])
+    PayAction-->>Admin: { success: true, message: "Refund processed successfully" }
+```
+
+### 9.3. Immutable Payment Ledger & Audit Trail
+Every payment event generates a permanent, append-only record in the `PaymentLedger` table:
+- **`eventType`**: `PAYMENT_AUTHORIZED`, `PAYMENT_CAPTURED`, `PAYMENT_FAILED`, `REFUND_PROCESSED`, `RECONCILED`.
+- **`actorType`**: `STUDENT`, `GATEWAY_WEBHOOK`, `ADMIN_OVERRIDE`, `AUTO_RECONCILER`.
+- **`rawPayload`**: Serialized gateway payload preserved for dispute auditing.
+
+### 9.4. Network Fault Tolerance & Auto-Reconciliation
+1. **Client Recovery Endpoint (`/api/payments/verify-status`)**: If candidate disconnects after entering UPI PIN before the frontend callback fires, polling this endpoint queries Razorpay and reconciles the order.
+2. **Background Reconciler (`reconcilePendingPaymentsAction`)**: Sweeps `PENDING` orders $> 30\text{ minutes}$ old against Razorpay's API to detect payments captured on the bank side but dropped in transit.
 
 ---
 
 ## 10. Operational & Production Architecture
 
 ### 10.1. Caching & Invalidation Policy
-- **Dynamic Portal Routes**: All `/admin/*` and `/student/*` pages configure `export const dynamic = "force-dynamic"` to ensure live synchronization of attempt quotas and evaluations.
+- **Dynamic Portal Routes**: All `/admin/*` and `/student/*` pages configure `export const dynamic = "force-dynamic"` to ensure live synchronization of attempt quotas, financial ledger items, and evaluations.
 - **Server Action Revalidation**: Mutations call `revalidatePath("/admin/...")` and `revalidatePath("/student/...")` to purge client router caches immediately after writes.
 - **Search Parameter Suspense**: Every client component utilizing `useSearchParams()` (e.g., login callback banners) is wrapped in a `<React.Suspense>` boundary to prevent de-opting static page rendering.
 
 ### 10.2. Production Deployment Boundaries
 - **Environment**: Next.js Node.js server container (Docker/Vercel) communicating with Supabase managed PostgreSQL over connection pooling (`pgbouncer` port 6543) and direct connection port 5432 for migrations.
-- **Build Step**: Production build executes Turbopack bundling (`pnpm run build`) accompanied by strict TypeScript checking (`tsc --noEmit`) and business invariant tests (`tests/verityra.test.ts`).
+- **Build Step**: Production build executes Turbopack bundling (`pnpm run build`) accompanied by strict TypeScript checking (`tsc --noEmit`) and the full suite of 42 modular business domain tests (`pnpm test` via `tests/run-all.ts`).

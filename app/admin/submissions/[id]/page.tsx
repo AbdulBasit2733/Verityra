@@ -2,9 +2,11 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { prisma, isDatabaseConnected } from "@/lib/prisma"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { AdminScoreReviewEditor } from "@/components/admin-score-review-editor"
-import { ArrowLeft } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
+import { ArrowLeft, FileCheck2 } from "lucide-react"
 
 export const dynamic = "force-dynamic"
 
@@ -84,47 +86,45 @@ export default async function AdminSubmissionReviewPage({
 
   return (
     <div className="space-y-6 max-w-5xl">
-      {/* Flat Page Header — No Card Wrapper */}
-      <div className="space-y-3">
-        <Link
-          href="/admin/submissions"
-          className="inline-flex items-center text-xs font-semibold text-slate-500 hover:text-[#2A6AED] transition-colors"
-        >
-          <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
-          Back to Submissions Queue
+      {/* Page Header */}
+      <PageHeader
+        icon={FileCheck2}
+        title="Review Candidate Answer Sheet"
+        subtitle={`Viewing: ${submission.testSeries?.title || "Test Series"} · Attempt #${submission.attemptNumber} by ${submission.user?.name || "Candidate"}`}
+        showRefresh={false}
+      >
+        <Link href="/admin/submissions">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-10 px-3.5 rounded-xl border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-2xs"
+          >
+            <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
+            Back to Submissions
+          </Button>
         </Link>
+      </PageHeader>
 
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge className="bg-[#2A6AED] text-white text-[11px] font-bold border-0 px-2.5 py-0.5 rounded-lg">
-                Attempt #{submission.attemptNumber}
-              </Badge>
-              <span className="text-xs text-[#64748B] font-medium">
-                Submitted on {new Date(submission.submittedAt).toLocaleString()}
-              </span>
-            </div>
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-[#0F172A] tracking-tight">
-              Review Candidate Answer Sheet
-            </h1>
-            <p className="text-xs sm:text-sm text-[#64748B]">
-              {submission.testSeries?.title}
-            </p>
-          </div>
-
-          <div className="sm:text-right border-l sm:border-l-0 pl-3 sm:pl-0 border-slate-200">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-              Candidate Identity
-            </p>
-            <p className="font-bold text-[#0F172A] text-xs sm:text-sm mt-0.5">
-              {submission.user?.name}
-            </p>
-            <p className="text-[11px] text-[#64748B]">{submission.user?.email}</p>
-          </div>
+      {/* Candidate Summary Card */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs">
+        <div className="flex items-center gap-3">
+          <Badge className="bg-[#2A6AED] text-white text-xs font-bold border-0 px-3 py-1 rounded-full shadow-2xs">
+            Attempt #{submission.attemptNumber}
+          </Badge>
+          <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+            Submitted on {new Date(submission.submittedAt).toLocaleString()}
+          </span>
+        </div>
+        <div className="sm:text-right border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-100 dark:border-slate-800">
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+            Candidate Identity
+          </span>
+          <span className="font-bold text-slate-900 dark:text-slate-100 text-xs sm:text-sm">
+            {submission.user?.name}
+          </span>
+          <span className="text-[11px] text-slate-500 dark:text-slate-400 block">{submission.user?.email}</span>
         </div>
       </div>
-
-      <Separator className="bg-slate-200" />
 
       {submission.evaluation ? (
         <AdminScoreReviewEditor

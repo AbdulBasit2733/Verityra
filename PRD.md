@@ -138,18 +138,37 @@ journey
   - Automatic enrollment record creation upon payment capture.
   - Webhook listener for asynchronous reconciliation.
 
+### 4.6. Module 6: Revenue Governance, 7-Day Refund Policy & Transaction Audit Trail
+- **Payments & Financials Console ([`app/admin/payments/page.tsx`](file:///d:/Abdul%20Basit/Freelance/Verityra/verityra4/app/admin/payments/page.tsx))**:
+  - Unified revenue dashboard with 4 KPI metrics: Net Collected Revenue, Successful Orders, 7-Day Refund Claims, and Pending Inquiries.
+  - Multi-tier filtering toolbar: date ranges, payment status, 7-day refund eligibility, and candidate name/email/order search.
+  - Monospace copyable badges for Razorpay Order and Payment IDs.
+- **7-Day Return Policy & Attempt Forfeiture Guard**:
+  - Enforces strict 7 calendar day refund window ($\le 7\text{ days}$) from payment creation.
+  - Attempt consumption guard: If `attemptsUsed > 0`, the refund dialog warns the administrator and mandates an explicit candidate forfeiture acknowledgment checkbox before executing the refund.
+  - Atomic database state transitions: `Payment.status = REFUNDED`, `PaymentRefund` record created, `TestRegistration.status = CANCELLED`, and `maxAttempts = 0`.
+- **Immutable Payment Ledger (`PaymentLedger`)**:
+  - Chronological transaction audit trail recording gateway webhooks, actor identification (`STUDENT`, `GATEWAY_WEBHOOK`, `ADMIN_OVERRIDE`, `AUTO_RECONCILER`), and raw JSON payloads.
+  - Inspected on-demand via the slide-over drawer (`AdminPaymentLedgerSheet`).
+- **Network Fault Tolerance & Auto-Reconciliation**:
+  - Client recovery status check endpoint (`/api/payments/verify-status`) to handle mobile network drops post-UPI authorization.
+  - Background reconciler (`reconcilePendingPaymentsAction`) automatically querying Razorpay for pending orders older than 30 minutes.
+
 ---
 
 ## 5. Non-Functional Requirements (NFRs)
 
 | Dimension | Specification | Verification Mechanism |
 |---|---|---|
-| **Security: Instruction Confidentiality** | `privateEvaluationInstructions` must never appear in student network payloads or client bundles. | Tested via `Security: Private evaluation instructions are isolated...` in `verityra.test.ts`. |
-| **Security: Quota Atomicity** | Strict 3-attempt limit must withstand concurrent browser submissions. | Schema constraint `@@unique([registrationId, attemptNumber])` + transactional verification. |
+| **Security: Instruction Confidentiality** | `privateEvaluationInstructions` must never appear in student network payloads or client bundles. | Tested via `tests/test-series.test.ts`. |
+| **Security: Quota Atomicity** | Strict 3-attempt limit must withstand concurrent browser submissions. | Schema constraint `@@unique([registrationId, attemptNumber])` + `tests/submissions.test.ts`. |
+| **Financial Integrity: 7-Day Refund Policy** | Refunds blocked beyond 7 days; attempts forfeiture required if attempts used $> 0$. | Tested via `tests/payments.test.ts` (8 dedicated financial invariants). |
+| **Auditability: Immutable Ledger** | All payment and refund lifecycle events logged in append-only `PaymentLedger`. | Verified via schema relations and `tests/payments.test.ts`. |
 | **Performance: Server Rendering** | Server Component TTFB $< 300\text{ms}$ on broadband connections. | Edge-ready Server Actions and Turbopack bundle optimization. |
 | **Evaluation Latency** | Full 20-question multi-page PDF evaluation completed in $< 45\text{s}$. | Streaming multimodal parsing via Google Gemini 2.5 Flash. |
 | **Accessibility (a11y)** | WCAG AA compliance across both Light and Dark themes. | Accessible `@base-ui/react` primitives, visible focus rings, $\ge 4.5:1$ text contrast. |
-| **Reliability: Zero Attempt Burn** | Corrupt files or disconnected uploads must never consume an attempt. | Pre-storage file validation; atomic transaction rollback on upload failure. |
+| **Reliability: Zero Attempt Burn** | Corrupt files or disconnected uploads must never consume an attempt. | Pre-storage file validation; tested via `tests/submissions.test.ts`. |
+| **Testing Coverage** | 100% pass rate across 42 critical domain invariants in 6 modular test suites. | Verified via `pnpm test` (`tests/run-all.ts`). |
 
 ---
 
@@ -158,4 +177,5 @@ journey
 1. **Attempt Utilization Rate**: $\ge 80\%$ of enrolled candidates utilize at least 2 attempts to iterate on feedback.
 2. **Score Improvement Delta**: Candidates who submit Attempt 2 and Attempt 3 demonstrate an average score improvement of $\ge +14\%$.
 3. **Turnaround Velocity**: Automated evaluations delivered in $< 3\text{ minutes}$ from candidate PDF upload.
-4. **Audit Integrity**: $100\%$ of score overrides and attempt adjustments logged with administrator ID, timestamp, and justification.
+4. **Audit Integrity**: $100\%$ of score overrides, attempt adjustments, and refunds logged with administrator ID, timestamp, and justification.
+5. **Refund Resolution Time**: $\le 24\text{ hours}$ for eligible 7-day refund claims processed directly through the admin console.

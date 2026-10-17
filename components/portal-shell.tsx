@@ -25,6 +25,10 @@ import {
   X,
   ExternalLink,
   ChevronRight,
+  Search,
+  Bell,
+  Plus,
+  CreditCard,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -56,6 +60,11 @@ const adminNavItems: NavItem[] = [
     label: "Candidates & Overrides",
     href: "/admin/students",
     icon: Users,
+  },
+  {
+    label: "Payments & Financials",
+    href: "/admin/payments",
+    icon: CreditCard,
   },
   {
     label: "Profile & Settings",
@@ -135,7 +144,7 @@ export function PortalShell({
     .map((part) => part[0])
     .join("")
     .slice(0, 2)
-    .toUpperCase()
+    .toUpperCase() || "VT"
 
   function isItemActive(item: NavItem) {
     if (item.exact) {
@@ -152,32 +161,36 @@ export function PortalShell({
     (role === "ADMIN" ? "Admin Console" : "Candidate Workspace")
 
   return (
-    <div className="min-h-screen bg-[#FFFFFF] flex flex-col lg:flex-row">
+    <div className="min-h-screen bg-slate-50/50 dark:bg-slate-950 flex flex-col lg:flex-row text-slate-900 dark:text-slate-100">
       {/* =========================================================
           1. DESKTOP LEFT SIDEBAR (Fixed w-64 on lg+)
+          Matches Screenshot 1 Left Sidebar
       ========================================================= */}
-      <aside className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 bg-slate-50/60 border-r border-slate-200/80 z-40 select-none">
+      <aside className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 bg-white dark:bg-slate-900 border-r border-slate-200/80 dark:border-slate-800 z-40 select-none shadow-2xs">
         {/* Brand Header */}
-        <div className="h-16 px-5 flex items-center justify-between border-b border-slate-200/70">
+        <div className="h-16 px-5 flex items-center justify-between border-b border-slate-200/80 dark:border-slate-800">
           <Link href={role === "ADMIN" ? "/admin" : "/student/dashboard"} className="flex items-center gap-2.5 group">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-[#2A6AED] to-[#1D4ED8] text-white font-bold text-sm shadow-sm shadow-blue-500/20 group-hover:scale-105 transition-transform">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#2A6AED] text-white font-extrabold text-base shadow-xs shadow-blue-500/20 group-hover:scale-105 transition-transform">
               V
             </div>
             <div className="flex flex-col">
-              <span className="font-heading text-base font-bold tracking-tight text-slate-900 leading-none">
+              <span className="font-heading text-base font-extrabold tracking-tight text-slate-900 dark:text-slate-100 leading-none">
                 Verityra
               </span>
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-[#2A6AED] mt-0.5">
-                {role === "ADMIN" ? "Admin Console" : "Candidate Portal"}
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#2A6AED] mt-1">
+                {role === "ADMIN" ? "Admin Suite" : "Candidate Suite"}
               </span>
             </div>
           </Link>
+          <div className="h-6 w-6 rounded-md bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
+            <ChevronRight className="h-3.5 w-3.5" />
+          </div>
         </div>
 
         {/* Navigation Links */}
         <div className="flex-1 overflow-y-auto px-3.5 py-5 space-y-5">
-          <div className="space-y-1">
-            <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+          <div className="space-y-1.5">
+            <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">
               {role === "ADMIN" ? "Management & Governance" : "Workspace & Practice"}
             </p>
             {navItems.map((item) => {
@@ -188,42 +201,42 @@ export function PortalShell({
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold transition-all duration-150 group",
+                    "flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all duration-150 group",
                     active
-                      ? "bg-[#EFF6FF] text-[#2A6AED]"
-                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                      ? "bg-[#2A6AED] text-white shadow-sm shadow-blue-500/20"
+                      : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-slate-100"
                   )}
                 >
                   <span className="flex items-center gap-2.5 truncate">
                     <Icon
                       className={cn(
                         "h-4 w-4 shrink-0 transition-colors",
-                        active ? "text-[#2A6AED]" : "text-slate-400 group-hover:text-slate-700"
+                        active ? "text-white" : "text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300"
                       )}
                     />
                     <span className="truncate">{item.label}</span>
                   </span>
-                  {active && <ChevronRight className="h-3.5 w-3.5 text-[#2A6AED] shrink-0" />}
+                  {active && <ChevronRight className="h-3.5 w-3.5 text-white/80 shrink-0" />}
                 </Link>
               )
             })}
           </div>
 
-          <Separator className="bg-slate-200/70" />
+          <Separator className="bg-slate-200/80 dark:border-slate-800" />
 
-          {/* Flat Security & Invariant Note */}
+          {/* Security & Invariant Note */}
           <div className="px-3 space-y-1.5">
-            <div className="flex items-center gap-2 text-[#2A6AED]">
+            <div className="flex items-center gap-2 text-[#2A6AED] dark:text-blue-400">
               {role === "ADMIN" ? (
                 <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
               ) : (
                 <Lock className="h-3.5 w-3.5 shrink-0" />
               )}
-              <span className="text-[11px] font-bold text-slate-800">
+              <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200">
                 {role === "ADMIN" ? "Audited Governance" : "3-Attempt Guarantee"}
               </span>
             </div>
-            <p className="text-[11px] text-slate-500 leading-relaxed">
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
               {role === "ADMIN"
                 ? "All score edits & extra attempt overrides are logged to the immutable audit trail."
                 : "Each enrolled test includes 3 evaluated handwritten attempts in our encrypted vault."}
@@ -232,18 +245,18 @@ export function PortalShell({
         </div>
 
         {/* Bottom Account & Sign Out Footer */}
-        <div className="p-3.5 border-t border-slate-200/80 bg-white space-y-2.5">
+        <div className="p-3.5 border-t border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-2.5">
           <Link
             href={role === "ADMIN" ? "/admin/profile" : "/student/profile"}
-            className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group cursor-pointer"
+            className="flex items-center gap-2.5 px-2 py-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group cursor-pointer"
             title="Open Profile & Settings"
           >
-            <div className="h-8 w-8 rounded-full bg-[#2A6AED] text-white font-bold text-xs flex items-center justify-center shrink-0">
+            <div className="h-8 w-8 rounded-full bg-[#2A6AED] text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
               {initials}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-bold text-slate-900 group-hover:text-[#2A6AED] transition-colors truncate">{displayName}</p>
-              <p className="text-[11px] text-slate-500 truncate">{displayEmail}</p>
+              <p className="text-xs font-bold text-slate-900 dark:text-slate-100 group-hover:text-[#2A6AED] transition-colors truncate">{displayName}</p>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">{displayEmail}</p>
             </div>
             <ChevronRight className="h-3.5 w-3.5 text-slate-400 group-hover:text-[#2A6AED] transition-colors shrink-0" />
           </Link>
@@ -251,7 +264,7 @@ export function PortalShell({
           <div className="grid grid-cols-2 gap-1.5">
             <Link
               href="/"
-              className="inline-flex items-center justify-center gap-1.5 h-8 px-2.5 rounded-lg border border-slate-200 bg-white text-[11px] font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors"
+              className="inline-flex items-center justify-center gap-1.5 h-8 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[11px] font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
             >
               <ExternalLink className="h-3 w-3" />
               Public Site
@@ -259,7 +272,7 @@ export function PortalShell({
             <button
               type="button"
               onClick={handleSignOut}
-              className="inline-flex items-center justify-center gap-1.5 h-8 px-2.5 rounded-lg border border-red-200/80 bg-red-50/50 text-[11px] font-semibold text-red-600 hover:bg-red-100/70 transition-colors cursor-pointer"
+              className="inline-flex items-center justify-center gap-1.5 h-8 px-2.5 rounded-lg border border-red-200/80 dark:border-red-900/60 bg-red-50/50 dark:bg-red-950/30 text-[11px] font-semibold text-red-600 dark:text-red-400 hover:bg-red-100/70 dark:hover:bg-red-900/40 transition-colors cursor-pointer"
             >
               <LogOut className="h-3 w-3" />
               Sign Out
@@ -280,31 +293,31 @@ export function PortalShell({
           />
 
           {/* Drawer Content */}
-          <div className="relative w-[270px] max-w-[84vw] bg-white h-full flex flex-col justify-between z-10 shadow-2xl border-r border-slate-200">
+          <div className="relative w-[280px] max-w-[85vw] bg-white dark:bg-slate-900 h-full flex flex-col justify-between z-10 shadow-2xl border-r border-slate-200 dark:border-slate-800">
             <div>
               {/* Mobile Drawer Header */}
-              <div className="h-15 px-4 flex items-center justify-between border-b border-slate-200/80">
+              <div className="h-16 px-4 flex items-center justify-between border-b border-slate-200/80 dark:border-slate-800">
                 <Link
                   href={role === "ADMIN" ? "/admin" : "/student/dashboard"}
                   onClick={() => setMobileMenuOpen(false)}
                   className="flex items-center gap-2"
                 >
-                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-[#2A6AED] to-[#1D4ED8] text-white font-bold text-sm">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#2A6AED] text-white font-bold text-sm shadow-xs">
                     V
                   </div>
                   <div>
-                    <span className="font-heading text-sm font-bold text-slate-900 block leading-none">
+                    <span className="font-heading text-sm font-bold text-slate-900 dark:text-slate-100 block leading-none">
                       Verityra
                     </span>
                     <span className="text-[10px] font-semibold text-[#2A6AED] uppercase tracking-wider">
-                      {role === "ADMIN" ? "Admin Console" : "Candidate Portal"}
+                      {role === "ADMIN" ? "Admin Suite" : "Candidate Suite"}
                     </span>
                   </div>
                 </Link>
                 <button
                   type="button"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="h-8 w-8 rounded-lg flex items-center justify-center text-slate-500 hover:bg-slate-100"
+                  className="h-8 w-8 rounded-lg flex items-center justify-center text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
                   aria-label="Close navigation menu"
                 >
                   <X className="h-4 w-4" />
@@ -312,8 +325,8 @@ export function PortalShell({
               </div>
 
               {/* Mobile Nav Items */}
-              <div className="p-3 space-y-1">
-                <p className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              <div className="p-3 space-y-1.5">
+                <p className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                   Navigation
                 </p>
                 {navItems.map((item) => {
@@ -325,17 +338,17 @@ export function PortalShell({
                       href={item.href}
                       onClick={() => setMobileMenuOpen(false)}
                       className={cn(
-                        "flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-colors",
+                        "flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-colors",
                         active
-                          ? "bg-[#EFF6FF] text-[#2A6AED] border border-blue-200/80"
-                          : "text-slate-600 hover:bg-slate-100"
+                          ? "bg-[#2A6AED] text-white shadow-xs"
+                          : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                       )}
                     >
                       <span className="flex items-center gap-2.5 truncate">
-                        <Icon className={cn("h-4 w-4 shrink-0", active ? "text-[#2A6AED]" : "text-slate-400")} />
+                        <Icon className={cn("h-4 w-4 shrink-0", active ? "text-white" : "text-slate-400")} />
                         <span className="truncate">{item.label}</span>
                       </span>
-                      {active && <ChevronRight className="h-3.5 w-3.5 text-[#2A6AED] shrink-0" />}
+                      {active && <ChevronRight className="h-3.5 w-3.5 text-white shrink-0" />}
                     </Link>
                   )
                 })}
@@ -343,18 +356,18 @@ export function PortalShell({
             </div>
 
             {/* Mobile Drawer Footer */}
-            <div className="p-3.5 border-t border-slate-200 bg-slate-50 space-y-2.5">
+            <div className="p-3.5 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 space-y-2.5">
               <Link
                 href={role === "ADMIN" ? "/admin/profile" : "/student/profile"}
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-2.5 p-1 rounded-lg hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors group cursor-pointer"
+                className="flex items-center gap-2.5 p-1 rounded-xl hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors group cursor-pointer"
               >
                 <div className="h-8 w-8 rounded-full bg-[#2A6AED] text-white font-bold text-xs flex items-center justify-center shrink-0">
                   {initials}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-bold text-slate-900 group-hover:text-[#2A6AED] transition-colors truncate">{displayName}</p>
-                  <p className="text-[11px] text-slate-500 truncate">{displayEmail}</p>
+                  <p className="text-xs font-bold text-slate-900 dark:text-slate-100 group-hover:text-[#2A6AED] transition-colors truncate">{displayName}</p>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">{displayEmail}</p>
                 </div>
                 <ChevronRight className="h-3.5 w-3.5 text-slate-400 group-hover:text-[#2A6AED] transition-colors shrink-0" />
               </Link>
@@ -365,7 +378,7 @@ export function PortalShell({
                 <Link
                   href="/"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="inline-flex items-center justify-center gap-1 h-8 px-2 rounded-lg border border-slate-200 bg-white text-[11px] font-semibold text-slate-700"
+                  className="inline-flex items-center justify-center gap-1 h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[11px] font-semibold text-slate-700 dark:text-slate-300"
                 >
                   <ExternalLink className="h-3 w-3" />
                   Home
@@ -373,7 +386,7 @@ export function PortalShell({
                 <button
                   type="button"
                   onClick={handleSignOut}
-                  className="inline-flex items-center justify-center gap-1 h-8 px-2 rounded-lg border border-red-200 bg-red-50 text-[11px] font-semibold text-red-600"
+                  className="inline-flex items-center justify-center gap-1 h-8 px-2 rounded-lg border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 text-[11px] font-semibold text-red-600 dark:text-red-400"
                 >
                   <LogOut className="h-3 w-3" />
                   Sign Out
@@ -385,68 +398,118 @@ export function PortalShell({
       )}
 
       {/* =========================================================
-          3. MAIN WORKSPACE COLUMN (Topbar + Page Content)
+          3. MAIN WORKSPACE COLUMN (Sticky Topbar + Page Content)
+          Matches Screenshot 1 Topbar
       ========================================================= */}
       <div className="flex-1 flex flex-col lg:pl-64 min-w-0">
         {/* Sticky Workspace Topbar */}
-        <header className="sticky top-0 z-30 h-14 sm:h-16 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-3.5 min-[375px]:px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5 min-w-0">
+        <header className="sticky top-0 z-30 h-16 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
+          {/* Left: Mobile Menu + Search Bar */}
+          <div className="flex items-center gap-3 flex-1 max-w-xl min-w-0">
             <button
               type="button"
               onClick={() => setMobileMenuOpen(true)}
-              className="lg:hidden h-9 w-9 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-700 hover:bg-slate-50 shrink-0"
+              className="lg:hidden h-10 w-10 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-center text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shrink-0"
               aria-label="Open navigation drawer"
             >
               <Menu className="h-4 w-4" />
             </button>
 
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="hidden sm:inline-block text-xs font-medium text-slate-400">
-                {role === "ADMIN" ? "Admin Console" : "Candidate Portal"}
-              </span>
-              <ChevronRight className="hidden sm:inline-block h-3.5 w-3.5 text-slate-300 shrink-0" />
-              <span className="text-xs min-[375px]:text-sm font-bold text-slate-900 truncate">
-                {currentNavTitle}
-              </span>
+            {/* Global Search Input with Ctrl + K badge matching Screenshot 1 */}
+            <div className="relative flex-1 min-w-0">
+              <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                placeholder={
+                  role === "ADMIN"
+                    ? "Search candidates, test series, roll number, submissions..."
+                    : "Search enrolled test series, evaluations, rubrics..."
+                }
+                readOnly
+                onClick={() => {
+                  toast.info("Global Search", {
+                    description: "Use page filters below or type Ctrl+K to jump between tests.",
+                  })
+                }}
+                className="w-full h-10 pl-10 pr-16 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 text-xs sm:text-sm text-slate-800 dark:text-slate-200 placeholder:text-slate-400 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#2A6AED]/20"
+              />
+              <div className="absolute right-2.5 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-0.5 px-1.5 py-0.5 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[10px] font-bold text-slate-400 dark:text-slate-500 shadow-2xs">
+                Ctrl + K
+              </div>
             </div>
           </div>
 
+          {/* Right Utility Actions */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            <Badge
-              variant="outline"
-              className="hidden md:inline-flex items-center gap-1.5 bg-[#EFF6FF] text-[#2A6AED] border-blue-200 text-[11px] font-semibold px-2.5 py-1 rounded-full"
-            >
-              <ShieldCheck className="h-3.5 w-3.5" />
-              {role === "ADMIN" ? "Role: Administrator" : "256-Bit Submission Vault"}
-            </Badge>
-
-            {role === "STUDENT" && (
+            {/* Quick Action Button */}
+            {role === "ADMIN" ? (
+              <Link href="/admin/test-series/new" className="hidden sm:block">
+                <Button
+                  size="sm"
+                  className="h-9 px-3.5 rounded-xl bg-[#2A6AED] hover:bg-[#1E55C7] text-white text-xs font-semibold shadow-xs"
+                >
+                  <Plus className="mr-1.5 h-3.5 w-3.5" />
+                  Add New
+                </Button>
+              </Link>
+            ) : (
               <Link href="/tests" className="hidden sm:block">
                 <Button
                   size="sm"
-                  variant="outline"
-                  className="h-8 px-3 text-xs font-semibold border-slate-200 text-slate-700 hover:text-[#2A6AED] hover:border-blue-200 hover:bg-blue-50/40 rounded-lg"
+                  className="h-9 px-3.5 rounded-xl bg-[#2A6AED] hover:bg-[#1E55C7] text-white text-xs font-semibold shadow-xs"
                 >
-                  Browse Tests
+                  <Compass className="mr-1.5 h-3.5 w-3.5" />
+                  Explore Tests
                 </Button>
               </Link>
             )}
 
+            {/* Role / Vault Status Badge */}
+            <Badge
+              variant="outline"
+              className="hidden md:inline-flex items-center gap-1.5 bg-[#EFF6FF] dark:bg-blue-950/50 text-[#2A6AED] dark:text-blue-400 border-blue-200 dark:border-blue-900/60 text-[11px] font-bold px-2.5 py-1 rounded-full"
+            >
+              <ShieldCheck className="h-3.5 w-3.5" />
+              {role === "ADMIN" ? "Admin Suite" : "256-Bit Vault"}
+            </Badge>
+
+            {/* Notification Bell matching Screenshot 1 */}
+            <button
+              type="button"
+              onClick={() => {
+                toast.info("Notifications", {
+                  description: "All evaluation queues and security audits are up to date.",
+                })
+              }}
+              className="relative h-9 w-9 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-2xs"
+              aria-label="View notifications"
+            >
+              <Bell className="h-4 w-4" />
+              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-extrabold text-white ring-2 ring-white dark:ring-slate-900">
+                3
+              </span>
+            </button>
+
+            {/* Theme Toggle */}
             <ThemeToggle />
 
-            <div className="flex items-center gap-2 pl-1 sm:border-l sm:border-slate-200 sm:pl-3">
-              <div className="h-8 w-8 rounded-full bg-[#EFF6FF] border border-blue-200 text-[#2A6AED] font-bold text-xs flex items-center justify-center shrink-0">
+            {/* User Profile Avatar Pill */}
+            <Link
+              href={role === "ADMIN" ? "/admin/profile" : "/student/profile"}
+              className="flex items-center gap-2 pl-1 sm:border-l sm:border-slate-200 sm:dark:border-slate-800 sm:pl-3 group cursor-pointer"
+            >
+              <div className="h-9 w-9 rounded-full bg-[#EFF6FF] dark:bg-blue-950/80 border border-blue-200 dark:border-blue-800 text-[#2A6AED] dark:text-blue-400 font-extrabold text-xs flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
                 {initials}
               </div>
-              <span className="hidden sm:inline-block text-xs font-semibold text-slate-700 max-w-[140px] truncate">
+              <span className="hidden xl:inline-block text-xs font-bold text-slate-800 dark:text-slate-200 max-w-[130px] truncate group-hover:text-[#2A6AED] transition-colors">
                 {displayName}
               </span>
-            </div>
+            </Link>
           </div>
         </header>
 
         {/* Main Workspace Canvas */}
-        <main className="flex-1 py-6 sm:py-8 lg:py-10 px-3.5 min-[375px]:px-4 sm:px-6 lg:px-8 max-w-7xl w-full mx-auto">
+        <main className="flex-1 py-6 sm:py-8 lg:py-10 px-4 sm:px-6 lg:px-8 max-w-7xl w-full mx-auto space-y-6">
           {children}
         </main>
       </div>

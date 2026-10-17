@@ -5,17 +5,18 @@ import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DataTable, DataTableColumn, DataTableFilter } from "@/components/ui/data-table"
 import { FormattedDate } from "@/components/ui/date-picker"
+import { PageHeader } from "@/components/ui/page-header"
+import { KpiStatCard } from "@/components/ui/kpi-stat-card"
 import {
-  ArrowRight,
   Award,
   BookOpen,
-  CheckCircle2,
   Clock,
+  Compass,
   FileCheck2,
+  GraduationCap,
   Layers,
 } from "lucide-react"
 
@@ -73,17 +74,17 @@ export function StudentDashboardClient({
         <div className="space-y-1 max-w-md whitespace-normal">
           <Link
             href={`/student/tests/${r.testSeriesId}`}
-            className="font-bold text-[#0F172A] hover:text-[#2A6AED] transition-colors block leading-snug"
+            className="font-bold text-slate-900 dark:text-slate-100 hover:text-[#2A6AED] dark:hover:text-blue-400 transition-colors block leading-snug"
           >
             {r.testTitle}
           </Link>
-          <div className="flex flex-wrap items-center gap-3 text-[11px] text-[#64748B]">
+          <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-500 dark:text-slate-400">
             <span className="inline-flex items-center gap-1">
               <Clock className="h-3 w-3 text-slate-400" />
               {r.durationMinutes} mins
             </span>
             <span className="inline-flex items-center gap-1">
-              <Award className="h-3 w-3 text-[#2A6AED]" />
+              <Award className="h-3 w-3 text-[#2A6AED] dark:text-blue-400" />
               {r.maxMarks} Marks
             </span>
           </div>
@@ -100,14 +101,14 @@ export function StudentDashboardClient({
         return (
           <div className="w-40 space-y-1.5">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-bold text-[#0F172A]">
+              <span className="font-bold text-slate-900 dark:text-slate-100">
                 {r.attemptsUsed} / {r.maxAttempts} used
               </span>
               <span
                 className={
                   left > 0
-                    ? "text-[11px] font-semibold text-emerald-600"
-                    : "text-[11px] font-semibold text-amber-600"
+                    ? "text-[11px] font-semibold text-emerald-600 dark:text-emerald-400"
+                    : "text-[11px] font-semibold text-amber-600 dark:text-amber-400"
                 }
               >
                 {left} left
@@ -130,37 +131,36 @@ export function StudentDashboardClient({
       cell: (r) =>
         r.latestScore !== null ? (
           <div className="space-y-0.5">
-            <span className="font-extrabold text-[#2A6AED] text-sm">
+            <span className="font-extrabold text-[#2A6AED] dark:text-blue-400 text-sm">
               {r.latestScore} / {r.maxMarks}
             </span>
-            <span className="block text-[11px] font-medium text-[#64748B]">
+            <span className="block text-[11px] font-medium text-slate-500 dark:text-slate-400">
               {r.latestPercentage}% score
             </span>
           </div>
         ) : (
-          <span className="text-xs text-slate-400 font-medium">No evaluated attempt</span>
+          <span className="text-slate-400 text-xs">No attempt submitted</span>
         ),
     },
     {
       id: "registeredAt",
-      header: "Enrolled Date",
+      header: "Enrolled On",
       sortable: true,
       sortAccessor: (r) => new Date(r.registeredAt),
       cell: (r) => <FormattedDate date={r.registeredAt} />,
     },
     {
       id: "action",
-      header: "Workspace",
+      header: "Action",
       headerClassName: "text-right",
       className: "text-right",
       cell: (r) => (
         <Link href={`/student/tests/${r.testSeriesId}`}>
           <Button
             size="sm"
-            className="h-8 px-3.5 rounded-lg bg-[#2A6AED] hover:bg-[#1E55C7] text-white text-xs font-semibold"
+            className="h-8 px-3 rounded-lg bg-[#2A6AED] hover:bg-[#1E55C7] text-white text-xs font-semibold shadow-2xs"
           >
             Open Workspace
-            <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
           </Button>
         </Link>
       ),
@@ -169,21 +169,22 @@ export function StudentDashboardClient({
 
   const registrationFilters: DataTableFilter<StudentRegistrationRow>[] = [
     {
-      id: "quota",
-      label: "Quota Status",
-      accessor: (r) => (r.attemptsUsed < r.maxAttempts ? "AVAILABLE" : "EXHAUSTED"),
+      id: "attemptStatus",
+      label: "Attempts Remaining",
+      accessor: (r) =>
+        r.attemptsUsed >= r.maxAttempts ? "EXHAUSTED" : "AVAILABLE",
       options: [
         { label: "Attempts Available", value: "AVAILABLE" },
-        { label: "Quota Exhausted (3/3)", value: "EXHAUSTED" },
+        { label: "Quota Exhausted", value: "EXHAUSTED" },
       ],
     },
     {
-      id: "evaluation",
-      label: "Progress",
-      accessor: (r) => (r.latestScore !== null ? "EVALUATED" : "NOT_STARTED"),
+      id: "maxMarks",
+      label: "Marks Weightage",
+      accessor: (r) => (r.maxMarks >= 250 ? "FULL_MOCK" : "SECTIONAL"),
       options: [
-        { label: "Graded & Evaluated", value: "EVALUATED" },
-        { label: "Pending First Attempt", value: "NOT_STARTED" },
+        { label: "Full Mock (≥ 250 Marks)", value: "FULL_MOCK" },
+        { label: "Sectional / Essay (< 250 Marks)", value: "SECTIONAL" },
       ],
     },
   ]
@@ -194,11 +195,11 @@ export function StudentDashboardClient({
       header: "Test Series",
       sortable: true,
       sortAccessor: (s) => s.testTitle,
-      searchAccessor: (s) => `${s.testTitle} Attempt ${s.attemptNumber} ${s.status}`,
+      searchAccessor: (s) => `${s.testTitle} ${s.status}`,
       cell: (s) => (
         <Link
           href={`/student/tests/${s.testSeriesId}`}
-          className="font-bold text-[#0F172A] hover:text-[#2A6AED] transition-colors block max-w-xs truncate"
+          className="font-bold text-slate-900 dark:text-slate-100 hover:text-[#2A6AED] dark:hover:text-blue-400 transition-colors block max-w-xs truncate"
         >
           {s.testTitle}
         </Link>
@@ -212,7 +213,7 @@ export function StudentDashboardClient({
       cell: (s) => (
         <Badge
           variant="outline"
-          className="text-[11px] font-semibold border-blue-200 text-[#2A6AED] bg-[#EFF6FF]"
+          className="text-[11px] font-semibold border-blue-200 dark:border-blue-900 text-[#2A6AED] dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 rounded-full"
         >
           Attempt #{s.attemptNumber} of 3
         </Badge>
@@ -228,10 +229,10 @@ export function StudentDashboardClient({
           variant="outline"
           className={
             s.status === "COMPLETED"
-              ? "border-emerald-200 text-emerald-700 bg-emerald-50 text-[11px] font-semibold"
+              ? "border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 text-[11px] font-semibold rounded-full"
               : s.status === "REVIEW_REQUIRED"
-                ? "border-amber-200 text-amber-700 bg-amber-50 text-[11px] font-semibold"
-                : "border-blue-200 text-blue-700 bg-blue-50 text-[11px] font-semibold"
+                ? "border-amber-200 dark:border-amber-900 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 text-[11px] font-semibold rounded-full"
+                : "border-blue-200 dark:border-blue-900 text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 text-[11px] font-semibold rounded-full"
           }
         >
           {s.status === "COMPLETED"
@@ -249,12 +250,14 @@ export function StudentDashboardClient({
       sortAccessor: (s) => s.totalMarksAwarded ?? -1,
       cell: (s) =>
         s.totalMarksAwarded !== null ? (
-          <span className="font-extrabold text-[#2A6AED]">
+          <span className="font-extrabold text-[#2A6AED] dark:text-blue-400">
             {s.totalMarksAwarded} / {s.maxMarks}{" "}
-            <span className="text-xs font-medium text-slate-500">({s.percentage}%)</span>
+            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+              ({s.percentage}%)
+            </span>
           </span>
         ) : (
-          <span className="text-slate-400 text-xs">Pending</span>
+          <span className="text-slate-400 text-xs">Pending Evaluation</span>
         ),
     },
     {
@@ -274,7 +277,7 @@ export function StudentDashboardClient({
           <Button
             size="sm"
             variant="outline"
-            className="h-8 px-3 rounded-lg border-slate-200 text-xs font-semibold text-slate-700 hover:text-[#2A6AED]"
+            className="h-8 px-3 rounded-lg border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-[#2A6AED] dark:hover:text-blue-400 shadow-2xs"
           >
             View Breakdown
           </Button>
@@ -304,124 +307,125 @@ export function StudentDashboardClient({
         { label: "Attempt #3", value: "3" },
       ],
     },
+    {
+      id: "scoreTier",
+      label: "Score Bracket",
+      accessor: (s) => {
+        if (s.percentage === null) return "PENDING"
+        if (s.percentage >= 70) return "HIGH"
+        if (s.percentage >= 50) return "AVERAGE"
+        return "LOW"
+      },
+      options: [
+        { label: "High Marks (≥ 70%)", value: "HIGH" },
+        { label: "Average Marks (50–69%)", value: "AVERAGE" },
+        { label: "Needs Improvement (< 50%)", value: "LOW" },
+        { label: "Pending Evaluation", value: "PENDING" },
+      ],
+    },
   ]
 
   return (
     <div className="space-y-6">
-      {/* Flat Page Header — No Card Wrapper */}
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-        <div className="space-y-1">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-[#2A6AED]">
-            Candidate Workspace
-          </p>
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-[#0F172A] tracking-tight">
-            Welcome back, {userName}
-          </h1>
-          <p className="text-xs sm:text-sm text-[#64748B]">
-            Manage your enrolled test series, download margin-aligned answer sheets, and track your 3-attempt progression.
-          </p>
-        </div>
-        <div className="flex items-center gap-2.5 shrink-0">
-          <Link href="/tests">
-            <Button className="h-10 px-4 rounded-xl bg-[#2A6AED] hover:bg-[#1E55C7] text-white text-xs sm:text-sm font-semibold">
-              <BookOpen className="mr-2 h-4 w-4" />
-              Enroll in New Test
-            </Button>
-          </Link>
-        </div>
+      {/* Page Header */}
+      <PageHeader
+        icon={GraduationCap}
+        title={`Welcome back, ${userName}`}
+        subtitle="Viewing: Your Enrolled UPSC Test Series & 3-Attempt Progression"
+      >
+        <Link href="/tests">
+          <Button className="h-10 px-4 rounded-xl bg-[#2A6AED] hover:bg-[#1E55C7] text-white text-xs sm:text-sm font-semibold shadow-xs">
+            <Compass className="mr-1.5 h-4 w-4" />
+            Explore Test Catalog
+          </Button>
+        </Link>
+      </PageHeader>
+
+      {/* KPI Stat Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <KpiStatCard
+          label="Enrolled Test Series"
+          value={totalRegistered}
+          subtext="Active exam registrations"
+          icon={BookOpen}
+          variant="blue"
+        />
+        <KpiStatCard
+          label="Evaluated Submissions"
+          value={submissions.length}
+          subtext="Detailed scorecards produced"
+          icon={FileCheck2}
+          variant="emerald"
+        />
+        <KpiStatCard
+          label="Remaining Guarantee"
+          value={totalAttemptsRemaining}
+          subtext="Attempts left across tests"
+          icon={Clock}
+          variant="amber"
+        />
+        <KpiStatCard
+          label="Attempts Consumed"
+          value={totalAttemptsUsed}
+          subtext="Handwritten sheets evaluated"
+          icon={Layers}
+          variant="indigo"
+        />
       </div>
 
-      {/* Flat Divided Metric Strip — Replaces Heavy KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-200 border-y border-slate-200 bg-slate-50/40">
-        <div className="py-4 px-4 sm:px-6 flex items-center justify-between">
-          <div>
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
-              Enrolled Test Series
-            </span>
-            <p className="text-2xl font-extrabold text-[#0F172A] mt-0.5">{totalRegistered}</p>
-            <span className="text-xs text-[#64748B]">Active exam registrations</span>
-          </div>
-          <BookOpen className="h-5 w-5 text-[#2A6AED] shrink-0" />
-        </div>
-
-        <div className="py-4 px-4 sm:px-6 flex items-center justify-between">
-          <div>
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
-              Attempts Evaluated
-            </span>
-            <p className="text-2xl font-extrabold text-[#2A6AED] mt-0.5">{totalAttemptsUsed}</p>
-            <span className="text-xs text-[#64748B]">Handwritten booklets graded</span>
-          </div>
-          <CheckCircle2 className="h-5 w-5 text-[#2A6AED] shrink-0" />
-        </div>
-
-        <div className="py-4 px-4 sm:px-6 flex items-center justify-between">
-          <div>
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
-              Attempts Remaining
-            </span>
-            <p className="text-2xl font-extrabold text-emerald-600 mt-0.5">
-              {totalAttemptsRemaining}
-            </p>
-            <span className="text-xs text-[#64748B]">Available submission slots</span>
-          </div>
-          <Layers className="h-5 w-5 text-emerald-600 shrink-0" />
-        </div>
-      </div>
-
-      {/* shadcn Tabs Switching Between Enrolled Tests Table & Submission Activity Table */}
+      {/* Tabs with DataTables */}
       <Tabs defaultValue="enrolled" className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <TabsList variant="line" className="border-b border-slate-200 w-full sm:w-auto justify-start">
-            <TabsTrigger value="enrolled" className="text-xs sm:text-sm font-semibold px-4 py-2">
-              <BookOpen className="h-3.5 w-3.5 mr-1.5" />
-              Enrolled Test Series ({registrations.length})
-            </TabsTrigger>
-            <TabsTrigger value="submissions" className="text-xs sm:text-sm font-semibold px-4 py-2">
-              <FileCheck2 className="h-3.5 w-3.5 mr-1.5" />
-              Submission History ({submissions.length})
-            </TabsTrigger>
-          </TabsList>
-        </div>
+        <TabsList variant="line" className="border-b border-slate-200 dark:border-slate-800 w-full sm:w-auto justify-start">
+          <TabsTrigger value="enrolled" className="text-xs sm:text-sm font-semibold px-4 py-2">
+            <BookOpen className="h-3.5 w-3.5 mr-1.5" />
+            My Enrolled Test Series ({registrations.length})
+          </TabsTrigger>
+          <TabsTrigger value="submissions" className="text-xs sm:text-sm font-semibold px-4 py-2">
+            <FileCheck2 className="h-3.5 w-3.5 mr-1.5" />
+            My Evaluated Submissions ({submissions.length})
+          </TabsTrigger>
+        </TabsList>
 
-        <TabsContent value="enrolled" className="space-y-4 pt-1">
+        <TabsContent value="enrolled" className="pt-1">
           <DataTable
             data={registrations}
             columns={registrationColumns}
             keyExtractor={(r) => r.id}
-            searchPlaceholder="Search enrolled tests by title or feedback..."
+            searchPlaceholder="Search enrolled test title or syllabus..."
             filters={registrationFilters}
             dateAccessor={(r) => r.registeredAt}
-            dateFilterLabel="Enrolled Date"
+            dateFilterLabel="Enrollment Date"
             defaultSortColumn="registeredAt"
             defaultSortDirection="desc"
             defaultPageSize={10}
-            emptyTitle="No enrolled test series found"
-            emptyDescription="Enroll in a free or paid mock examination to download margin-aligned answer sheets and submit up to 3 handwritten attempts."
+            showSerialNumber={true}
+            emptyTitle="No test series enrolled yet"
+            emptyDescription="Explore our UPSC Mains test series catalog to enroll and start submitting handwritten answer sheets."
             emptyAction={
               <Link href="/tests">
-                <Button size="sm" className="bg-[#2A6AED] hover:bg-[#1E55C7] text-white text-xs font-semibold">
-                  Explore Test Catalog
+                <Button size="sm" className="bg-[#2A6AED] text-white">
+                  Browse Test Catalog
                 </Button>
               </Link>
             }
           />
         </TabsContent>
 
-        <TabsContent value="submissions" className="space-y-4 pt-1">
+        <TabsContent value="submissions" className="pt-1">
           <DataTable
             data={submissions}
             columns={submissionColumns}
             keyExtractor={(s) => s.id}
-            searchPlaceholder="Search submissions by test series..."
+            searchPlaceholder="Search submitted test title or status..."
             filters={submissionFilters}
             dateAccessor={(s) => s.submittedAt}
             dateFilterLabel="Submission Date"
             defaultSortColumn="submittedAt"
             defaultSortDirection="desc"
             defaultPageSize={10}
-            emptyTitle="No handwritten submissions found"
-            emptyDescription="Upload your first scanned handwritten answer booklet inside any enrolled test workspace."
+            showSerialNumber={true}
+            emptyTitle="No answer sheets submitted yet"
+            emptyDescription="Open any enrolled test series above to upload your handwritten PDF response."
           />
         </TabsContent>
       </Tabs>

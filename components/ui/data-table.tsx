@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
@@ -34,6 +35,7 @@ import {
   Filter,
   RotateCcw,
   Search,
+  SlidersHorizontal,
   X,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -48,11 +50,14 @@ export interface DataTableColumn<T> {
   searchAccessor?: (row: T) => string
   className?: string
   headerClassName?: string
+  hideable?: boolean
+  defaultHidden?: boolean
 }
 
 export interface DataTableFilterOption {
   label: string
   value: string
+  icon?: React.ComponentType<{ className?: string }>
 }
 
 export interface DataTableFilter<T> {
@@ -61,6 +66,7 @@ export interface DataTableFilter<T> {
   options: DataTableFilterOption[]
   accessor: (row: T) => string
   defaultValue?: string
+  icon?: React.ComponentType<{ className?: string }>
 }
 
 export interface DataTableProps<T> {
@@ -74,6 +80,7 @@ export interface DataTableProps<T> {
   defaultSortColumn?: string
   defaultSortDirection?: "asc" | "desc"
   defaultPageSize?: number
+  showSerialNumber?: boolean
   emptyTitle?: string
   emptyDescription?: string
   emptyAction?: React.ReactNode
@@ -85,13 +92,14 @@ export function DataTable<T>({
   data,
   columns,
   keyExtractor,
-  searchPlaceholder = "Search records...",
+  searchPlaceholder = "Search by keyword, candidate, or title...",
   filters = [],
   dateAccessor,
   dateFilterLabel = "Filter by date",
   defaultSortColumn,
   defaultSortDirection = "desc",
   defaultPageSize = 10,
+  showSerialNumber = true,
   emptyTitle = "No matching records found",
   emptyDescription = "Try adjusting your search query, status filters, or date range.",
   emptyAction,
@@ -120,6 +128,21 @@ export function DataTable<T>({
   )
   const [currentPage, setCurrentPage] = React.useState(1)
   const [pageSize, setPageSize] = React.useState(defaultPageSize)
+
+  // Column visibility state
+  const [columnVisibility, setColumnVisibility] = React.useState<Record<string, boolean>>(
+    () => {
+      const initial: Record<string, boolean> = {}
+      for (const col of columns) {
+        initial[col.id] = !col.defaultHidden
+      }
+      return initial
+    }
+  )
+
+  const visibleColumns = React.useMemo(() => {
+    return columns.filter((col) => columnVisibility[col.id] !== false)
+  }, [columns, columnVisibility])
 
   const handleSort = (colId: string) => {
     if (sortColumn === colId) {
@@ -251,14 +274,25 @@ export function DataTable<T>({
     }
   }, [sortedData.length, pageSize, currentPage])
 
+  const totalCols = (showSerialNumber ? 1 : 0) + visibleColumns.length
+
   return (
-    <div className={cn("space-y-3", className)}>
-      {/* Table Toolbar: Search + Dropdown Filters + Date Picker + Actions */}
-      <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex flex-1 flex-wrap items-center gap-2">
-          {/* Search Input */}
-          <div className="relative w-full sm:w-72">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+    <div
+      className={cn(
+        "rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs overflow-hidden",
+        className
+      )}
+    >
+      {/* =========================================================================
+          TABLE TOOLBAR: Multi-tier toolbar matching Reference Screenshots
+          Row 1: Search input + Column Selector + Toolbar Actions
+          Row 2: Dropdown filters + Date Picker + Reset Filters
+      ========================================================================= */}
+      <div className="p-4 sm:p-5 border-b border-slate-200/80 dark:border-slate-800 space-y-3 bg-white dark:bg-slate-900">
+        {/* Tier 1: Search & Right Tools */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div className="relative flex-1 max-w-2xl">
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <Input
               value={searchQuery}
               onChange={(e) => {
@@ -266,7 +300,7 @@ export function DataTable<T>({
                 setCurrentPage(1)
               }}
               placeholder={searchPlaceholder}
-              className="h-9 pl-9 pr-8 rounded-lg border-slate-200 bg-white text-xs sm:text-sm shadow-2xs focus-visible:ring-[#2A6AED]/20"
+              className="h-10 pl-10 pr-9 rounded-xl border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 text-xs sm:text-sm shadow-2xs focus-visible:ring-[#2A6AED]/20 focus-visible:border-[#2A6AED]"
             />
             {searchQuery && (
               <button
@@ -275,202 +309,270 @@ export function DataTable<T>({
                   setSearchQuery("")
                   setCurrentPage(1)
                 }}
-                aria-label="Clear search"
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                aria-label="Clear search query"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
               >
-                <X className="h-3.5 w-3.5" />
+                <X className="h-4 w-4" />
               </button>
             )}
           </div>
 
-          {/* Dropdown Menu Filters */}
-          {filters.map((filter) => {
-            const currentVal = activeFilters[filter.id] || "ALL"
-            const activeOption = filter.options.find((o) => o.value === currentVal)
-            const isFiltered = currentVal !== "ALL"
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Columns (N/N) Dropdown Selector */}
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors outline-none cursor-pointer shadow-2xs"
+              >
+                <SlidersHorizontal className="h-3.5 w-3.5 text-slate-500" />
+                <span>
+                  Columns ({visibleColumns.length}/{columns.length})
+                </span>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuLabel className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Toggle Columns
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {columns.map((col) => {
+                  const isVisible = columnVisibility[col.id] !== false
+                  return (
+                    <DropdownMenuCheckboxItem
+                      key={col.id}
+                      checked={isVisible}
+                      onCheckedChange={(checked) => {
+                        setColumnVisibility((prev) => ({
+                          ...prev,
+                          [col.id]: !!checked,
+                        }))
+                      }}
+                      className="text-xs font-medium"
+                    >
+                      {col.header}
+                    </DropdownMenuCheckboxItem>
+                  )
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-            return (
-              <DropdownMenu key={filter.id}>
-                <DropdownMenuTrigger
-                  className={cn(
-                    "inline-flex h-9 items-center gap-2 rounded-lg border px-3 text-xs font-semibold transition-colors outline-none cursor-pointer",
-                    isFiltered
-                      ? "border-[#2A6AED]/30 bg-[#EFF6FF] text-[#2A6AED]"
-                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                  )}
-                >
-                  <Filter className="h-3.5 w-3.5 shrink-0" />
-                  <span>{filter.label}</span>
-                  {isFiltered && activeOption && (
-                    <Badge className="ml-0.5 h-5 rounded-md bg-[#2A6AED] px-1.5 py-0 text-[10px] font-bold text-white border-0">
-                      {activeOption.label}
-                    </Badge>
-                  )}
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-52">
-                  <DropdownMenuLabel className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                    Filter by {filter.label}
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuRadioGroup
-                    value={currentVal}
-                    onValueChange={(val) => handleFilterChange(filter.id, val)}
-                  >
-                    <DropdownMenuRadioItem value="ALL" className="text-xs font-medium">
-                      All {filter.label}
-                    </DropdownMenuRadioItem>
-                    {filter.options.map((opt) => (
-                      <DropdownMenuRadioItem
-                        key={opt.value}
-                        value={opt.value}
-                        className="text-xs font-medium"
-                      >
-                        {opt.label}
-                      </DropdownMenuRadioItem>
-                    ))}
-                  </DropdownMenuRadioGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )
-          })}
-
-          {/* Date Filter Picker */}
-          {dateAccessor && (
-            <DateFilterPicker
-              value={dateFilter}
-              onChange={(next) => {
-                setDateFilter(next)
-                setCurrentPage(1)
-              }}
-              placeholder={dateFilterLabel}
-            />
-          )}
-
-          {/* Reset Filters Button */}
-          {hasActiveControls && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={resetAllFilters}
-              className="h-9 px-2.5 text-xs font-semibold text-slate-500 hover:text-slate-900"
-            >
-              <RotateCcw className="h-3.5 w-3.5 mr-1" />
-              Reset
-            </Button>
-          )}
+            {toolbarActions}
+          </div>
         </div>
 
-        {/* Right Toolbar Slot */}
-        {toolbarActions && (
-          <div className="flex items-center gap-2 shrink-0">{toolbarActions}</div>
+        {/* Tier 2: Horizontal Filter Strip */}
+        {(filters.length > 0 || dateAccessor || hasActiveControls) && (
+          <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/80">
+            {/* Dropdown Filters */}
+            {filters.map((filter) => {
+              const currentVal = activeFilters[filter.id] || "ALL"
+              const activeOption = filter.options.find((o) => o.value === currentVal)
+              const isFiltered = currentVal !== "ALL"
+              const FilterIcon = filter.icon || Filter
+
+              return (
+                <DropdownMenu key={filter.id}>
+                  <DropdownMenuTrigger
+                    className={cn(
+                      "inline-flex h-9 items-center gap-2 rounded-xl border px-3 text-xs font-semibold transition-colors outline-none cursor-pointer shadow-2xs",
+                      isFiltered
+                        ? "border-[#2A6AED]/30 bg-[#EFF6FF] dark:bg-blue-950/50 text-[#2A6AED] dark:text-blue-400"
+                        : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                    )}
+                  >
+                    <FilterIcon className="h-3.5 w-3.5 shrink-0 opacity-70" />
+                    <span>{filter.label}</span>
+                    {isFiltered && activeOption && (
+                      <Badge className="ml-0.5 h-5 rounded-md bg-[#2A6AED] px-1.5 py-0 text-[10px] font-bold text-white border-0">
+                        {activeOption.label}
+                      </Badge>
+                    )}
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-56">
+                    <DropdownMenuLabel className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                      Filter by {filter.label}
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuRadioGroup
+                      value={currentVal}
+                      onValueChange={(val) => handleFilterChange(filter.id, val)}
+                    >
+                      <DropdownMenuRadioItem value="ALL" className="text-xs font-medium">
+                        All {filter.label}
+                      </DropdownMenuRadioItem>
+                      {filter.options.map((opt) => (
+                        <DropdownMenuRadioItem
+                          key={opt.value}
+                          value={opt.value}
+                          className="text-xs font-medium"
+                        >
+                          {opt.label}
+                        </DropdownMenuRadioItem>
+                      ))}
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )
+            })}
+
+            {/* Date Filter Picker */}
+            {dateAccessor && (
+              <DateFilterPicker
+                value={dateFilter}
+                onChange={(next) => {
+                  setDateFilter(next)
+                  setCurrentPage(1)
+                }}
+                placeholder={dateFilterLabel}
+              />
+            )}
+
+            {/* Reset Filters Action */}
+            {hasActiveControls && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={resetAllFilters}
+                className="h-9 px-2.5 text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 rounded-xl"
+              >
+                <RotateCcw className="h-3.5 w-3.5 mr-1" />
+                Reset
+              </Button>
+            )}
+          </div>
         )}
       </div>
 
-      {/* shadcn Table */}
-      <Table>
-        <TableHeader>
-          <TableRow className="hover:bg-transparent">
-            {columns.map((col) => {
-              const isSorted = sortColumn === col.id
-              return (
-                <TableHead
-                  key={col.id}
-                  className={cn(
-                    "h-11 px-4 text-[11px] font-bold uppercase tracking-wider text-slate-500",
-                    col.headerClassName
-                  )}
-                >
-                  {col.sortable ? (
-                    <button
-                      type="button"
-                      onClick={() => handleSort(col.id)}
-                      className={cn(
-                        "inline-flex items-center gap-1.5 uppercase tracking-wider transition-colors hover:text-[#0F172A] cursor-pointer select-none",
-                        isSorted && "text-[#2A6AED] font-bold"
-                      )}
-                    >
-                      <span>{col.header}</span>
-                      {isSorted ? (
-                        sortDirection === "asc" ? (
-                          <ArrowUp className="h-3.5 w-3.5 text-[#2A6AED]" />
-                        ) : (
-                          <ArrowDown className="h-3.5 w-3.5 text-[#2A6AED]" />
-                        )
-                      ) : (
-                        <ArrowUpDown className="h-3.5 w-3.5 text-slate-400 opacity-70" />
-                      )}
-                    </button>
-                  ) : (
-                    col.header
-                  )}
+      {/* =========================================================================
+          TABLE BODY
+      ========================================================================= */}
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-slate-50/80 dark:bg-slate-800/60 hover:bg-slate-50/80 border-b border-slate-200/80 dark:border-slate-800">
+              {/* Sr. Column Header matching reference screenshots */}
+              {showSerialNumber && (
+                <TableHead className="w-14 h-11 px-4 text-center text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Sr.
                 </TableHead>
-              )
-            })}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {paginatedData.length === 0 ? (
-            <TableRow className="hover:bg-transparent">
-              <TableCell
-                colSpan={columns.length}
-                className="h-48 text-center align-middle"
-              >
-                <div className="mx-auto flex max-w-sm flex-col items-center justify-center gap-2 py-6">
-                  <p className="text-sm font-bold text-[#0F172A]">{emptyTitle}</p>
-                  <p className="text-xs text-[#64748B] whitespace-normal leading-relaxed">
-                    {emptyDescription}
-                  </p>
-                  {hasActiveControls ? (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={resetAllFilters}
-                      className="mt-2 h-8 px-3 text-xs font-semibold"
-                    >
-                      <RotateCcw className="h-3 w-3 mr-1.5" />
-                      Clear all filters
-                    </Button>
-                  ) : (
-                    emptyAction && <div className="mt-2">{emptyAction}</div>
-                  )}
-                </div>
-              </TableCell>
-            </TableRow>
-          ) : (
-            paginatedData.map((row) => (
-              <TableRow key={keyExtractor(row)}>
-                {columns.map((col) => (
-                  <TableCell
+              )}
+              {visibleColumns.map((col) => {
+                const isSorted = sortColumn === col.id
+                return (
+                  <TableHead
                     key={col.id}
-                    className={cn("px-4 py-3.5 text-xs sm:text-sm", col.className)}
+                    className={cn(
+                      "h-11 px-4 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400",
+                      col.headerClassName
+                    )}
                   >
-                    {col.cell
-                      ? col.cell(row)
-                      : col.accessor
-                        ? col.accessor(row)
-                        : null}
-                  </TableCell>
-                ))}
+                    {col.sortable ? (
+                      <button
+                        type="button"
+                        onClick={() => handleSort(col.id)}
+                        className={cn(
+                          "inline-flex items-center gap-1.5 uppercase tracking-wider transition-colors hover:text-slate-900 dark:hover:text-slate-100 cursor-pointer select-none",
+                          isSorted && "text-[#2A6AED] dark:text-blue-400 font-bold"
+                        )}
+                      >
+                        <span>{col.header}</span>
+                        {isSorted ? (
+                          sortDirection === "asc" ? (
+                            <ArrowUp className="h-3.5 w-3.5 text-[#2A6AED] dark:text-blue-400" />
+                          ) : (
+                            <ArrowDown className="h-3.5 w-3.5 text-[#2A6AED] dark:text-blue-400" />
+                          )
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 text-slate-400 opacity-60" />
+                        )}
+                      </button>
+                    ) : (
+                      col.header
+                    )}
+                  </TableHead>
+                )
+              })}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {paginatedData.length === 0 ? (
+              <TableRow className="hover:bg-transparent">
+                <TableCell
+                  colSpan={totalCols}
+                  className="h-56 text-center align-middle"
+                >
+                  <div className="mx-auto flex max-w-sm flex-col items-center justify-center gap-2 py-8">
+                    <p className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                      {emptyTitle}
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 whitespace-normal leading-relaxed">
+                      {emptyDescription}
+                    </p>
+                    {hasActiveControls ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={resetAllFilters}
+                        className="mt-2 h-8 px-3 text-xs font-semibold rounded-lg"
+                      >
+                        <RotateCcw className="h-3 w-3 mr-1.5" />
+                        Clear all filters
+                      </Button>
+                    ) : (
+                      emptyAction && <div className="mt-2">{emptyAction}</div>
+                    )}
+                  </div>
+                </TableCell>
               </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+            ) : (
+              paginatedData.map((row, index) => {
+                const serialNumber = (currentPage - 1) * pageSize + index + 1
+                return (
+                  <TableRow
+                    key={keyExtractor(row)}
+                    className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800/80 transition-colors"
+                  >
+                    {showSerialNumber && (
+                      <TableCell className="w-14 px-4 py-3.5 text-center text-xs font-bold text-slate-400 dark:text-slate-500">
+                        {serialNumber}
+                      </TableCell>
+                    )}
+                    {visibleColumns.map((col) => (
+                      <TableCell
+                        key={col.id}
+                        className={cn("px-4 py-3.5 text-xs sm:text-sm", col.className)}
+                      >
+                        {col.cell
+                          ? col.cell(row)
+                          : col.accessor
+                            ? col.accessor(row)
+                            : null}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                )
+              })
+            )}
+          </TableBody>
+        </Table>
+      </div>
 
-      {/* Global Pagination Footer */}
-      <GlobalPagination
-        currentPage={currentPage}
-        totalPages={Math.max(1, Math.ceil(sortedData.length / pageSize))}
-        totalItems={sortedData.length}
-        pageSize={pageSize}
-        onPageChange={setCurrentPage}
-        onPageSizeChange={(size) => {
-          setPageSize(size)
-          setCurrentPage(1)
-        }}
-      />
+      {/* =========================================================================
+          GLOBAL PAGINATION FOOTER
+      ========================================================================= */}
+      <div className="px-4 sm:px-5 py-3.5 bg-white dark:bg-slate-900 border-t border-slate-200/80 dark:border-slate-800">
+        <GlobalPagination
+          currentPage={currentPage}
+          totalPages={Math.max(1, Math.ceil(sortedData.length / pageSize))}
+          totalItems={sortedData.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(size) => {
+            setPageSize(size)
+            setCurrentPage(1)
+          }}
+        />
+      </div>
     </div>
   )
 }

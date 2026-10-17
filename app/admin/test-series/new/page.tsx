@@ -11,7 +11,8 @@ import { Separator } from "@/components/ui/separator"
 import { useConfirm } from "@/components/providers/confirm-dialog-provider"
 import { useGlobalError } from "@/components/providers/error-dialog-provider"
 import { toast } from "@/components/ui/sonner"
-import { ArrowLeft, Loader2, ShieldAlert } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
+import { ArrowLeft, BookOpen, Loader2, ShieldAlert } from "lucide-react"
 import { createTestSeriesAction } from "@/actions/test-series-actions"
 import { TestSeriesStatus } from "@prisma/client"
 
@@ -97,26 +98,26 @@ export default function CreateTestSeriesPage() {
 
   return (
     <div className="space-y-6 max-w-4xl">
-      {/* Flat Page Header */}
-      <div className="space-y-1">
-        <Link
-          href="/admin/test-series"
-          className="inline-flex items-center text-xs font-semibold text-slate-500 hover:text-[#2A6AED] transition-colors mb-1"
-        >
-          <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
-          Back to Test Series List
+      {/* Page Header */}
+      <PageHeader
+        icon={BookOpen}
+        title="Create Test Series"
+        subtitle="Configure examination rules, attempt limits, and establish separate student vs. evaluator instruction boundaries"
+        showRefresh={false}
+      >
+        <Link href="/admin/test-series">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-10 px-3.5 rounded-xl border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-2xs"
+          >
+            <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
+            Back to Catalog
+          </Button>
         </Link>
-        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-[#0F172A] tracking-tight">
-          Create Test Series
-        </h1>
-        <p className="text-xs sm:text-sm text-[#64748B]">
-          Configure examination rules, attempt limits, and establish separate student vs. evaluator instruction boundaries.
-        </p>
-      </div>
+      </PageHeader>
 
-      <Separator className="bg-slate-200" />
-
-      {/* Flat Form Layout — No Heavy Card Wrapper */}
+      {/* Form Container */}
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-4">
           <div className="space-y-1.5">

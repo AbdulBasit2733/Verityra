@@ -60,7 +60,7 @@ function PaginationLink({
         "inline-flex h-8 min-w-8 items-center justify-center rounded-lg px-2.5 text-xs font-semibold transition-colors outline-none select-none cursor-pointer disabled:pointer-events-none disabled:opacity-50",
         isActive
           ? "bg-[#2A6AED] text-white shadow-2xs"
-          : "border border-slate-200/80 bg-white text-slate-700 hover:bg-slate-100 hover:text-slate-900",
+          : "border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100",
         className
       )}
       {...props}
@@ -159,12 +159,12 @@ export function GlobalPagination({
   }
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t border-slate-200/70 text-xs text-slate-500">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
       <div className="flex flex-wrap items-center justify-between sm:justify-start gap-3">
         <span>
-          Showing <strong className="font-semibold text-slate-800">{startItem}</strong> to{" "}
-          <strong className="font-semibold text-slate-800">{endItem}</strong> of{" "}
-          <strong className="font-semibold text-slate-800">{totalItems}</strong> records
+          Showing <strong className="font-bold text-slate-900 dark:text-slate-100">{startItem}</strong> to{" "}
+          <strong className="font-bold text-slate-900 dark:text-slate-100">{endItem}</strong> of{" "}
+          <strong className="font-bold text-slate-900 dark:text-slate-100">{totalItems}</strong> items
         </span>
 
         {onPageSizeChange && (
@@ -176,7 +176,7 @@ export function GlobalPagination({
                 if (val) onPageSizeChange(Number(val))
               }}
             >
-              <SelectTrigger size="sm" className="h-8 px-2.5 text-xs rounded-lg border-slate-200 bg-white">
+              <SelectTrigger size="sm" className="h-8 px-2.5 text-xs rounded-lg border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -191,40 +191,47 @@ export function GlobalPagination({
         )}
       </div>
 
-      <Pagination className="mx-0 w-auto justify-end">
-        <PaginationContent>
-          <PaginationItem>
-            <PaginationPrevious
-              disabled={currentPage <= 1}
-              onClick={() => onPageChange(Math.max(1, currentPage - 1))}
-            />
-          </PaginationItem>
+      <div className="flex items-center gap-3 self-end sm:self-auto">
+        <span className="hidden md:inline-block font-medium text-slate-500 dark:text-slate-400">
+          Page <strong className="font-bold text-slate-900 dark:text-slate-100">{currentPage}</strong> of{" "}
+          <strong className="font-bold text-slate-900 dark:text-slate-100">{safeTotalPages}</strong>
+        </span>
 
-          {getPageNumbers().map((p, idx) =>
-            p === "ellipsis" ? (
-              <PaginationItem key={`ellipsis-${idx}`}>
-                <PaginationEllipsis />
-              </PaginationItem>
-            ) : (
-              <PaginationItem key={p}>
-                <PaginationLink
-                  isActive={p === currentPage}
-                  onClick={() => onPageChange(p)}
-                >
-                  {p}
-                </PaginationLink>
-              </PaginationItem>
-            )
-          )}
+        <Pagination className="mx-0 w-auto justify-end">
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
+                disabled={currentPage <= 1}
+                onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+              />
+            </PaginationItem>
 
-          <PaginationItem>
-            <PaginationNext
-              disabled={currentPage >= safeTotalPages}
-              onClick={() => onPageChange(Math.min(safeTotalPages, currentPage + 1))}
-            />
-          </PaginationItem>
-        </PaginationContent>
-      </Pagination>
+            {getPageNumbers().map((p, idx) =>
+              p === "ellipsis" ? (
+                <PaginationItem key={`ellipsis-${idx}`}>
+                  <PaginationEllipsis />
+                </PaginationItem>
+              ) : (
+                <PaginationItem key={p}>
+                  <PaginationLink
+                    isActive={p === currentPage}
+                    onClick={() => onPageChange(p)}
+                  >
+                    {p}
+                  </PaginationLink>
+                </PaginationItem>
+              )
+            )}
+
+            <PaginationItem>
+              <PaginationNext
+                disabled={currentPage >= safeTotalPages}
+                onClick={() => onPageChange(Math.min(safeTotalPages, currentPage + 1))}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      </div>
     </div>
   )
 }

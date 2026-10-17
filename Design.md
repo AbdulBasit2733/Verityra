@@ -146,6 +146,27 @@ font-family: var(--font-poppins), -apple-system, BlinkMacSystemFont, "Segoe UI",
   - Segmented 3-option pill bar (`Light | Dark | Auto`) designed for mobile drawers.
 - **Hot-Key**: Pressing `d` outside text inputs toggles theme instantly via [`theme-provider.tsx`](file:///d:/Abdul%20Basit/Freelance/Verityra/verityra4/components/theme-provider.tsx).
 
+### 4.6. Payments & Financials Console (`/admin/payments`)
+- **Header & 4-Metric KPI Strip**:
+  - Clean page header (`Payments & Financials`) with subtitle and quick refresh button.
+  - Horizontal divided metric strip (`KpiStatCard`):
+    - `Net Collected Revenue` (₹ formatted, green trend indicator).
+    - `Completed Transactions` (Success count with percentage rate).
+    - `7-Day Refund Claims` (Total refunded count & ₹ sum).
+    - `Pending Inquiries` (Transactions needing bank-side verification).
+- **Multi-Tier Filtering Toolbar**:
+  - Full-text search across Candidate Name, Email, Razorpay Order ID, and Payment ID.
+  - Status faceted filter (`All`, `COMPLETED`, `REFUNDED`, `PENDING`, `FAILED`).
+  - Eligibility filter (`Within 7 Days`, `Expired (> 7 Days)`).
+  - Date Filter Picker with presets (`Today`, `Last 7 Days`, `Last 30 Days`).
+- **Data Rows & Copyable Badges**:
+  - `Sr.` sequential 1-indexed numbering with global pagination offset.
+  - Monospace clickable badges for `razorpayOrderId` and `razorpayPaymentId` with one-click clipboard copying.
+  - Dynamic status pills with 60/30/10 semantic styling (`emerald` for completed, `amber` for refunded, `slate` for pending).
+- **Refund & Ledger Modals**:
+  - **`AdminRefundDialog`**: Enforces strict 7-day window. If attempts have been consumed (`attemptsUsed > 0`), renders an amber alert callout requiring explicit candidate forfeiture acknowledgment before triggering the refund.
+  - **`AdminPaymentLedgerSheet`**: Right-side drawer revealing immutable gateway webhooks, actor identification, and expandable JSON diagnostic payloads.
+
 ---
 
 ## 5. Responsive Grid & Breakpoint Standards

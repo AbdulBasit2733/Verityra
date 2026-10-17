@@ -14,7 +14,7 @@
    - Before submitting any task or marking work complete, you MUST execute and pass all three steps:
      ```powershell
      cd verityra4
-     pnpm test           # All critical business logic tests must pass (13/13)
+     pnpm test           # All 42 critical business logic tests must pass across 6 domain suites
      pnpm run typecheck  # Zero TypeScript compilation errors
      pnpm run build      # Full Next.js Turbopack production build succeeds
      ```
@@ -22,7 +22,7 @@
 
 ---
 
-## 2. The Six Critical Business Invariants (DO NOT BREAK)
+## 2. The Seven Critical Business Invariants (DO NOT BREAK)
 
 ### Invariant 1: The Zero-AI Public Marketing Rule
 > **MANDATE**: Never mention "AI", "AI-powered grading", "automated evaluation", "machine grading", or "AI checking" on the public landing page, catalog, marketing copy, or public promotional materials.
@@ -46,11 +46,11 @@
 > 1. `studentInstructions`: Public candidate guidance (syllabus scope, ballpoint pen color, margin boundaries).
 > 2. `privateEvaluationInstructions`: Strictly confidential marking keys, partial-credit formulas, and model solutions.
 - **Security Rule**: `privateEvaluationInstructions` must **never** be projected, serialized, or returned in student-facing queries, Server Actions, or client bundles.
-- **Verification**: Covered by automated test `Security: Private evaluation instructions are isolated...`.
+- **Verification**: Covered by automated test `tests/test-series.test.ts`.
 
 ### Invariant 4: Server Action-Based Architecture (No REST Mutation Endpoints)
 > **MANDATE**: Do NOT create client components that make REST API calls (`fetch('/api/...')`) for application mutations.
-- **Rule**: All application mutations (enrollment, booklet submission, score adjustments, profile updates, password changes) MUST execute as Next.js **Server Actions** (`"use server"`) in `verityra4/actions/*`.
+- **Rule**: All application mutations (enrollment, booklet submission, score adjustments, profile updates, password changes, refund triggers) MUST execute as Next.js **Server Actions** (`"use server"`) in `verityra4/actions/*`.
 - **Exceptions**: Route handlers (`app/api/*`) are reserved exclusively for external webhooks (Razorpay) and authenticated file streaming proxies (`/api/files/download`).
 
 ### Invariant 5: Server-Side Role-Based Access Control (RBAC)
@@ -58,13 +58,20 @@
 - **Roles**: `Role.STUDENT` and `Role.ADMIN`.
 - **Registration Rule**: Self-service signup and OAuth sign-in **always** default to `Role.STUDENT`. Never accept client-supplied role payloads.
 - **Student Boundary**: Students can only access their own submissions, registrations, and private evaluations.
-- **Admin Boundary**: Admin actions (`createTestSeries`, `adjustScore`, `grantExtraAttempt`) require `requireAdmin()`.
+- **Admin Boundary**: Admin actions (`createTestSeries`, `adjustScore`, `grantExtraAttempt`, `adminTriggerRefundAction`) require `requireAdmin()`.
 
 ### Invariant 6: Hallucination-Proof Score Clamping & Code-Level Calculation
 > **MANDATE**: Total scores and percentages must be computed strictly in application code—never trusted directly from model outputs.
 - **Score Clamping**: Question scores are hard-clamped to $[0, \text{maxMarks}]$.
 - **Percentage Formula**: $\text{Percentage} = (\sum \text{AwardedMarks} / \sum \text{MaxMarks}) \times 100$.
 - **Uncertainty Escalation**: Any score marked with high uncertainty or ambiguous handwriting legibility must be assigned `status: REVIEW_REQUIRED` to force human educator review.
+
+### Invariant 7: 7-Day Refund Policy & Attempt Forfeiture Guard
+> **MANDATE**: Refunds on paid test series are strictly governed by a 7 calendar-day window and an attempt-forfeiture protocol.
+- **7-Day Eligibility Boundary**: Payments created $> 7\text{ days}$ ago ($\Delta t > 7 \times 24 \times 60 \times 60 \times 1000\text{ ms}$) are strictly non-refundable through standard actions.
+- **Attempt Forfeiture Protocol**: If a candidate has already consumed attempts (`attemptsUsed > 0`), the refund CANNOT be processed without explicit candidate/admin confirmation of quota forfeiture.
+- **Atomic State Transitions**: Triggering a refund in `actions/payment-actions.ts` must atomically set `Payment.status = REFUNDED`, insert a `PaymentRefund` record, update `TestRegistration.status = CANCELLED`, zero out `maxAttempts = 0`, and log an immutable entry into `PaymentLedger`.
+- **Security & Idempotency**: Double refunds and race conditions are prevented by unique gateway refund references and unique idempotency keys (`idemp_ref_${paymentId}_${timestamp}`).
 
 ---
 

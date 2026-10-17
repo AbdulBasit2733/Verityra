@@ -73,6 +73,40 @@ Verityra was conceived to solve this through a **hybrid physical-digital paradig
 - **Decision**: Create `/student/profile` and `/admin/profile` as Server Components that prefill existing database profile data, offering tabbed settings for personal details, verified password changes, and quota/governance reviews.
 - **Consequences**: Complete self-service account management and security for both candidate and administrator roles.
 
+### ADR 010: Admin-Triggered 7-Day Refund Engine & Immutable Payment Ledger
+- **Status**: Implemented & Enforced (Invariant #7)
+- **Context**: Enforcing student consumer protection and clear financial auditability requires a compliant refund policy and an immutable audit trail of gateway webhooks and administrative decisions.
+- **Decision**:
+  1. **7-Day Eligibility Window**: Refunds are strictly permitted within 7 calendar days ($\le 7 \times 24 \times 60 \times 60 \times 1000\text{ ms}$) from order payment creation.
+  2. **Attempt Consumption Guard**: If candidate has utilized attempts (`attemptsUsed > 0`), the refund dialog alerts the administrator and requires an explicit candidate forfeiture acknowledgment checkbox.
+  3. **Atomic Execution**: On refund execution in `actions/payment-actions.ts`, the database transaction sets `Payment.status = REFUNDED`, creates `PaymentRefund`, sets `TestRegistration.status = CANCELLED`, zeroes out `maxAttempts = 0`, and records an immutable `PaymentLedger` event.
+  4. **Network Reconnection & Idempotency**: Route `/api/payments/verify-status` enables client recovery, and `reconcilePendingPaymentsAction` sweeps orphan pending payments.
+- **Consequences**: Complete financial governance, prevention of double-refunds, and tamper-proof auditability.
+
+### ADR 011: Modular Domain Test Suite Architecture
+- **Status**: Implemented & Enforced
+- **Context**: Monolithic `tests/verityra.test.ts` grew difficult to run per-domain and lacked fine-grained test reporting.
+- **Decision**: Decompose testing into 6 isolated domain modules:
+  - `tests/auth.test.ts` (11 tests)
+  - `tests/test-series.test.ts` (7 tests)
+  - `tests/registration.test.ts` (5 tests)
+  - `tests/submissions.test.ts` (5 tests)
+  - `tests/evaluation.test.ts` (6 tests)
+  - `tests/payments.test.ts` (8 tests)
+  Coordinated by master runner `tests/run-all.ts` (42 tests total) with individual standalone execution support.
+- **Consequences**: Fast 13ms execution, modular debugging, zero external test framework bloat.
+
+### ADR 012: Universal Table Master Pattern for Student & Admin Surfaces
+- **Status**: Implemented & Enforced
+- **Context**: Across candidate dashboards, test catalogs, leaderboards, and administrative queues, tabular data was inconsistently styled and lacked comprehensive searching, sorting, multi-faceted filtering, and pagination.
+- **Decision**: Standardize all structured data views on `components/ui/data-table.tsx` and `components/ui/pagination.tsx`:
+  1. **Full-Text Multi-Field Search**: Searches across all relevant candidate, order, and test identifiers via `searchAccessor`.
+  2. **3-Way Column Sorting**: Ascending, descending, and neutral reset, with numeric-aware string sorting (e.g., sorting "Q10" after "Q2") and date parsing.
+  3. **Dynamic Faceted Filters**: Automatic extraction of distinct categorical options (e.g. distinct test series titles) with badge counters and one-click dismiss.
+  4. **Calendar Date Range Filtering**: Preset shortcuts (`Today`, `Last 7 Days`, `Last 30 Days`, `Specific Date`, `All Time`) with date math helpers.
+  5. **Configurable Global Pagination**: Standardized page numbers, total item counts, and rows-per-page selectors (5, 10, 20, 50).
+- **Consequences**: Consistent, high-efficiency data management UX across all 27 application routes.
+
 ---
 
 ## 3. Critical Operational Constraints & Gotchas
@@ -84,6 +118,10 @@ Verityra was conceived to solve this through a **hybrid physical-digital paradig
    - `lib/prisma.ts` provides `isDatabaseConnected()` check.
    - Server Actions include offline development fallbacks so local preview and unit tests succeed without requiring live Supabase credentials.
 5. **No AI Marketing Rule Enforcement**: Every marketing headline, badge, FAQ, and value proposition on `app/page.tsx` must strictly observe Invariant #1.
+6. **Base-UI Trigger Conventions**:
+   - In `@base-ui/react/dialog`, `DialogTrigger` does not accept `asChild`; pass `className` and children directly to `<DialogTrigger className="...">`.
+   - In `@base-ui/react/menu`, `DropdownMenuTrigger` renders a button element directly; pass `className` and children directly to `<DropdownMenuTrigger className="...">` without `asChild`.
+7. **GlobalPagination totalPages Prop**: `GlobalPagination` requires `totalPages: number` explicitly; calculate via `Math.max(1, Math.ceil(totalItems / pageSize))`.
 
 ---
 
@@ -96,25 +134,21 @@ Verityra was conceived to solve this through a **hybrid physical-digital paradig
 | **Audit Log Type Mismatch** | Action passed plain object to `details` which expected `string`. | Serialized payloads with `JSON.stringify()` in `updateAdminProfileAction` and `changePasswordAction`. |
 | **Outline Button Contrast in Dark Mode** | `.dark .bg-white` global override conflicted with outline button hover styles. | Applied explicit `dark:!bg-slate-900 dark:border-slate-800 dark:text-slate-200` to outline buttons. |
 | **Student Profile Unhydrated Client State** | `app/student/profile/page.tsx` was a `"use client"` component initializing with dummy state. | Converted page to Server Component with `getStudentProfileAction()` hydrating real PostgreSQL data into `StudentProfileClient`. |
+| **Base-UI DialogTrigger asChild Error** | Base-UI `DialogTrigger` does not support `asChild` prop. | Refactored `admin-refund-dialog.tsx` to `<DialogTrigger className="...">` without child `<Button>`. |
+| **Windows Node DLL File Lock** | Background Turbopack build held lock on `query_engine-windows.dll.node`. | Terminated orphaned node worker processes before generating Prisma client. |
+| **Supabase Pooler Unique Constraint Push** | Adding unique constraint on nullable `idempotencyKey` caused Prisma CLI prompt. | Executed `pnpm prisma db push --accept-data-loss` to sync PostgreSQL schema cleanly. |
 
 ---
 
-## 5. Test Suite Verification Ledger
+## 5. Modular Domain Test Suite Verification Ledger
 
-The automated test suite in [`verityra4/tests/verityra.test.ts`](file:///d:/Abdul%20Basit/Freelance/Verityra/verityra4/tests/verityra.test.ts) validates 13 critical business logic invariants on every release:
+The modular test suite in [`verityra4/tests/`](file:///d:/Abdul%20Basit/Freelance/Verityra/verityra4/tests/) validates **42 critical business logic invariants** across 6 domain suites via `pnpm test` (`tests/run-all.ts`):
 
-| Test Name | Domain Verified |
-|---|---|
-| `Auth: Valid candidate registration schema passes` | Normalized email parsing, bcrypt password policy |
-| `Auth: Weak passwords without number or uppercase are rejected` | Entropy enforcement (8+ chars, uppercase, number, symbol) |
-| `Auth: Mismatched password and confirmPassword are rejected` | Registration schema refinement |
-| `Auth: Student and Admin profile schemas validate inputs properly` | Profile field boundaries and sanitation |
-| `Auth: Change password schema validates requirements and matches confirmation` | Credential update confirmation validation |
-| `Attempts: Three-attempt limit logic strictly accepts 1, 2, 3 and blocks attempt 4` | Core 3-attempt quota enforcement |
-| `Attempts: Invalid uploads before acceptance do not burn attempts` | Atomic submission safety |
-| `AI Evaluator: Structured JSON schema validates question scores and feedback` | Zod schema validation for model outputs |
-| `AI Evaluator: Clamps marks so awarded score never exceeds maxMarks` | Score clamping algorithm: $[0, \text{maxMarks}]$ |
-| `AI Evaluator: Flagging uncertainty routes to review status` | Review queue escalation routing |
-| `Payments: Server-side HMAC SHA-256 signature verification succeeds with correct secret` | Razorpay payment security |
-| `Payments: Tampered signature is strictly rejected` | Anti-tamper verification |
-| `Security: Private evaluation instructions are isolated from student query projections` | Confidential rubric isolation |
+| Test Suite Module | Tests Passed | Domain Scope & Invariants Verified |
+|---|---|---|
+| [`tests/auth.test.ts`](file:///d:/Abdul%20Basit/Freelance/Verityra/verityra4/tests/auth.test.ts) | 11 / 11 | Registration schema, email normalization, bcrypt password complexity (8+ chars, uppercase, number, symbol), confirmation equality matching, login schema, student profile schema, admin profile schema, change password schema, Role enum definitions. |
+| [`tests/test-series.test.ts`](file:///d:/Abdul%20Basit/Freelance/Verityra/verityra4/tests/test-series.test.ts) | 7 / 7 | URL-friendly slug generation, rupee-to-paise pricing calculation, default max attempts fallback (3), required fields validation, confidential `privateEvaluationInstructions` isolation from candidate view, status enum transitions (DRAFT/PUBLISHED/ARCHIVED), test active/expired window logic. |
+| [`tests/registration.test.ts`](file:///d:/Abdul%20Basit/Freelance/Verityra/verityra4/tests/registration.test.ts) | 5 / 5 | Free test enrollment criteria (price 0 & published), paid test gating, initial attempt allocation (`attemptsUsed = 0`), composite `userId_testSeriesId` duplicate prevention, cancelled registration access closure, Razorpay order payload specification. |
+| [`tests/submissions.test.ts`](file:///d:/Abdul%20Basit/Freelance/Verityra/verityra4/tests/submissions.test.ts) | 5 / 5 | Standard MIME types validation (PDF/JPG/PNG/WebP), rejection of invalid formats, 25MB file size limit, zero-attempt-burning invariant on invalid uploads, strict 3-attempt ceiling enforcement (blocks attempt 4), submission deadline enforcement, SubmissionStatus transitions. |
+| [`tests/evaluation.test.ts`](file:///d:/Abdul%20Basit/Freelance/Verityra/verityra4/tests/evaluation.test.ts) | 6 / 6 | Zod schema validation for Gemini multimodal output, question structure integrity, score bounds clamping $[0, \text{maxMarks}]$, aggregate percentage calculation precision (2 decimals), human-in-the-loop review routing (`REVIEW_REQUIRED`), admin score override recalculations. |
+| [`tests/payments.test.ts`](file:///d:/Abdul%20Basit/Freelance/Verityra/verityra4/tests/payments.test.ts) | 8 / 8 | Razorpay HMAC SHA-256 signature verification, tampered signature rejection, 7-day refund window policy calculations (eligible vs expired), attempt consumption forfeiture guard, idempotency key uniqueness format, PaymentLedger structured JSON audit payload serialization, auto-reconciliation threshold check (>30 min), PaymentStatus and RefundReason enum fidelity. |

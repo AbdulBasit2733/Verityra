@@ -48,6 +48,7 @@ export default async function AdminSubmissionsPage() {
     totalMarksAwarded: sub.evaluation ? sub.evaluation.totalMarksAwarded : null,
     maxMarks: sub.evaluation ? sub.evaluation.maxMarks : sub.testSeries?.maxMarks || 250,
     uncertaintyFlag: Boolean(sub.evaluation?.uncertaintyFlag),
+    fileUrl: sub.fileUrl || null,
     submittedAt: new Date(sub.submittedAt).toISOString(),
   }))
 

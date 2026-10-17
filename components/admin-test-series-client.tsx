@@ -2,11 +2,31 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { DataTable, DataTableColumn, DataTableFilter } from "@/components/ui/data-table"
 import { FormattedDate } from "@/components/ui/date-picker"
-import { BookOpen, Edit, Plus } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
+import { KpiStatCard } from "@/components/ui/kpi-stat-card"
+import { useConfirm } from "@/components/providers/confirm-dialog-provider"
+import { useGlobalError } from "@/components/providers/error-dialog-provider"
+import { toast } from "@/components/ui/sonner"
+import { togglePublishTestSeriesAction } from "@/actions/test-series-actions"
+import { cn } from "@/lib/utils"
+import {
+  BookOpen,
+  CheckCircle2,
+  Edit,
+  ExternalLink,
+  Eye,
+  EyeOff,
+  FileText,
+  Globe,
+  Loader2,
+  Plus,
+  Users,
+} from "lucide-react"
 
 export interface AdminTestSeriesRow {
   id: string
@@ -27,9 +47,59 @@ export function AdminTestSeriesClient({
 }: {
   testSeries: AdminTestSeriesRow[]
 }) {
+  const router = useRouter()
+  const confirm = useConfirm()
+  const { showError } = useGlobalError()
+  const [toggleLoadingId, setToggleLoadingId] = React.useState<string | null>(null)
+
   const publishedCount = testSeries.filter((t) => t.status === "PUBLISHED").length
   const draftCount = testSeries.filter((t) => t.status === "DRAFT").length
   const totalEnrolled = testSeries.reduce((acc, t) => acc + t.registrationsCount, 0)
+
+  async function handleTogglePublish(row: AdminTestSeriesRow) {
+    const isCurrentlyPublished = row.status === "PUBLISHED"
+    const nextState = !isCurrentlyPublished
+
+    const confirmed = await confirm({
+      title: nextState
+        ? `Publish "${row.title}" to Public Catalog?`
+        : `Unpublish "${row.title}" from Catalog?`,
+      description: nextState
+        ? "Candidates will immediately be able to view and register for this test series."
+        : "New registrations will be paused. Enrolled candidates will retain access.",
+      confirmText: nextState ? "Publish to Catalog" : "Unpublish to Draft",
+      cancelText: "Cancel",
+      variant: nextState ? "default" : "warning",
+      badgeText: "Catalog Visibility",
+    })
+
+    if (!confirmed) return
+
+    setToggleLoadingId(row.id)
+    try {
+      const res = await togglePublishTestSeriesAction(row.id, nextState)
+      if (res.success) {
+        toast.success(nextState ? "Test Series Published" : "Test Series Unpublished", {
+          description: res.message,
+        })
+        router.refresh()
+      } else {
+        showError({
+          title: "Publication Status Error",
+          message: res.error || "Unable to update publication state.",
+          code: "PUBLISH_TOGGLE_ERR",
+        })
+      }
+    } catch {
+      showError({
+        title: "Publication Error",
+        message: "An unexpected error occurred while toggling publication status.",
+        code: "PUBLISH_TOGGLE_ERR",
+      })
+    } finally {
+      setToggleLoadingId(null)
+    }
+  }
 
   const columns: DataTableColumn<AdminTestSeriesRow>[] = [
     {
@@ -42,7 +112,7 @@ export function AdminTestSeriesClient({
         <div className="space-y-0.5 max-w-xs whitespace-normal">
           <Link
             href={`/admin/test-series/${t.id}`}
-            className="font-bold text-[#0F172A] hover:text-[#2A6AED] transition-colors block leading-snug"
+            className="font-bold text-slate-900 dark:text-slate-100 hover:text-[#2A6AED] dark:hover:text-blue-400 transition-colors block leading-snug"
           >
             {t.title}
           </Link>
@@ -57,11 +127,11 @@ export function AdminTestSeriesClient({
       sortAccessor: (t) => t.price,
       cell: (t) =>
         t.price === 0 ? (
-          <Badge className="bg-emerald-600 text-white font-bold text-[10px] border-0 px-2 py-0.5">
+          <Badge className="bg-emerald-600 text-white font-bold text-[10px] border-0 px-2 py-0.5 rounded-full">
             FREE
           </Badge>
         ) : (
-          <span className="font-extrabold text-[#2A6AED]">
+          <span className="font-extrabold text-[#2A6AED] dark:text-blue-400 text-xs sm:text-sm">
             ₹{(t.price / 100).toLocaleString()}
           </span>
         ),
@@ -76,8 +146,8 @@ export function AdminTestSeriesClient({
           variant="outline"
           className={
             t.status === "PUBLISHED"
-              ? "border-emerald-200 text-emerald-700 bg-emerald-50 text-[11px] font-semibold"
-              : "border-slate-200 text-slate-600 bg-slate-50 text-[11px] font-semibold"
+              ? "border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 text-[11px] font-semibold rounded-full"
+              : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-900 text-[11px] font-semibold rounded-full"
           }
         >
           {t.status}
@@ -89,7 +159,7 @@ export function AdminTestSeriesClient({
       header: "Max Marks",
       sortable: true,
       sortAccessor: (t) => t.maxMarks,
-      cell: (t) => <span className="font-semibold text-[#0F172A]">{t.maxMarks} Marks</span>,
+      cell: (t) => <span className="font-semibold text-slate-900 dark:text-slate-100 text-xs sm:text-sm">{t.maxMarks} Marks</span>,
     },
     {
       id: "maxAttempts",
@@ -97,7 +167,7 @@ export function AdminTestSeriesClient({
       sortable: true,
       sortAccessor: (t) => t.maxAttempts,
       cell: (t) => (
-        <span className="font-bold text-[#2A6AED]">{t.maxAttempts} attempts</span>
+        <span className="font-bold text-[#2A6AED] dark:text-blue-400 text-xs sm:text-sm">{t.maxAttempts} attempts</span>
       ),
     },
     {
@@ -106,19 +176,7 @@ export function AdminTestSeriesClient({
       sortable: true,
       sortAccessor: (t) => t.registrationsCount,
       cell: (t) => (
-        <span className="text-slate-700 font-medium">
-          {t.registrationsCount} candidates
-        </span>
-      ),
-    },
-    {
-      id: "assets",
-      header: "Assets",
-      sortable: false,
-      cell: (t) => (
-        <span className="text-xs text-[#64748B]">
-          {t.papersCount} papers · {t.templatesCount} templates
-        </span>
+        <span className="font-bold text-slate-900 dark:text-slate-100 text-xs sm:text-sm">{t.registrationsCount} candidates</span>
       ),
     },
     {
@@ -129,22 +187,71 @@ export function AdminTestSeriesClient({
       cell: (t) => <FormattedDate date={t.createdAt} />,
     },
     {
-      id: "actions",
+      id: "action",
       header: "Actions",
       headerClassName: "text-right",
       className: "text-right",
-      cell: (t) => (
-        <Link href={`/admin/test-series/${t.id}`}>
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-8 px-3 border-slate-200 text-[#2A6AED] hover:bg-[#EFF6FF] font-semibold text-xs rounded-lg"
-          >
-            <Edit className="h-3.5 w-3.5 mr-1" />
-            Configure
-          </Button>
-        </Link>
-      ),
+      cell: (t) => {
+        const isPublished = t.status === "PUBLISHED"
+        const isLoading = toggleLoadingId === t.id
+
+        return (
+          <div className="flex items-center justify-end gap-1.5">
+            {/* Quick Toggle Publish */}
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={isLoading}
+              onClick={() => handleTogglePublish(t)}
+              title={isPublished ? "Unpublish to Draft" : "Publish to Catalog"}
+              className={cn(
+                "h-8 px-2.5 text-xs font-semibold rounded-lg shadow-2xs border-slate-200 dark:border-slate-800",
+                isPublished
+                  ? "hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-700 dark:text-amber-400"
+                  : "hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400"
+              )}
+            >
+              {isLoading ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : isPublished ? (
+                <>
+                  <EyeOff className="h-3.5 w-3.5 mr-1" />
+                  Unpublish
+                </>
+              ) : (
+                <>
+                  <Globe className="h-3.5 w-3.5 mr-1" />
+                  Publish
+                </>
+              )}
+            </Button>
+
+            {/* Manage Test Link */}
+            <Link href={`/admin/test-series/${t.id}`}>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 px-2.5 border-slate-200 dark:border-slate-800 text-[#2A6AED] dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950 font-semibold text-xs rounded-lg shadow-2xs"
+              >
+                <Edit className="h-3.5 w-3.5 mr-1" />
+                Manage
+              </Button>
+            </Link>
+
+            {/* Candidate View External Link */}
+            <Link href={`/tests/${t.id}`} target="_blank">
+              <Button
+                size="sm"
+                variant="ghost"
+                title="Preview candidate view in new tab"
+                className="h-8 w-8 p-0 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg"
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+              </Button>
+            </Link>
+          </div>
+        )
+      },
     },
   ]
 
@@ -154,68 +261,76 @@ export function AdminTestSeriesClient({
       label: "Publication Status",
       accessor: (t) => t.status,
       options: [
-        { label: "Published", value: "PUBLISHED" },
-        { label: "Draft", value: "DRAFT" },
+        { label: "Published Tests", value: "PUBLISHED" },
+        { label: "Draft Tests", value: "DRAFT" },
       ],
     },
     {
       id: "pricing",
-      label: "Pricing Tier",
+      label: "Pricing Type",
       accessor: (t) => (t.price === 0 ? "FREE" : "PAID"),
       options: [
-        { label: "Free Enrollment", value: "FREE" },
-        { label: "Paid Test Series", value: "PAID" },
+        { label: "Free Tests", value: "FREE" },
+        { label: "Paid Tests", value: "PAID" },
+      ],
+    },
+    {
+      id: "maxMarks",
+      label: "Marks Weightage",
+      accessor: (t) => (t.maxMarks >= 250 ? "FULL_MOCK" : "SECTIONAL"),
+      options: [
+        { label: "Full Mock (≥ 250 Marks)", value: "FULL_MOCK" },
+        { label: "Sectional / Essay (< 250 Marks)", value: "SECTIONAL" },
       ],
     },
   ]
 
   return (
     <div className="space-y-6">
-      {/* Flat Page Header — No Card Wrapper */}
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-        <div className="space-y-1">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-[#2A6AED]">
-            Catalog & Rubric Governance
-          </p>
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-[#0F172A] tracking-tight">
-            Test Series Management
-          </h1>
-          <p className="text-xs sm:text-sm text-[#64748B]">
-            Create, configure, publish, and manage subjective examination papers and margin templates.
-          </p>
-        </div>
-
-        <Link href="/admin/test-series/new" className="shrink-0">
-          <Button className="bg-[#2A6AED] hover:bg-[#1E55C7] text-white font-semibold text-xs sm:text-sm h-10 px-4 rounded-xl">
+      {/* Page Header */}
+      <PageHeader
+        icon={BookOpen}
+        title="Test Series Catalog"
+        subtitle="Viewing: All UPSC Mains GS Papers & Rubrics"
+      >
+        <Link href="/admin/test-series/new">
+          <Button className="h-10 px-4 rounded-xl bg-[#2A6AED] hover:bg-[#1E55C7] text-white text-xs sm:text-sm font-semibold shadow-xs">
             <Plus className="mr-1.5 h-4 w-4" />
-            Create New Test Series
+            Create Test Series
           </Button>
         </Link>
-      </div>
+      </PageHeader>
 
-      {/* Flat Divided Summary Bar */}
-      <div className="grid grid-cols-3 divide-x divide-slate-200 border-y border-slate-200 bg-slate-50/40">
-        <div className="py-3.5 px-4 sm:px-6">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-            Total Series
-          </span>
-          <p className="text-lg sm:text-xl font-extrabold text-[#0F172A]">{testSeries.length}</p>
-        </div>
-        <div className="py-3.5 px-4 sm:px-6">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-            Published / Draft
-          </span>
-          <p className="text-lg sm:text-xl font-extrabold text-[#2A6AED]">
-            {publishedCount}{" "}
-            <span className="text-xs font-medium text-slate-500">/ {draftCount} draft</span>
-          </p>
-        </div>
-        <div className="py-3.5 px-4 sm:px-6">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-            Candidate Enrollments
-          </span>
-          <p className="text-lg sm:text-xl font-extrabold text-emerald-700">{totalEnrolled}</p>
-        </div>
+      {/* KPI Stat Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <KpiStatCard
+          label="Total Test Series"
+          value={testSeries.length}
+          subtext="Configured evaluation papers"
+          icon={BookOpen}
+          variant="blue"
+        />
+        <KpiStatCard
+          label="Published Tests"
+          value={publishedCount}
+          subtext="Available for enrollment"
+          icon={CheckCircle2}
+          variant="emerald"
+        />
+        <KpiStatCard
+          label="Draft Tests"
+          value={draftCount}
+          subtext="Pending publication"
+          icon={FileText}
+          variant="slate"
+        />
+        <KpiStatCard
+          label="Total Aspirants"
+          value={totalEnrolled}
+          subtext="Enrolled across all tests"
+          icon={Users}
+          variant="indigo"
+        />
       </div>
 
       {/* Interactive DataTable */}
@@ -223,20 +338,20 @@ export function AdminTestSeriesClient({
         data={testSeries}
         columns={columns}
         keyExtractor={(t) => t.id}
-        searchPlaceholder="Search test series by title or slug..."
+        searchPlaceholder="Search test title, slug, or status..."
         filters={filters}
         dateAccessor={(t) => t.createdAt}
-        dateFilterLabel="Created Date"
+        dateFilterLabel="Creation Date"
         defaultSortColumn="createdAt"
         defaultSortDirection="desc"
         defaultPageSize={10}
-        emptyTitle="No test series created yet"
-        emptyDescription="Click Create New Test Series to configure your first subjective examination."
+        showSerialNumber={true}
+        emptyTitle="No test series found"
+        emptyDescription="Create your first UPSC test series to get started."
         emptyAction={
           <Link href="/admin/test-series/new">
-            <Button size="sm" className="bg-[#2A6AED] hover:bg-[#1E55C7] text-white text-xs font-semibold">
-              <BookOpen className="h-3.5 w-3.5 mr-1.5" />
-              Create First Test Series
+            <Button size="sm" className="bg-[#2A6AED] text-white">
+              Create New Test Series
             </Button>
           </Link>
         }
