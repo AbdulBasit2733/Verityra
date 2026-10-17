@@ -1,6 +1,6 @@
 # Verityra — AI Contributor Guide (GEMINI.md)
 
-Welcome, AI Engineer (Antigravity, Gemini, Claude, Copilot, or Cursor). This document contains the architectural invariants, domain rules, operational commands, and coding standards required to contribute fast, safely, and efficiently to the **Verityra** codebase.
+> **PRIMARY DIRECTIVE**: The active application codebase, configuration, and dependencies reside in the **`verityra4/`** directory. Always execute scripts, terminal commands, and edits within `verityra4/`.
 
 ---
 
@@ -63,16 +63,16 @@ Any contribution must strictly uphold these six core invariants:
 
 ### Rule 4: Action-Based Architecture (No REST Client Fetches)
 > Do **not** create client components that make REST API calls (`fetch('/api/...')`) for application actions.
-> All application mutations must be direct Next.js **Server Actions** (`"use server"`) in `actions/*`. Route handlers (`app/api/*`) are reserved only for external webhooks (e.g. Razorpay) and file streaming downloads.
+> All application mutations must be direct Next.js **Server Actions** (`"use server"`) in `verityra4/actions/*`. Route handlers (`verityra4/app/api/*`) are reserved only for external webhooks (e.g. Razorpay) and file streaming downloads.
 
 ### Rule 5: Server-Side Role-Based Access Control
-> Authorization is enforced on the server for all Server Actions and Server Components using `lib/auth-guard.ts`.
+> Authorization is enforced on the server for all Server Actions and Server Components using `verityra4/lib/auth-guard.ts`.
 > - Roles: `STUDENT` and `ADMIN`.
 > - Public registration and Google OAuth **always** create users with `Role.STUDENT`. Never accept client-supplied role payloads.
 > - Students can only access their own profile, submissions, registrations, and private results.
 
 ### Rule 6: Hallucination-Proof Score Clamping
-> The evaluation engine (`lib/ai/gemini-evaluator.ts`) validates model outputs using Zod schemas. Total marks and percentages are calculated **strictly in application code**, never taken directly from model outputs. Question scores are hard-clamped to `[0, maxMarks]`.
+> The evaluation engine (`verityra4/lib/ai/gemini-evaluator.ts`) validates model outputs using Zod schemas. Total marks and percentages are calculated **strictly in application code**, never taken directly from model outputs. Question scores are hard-clamped to `[0, maxMarks]`.
 
 ---
 
@@ -95,61 +95,59 @@ Any contribution must strictly uphold these six core invariants:
 ## 4. Directory Structure Map
 
 ```
-verityra4/
-├── actions/                         # Server Actions (Mutations & Direct DB Ops)
-│   ├── auth-actions.ts              # Registration, profile updates, password resets
-│   ├── test-series-actions.ts       # Test series CRUD, paper & template uploads
-│   ├── registration-actions.ts      # Free enrollment & Razorpay payment verification
-│   ├── submission-actions.ts        # Atomic 3-attempt upload & AI evaluation trigger
-│   ├── evaluation-actions.ts        # Admin score adjustments & audited extra attempts
-│   └── leaderboard-actions.ts       # Deterministic ranking calculation
-├── app/                             # Next.js App Router (Pages & Route Handlers)
-│   ├── (auth)/                      # signin, signup, forgot-password, reset-password
-│   ├── admin/                       # Admin Portal (dashboard, test-series, submissions, students)
-│   ├── student/                     # Candidate Portal (dashboard, profile, test workspace)
-│   ├── tests/                       # Public Test Series catalog & details
-│   ├── leaderboard/                 # Public live leaderboard
-│   ├── api/                         # NextAuth handler, file download, Razorpay webhook
-│   ├── layout.tsx                   # Root layout with AuthProvider & ThemeProvider
-│   └── page.tsx                     # Public marketing landing page (No AI mentions)
-├── components/                      # React Components
-│   ├── ui/                          # shadcn/ui primitives (@base-ui/react)
-│   ├── navbar.tsx                   # Responsive header with role-based menu
-│   ├── footer.tsx                   # Standard platform footer
-│   ├── submission-upload-form.tsx   # Answer sheet upload form with 3-attempt locking
-│   ├── admin-score-review-editor.tsx# Question-wise score adjuster with live recalculation
-│   └── admin-extra-attempt-dialog.tsx# Audited attempt override modal
-├── lib/                             # Core Services & Utilities
-│   ├── prisma.ts                    # Prisma client singleton with offline fallback
-│   ├── supabase.ts                  # Supabase client & private signed URL generator
-│   ├── auth.ts                      # NextAuth configuration (Credentials & Google)
-│   ├── auth-guard.ts                # Server-side role & session guards
-│   ├── ai/                          # Gemini evaluation engine & Zod validation schema
-│   └── validations/                 # Zod validation schemas (auth, forms)
-├── prisma/                          # Database
-│   ├── schema.prisma                # Full PostgreSQL schema with constraints & indexes
-│   ├── migrations/                  # Version-controlled SQL migrations
-│   └── seed.ts                      # Admin, demo student & mock test seeder
-├── docs/                            # In-depth architectural & operational documentation
-│   ├── ARCHITECTURE.md              # System architecture & action flow
-│   ├── DATABASE.md                  # Database schema, relations, and Supabase pooling
-│   ├── AUTHENTICATION.md            # NextAuth & Google OAuth setup
-│   ├── SECURITY.md                  # Privacy, prompt injection & attempt defense
-│   ├── AI-EVALUATION.md             # Multimodal grading engine & fallback mode
-│   ├── PAYMENTS.md                  # Razorpay order & signature verification
-│   ├── DEPLOYMENT.md                # Production configuration & hosting checklist
-│   └── TESTING.md                   # QA verification guide
-└── tests/
-    └── verityra.test.ts             # Automated test suite for critical business rules
+verityra/
+├── verityra4/                       # Application Root Directory
+│   ├── actions/                     # Server Actions (Mutations & Direct DB Ops)
+│   │   ├── auth-actions.ts          # Registration, profile updates, password resets
+│   │   ├── test-series-actions.ts   # Test series CRUD, paper & template uploads
+│   │   ├── registration-actions.ts  # Free enrollment & Razorpay payment verification
+│   │   ├── submission-actions.ts    # Atomic 3-attempt upload & AI evaluation trigger
+│   │   ├── evaluation-actions.ts    # Admin score adjustments & audited extra attempts
+│   │   └── leaderboard-actions.ts   # Deterministic ranking calculation
+│   ├── app/                         # Next.js App Router (Pages & Route Handlers)
+│   │   ├── (auth)/                  # signin, signup, forgot-password, reset-password
+│   │   ├── admin/                   # Admin Portal (dashboard, test-series, submissions, students)
+│   │   ├── student/                 # Candidate Portal (dashboard, profile, test workspace)
+│   │   ├── tests/                   # Public Test Series catalog & details
+│   │   ├── leaderboard/             # Public live leaderboard
+│   │   ├── api/                     # NextAuth handler, file download, Razorpay webhook
+│   │   ├── layout.tsx               # Root layout with AuthProvider & ThemeProvider
+│   │   └── page.tsx                 # Public marketing landing page (No AI mentions)
+│   ├── components/                  # React Components
+│   │   ├── ui/                      # shadcn/ui primitives (@base-ui/react)
+│   │   ├── navbar.tsx               # Responsive header with role-based menu
+│   │   ├── footer.tsx               # Standard platform footer
+│   │   ├── submission-upload-form.tsx # Answer sheet upload form with 3-attempt locking
+│   │   ├── admin-score-review-editor.tsx # Question-wise score adjuster with live recalculation
+│   │   └── admin-extra-attempt-dialog.tsx # Audited attempt override modal
+│   ├── lib/                         # Core Services & Utilities
+│   │   ├── prisma.ts                # Prisma client singleton with offline fallback
+│   │   ├── supabase.ts              # Supabase client & private signed URL generator
+│   │   ├── auth.ts                  # NextAuth configuration (Credentials & Google)
+│   │   ├── auth-guard.ts            # Server-side role & session guards
+│   │   ├── ai/                      # Gemini evaluation engine & Zod validation schema
+│   │   └── validations/             # Zod validation schemas (auth, forms)
+│   ├── prisma/                      # Database
+│   │   ├── schema.prisma            # Full PostgreSQL schema with constraints & indexes
+│   │   ├── migrations/              # Version-controlled SQL migrations
+│   │   └── seed.ts                  # Admin, demo student & mock test seeder
+│   ├── docs/                        # In-depth architectural & operational documentation
+│   ├── tests/
+│   │   └── verityra.test.ts         # Automated test suite for critical business rules
+│   └── GEMINI.md                    # In-tree AI Contributor Guide
+├── GEMINI.md                        # Root AI Contributor Guide (this file)
+└── Verityra_AI_Test_Series_Project_Plan.pdf # Original blueprint specification
 ```
 
 ---
 
 ## 5. Development & Verification Workflow
 
-Always run commands inside the `verityra4/` directory:
+Always `cd verityra4` before running commands:
 
 ```powershell
+cd verityra4
+
 # 1. Install dependencies
 pnpm install
 
@@ -168,6 +166,8 @@ pnpm run dev
 
 ### Database Operations (Supabase PostgreSQL)
 ```powershell
+cd verityra4
+
 # Generate Prisma Client
 pnpm exec prisma generate
 
@@ -183,37 +183,7 @@ pnpm exec prisma db seed
 
 ---
 
-## 6. How-To Guide for Common AI Tasks
-
-### Adding a New Mutation / Action
-1. Create or open the relevant file in `actions/*.ts`.
-2. Ensure the top of the file declares `"use server"`.
-3. Check authorization using `await getCurrentUser()`, `await requireAdmin()`, or `await requireStudent()`.
-4. Validate inputs using Zod.
-5. Perform database operations via `prisma`. Wrap concurrent or multi-table updates in `prisma.$transaction()`.
-6. Call `revalidatePath('/relevant-path')` before returning `{ success: true, ... }`.
-
-### Adding a New Page or View
-1. Default to **Server Components** (`export default async function Page()`).
-2. Fetch data directly via `prisma` inside the Server Component.
-3. If client interactivity (state, hooks) is needed, extract the interactive portion into a Client Component (`"use client"`) in `components/`.
-4. **Important**: Any client component using `useSearchParams()` must be wrapped in a `<Suspense>` boundary to prevent static prerender build errors.
-
-### Modifying the Database Schema
-1. Edit `prisma/schema.prisma`.
-2. Add appropriate constraints (`@unique`, foreign keys, indexes).
-3. If working with Supabase, remember `DATABASE_URL` uses port `6543` (transaction pooler) and `DIRECT_URL` uses port `5432` (direct).
-4. Run `pnpm exec prisma generate`.
-5. Run `pnpm run typecheck` to verify all TypeScript typings match.
-
-### Modifying the Evaluation Engine
-1. Update `lib/ai/evaluation-schema.ts` if structured output fields change.
-2. Ensure `lib/ai/gemini-evaluator.ts` keeps the prompt injection defenses intact.
-3. Maintain the fallback simulation function so offline/local testing continues to work without requiring live Gemini API credits.
-
----
-
-## 7. AI Code Review Checklist (Verify Before Submitting)
+## 6. AI Code Review Checklist (Verify Before Submitting)
 
 Before declaring any task complete:
 - [ ] Did I run `pnpm test` and verify all tests pass?

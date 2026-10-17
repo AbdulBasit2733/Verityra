@@ -1,14 +1,6 @@
-<!-- BEGIN:nextjs-agent-rules -->
-
-# This is NOT the Next.js you know
-
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
-
-This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
-
-<!-- END:nextjs-agent-rules -->
-
 # Verityra Agent Operating Manual
+
+> **PRIMARY DIRECTIVE**: The active application codebase is located in **`verityra4/`**. Always execute terminal commands and code modifications inside `verityra4/`.
 
 Refer to [`GEMINI.md`](GEMINI.md) for full architecture and domain invariants.
 
@@ -19,4 +11,4 @@ Refer to [`GEMINI.md`](GEMINI.md) for full architecture and domain invariants.
 4. **Three-Attempt Invariant**: Strict maximum 3 submissions per test series registration. Backed by `@unique([registrationId, attemptNumber])`.
 5. **Instruction Isolation**: `privateEvaluationInstructions` must never be exposed or returned to students.
 6. **Suspense Boundaries**: Wrap client components using `useSearchParams()` with `<Suspense>`.
-7. **Verification Routine**: Always run `pnpm test` and `pnpm run typecheck` before finishing.
+7. **Verification Routine**: Always run `cd verityra4; pnpm test` and `pnpm run typecheck` before finishing.

@@ -74,7 +74,15 @@ Candidates practice under authentic examination conditions: downloading margin-a
 
 ## Documentation Index
 
-- [Architecture Overview](docs/ARCHITECTURE.md)
+### Core Operating Documentation
+- [System Architecture](Architecture.md)
+- [Design System & Styling Specifications](Design.md)
+- [Engineering Memory & Context Log](Memory.md)
+- [Product Requirements Document (PRD)](PRD.md)
+- [Engineering Rules & Invariants](Rules.md)
+- [Tasks & Roadmap Ledger](Tasks.md)
+
+### Technical Topic Guides
 - [Database Schema & Migrations](docs/DATABASE.md)
 - [Authentication & Access Control](docs/AUTHENTICATION.md)
 - [Security & Privacy](docs/SECURITY.md)
