@@ -240,6 +240,70 @@ export function AdminScoreReviewEditor({
           defaultSortColumn="questionNumber"
           defaultSortDirection="asc"
           defaultPageSize={10}
+          defaultViewMode="auto"
+          gridClassName="grid grid-cols-1 md:grid-cols-2 gap-4"
+          renderCard={(q) => (
+            <div
+              key={q.id}
+              className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 space-y-3 shadow-xs"
+            >
+              {/* Question Header & Max Marks */}
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-extrabold text-[#2A6AED] dark:text-blue-400 text-sm">
+                  {q.questionNumber}
+                </span>
+                <Badge variant="outline" className="text-xs font-semibold">
+                  Max: {q.maxMarks} Marks
+                </Badge>
+              </div>
+
+              {/* Score Input */}
+              <div className="space-y-1">
+                <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Awarded Marks (0 – {q.maxMarks})
+                </Label>
+                <Input
+                  type="number"
+                  step={0.5}
+                  min={0}
+                  max={q.maxMarks}
+                  value={q.marksAwarded}
+                  onChange={(e) =>
+                    handleScoreChange(q.id, parseFloat(e.target.value) || 0, q.maxMarks)
+                  }
+                  className="border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 h-10 text-sm font-bold text-[#2A6AED] dark:text-blue-400 rounded-xl"
+                />
+              </div>
+
+              {/* Feedback & Missing Concepts */}
+              <div className="space-y-1.5 pt-1">
+                <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+                  Rubric Evaluation
+                </span>
+                <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-950 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
+                  {q.feedback}
+                </p>
+                {q.missingConcepts && (
+                  <p className="text-[11px] text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50 p-2 rounded-lg border border-amber-200 dark:border-amber-900 italic">
+                    Missing Concepts: {q.missingConcepts}
+                  </p>
+                )}
+              </div>
+
+              {/* Admin Override Notes */}
+              <div className="space-y-1 pt-1">
+                <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Admin Audit Reason / Note
+                </Label>
+                <Input
+                  value={q.adminNotes || ""}
+                  onChange={(e) => handleNotesChange(q.id, e.target.value)}
+                  placeholder="Reason for adjustment..."
+                  className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-9 text-xs rounded-xl"
+                />
+              </div>
+            </div>
+          )}
           emptyTitle="No question evaluations found"
           emptyDescription="No question records match your search query."
         />

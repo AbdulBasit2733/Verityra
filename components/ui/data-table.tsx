@@ -33,6 +33,8 @@ import {
   ArrowUp,
   ArrowUpDown,
   Filter,
+  LayoutGrid,
+  List,
   RotateCcw,
   Search,
   SlidersHorizontal,
@@ -86,6 +88,9 @@ export interface DataTableProps<T> {
   emptyAction?: React.ReactNode
   toolbarActions?: React.ReactNode
   className?: string
+  defaultViewMode?: "auto" | "table" | "grid"
+  renderCard?: (row: T, index: number, serialNumber: number) => React.ReactNode
+  gridClassName?: string
 }
 
 export function DataTable<T>({
@@ -105,7 +110,11 @@ export function DataTable<T>({
   emptyAction,
   toolbarActions,
   className,
+  defaultViewMode = "auto",
+  renderCard,
+  gridClassName,
 }: DataTableProps<T>) {
+  const [viewMode, setViewMode] = React.useState<"auto" | "table" | "grid">(defaultViewMode)
   const [searchQuery, setSearchQuery] = React.useState("")
   const [activeFilters, setActiveFilters] = React.useState<Record<string, string>>(
     () => {
@@ -317,15 +326,54 @@ export function DataTable<T>({
             )}
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0">
+            {/* View Mode Switcher: [ ▦ Grid | ▤ Table ] */}
+            <div className="inline-flex items-center rounded-xl border border-slate-200 dark:border-slate-800 p-0.5 bg-slate-100/70 dark:bg-slate-950/70 shadow-2xs">
+              <button
+                type="button"
+                onClick={() => setViewMode(viewMode === "grid" ? "auto" : "grid")}
+                title="Grid Card View (Default on Mobile)"
+                className={cn(
+                  "inline-flex items-center justify-center h-8 px-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer",
+                  viewMode === "grid"
+                    ? "!bg-white dark:!bg-slate-800 !text-[#2A6AED] dark:!text-blue-400 !shadow-2xs"
+                    : viewMode === "auto"
+                      ? "bg-white dark:bg-slate-800 text-[#2A6AED] dark:text-blue-400 shadow-2xs md:bg-transparent md:text-slate-500 md:shadow-none"
+                      : "text-slate-500 hover:text-slate-900 dark:hover:text-slate-100"
+                )}
+              >
+                <LayoutGrid className="h-3.5 w-3.5 sm:mr-1" />
+                <span className="hidden sm:inline">Grid</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode(viewMode === "table" ? "auto" : "table")}
+                title="Table List View (Default on Desktop)"
+                className={cn(
+                  "inline-flex items-center justify-center h-8 px-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer",
+                  viewMode === "table"
+                    ? "!bg-white dark:!bg-slate-800 !text-[#2A6AED] dark:!text-blue-400 !shadow-2xs"
+                    : viewMode === "auto"
+                      ? "hidden md:inline-flex md:bg-white md:dark:bg-slate-800 md:text-[#2A6AED] md:dark:text-blue-400 md:shadow-2xs"
+                      : "text-slate-500 hover:text-slate-900 dark:hover:text-slate-100"
+                )}
+              >
+                <List className="h-3.5 w-3.5 sm:mr-1" />
+                <span className="hidden sm:inline">Table</span>
+              </button>
+            </div>
+
             {/* Columns (N/N) Dropdown Selector */}
             <DropdownMenu>
               <DropdownMenuTrigger
-                className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors outline-none cursor-pointer shadow-2xs"
+                className="inline-flex h-9 sm:h-10 items-center gap-1.5 sm:gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 sm:px-3.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors outline-none cursor-pointer shadow-2xs"
               >
                 <SlidersHorizontal className="h-3.5 w-3.5 text-slate-500" />
-                <span>
+                <span className="hidden sm:inline">
                   Columns ({visibleColumns.length}/{columns.length})
+                </span>
+                <span className="sm:hidden text-[11px]">
+                  ({visibleColumns.length})
                 </span>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-52">
@@ -360,7 +408,7 @@ export function DataTable<T>({
 
         {/* Tier 2: Horizontal Filter Strip */}
         {(filters.length > 0 || dateAccessor || hasActiveControls) && (
-          <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/80">
+          <div className="flex overflow-x-auto no-scrollbar scroll-smooth flex-nowrap sm:flex-wrap items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/80">
             {/* Dropdown Filters */}
             {filters.map((filter) => {
               const currentVal = activeFilters[filter.id] || "ALL"
@@ -443,9 +491,137 @@ export function DataTable<T>({
       </div>
 
       {/* =========================================================================
-          TABLE BODY
+          DATA DISPLAY: DUAL RESPONSIVE VIEWS
+          1. Card Grid Layout (Mobile default or explicit grid mode)
+          2. Table View (Desktop default or explicit table mode)
       ========================================================================= */}
-      <div className="overflow-x-auto">
+
+      {/* 1. CARD GRID VIEW */}
+      <div
+        className={cn(
+          "p-4 sm:p-5",
+          viewMode === "grid"
+            ? "block"
+            : viewMode === "table"
+              ? "hidden"
+              : "block md:hidden"
+        )}
+      >
+        {paginatedData.length === 0 ? (
+          <div className="mx-auto flex max-w-sm flex-col items-center justify-center gap-2 py-10 text-center">
+            <p className="text-sm font-bold text-slate-900 dark:text-slate-100">
+              {emptyTitle}
+            </p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 whitespace-normal leading-relaxed">
+              {emptyDescription}
+            </p>
+            {hasActiveControls ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={resetAllFilters}
+                className="mt-2 h-8 px-3 text-xs font-semibold rounded-lg"
+              >
+                <RotateCcw className="h-3 w-3 mr-1.5" />
+                Clear all filters
+              </Button>
+            ) : (
+              emptyAction && <div className="mt-2">{emptyAction}</div>
+            )}
+          </div>
+        ) : (
+          <div
+            className={cn(
+              "grid grid-cols-1 sm:grid-cols-2 gap-4",
+              gridClassName
+            )}
+          >
+            {paginatedData.map((row, index) => {
+              const serialNumber = (currentPage - 1) * pageSize + index + 1
+              if (renderCard) {
+                return (
+                  <React.Fragment key={keyExtractor(row)}>
+                    {renderCard(row, index, serialNumber)}
+                  </React.Fragment>
+                )
+              }
+
+              // Automatic fallback card generator from visible columns
+              const primaryCol = visibleColumns[0]
+              const actionCol = visibleColumns.find((c) => c.id === "action" || c.id === "actions")
+              const otherCols = visibleColumns.filter(
+                (c) => c.id !== primaryCol?.id && c.id !== actionCol?.id
+              )
+
+              return (
+                <div
+                  key={keyExtractor(row)}
+                  className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/90 p-4 shadow-2xs space-y-3"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      {showSerialNumber && (
+                        <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-[11px] font-bold text-slate-500 shrink-0">
+                          #{serialNumber}
+                        </span>
+                      )}
+                      <div>
+                        {primaryCol?.cell
+                          ? primaryCol.cell(row)
+                          : primaryCol?.accessor
+                            ? primaryCol.accessor(row)
+                            : null}
+                      </div>
+                    </div>
+                  </div>
+
+                  {otherCols.length > 0 && (
+                    <div className="grid grid-cols-1 gap-2 pt-2 border-t border-slate-100 dark:border-slate-800/80 text-xs">
+                      {otherCols.map((col) => (
+                        <div key={col.id} className="flex items-center justify-between gap-2">
+                          <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500">
+                            {col.header}
+                          </span>
+                          <div className="text-right">
+                            {col.cell
+                              ? col.cell(row)
+                              : col.accessor
+                                ? col.accessor(row)
+                                : null}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {actionCol && (
+                    <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-end">
+                      {actionCol.cell
+                        ? actionCol.cell(row)
+                        : actionCol.accessor
+                          ? actionCol.accessor(row)
+                          : null}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* 2. TABLE VIEW */}
+      <div
+        className={cn(
+          "overflow-x-auto",
+          viewMode === "table"
+            ? "block"
+            : viewMode === "grid"
+              ? "hidden"
+              : "hidden md:block"
+        )}
+      >
         <Table>
           <TableHeader>
             <TableRow className="bg-slate-50/80 dark:bg-slate-800/60 hover:bg-slate-50/80 border-b border-slate-200/80 dark:border-slate-800">

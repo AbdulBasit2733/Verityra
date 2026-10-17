@@ -214,7 +214,7 @@ export function LeaderboardClient({
           </div>
 
           {/* Rank 1 */}
-          <div className="rounded-3xl border-2 border-[#2A6AED] dark:border-blue-500 bg-white dark:bg-slate-900 order-1 md:order-2 text-center shadow-xl shadow-blue-500/10 -translate-y-2.5 p-8 sm:p-9 space-y-3 relative">
+          <div className="rounded-3xl border-2 border-[#2A6AED] dark:border-blue-500 bg-white dark:bg-slate-900 order-1 md:order-2 text-center shadow-xl shadow-blue-500/10 md:-translate-y-2.5 p-8 sm:p-9 space-y-3 relative">
             <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[#2A6AED] text-white text-[11px] font-bold px-4 py-1 rounded-full uppercase tracking-wider flex items-center gap-1.5 shadow-md">
               <Trophy className="h-3.5 w-3.5" /> Top Rank
             </div>
@@ -269,6 +269,93 @@ export function LeaderboardClient({
         defaultSortDirection="asc"
         defaultPageSize={10}
         showSerialNumber={false}
+        defaultViewMode="auto"
+        gridClassName="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+        renderCard={(r) => {
+          let badgeStyle = "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold"
+          if (r.rank === 1) {
+            badgeStyle = "bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 font-black border border-amber-300 dark:border-amber-700 shadow-2xs"
+          } else if (r.rank === 2) {
+            badgeStyle = "bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold border border-slate-300 dark:border-slate-700"
+          } else if (r.rank === 3) {
+            badgeStyle = "bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-400 font-bold border border-amber-200 dark:border-amber-800"
+          }
+
+          const isTop = r.percentage >= 70
+
+          return (
+            <div
+              key={`${r.rank}-${r.studentName}-${r.testTitle}`}
+              className={cn(
+                "rounded-2xl border p-4 sm:p-5 shadow-xs transition-all flex flex-col justify-between gap-4",
+                r.rank === 1
+                  ? "border-[#2A6AED] bg-blue-50/20 dark:bg-blue-950/20"
+                  : "border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-[#2A6AED]/40"
+              )}
+            >
+              <div className="space-y-3">
+                {/* Header: Rank + Attempt + Percentage */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className={cn("inline-flex h-8 w-8 items-center justify-center rounded-xl text-xs", badgeStyle)}>
+                      {r.rank === 1 ? "🥇 1" : r.rank === 2 ? "🥈 2" : r.rank === 3 ? "🥉 3" : `#${r.rank}`}
+                    </span>
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] font-semibold border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 rounded-full"
+                    >
+                      Attempt #{r.attemptNumber}
+                    </Badge>
+                  </div>
+
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "text-xs font-bold px-2.5 py-0.5 rounded-full",
+                      isTop
+                        ? "border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50"
+                        : "border-blue-200 dark:border-blue-900 text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50"
+                    )}
+                  >
+                    {r.percentage.toFixed(1)}%
+                  </Badge>
+                </div>
+
+                {/* Candidate Name */}
+                <div>
+                  <h4 className="font-bold text-slate-900 dark:text-slate-100 text-base leading-snug">
+                    {r.studentName}
+                  </h4>
+                </div>
+
+                {/* Exam Module */}
+                <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800/80">
+                  <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mb-0.5">
+                    Examination Module
+                  </span>
+                  <p className="font-semibold text-xs text-slate-800 dark:text-slate-200 line-clamp-2">
+                    {r.testTitle}
+                  </p>
+                </div>
+
+                {/* Score Awarded & Date */}
+                <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800">
+                  <div>
+                    <span className="text-[10px] text-slate-400 block font-medium">Awarded Score</span>
+                    <span className="font-black text-[#2A6AED] dark:text-blue-400 text-base">
+                      {r.score}{" "}
+                      <span className="text-xs font-normal text-slate-400">/ {r.maxMarks}</span>
+                    </span>
+                  </div>
+                  <div className="text-right text-[11px] text-slate-400 dark:text-slate-500">
+                    <span className="text-[10px] text-slate-400 block font-medium">Date</span>
+                    <FormattedDate date={r.submittedAt} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )
+        }}
         emptyTitle="No eligible leaderboard rankings found"
         emptyDescription="Finalized evaluations will automatically appear here once results are published."
       />

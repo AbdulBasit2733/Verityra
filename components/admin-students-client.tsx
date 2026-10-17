@@ -232,6 +232,79 @@ export function AdminStudentsClient({
         defaultSortDirection="desc"
         defaultPageSize={10}
         showSerialNumber={true}
+        renderCard={(r, idx, serialNumber) => {
+          const isExhausted = r.attemptsUsed >= r.maxAttempts
+          return (
+            <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/90 p-4 sm:p-5 shadow-2xs space-y-3 flex flex-col justify-between">
+              <div className="space-y-2.5">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-[11px] font-bold text-slate-500 shrink-0">
+                      #{serialNumber}
+                    </span>
+                    <div>
+                      <span className="font-bold text-slate-900 dark:text-slate-100 block text-sm">
+                        {r.studentName}
+                      </span>
+                      <span className="text-[11px] text-slate-400 block truncate max-w-[200px]">
+                        {r.studentEmail}
+                      </span>
+                    </div>
+                  </div>
+                  <Badge
+                    variant="outline"
+                    className={
+                      isExhausted
+                        ? "border-red-200 dark:border-red-900 text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/50 text-[10px] font-semibold shrink-0"
+                        : "border-blue-200 dark:border-blue-900 text-[#2A6AED] dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 text-[10px] font-semibold shrink-0"
+                    }
+                  >
+                    {isExhausted ? "Quota Exhausted" : "Active Quota"}
+                  </Badge>
+                </div>
+
+                <div className="pt-1">
+                  <span className="text-[11px] text-slate-400 font-semibold block">Enrolled Paper:</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200 text-xs block line-clamp-1">
+                    {r.testTitle}
+                  </span>
+                </div>
+
+                {/* Progress Strip */}
+                <div className="space-y-1.5 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 text-xs">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-slate-800 dark:text-slate-200">
+                      {r.attemptsUsed} / {r.maxAttempts} attempts used
+                    </span>
+                    {r.maxAttempts > 3 && (
+                      <Badge className="bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border-0 text-[10px] font-bold">
+                        Overridden Limit
+                      </Badge>
+                    )}
+                  </div>
+                  <Progress
+                    value={r.attemptsUsed}
+                    max={r.maxAttempts}
+                    indicatorClassName={isExhausted ? "bg-red-500" : "bg-[#2A6AED]"}
+                  />
+                </div>
+
+                <div className="text-[11px] text-slate-400">
+                  Enrolled: <FormattedDate date={r.registeredAt} includeTime />
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end">
+                <AdminExtraAttemptDialog
+                  registrationId={r.id}
+                  studentName={r.studentName}
+                  testTitle={r.testTitle}
+                  currentMax={r.maxAttempts}
+                />
+              </div>
+            </div>
+          )
+        }}
         emptyTitle="No enrolled candidates found"
         emptyDescription="Adjust your search query or filters to view student enrollments."
       />

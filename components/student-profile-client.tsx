@@ -208,18 +208,21 @@ export function StudentProfileClient({ initialData }: StudentProfileProps) {
 
       {/* Tabs Interface */}
       <Tabs defaultValue="academic" className="w-full space-y-6">
-        <TabsList variant="line" className="border-b border-slate-200/80 w-full justify-start gap-4 sm:gap-8 pb-0">
+        <TabsList variant="line" className="border-b border-slate-200/80 dark:border-slate-800 w-full justify-start gap-2 sm:gap-6 pb-0">
           <TabsTrigger value="academic" className="text-xs sm:text-sm font-semibold pb-3 rounded-none border-b-2 border-transparent data-[state=active]:border-[#2A6AED] data-[state=active]:text-[#2A6AED]">
             <GraduationCap className="h-4 w-4 mr-1.5" />
-            Academic & Target Focus
+            <span className="sm:hidden">Academic</span>
+            <span className="hidden sm:inline">Academic & Target Focus</span>
           </TabsTrigger>
           <TabsTrigger value="security" className="text-xs sm:text-sm font-semibold pb-3 rounded-none border-b-2 border-transparent data-[state=active]:border-[#2A6AED] data-[state=active]:text-[#2A6AED]">
             <KeyRound className="h-4 w-4 mr-1.5" />
-            Security & Password
+            <span className="sm:hidden">Security</span>
+            <span className="hidden sm:inline">Security & Password</span>
           </TabsTrigger>
           <TabsTrigger value="quota" className="text-xs sm:text-sm font-semibold pb-3 rounded-none border-b-2 border-transparent data-[state=active]:border-[#2A6AED] data-[state=active]:text-[#2A6AED]">
             <FileText className="h-4 w-4 mr-1.5" />
-            Three-Attempt Guarantee
+            <span className="sm:hidden">3-Attempt Quota</span>
+            <span className="hidden sm:inline">Three-Attempt Guarantee</span>
           </TabsTrigger>
         </TabsList>
 

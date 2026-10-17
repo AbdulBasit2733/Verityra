@@ -191,7 +191,39 @@ export function GlobalPagination({
         )}
       </div>
 
-      <div className="flex items-center gap-3 self-end sm:self-auto">
+      {/* Mobile Compact Controls (< sm screens) */}
+      <div className="flex sm:hidden items-center justify-between w-full pt-2 border-t border-slate-100 dark:border-slate-800">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={currentPage <= 1}
+          onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+          className="h-8 px-3 text-xs font-semibold rounded-lg border-slate-200 dark:border-slate-800"
+        >
+          <ChevronLeft className="h-3.5 w-3.5 mr-1" />
+          Previous
+        </Button>
+
+        <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+          {currentPage} / {safeTotalPages}
+        </span>
+
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={currentPage >= safeTotalPages}
+          onClick={() => onPageChange(Math.min(safeTotalPages, currentPage + 1))}
+          className="h-8 px-3 text-xs font-semibold rounded-lg border-slate-200 dark:border-slate-800"
+        >
+          Next
+          <ChevronRight className="h-3.5 w-3.5 ml-1" />
+        </Button>
+      </div>
+
+      {/* Desktop & Tablet Full Pagination (sm+) */}
+      <div className="hidden sm:flex items-center gap-3 self-end sm:self-auto">
         <span className="hidden md:inline-block font-medium text-slate-500 dark:text-slate-400">
           Page <strong className="font-bold text-slate-900 dark:text-slate-100">{currentPage}</strong> of{" "}
           <strong className="font-bold text-slate-900 dark:text-slate-100">{safeTotalPages}</strong>

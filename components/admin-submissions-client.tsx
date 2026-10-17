@@ -290,6 +290,126 @@ export function AdminSubmissionsClient({
         defaultSortDirection="desc"
         defaultPageSize={10}
         showSerialNumber={true}
+        defaultViewMode="auto"
+        gridClassName="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+        renderCard={(s, _index, sn) => (
+          <div
+            key={s.id}
+            className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs hover:border-[#2A6AED]/40 hover:shadow-md transition-all flex flex-col justify-between gap-4"
+          >
+            <div className="space-y-3">
+              {/* Card Header: SN + Attempt + Status */}
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-[11px] font-bold text-slate-600 dark:text-slate-400">
+                    #{sn}
+                  </span>
+                  <Badge
+                    variant="outline"
+                    className="text-[10px] font-semibold border-blue-200 dark:border-blue-900 text-[#2A6AED] dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 rounded-full"
+                  >
+                    Attempt #{s.attemptNumber} of 3
+                  </Badge>
+                </div>
+
+                <Badge
+                  variant="outline"
+                  className={
+                    s.status === "COMPLETED"
+                      ? "border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 text-[10px] font-semibold rounded-full"
+                      : s.status === "REVIEW_REQUIRED"
+                        ? "border-amber-200 dark:border-amber-900 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 text-[10px] font-semibold rounded-full"
+                        : "border-blue-200 dark:border-blue-900 text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 text-[10px] font-semibold rounded-full"
+                  }
+                >
+                  {s.status === "COMPLETED"
+                    ? "Completed"
+                    : s.status === "REVIEW_REQUIRED"
+                      ? "Review Required"
+                      : s.status}
+                </Badge>
+              </div>
+
+              {/* Candidate Info */}
+              <div>
+                <h4 className="font-bold text-slate-900 dark:text-slate-100 text-sm leading-snug">
+                  {s.candidateName}
+                </h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                  {s.candidateEmail}
+                </p>
+              </div>
+
+              {/* Test Series Title */}
+              <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800/80">
+                <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-0.5">
+                  <FileText className="h-3 w-3" />
+                  <span>Test Series</span>
+                </div>
+                <p className="font-semibold text-xs text-slate-900 dark:text-slate-100 line-clamp-1">
+                  {s.testTitle}
+                </p>
+              </div>
+
+              {/* Marks & Uncertainty Flag */}
+              <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-100 dark:border-slate-800">
+                <div>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 block">Awarded Marks</span>
+                  {s.totalMarksAwarded !== null ? (
+                    <span className="font-black text-[#2A6AED] dark:text-blue-400 text-sm">
+                      {s.totalMarksAwarded} / {s.maxMarks}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-slate-400">Processing</span>
+                  )}
+                </div>
+
+                <div className="text-right">
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 block">Confidence</span>
+                  {s.uncertaintyFlag ? (
+                    <span className="inline-flex items-center gap-1 text-[11px] text-amber-800 dark:text-amber-300 font-bold bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-900 px-2 py-0.5 rounded-full">
+                      <AlertTriangle className="h-3 w-3" /> Flagged
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold">
+                      <CheckCircle2 className="h-3.5 w-3.5" /> Clear
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Submitted Date */}
+              <div className="text-[11px] text-slate-400 dark:text-slate-500">
+                Submitted <FormattedDate date={s.submittedAt} includeTime />
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+              {s.fileUrl && (
+                <a
+                  href={s.fileUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  title="Download booklet"
+                  className="inline-flex items-center justify-center h-8 px-2.5 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-[#2A6AED] hover:bg-blue-50 dark:hover:bg-blue-950 text-xs font-semibold gap-1 transition-colors"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  PDF
+                </a>
+              )}
+              <Link href={`/admin/submissions/${s.id}`} className="flex-1">
+                <Button
+                  size="sm"
+                  className="w-full h-8 px-3 bg-[#2A6AED] hover:bg-[#1E55C7] text-white font-semibold text-xs rounded-lg shadow-2xs"
+                >
+                  <Edit className="h-3.5 w-3.5 mr-1" />
+                  Review Score
+                </Button>
+              </Link>
+            </div>
+          </div>
+        )}
         emptyTitle="No candidate submissions found"
         emptyDescription="No student submissions match your current search or filter criteria."
       />

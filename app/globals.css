@@ -778,3 +778,22 @@ body {
 .goog-te-gadget .goog-te-combo {
   display: none !important;
 }
+
+/* ==========================================================================
+   Mobile Touch & Horizontal Carousel Utilities
+   ========================================================================== */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@utility no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}

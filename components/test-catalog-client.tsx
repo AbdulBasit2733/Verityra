@@ -288,12 +288,12 @@ export function TestCatalogClient({
           </div>
 
           {/* Action Filters Bar */}
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth flex-nowrap sm:flex-wrap pb-1">
             {/* Pricing Filter */}
             <DropdownMenu>
               <DropdownMenuTrigger
                 className={cn(
-                  "inline-flex items-center justify-center h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-semibold gap-1.5 transition-colors cursor-pointer shadow-2xs bg-white dark:bg-slate-900",
+                  "inline-flex shrink-0 items-center justify-center h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-semibold gap-1.5 transition-colors cursor-pointer shadow-2xs bg-white dark:bg-slate-900",
                   pricingFilter !== "ALL" && "border-[#2A6AED] text-[#2A6AED] bg-blue-50/50 dark:bg-blue-950/40"
                 )}
               >
@@ -328,7 +328,7 @@ export function TestCatalogClient({
             <DropdownMenu>
               <DropdownMenuTrigger
                 className={cn(
-                  "inline-flex items-center justify-center h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-semibold gap-1.5 transition-colors cursor-pointer shadow-2xs bg-white dark:bg-slate-900",
+                  "inline-flex shrink-0 items-center justify-center h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-semibold gap-1.5 transition-colors cursor-pointer shadow-2xs bg-white dark:bg-slate-900",
                   categoryFilter !== "ALL" && "border-[#2A6AED] text-[#2A6AED] bg-blue-50/50 dark:bg-blue-950/40"
                 )}
               >
@@ -367,7 +367,7 @@ export function TestCatalogClient({
             {/* Sort Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger
-                className="inline-flex items-center justify-center h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-semibold gap-1.5 transition-colors cursor-pointer shadow-2xs bg-white dark:bg-slate-900"
+                className="inline-flex shrink-0 items-center justify-center h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-semibold gap-1.5 transition-colors cursor-pointer shadow-2xs bg-white dark:bg-slate-900"
               >
                 <ArrowUpDown className="h-3.5 w-3.5 text-slate-400" />
                 <span>
@@ -407,7 +407,7 @@ export function TestCatalogClient({
             </DropdownMenu>
 
             {/* View Mode Toggle: Grid vs Table */}
-            <div className="flex items-center rounded-xl border border-slate-200 dark:border-slate-800 p-0.5 bg-slate-50 dark:bg-slate-950">
+            <div className="flex shrink-0 items-center rounded-xl border border-slate-200 dark:border-slate-800 p-0.5 bg-slate-50 dark:bg-slate-950">
               <button
                 type="button"
                 onClick={() => setViewMode("grid")}
@@ -442,7 +442,7 @@ export function TestCatalogClient({
                 variant="ghost"
                 size="sm"
                 onClick={handleResetFilters}
-                className="h-10 px-2.5 rounded-xl text-xs font-semibold text-slate-500 hover:text-[#2A6AED] gap-1"
+                className="shrink-0 h-10 px-2.5 rounded-xl text-xs font-semibold text-slate-500 hover:text-[#2A6AED] gap-1"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
                 Reset
@@ -574,6 +574,7 @@ export function TestCatalogClient({
           defaultSortDirection="asc"
           defaultPageSize={10}
           showSerialNumber={true}
+          defaultViewMode="auto"
           emptyTitle="No test series found"
           emptyDescription="No papers match your search and filter criteria."
         />

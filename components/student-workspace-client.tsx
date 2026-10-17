@@ -12,6 +12,7 @@ import { FormattedDate } from "@/components/ui/date-picker"
 import { PageHeader } from "@/components/ui/page-header"
 import { KpiStatCard } from "@/components/ui/kpi-stat-card"
 import { SubmissionUploadForm } from "@/components/submission-upload-form"
+import { cn } from "@/lib/utils"
 import {
   AlertTriangle,
   ArrowLeft,
@@ -283,18 +284,21 @@ export function StudentWorkspaceClient({
 
       {/* Workspace Tabs */}
       <Tabs defaultValue={submissions.length > 0 ? "evaluations" : "upload"} className="space-y-6">
-        <TabsList variant="line" className="border-b border-slate-200 dark:border-slate-800 w-full justify-start overflow-x-auto">
-          <TabsTrigger value="evaluations" className="text-xs sm:text-sm font-semibold px-4 py-2">
+        <TabsList variant="line" className="border-b border-slate-200 dark:border-slate-800 w-full justify-start overflow-x-auto no-scrollbar">
+          <TabsTrigger value="evaluations" className="text-xs sm:text-sm font-semibold px-3 sm:px-4 py-2">
             <FileCheck2 className="h-3.5 w-3.5 mr-1.5" />
-            Evaluated Attempts & Rubric Breakdown ({submissions.length})
+            <span className="sm:hidden">Evaluations ({submissions.length})</span>
+            <span className="hidden sm:inline">Evaluated Attempts & Rubric Breakdown ({submissions.length})</span>
           </TabsTrigger>
-          <TabsTrigger value="upload" className="text-xs sm:text-sm font-semibold px-4 py-2">
+          <TabsTrigger value="upload" className="text-xs sm:text-sm font-semibold px-3 sm:px-4 py-2">
             <UploadCloud className="h-3.5 w-3.5 mr-1.5" />
-            Submit Handwritten Booklet ({attemptsRemaining} left)
+            <span className="sm:hidden">Submit Booklet ({attemptsRemaining} left)</span>
+            <span className="hidden sm:inline">Submit Handwritten Booklet ({attemptsRemaining} left)</span>
           </TabsTrigger>
-          <TabsTrigger value="resources" className="text-xs sm:text-sm font-semibold px-4 py-2">
+          <TabsTrigger value="resources" className="text-xs sm:text-sm font-semibold px-3 sm:px-4 py-2">
             <FileText className="h-3.5 w-3.5 mr-1.5" />
-            Question Paper, Margin Sheet & Instructions
+            <span className="sm:hidden">Resources</span>
+            <span className="hidden sm:inline">Question Paper, Margin Sheet & Instructions</span>
           </TabsTrigger>
         </TabsList>
 
@@ -313,9 +317,9 @@ export function StudentWorkspaceClient({
             <div className="space-y-5">
               {/* Attempt Selector Strip */}
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mr-1">
-                    Select Attempt:
+                <div className="flex overflow-x-auto no-scrollbar scroll-smooth flex-nowrap items-center gap-2 py-1 max-w-full">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mr-1 shrink-0">
+                    Attempt:
                   </span>
                   {submissions.map((sub) => {
                     const isSelected = sub.attemptNumber === activeSubmission?.attemptNumber
@@ -326,11 +330,12 @@ export function StudentWorkspaceClient({
                         size="sm"
                         variant={isSelected ? "default" : "outline"}
                         onClick={() => setSelectedAttemptNumber(sub.attemptNumber)}
-                        className={
+                        className={cn(
+                          "shrink-0",
                           isSelected
                             ? "h-9 px-4 rounded-xl bg-[#2A6AED] hover:bg-[#1E55C7] text-white text-xs font-bold shadow-2xs"
                             : "h-9 px-4 rounded-xl border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold"
-                        }
+                        )}
                       >
                         Attempt #{sub.attemptNumber}
                         {sub.evaluation && (
@@ -418,6 +423,56 @@ export function StudentWorkspaceClient({
                       defaultSortDirection="asc"
                       defaultPageSize={10}
                       showSerialNumber={true}
+                      renderCard={(q, idx, serialNumber) => {
+                        const ratio = q.maxMarks > 0 ? Math.round((q.marksAwarded / q.maxMarks) * 100) : 0
+                        return (
+                          <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/90 p-4 sm:p-5 shadow-2xs space-y-3">
+                            <div className="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800/80 pb-2.5">
+                              <div className="flex items-center gap-2">
+                                <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-950/60 text-[11px] font-bold text-[#2A6AED] dark:text-blue-400">
+                                  {q.questionNumber}
+                                </span>
+                                <span className="font-extrabold text-[#2A6AED] dark:text-blue-400 text-sm">
+                                  {q.marksAwarded} / {q.maxMarks} marks
+                                </span>
+                                <span className="text-[11px] font-semibold text-slate-400">
+                                  ({ratio}% credit)
+                                </span>
+                              </div>
+                              <Badge
+                                variant="outline"
+                                className={
+                                  q.isLegible
+                                    ? "border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 text-[10px] font-semibold rounded-full"
+                                    : "border-amber-200 dark:border-amber-900 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 text-[10px] font-semibold rounded-full"
+                                }
+                              >
+                                {q.isLegible ? "Clear Script" : "Unclear"}
+                              </Badge>
+                            </div>
+
+                            <div className="space-y-1">
+                              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                                Rubric Feedback
+                              </span>
+                              <p className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed">
+                                {q.feedback}
+                              </p>
+                            </div>
+
+                            {q.missingConcepts && (
+                              <div className="pt-1">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 block mb-1">
+                                  Improvement & Omissions
+                                </span>
+                                <p className="text-xs text-amber-900 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 p-2.5 rounded-xl border border-amber-200 dark:border-amber-900 leading-relaxed">
+                                  {q.missingConcepts}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        )
+                      }}
                       emptyTitle="No itemized question scores available"
                       emptyDescription="Adjust your search or score band filter to view question rows."
                     />

@@ -166,6 +166,34 @@
 
 ---
 
+### Phase 9: Mobile-First Responsive Grid & Table Layout Engine `[x]`
+- [x] **Core UI Framework Adaptations**:
+  - `app/globals.css`: Added `.no-scrollbar` and `@utility no-scrollbar` utilities for touch carousels and swipeable filter bars.
+  - `components/ui/tabs.tsx`: Enhanced `TabsList` with `max-w-full overflow-x-auto no-scrollbar scroll-smooth flex-nowrap`, and `TabsTrigger` with `min-h-[38px] sm:min-h-[40px] shrink-0 whitespace-nowrap` for mobile touch ergonomics.
+  - `components/ui/pagination.tsx`: Built compact mobile pager for `< sm` screens (`[ < Previous ] Page X/Y [ Next > ]`) while preserving full numbered pager on `sm+`.
+  - `components/ui/data-table.tsx`:
+    - Added `defaultViewMode?: "auto" | "table" | "grid"`, `renderCard?: (item: T, index: number, serialNumber: number) => React.ReactNode`, and `gridClassName?: string`.
+    - Added segmented `[ ▦ Grid | ▤ Table ]` toggle in the toolbar.
+    - Implemented dual responsive rendering in `"auto"` mode (`block md:hidden` for Grid and `hidden md:block` for Table) for zero SSR hydration mismatch and instant device rotation responsiveness.
+    - Added swipeable horizontal filter bar for small screens (`overflow-x-auto no-scrollbar scroll-smooth flex-nowrap sm:flex-wrap`).
+- [x] **Student Panel Mobile Card Experience**:
+  - `StudentDashboardClient`: Custom `renderCard` for Enrolled Test Series (with quota progress bar, score, and "Open Workspace" CTA) and Past Submissions; responsive tab labels.
+  - `StudentWorkspaceClient`: Responsive tab spans, swipeable attempt selector, and custom question rubric scoring `renderCard` (question badge, score, legibility pill, feedback, and omission callouts).
+  - `StudentProfileClient`: Responsive tab labels (`Academic`, `Security`, `3-Attempt Quota`).
+- [x] **Admin Panel Mobile Card Experience**:
+  - `AdminOverviewClient`: Responsive tabs (`Submissions` vs `Audit Logs`), custom `renderCard` for both Submissions and Audit Logs.
+  - `AdminPaymentsClient`: Custom `renderCard` for Payment Ledger cards (with copyable order/payment IDs, 7-day badge, and touch action buttons).
+  - `AdminStudentsClient`: Custom `renderCard` for Candidate Directory (progress bar, quota badge, override button).
+  - `AdminSubmissionsClient`: Custom `renderCard` for Submissions Queue (status badges, marks awarded, confidence status, booklet download, and review action).
+  - `AdminTestSeriesClient`: Custom `renderCard` for Test Series Catalog (publication toggle, marks, quota, enrolled aspirants, and preview link).
+  - `AdminProfileClient`: Responsive tab labels (`Profile`, `Security`, `Governance`).
+  - `AdminScoreReviewEditor`: Custom `renderCard` for question-by-question scoring and audit note adjustment.
+- [x] **Public Catalog & Leaderboard Mobile Enhancements**:
+  - `LeaderboardClient`: Custom `renderCard` for Leaderboard entries and mobile stacked podium layout.
+  - `TestCatalogClient`: Swipeable horizontal action filter bar and automatic mobile grid rendering.
+
+---
+
 ## 3. Active Roadmap & Future Milestones `[ ]`
 
 ### Phase 9: Annotation & Visual Evaluation Enhancements `[ ]`

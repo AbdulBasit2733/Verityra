@@ -366,13 +366,15 @@ export function AdminOverviewClient({
       <Tabs defaultValue="submissions" className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <TabsList variant="line" className="border-b border-slate-200 dark:border-slate-800 w-full sm:w-auto justify-start">
-            <TabsTrigger value="submissions" className="text-xs sm:text-sm font-semibold px-4 py-2">
+            <TabsTrigger value="submissions" className="text-xs sm:text-sm font-semibold px-3 sm:px-4 py-2">
               <FileCheck2 className="h-3.5 w-3.5 mr-1.5" />
-              Recent Candidate Submissions ({submissions.length})
+              <span className="sm:hidden">Submissions ({submissions.length})</span>
+              <span className="hidden sm:inline">Recent Candidate Submissions ({submissions.length})</span>
             </TabsTrigger>
-            <TabsTrigger value="audit" className="text-xs sm:text-sm font-semibold px-4 py-2">
+            <TabsTrigger value="audit" className="text-xs sm:text-sm font-semibold px-3 sm:px-4 py-2">
               <History className="h-3.5 w-3.5 mr-1.5" />
-              Administrative Audit Logs ({auditLogs.length})
+              <span className="sm:hidden">Audit Logs ({auditLogs.length})</span>
+              <span className="hidden sm:inline">Administrative Audit Logs ({auditLogs.length})</span>
             </TabsTrigger>
           </TabsList>
 
@@ -398,6 +400,67 @@ export function AdminOverviewClient({
             defaultSortDirection="desc"
             defaultPageSize={10}
             showSerialNumber={true}
+            renderCard={(s, idx, serialNumber) => (
+              <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/90 p-4 sm:p-5 shadow-2xs space-y-3 flex flex-col justify-between">
+                <div className="space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-[11px] font-bold text-slate-500 shrink-0">
+                        #{serialNumber}
+                      </span>
+                      <div>
+                        <span className="font-bold text-slate-900 dark:text-slate-100 block text-sm">
+                          {s.candidateName}
+                        </span>
+                        <span className="text-[11px] text-slate-400 block truncate max-w-[200px]">
+                          {s.candidateEmail}
+                        </span>
+                      </div>
+                    </div>
+                    <Badge
+                      variant="outline"
+                      className={
+                        s.status === "COMPLETED"
+                          ? "border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 text-[10px] font-semibold shrink-0"
+                          : s.status === "REVIEW_REQUIRED"
+                            ? "border-amber-200 dark:border-amber-900 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 text-[10px] font-semibold shrink-0"
+                            : "border-blue-200 dark:border-blue-900 text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 text-[10px] font-semibold shrink-0"
+                      }
+                    >
+                      {s.status === "COMPLETED" ? "Completed" : s.status === "REVIEW_REQUIRED" ? "Review Required" : s.status}
+                    </Badge>
+                  </div>
+
+                  <div className="pt-1 space-y-1">
+                    <span className="font-semibold text-slate-800 dark:text-slate-200 text-xs block line-clamp-1">
+                      {s.testTitle}
+                    </span>
+                    <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400">
+                      <span className="font-medium text-[#2A6AED] dark:text-blue-400">
+                        Attempt #{s.attemptNumber}
+                      </span>
+                      <span>·</span>
+                      <span><FormattedDate date={s.submittedAt} includeTime /></span>
+                    </div>
+                  </div>
+
+                  {s.totalMarksAwarded !== null && s.maxMarks && (
+                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 text-xs">
+                      <span className="text-slate-500 font-medium">Evaluation Score:</span>
+                      <span className="font-extrabold text-[#2A6AED] dark:text-blue-400 text-sm">
+                        {s.totalMarksAwarded} / {s.maxMarks} marks
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <Link href={`/admin/submissions/${s.id}`} className="block w-full pt-1">
+                  <Button size="sm" variant="outline" className="w-full h-9 rounded-xl border-slate-200 dark:border-slate-800 text-[#2A6AED] dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950 text-xs font-semibold">
+                    Inspect & Review
+                  </Button>
+                </Link>
+              </div>
+            )}
             emptyTitle="No candidate submissions found"
             emptyDescription="Adjust your search query or filters to view matching submissions."
           />
@@ -416,6 +479,28 @@ export function AdminOverviewClient({
             defaultSortDirection="desc"
             defaultPageSize={10}
             showSerialNumber={true}
+            renderCard={(a, idx, serialNumber) => (
+              <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/90 p-4 shadow-2xs space-y-2.5">
+                <div className="flex items-start justify-between gap-2">
+                  <Badge
+                    variant="outline"
+                    className="text-[10px] font-mono border-blue-200 dark:border-blue-900 text-[#2A6AED] dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50"
+                  >
+                    {a.action}
+                  </Badge>
+                  <span className="text-[11px] text-slate-400">
+                    <FormattedDate date={a.createdAt} includeTime />
+                  </span>
+                </div>
+                <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                  {a.details}
+                </p>
+                <div className="pt-1.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+                  <span>Administrator:</span>
+                  <strong className="text-slate-800 dark:text-slate-200 font-bold">{a.adminName}</strong>
+                </div>
+              </div>
+            )}
             emptyTitle="No administrative audit events recorded"
             emptyDescription="Score adjustments, test publications, and extra attempt overrides appear here."
           />

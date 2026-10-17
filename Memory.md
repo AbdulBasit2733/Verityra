@@ -107,6 +107,16 @@ Verityra was conceived to solve this through a **hybrid physical-digital paradig
   5. **Configurable Global Pagination**: Standardized page numbers, total item counts, and rows-per-page selectors (5, 10, 20, 50).
 - **Consequences**: Consistent, high-efficiency data management UX across all 27 application routes.
 
+### ADR 013: Mobile-First Responsive Grid & Table Layout Engine
+- **Status**: Implemented & Enforced
+- **Context**: Mobile screen users (especially UPSC candidates viewing dashboards, question breakdowns, and test catalogs on S: 320-375px, M: 375-425px, L: 425-768px viewports) experienced awkward horizontal scrolling and cramped columns with standard table structures.
+- **Decision**:
+  1. **Dual Responsive Rendering with Zero Hydration Mismatch**: In `components/ui/data-table.tsx`, when `viewMode === "auto"`, render both the Card Grid (`block md:hidden`) and Table (`hidden md:block`) in pure CSS. This prevents SSR hydration mismatches while ensuring instant responsive layout switching upon device rotation or viewport resizing.
+  2. **Touch-Optimized Tabs & Filter Strips**: All filter containers and tab navigation bars utilize `overflow-x-auto no-scrollbar scroll-smooth flex-nowrap sm:flex-wrap` with `shrink-0` triggers (`min-h-[38px] sm:min-h-[40px]`).
+  3. **Adaptive Mobile Pagination**: On `< sm` viewports, render compact mobile controls (`[ < Previous ] Page X/Y [ Next > ]`), automatically expanding to the full numbered pager on `sm+`.
+  4. **User Override**: Provide segmented `[ ▦ Grid | ▤ Table ]` toggle so users can manually pick their preferred view on any device.
+- **Consequences**: Superior touch usability on mobile devices while maintaining dense data table efficiency on desktop monitors.
+
 ---
 
 ## 3. Critical Operational Constraints & Gotchas
