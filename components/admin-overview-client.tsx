@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DataTable, DataTableColumn, DataTableFilter } from "@/components/ui/data-table"
 import { FormattedDate } from "@/components/ui/date-picker"
 import { PageHeader } from "@/components/ui/page-header"
-import { KpiStatCard } from "@/components/ui/kpi-stat-card"
+import { KpiMetricStrip, KpiMetric } from "@/components/shared/kpi-metric-strip"
 import {
   AlertTriangle,
   ArrowRight,
@@ -330,37 +330,37 @@ export function AdminOverviewClient({
         </Link>
       </PageHeader>
 
-      {/* Horizontal Compact KPI Stat Cards matching Screenshot 1 */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiStatCard
+      {/* KPI Metric Strip - Flat Divided Design */}
+      <KpiMetricStrip columns={4}>
+        <KpiMetric
           label="Total Candidates"
           value={totalStudents}
           subtext="Registered aspirant accounts"
           icon={Users}
           variant="blue"
         />
-        <KpiStatCard
+        <KpiMetric
           label="Active Enrollments"
           value={totalRegistrations}
           subtext={`${publishedTests} published · ${draftTests} draft`}
           icon={BookOpen}
           variant="indigo"
         />
-        <KpiStatCard
+        <KpiMetric
           label="Pending Reviews"
           value={pendingReviews}
           subtext="Flagged for educator review"
           icon={AlertTriangle}
           variant="amber"
         />
-        <KpiStatCard
+        <KpiMetric
           label="Verified Revenue"
           value={`₹${totalRevenueInRupees.toLocaleString()}`}
           subtext="Captured Razorpay orders"
           icon={CreditCard}
           variant="emerald"
         />
-      </div>
+      </KpiMetricStrip>
 
       {/* Table Section with Tabs */}
       <Tabs defaultValue="submissions" className="space-y-4">

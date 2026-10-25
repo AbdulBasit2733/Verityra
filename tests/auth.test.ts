@@ -8,6 +8,7 @@ import {
   changePasswordSchema,
 } from "../lib/validations/auth"
 import { Role } from "@prisma/client"
+import { resolvePostLoginTarget } from "../lib/auth-routing"
 
 export function runAuthTests() {
   const suite = new TestSuite("Module: Authentication & Identity")
@@ -148,6 +149,32 @@ export function runAuthTests() {
   suite.test("RBAC: Role enumeration defines explicit STUDENT and ADMIN values", () => {
     assert.equal(Role.STUDENT, "STUDENT")
     assert.equal(Role.ADMIN, "ADMIN")
+  })
+
+  suite.test("RBAC: Admin login target resolution routes to /admin and rejects student panel callback", () => {
+    const defaultAdminTarget = resolvePostLoginTarget(Role.ADMIN, null)
+    assert.equal(defaultAdminTarget, "/admin")
+
+    const studentCallbackBlocked = resolvePostLoginTarget(Role.ADMIN, "/student/dashboard")
+    assert.equal(studentCallbackBlocked, "/admin")
+
+    const safeAdminTarget = resolvePostLoginTarget(Role.ADMIN, "/admin/submissions")
+    assert.equal(safeAdminTarget, "/admin/submissions")
+  })
+
+  suite.test("RBAC: Student login target resolution routes to /student/dashboard and rejects admin panel callback", () => {
+    const defaultStudentTarget = resolvePostLoginTarget(Role.STUDENT, null)
+    assert.equal(defaultStudentTarget, "/student/dashboard")
+
+    const adminCallbackBlocked = resolvePostLoginTarget(Role.STUDENT, "/admin/students")
+    assert.equal(adminCallbackBlocked, "/student/dashboard")
+
+    const safePublicTarget = resolvePostLoginTarget(Role.STUDENT, "/tests/upsc-gs-1")
+    assert.equal(safePublicTarget, "/tests/upsc-gs-1")
+  })
+
+  suite.test("RBAC: Unknown or unauthenticated role defaults to /dashboard dispatcher", () => {
+    assert.equal(resolvePostLoginTarget(undefined, null), "/dashboard")
   })
 
   return suite.summary()

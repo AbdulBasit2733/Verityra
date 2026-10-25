@@ -1,3 +1,4 @@
+import { Suspense } from "react"
 import { redirect } from "next/navigation"
 import { requireStudent } from "@/lib/auth-guard"
 import { prisma, isDatabaseConnected } from "@/lib/prisma"
@@ -173,28 +174,30 @@ export default async function StudentTestWorkspacePage({
 
   // Note: Only studentInstructions are passed — privateEvaluationInstructions are never projected to student views.
   return (
-    <StudentWorkspaceClient
-      testSeriesId={testSeries.id}
-      title={testSeries.title}
-      maxMarks={testSeries.maxMarks || 250}
-      durationMinutes={testSeries.durationMinutes || 180}
-      studentInstructions={
-        testSeries.studentInstructions ||
-        "1. Number all responses clearly inside the left margin.\n2. Scan all pages upright into a single clear PDF before uploading."
-      }
-      attemptsUsed={registration.attemptsUsed}
-      maxAttempts={registration.maxAttempts}
-      papers={(testSeries.papers || []).map((p: any) => ({
-        id: p.id,
-        title: p.title,
-        fileUrl: p.fileUrl,
-      }))}
-      templates={(testSeries.templates || []).map((t: any) => ({
-        id: t.id,
-        title: t.title,
-        fileUrl: t.fileUrl,
-      }))}
-      submissions={serializedSubmissions}
-    />
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2A6AED]" /></div>}>
+      <StudentWorkspaceClient
+        testSeriesId={testSeries.id}
+        title={testSeries.title}
+        maxMarks={testSeries.maxMarks || 250}
+        durationMinutes={testSeries.durationMinutes || 180}
+        studentInstructions={
+          testSeries.studentInstructions ||
+          "1. Number all responses clearly inside the left margin.\n2. Scan all pages upright into a single clear PDF before uploading."
+        }
+        attemptsUsed={registration.attemptsUsed}
+        maxAttempts={registration.maxAttempts}
+        papers={(testSeries.papers || []).map((p: any) => ({
+          id: p.id,
+          title: p.title,
+          fileUrl: p.fileUrl,
+        }))}
+        templates={(testSeries.templates || []).map((t: any) => ({
+          id: t.id,
+          title: t.title,
+          fileUrl: t.fileUrl,
+        }))}
+        submissions={serializedSubmissions}
+      />
+    </Suspense>
   )
 }

@@ -193,6 +193,395 @@ font-family: var(--font-poppins), -apple-system, BlinkMacSystemFont, "Segoe UI",
 2. **Keyboard Navigation**:
    - Every interactive element (buttons, tabs, table sort headers, dropdowns) includes visible focus rings: `focus-visible:ring-3 focus-visible:ring-ring/25 focus-visible:outline-none`.
    - Modals and slide-over drawers trap focus and support closing on `Escape`.
+   - Command Palette: `Ctrl+K` / `Cmd+K` for global navigation (desktop only).
+   - Sidebar Toggle: `Ctrl+B` to collapse/expand sidebar (desktop only).
 3. **Screen Reader Semantics**:
    - Icons accompanied by accessible text or `aria-label`.
    - Buttons use native `<button>` or `@base-ui/react/button` primitives with `type="button"` or `type="submit"`.
+4. **Touch Targets** (Mobile):
+   - All interactive elements meet minimum 44px height requirement for touch accessibility.
+   - Bottom navigation tabs: 56px minimum height with adequate padding.
+
+---
+
+## 7. New Responsive Components & Patterns (2025 Redesign)
+
+### 7.1. KPI Metric Strip (`components/shared/kpi-metric-strip.tsx`)
+
+**Purpose**: Replaces heavy card-based metrics with flat, horizontally divided strips for better information density and scannable layouts.
+
+**Visual Pattern**:
+- No rounded corners (flat edge-to-edge)
+- Vertical hairline dividers (`divide-x divide-slate-200 dark:divide-slate-800`)
+- Top and bottom borders only (`border-y`)
+- 2-column grid on mobile, 4-column on desktop
+
+**Usage Example**:
+```tsx
+<KpiMetricStrip columns={4}>
+  <KpiMetric 
+    label="Total Registered" 
+    value="47" 
+    icon={Users} 
+    variant="blue" 
+  />
+  <KpiMetric 
+    label="Attempts Used" 
+    value="89" 
+    icon={FileCheck2} 
+    variant="indigo" 
+  />
+  <KpiMetric 
+    label="Attempts Remaining" 
+    value="52" 
+    icon={Layers} 
+    variant="amber" 
+  />
+  <KpiMetric 
+    label="Avg Score" 
+    value="73.2%" 
+    icon={Award} 
+    variant="emerald" 
+  />
+</KpiMetricStrip>
+```
+
+**Design Specifications**:
+- Background: `bg-white dark:bg-slate-900`
+- Border: `border-y border-slate-200/80 dark:border-slate-800`
+- Dividers: `divide-x divide-slate-200/80 dark:divide-slate-800`
+- Grid: `grid-cols-2 lg:grid-cols-4` (responsive)
+- Padding: `px-4 py-3` per metric cell
+
+**Color Variants**:
+| Variant | Icon Background (Light) | Icon Background (Dark) | Icon Color |
+|---------|------------------------|----------------------|------------|
+| `blue` | `bg-blue-100` | `dark:bg-blue-950` | `text-[#2A6AED] dark:text-blue-400` |
+| `indigo` | `bg-indigo-100` | `dark:bg-indigo-950` | `text-indigo-600 dark:text-indigo-400` |
+| `emerald` | `bg-emerald-100` | `dark:bg-emerald-950` | `text-emerald-600 dark:text-emerald-400` |
+| `amber` | `bg-amber-100` | `dark:bg-amber-950` | `text-amber-600 dark:text-amber-400` |
+
+---
+
+### 7.2. Attempt Progress Tracker (`components/shared/attempt-progress-tracker.tsx`)
+
+**Purpose**: Dynamically renders attempt progression nodes based on `maxAttempts` (not hardcoded to 3). Supports admin-granted extra attempts beyond standard 3-attempt guarantee.
+
+**Visual States**:
+- **Completed**: Filled dot with checkmark (`CheckCircle2` icon, emerald-600)
+- **Available/Current**: Empty circle (`Circle` icon, Royal Blue)
+- **Locked**: Greyed circle with lock icon (`Lock` icon, slate-400)
+
+**Usage Example**:
+```tsx
+<AttemptProgressTracker
+  attemptsUsed={2}
+  maxAttempts={4}
+  submissions={[
+    { attemptNumber: 1, status: "COMPLETED" },
+    { attemptNumber: 2, status: "COMPLETED" }
+  ]}
+/>
+```
+
+**Design Specifications**:
+- Node size: `h-8 w-8` circular containers
+- Connector line: `h-0.5 min-w-[16px]` horizontal line
+- Label: `text-[10px] font-bold uppercase` beneath each node
+- Extra attempts: Display "(Extra)" suffix for attempts > 3
+
+**Compact Variant**:
+```tsx
+<AttemptProgressTrackerCompact
+  attemptsUsed={2}
+  maxAttempts={3}
+  submissions={submissions}
+/>
+```
+Displays: "2 done • 1 left" inline format for mobile or tight spaces.
+
+---
+
+### 7.3. Mobile Bottom Navigation (`components/mobile/mobile-bottom-nav.tsx`)
+
+**Purpose**: Fixed bottom navigation bar for student portal on mobile devices only (< 1024px).
+
+**Navigation Tabs** (4 primary):
+1. **Dashboard** → `/student/dashboard`
+2. **Tests** → `/tests`
+3. **Leaderboard** → `/leaderboard`
+4. **Profile** → `/student/profile`
+
+**Design Specifications**:
+- Position: `fixed bottom-0 left-0 right-0 z-50`
+- Background: `bg-white/95 dark:bg-slate-900/95 backdrop-blur-md`
+- Border: `border-t border-slate-200 dark:border-slate-800`
+- Safe Area: `paddingBottom: env(safe-area-inset-bottom, 0px)` for iPhone notch
+- Touch targets: `min-h-[56px]` for accessibility
+- Active state: Royal Blue fill (`bg-[#2A6AED]`) with white icon/text
+- Inactive state: `text-slate-600 dark:text-slate-400`
+
+**Visibility Rules**:
+- Only visible on mobile (`< 1024px`)
+- Only shown for student role (not admin)
+- Only on student pages (`/student/*`, `/tests`, `/leaderboard`)
+
+**Spacer**: Includes `h-20` spacer div to prevent content from being hidden behind fixed nav.
+
+---
+
+### 7.4. Desktop Command Palette (`components/desktop/desktop-command-palette.tsx`)
+
+**Purpose**: Global keyboard-driven navigation with fuzzy search for rapid jumps across the platform.
+
+**Keyboard Shortcut**: `Ctrl+K` (Windows/Linux) or `Cmd+K` (Mac)
+
+**Command Categories**:
+
+**Admin Commands** (7 routes):
+- Navigation: Overview, Test Series, Submissions, Students, Payments, Profile
+- Quick Actions: Create New Test Series
+
+**Student Commands** (4 routes):
+- Navigation: Dashboard, Profile, Explore Test Catalog, Live Leaderboard
+
+**Design Specifications**:
+- Modal: Centered dialog on desktop, full-screen on mobile
+- Search input: `h-12` with `Search` icon prefix
+- Results: Grouped by category with separators
+- Each result: Icon (9×9 rounded container) + Label + Keywords
+- Footer: Keyboard hints (`↵ to select`, `ESC to close`)
+- Max height: `max-h-[400px]` with scroll
+
+**Implementation**:
+- Uses `cmdk` library (Command primitive)
+- Fuzzy matching on label + keywords
+- Keyboard navigation with arrow keys
+- Auto-closes after selection
+
+---
+
+### 7.5. Collapsible Sidebar (`components/portal-shell.tsx`)
+
+**Purpose**: Desktop sidebar that toggles between full-width (w-64) and icon-rail (w-16) modes for space efficiency.
+
+**Keyboard Shortcut**: `Ctrl+B` to toggle
+
+**States**:
+1. **Expanded** (default): `w-64` with full labels
+   - Brand logo + text visible
+   - Navigation items with icons + labels
+   - Footer with collapse button
+   
+2. **Collapsed**: `w-16` icon-rail
+   - Icon-only navigation
+   - Tooltip hints on hover
+   - Reduced brand mark (icon only)
+
+**Design Specifications**:
+- Transition: `transition-all duration-300 ease-in-out`
+- Position: `fixed inset-y-0 left-0` (desktop only)
+- Main content padding adjusts: `lg:pl-64` → `lg:pl-16`
+- Preference persistence: `localStorage.getItem("verityra-sidebar-collapsed")`
+
+**Tooltip Integration**:
+- Collapsed state shows tooltips on navigation item hover
+- Delay: 200ms
+- Position: Right-aligned
+
+---
+
+### 7.6. Adaptive Dialog Pattern (`components/shared/adaptive-dialog.tsx`)
+
+**Purpose**: Auto-adapts between Desktop Dialog (centered modal) and Mobile Drawer (bottom sheet) based on viewport size.
+
+**Behavior**:
+- **Desktop** (≥ 1024px): Renders Radix `Dialog` (centered modal with backdrop)
+- **Mobile** (< 1024px): Renders Vaul `Drawer` (bottom sheet with swipe-to-dismiss)
+
+**Usage Example**:
+```tsx
+<AdaptiveDialog open={open} onOpenChange={setOpen}>
+  <AdaptiveDialogContent>
+    <AdaptiveDialogHeader>
+      <AdaptiveDialogTitle>Refund Payment</AdaptiveDialogTitle>
+      <AdaptiveDialogDescription>
+        Enter refund reason and amount
+      </AdaptiveDialogDescription>
+    </AdaptiveDialogHeader>
+    
+    {/* Dialog content */}
+    
+    <AdaptiveDialogFooter>
+      <AdaptiveDialogClose>Cancel</AdaptiveDialogClose>
+      <Button>Confirm</Button>
+    </AdaptiveDialogFooter>
+  </AdaptiveDialogContent>
+</AdaptiveDialog>
+```
+
+**Components**:
+- `AdaptiveDialog` (root wrapper)
+- `AdaptiveDialogTrigger`
+- `AdaptiveDialogContent`
+- `AdaptiveDialogHeader` / `AdaptiveDialogFooter`
+- `AdaptiveDialogTitle` / `AdaptiveDialogDescription`
+- `AdaptiveDialogClose`
+
+**Design Specifications**:
+- Mobile drawer: Fixed to bottom with rounded top corners (`rounded-t-xl`)
+- Desktop dialog: Centered with max-width constraint
+- Both: Backdrop blur with opacity transition
+
+---
+
+### 7.7. Responsive Hooks (`hooks/use-media-query.ts`)
+
+**Purpose**: SSR-safe React hooks for breakpoint detection and responsive UI logic.
+
+**Exported Hooks**:
+
+```tsx
+// Core hook - accepts any CSS media query
+const matches = useMediaQuery('(min-width: 768px)')
+
+// Convenience presets
+const isMobile = useIsMobile()      // < 1024px
+const isTablet = useIsTablet()      // 768px - 1023px
+const isDesktop = useIsDesktop()    // ≥ 1024px
+
+// Granular breakpoint detection
+const breakpoint = useBreakpoint()  // 'mobile' | 'tablet' | 'desktop'
+```
+
+**SSR Safety**:
+- Returns `false` during SSR (prevents hydration mismatches)
+- Uses `window.matchMedia` after mount
+- Includes `useMounted()` helper for conditional rendering
+
+**Usage Pattern**:
+```tsx
+export function ResponsiveComponent() {
+  const isMobile = useIsMobile()
+  
+  if (isMobile) {
+    return <MobileBottomNav />
+  }
+  
+  return <DesktopSidebar />
+}
+```
+
+**Breakpoint Definitions**:
+| Preset | Query | Use Case |
+|--------|-------|----------|
+| `useIsMobile()` | `(max-width: 1023px)` | Mobile/tablet layouts, bottom nav visibility |
+| `useIsTablet()` | `(min-width: 768px) and (max-width: 1023px)` | Tablet-specific optimizations |
+| `useIsDesktop()` | `(min-width: 1024px)` | Desktop sidebar, command palette, wide layouts |
+
+---
+
+### 7.8. PDF Preview & Legibility Checklist (`components/submission-upload-form.tsx`)
+
+**Purpose**: Client-side file preview and acknowledgment before submission to reduce illegible uploads.
+
+**Features**:
+1. **Image Preview**: Renders thumbnail for JPG/PNG uploads via `URL.createObjectURL()`
+2. **PDF Metadata**: Shows file size, estimated page count (~150KB/page heuristic)
+3. **Legibility Checklist**:
+   - ✓ All pages upright (not rotated)
+   - ✓ Handwriting clear and legible
+   - ✓ All pages included
+   - ⚠ Warning: Illegible submissions may receive reduced scores
+4. **Acknowledgment Checkbox**: Required before "Confirm & Submit" button enables
+
+**Design Specifications**:
+- Preview container: `rounded-xl border bg-slate-50 dark:bg-slate-900 p-4`
+- Image preview: `max-h-64 object-contain` with border
+- Checklist items: `CheckCircle2` icon (emerald) for requirements, `AlertCircle` (amber) for warning
+- Submit button: Disabled until checkbox checked
+
+---
+
+### 7.9. URL State Management (Student Workspace)
+
+**Purpose**: Persist attempt selection in URL for shareable workspace links.
+
+**Implementation**:
+```tsx
+const searchParams = useSearchParams()
+const attemptNumber = parseInt(searchParams.get('attempt') || '1')
+
+// Update URL without page reload
+function setAttempt(num: number) {
+  const params = new URLSearchParams(searchParams)
+  params.set('attempt', num.toString())
+  router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+}
+```
+
+**URL Format**: `/student/tests/upsc-gs-1?attempt=2`
+
+**Benefits**:
+- Shareable workspace links (e.g., "Check my Attempt 2 score")
+- Refreshing page preserves selected attempt
+- Browser back/forward navigation works correctly
+
+**SSR Safety**: Component wrapped in `<Suspense>` to handle `useSearchParams()` hydration
+
+---
+
+## 8. Testing & Quality Assurance
+
+### 8.1. Unit Testing
+- **Framework**: Custom `tsx` test runner
+- **Coverage**: 45/45 tests passing (Authentication, Test Series, Submissions, Payments, Evaluation Engine)
+- **Command**: `pnpm test` or `pnpm test:unit`
+
+### 8.2. E2E Testing (Playwright)
+- **Framework**: Playwright v1.64.1
+- **Browsers**: Chromium, WebKit
+- **Viewports**: Desktop Chrome (1280×800), iPhone SE (375×667), iPhone 14 (390×844)
+- **Commands**:
+  - `pnpm test:e2e` - Run all E2E tests
+  - `pnpm test:e2e:ui` - Open Playwright UI mode
+  - `pnpm test:e2e:headed` - Run tests with visible browser
+  - `pnpm test:e2e:debug` - Debug mode with step-through
+
+**Test Suites**:
+1. **auth.spec.ts**: Sign-up, sign-in, RBAC, password reset
+2. **student-flow.spec.ts**: Complete student journey (catalog → enroll → workspace → upload → results)
+3. **admin-flow.spec.ts**: Admin workflows (submissions, score review, test series management)
+4. **responsive.spec.ts**: Cross-device testing (mobile bottom nav, adaptive dialogs, KPI responsiveness)
+
+---
+
+## 9. Migration Guide: Cards → Flat KPI Strips
+
+**Before** (Card-based metrics):
+```tsx
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+  <KpiStatCard label="Total Students" value="47" icon={Users} />
+  <KpiStatCard label="Enrollments" value="89" icon={BookOpen} />
+  <KpiStatCard label="Pending" value="12" icon={AlertTriangle} />
+  <KpiStatCard label="Revenue" value="₹45,600" icon={CreditCard} />
+</div>
+```
+
+**After** (Flat divided strip):
+```tsx
+<KpiMetricStrip columns={4}>
+  <KpiMetric label="Total Students" value="47" icon={Users} variant="blue" />
+  <KpiMetric label="Enrollments" value="89" icon={BookOpen} variant="indigo" />
+  <KpiMetric label="Pending" value="12" icon={AlertTriangle} variant="amber" />
+  <KpiMetric label="Revenue" value="₹45,600" icon={CreditCard} variant="emerald" />
+</KpiMetricStrip>
+```
+
+**Benefits**:
+- 40% more vertical space for content
+- Faster scan pattern (horizontal eye movement)
+- Cleaner visual hierarchy
+- Better dark mode harmony (no card shadows)
+
+---

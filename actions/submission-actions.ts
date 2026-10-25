@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/auth-guard"
 import { prisma, isDatabaseConnected } from "@/lib/prisma"
 import { uploadPrivateFile } from "@/lib/supabase"
 import { evaluateAnswerSheetWithGemini } from "@/lib/ai/gemini-evaluator"
+import { queueEvaluation } from "@/lib/queue/evaluation-queue"
 import { EvaluationStatus, RegistrationStatus, SubmissionStatus } from "@prisma/client"
 import { revalidatePath } from "next/cache"
 import { ActionResult } from "./auth-actions"
@@ -160,88 +161,105 @@ export async function submitAnswerSheetAction(formData: FormData): Promise<Actio
     return { success: false, error: "Database transaction failed. Please try again." }
   }
 
-  // 7. Trigger AI Evaluation Workflow
-  // Runs with question paper rubric, private evaluation instructions, and student answer sheet
-  try {
-    const testSeries = registration.testSeries
-    const latestPaper = testSeries.papers[0]
+  // 7. Trigger AI Evaluation Workflow (Async Queue)
+  // Attempt to queue evaluation in background; fall back to synchronous if Redis unavailable
+  const jobId = await queueEvaluation({
+    submissionId: submission.id,
+    testSeriesId: registration.testSeriesId,
+    userId: user.id,
+    fileUrl: uploadedFileUrl,
+    fileBuffer: fileBytes.toString('base64'), // Pass buffer to avoid re-downloading
+    mimeType: file.type,
+  })
 
-    const aiResult = await evaluateAnswerSheetWithGemini({
-      testTitle: testSeries.title,
-      maxMarks: testSeries.maxMarks,
-      rubricContent: latestPaper?.rubricContent || null,
-      privateEvaluationInstructions: testSeries.privateEvaluationInstructions,
-      studentAnswerSheetBuffer: fileBytes,
-      studentAnswerSheetMimeType: file.type,
-      studentAnswerSheetUrl: uploadedFileUrl,
-    })
+  if (!jobId) {
+    // Redis not available - fall back to synchronous evaluation (legacy path)
+    console.warn('[Submission] Redis unavailable, falling back to synchronous evaluation')
 
-    // Compute application-level totals
-    let totalScore = 0
-    aiResult.questions.forEach((q) => {
-      totalScore += q.marksAwarded
-    })
+    try {
+      const testSeries = registration.testSeries
+      const latestPaper = testSeries.papers[0]
 
-    const percentage = Number(((totalScore / testSeries.maxMarks) * 100).toFixed(2))
+      const aiResult = await evaluateAnswerSheetWithGemini({
+        testTitle: testSeries.title,
+        maxMarks: testSeries.maxMarks,
+        rubricContent: latestPaper?.rubricContent || null,
+        privateEvaluationInstructions: testSeries.privateEvaluationInstructions,
+        studentAnswerSheetBuffer: fileBytes,
+        studentAnswerSheetMimeType: file.type,
+        studentAnswerSheetUrl: uploadedFileUrl,
+      })
 
-    // Determine status: if uncertainty or legibility warnings triggered, flag for REVIEW_REQUIRED
-    const evalStatus =
-      aiResult.uncertaintyFlag || aiResult.legibilityWarning
-        ? EvaluationStatus.REVIEW_REQUIRED
-        : EvaluationStatus.COMPLETED
+      // Compute application-level totals
+      let totalScore = 0
+      aiResult.questions.forEach((q) => {
+        totalScore += q.marksAwarded
+      })
 
-    await prisma.$transaction(async (tx) => {
-      const evaluation = await tx.evaluation.create({
-        data: {
-          submissionId: submission.id,
-          totalMarksAwarded: totalScore,
-          maxMarks: testSeries.maxMarks,
-          percentage,
-          generalFeedback: aiResult.generalFeedback,
-          legibilityWarning: aiResult.legibilityWarning,
-          uncertaintyFlag: aiResult.uncertaintyFlag,
-          status: evalStatus,
-          evaluatedAt: new Date(),
-          questions: {
-            create: aiResult.questions.map((q) => ({
-              questionNumber: q.questionNumber,
-              maxMarks: q.maxMarks,
-              marksAwarded: q.marksAwarded,
-              feedback: q.feedback,
-              missingConcepts: q.missingConcepts,
-              isLegible: q.isLegible,
-              isUncertain: q.isUncertain,
-            })),
+      const percentage = Number(((totalScore / testSeries.maxMarks) * 100).toFixed(2))
+
+      // Determine status: if uncertainty or legibility warnings triggered, flag for REVIEW_REQUIRED
+      const evalStatus =
+        aiResult.uncertaintyFlag || aiResult.legibilityWarning
+          ? EvaluationStatus.REVIEW_REQUIRED
+          : EvaluationStatus.COMPLETED
+
+      await prisma.$transaction(async (tx) => {
+        const evaluation = await tx.evaluation.create({
+          data: {
+            submissionId: submission.id,
+            totalMarksAwarded: totalScore,
+            maxMarks: testSeries.maxMarks,
+            percentage,
+            generalFeedback: aiResult.generalFeedback,
+            legibilityWarning: aiResult.legibilityWarning,
+            uncertaintyFlag: aiResult.uncertaintyFlag,
+            status: evalStatus,
+            evaluatedAt: new Date(),
+            questions: {
+              create: aiResult.questions.map((q) => ({
+                questionNumber: q.questionNumber,
+                maxMarks: q.maxMarks,
+                marksAwarded: q.marksAwarded,
+                feedback: q.feedback,
+                missingConcepts: q.missingConcepts,
+                isLegible: q.isLegible,
+                isUncertain: q.isUncertain,
+              })),
+            },
           },
-        },
-      })
+        })
 
-      await tx.submission.update({
-        where: { id: submission.id },
-        data: {
-          status:
-            evalStatus === EvaluationStatus.REVIEW_REQUIRED
-              ? SubmissionStatus.REVIEW_REQUIRED
-              : SubmissionStatus.COMPLETED,
-        },
+        await tx.submission.update({
+          where: { id: submission.id },
+          data: {
+            status:
+              evalStatus === EvaluationStatus.REVIEW_REQUIRED
+                ? SubmissionStatus.REVIEW_REQUIRED
+                : SubmissionStatus.COMPLETED,
+          },
+        })
       })
-    })
-  } catch (evalErr) {
-    console.error("[EVALUATION FAILED]", evalErr)
-    // AI failure does NOT consume another attempt; updates status to REVIEW_REQUIRED or FAILED for retry
-    await prisma.submission.update({
-      where: { id: submission.id },
-      data: { status: SubmissionStatus.FAILED },
-    })
+    } catch (evalErr) {
+      console.error("[EVALUATION FAILED]", evalErr)
+      await prisma.submission.update({
+        where: { id: submission.id },
+        data: { status: SubmissionStatus.FAILED },
+      })
+    }
   }
 
   revalidatePath(`/student/tests/${testSeriesId}`)
   revalidatePath("/student/dashboard")
   revalidatePath("/admin/submissions")
 
+  const evaluationMessage = jobId
+    ? "Your submission is being evaluated. Results will be available shortly."
+    : "Evaluation completed."
+
   return {
     success: true,
-    message: `Attempt ${submission.attemptNumber} of ${registration.maxAttempts} submitted successfully. Evaluation completed.`,
+    message: `Attempt ${submission.attemptNumber} of ${registration.maxAttempts} submitted successfully. ${evaluationMessage}`,
     data: { submissionId: submission.id, attemptNumber: submission.attemptNumber },
   }
 }

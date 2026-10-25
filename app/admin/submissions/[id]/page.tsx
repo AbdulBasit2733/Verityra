@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator"
 import { AdminScoreReviewEditor } from "@/components/admin-score-review-editor"
 import { PageHeader } from "@/components/ui/page-header"
 import { ArrowLeft, FileCheck2 } from "lucide-react"
+import { formatDateTimeFull } from "@/lib/format"
 
 export const dynamic = "force-dynamic"
 
@@ -112,7 +113,7 @@ export default async function AdminSubmissionReviewPage({
             Attempt #{submission.attemptNumber}
           </Badge>
           <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-            Submitted on {new Date(submission.submittedAt).toLocaleString()}
+            Submitted on {formatDateTimeFull(submission.submittedAt)}
           </span>
         </div>
         <div className="sm:text-right border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-100 dark:border-slate-800">

@@ -114,11 +114,14 @@ export async function requestPasswordResetAction(email: string): Promise<ActionR
       })
 
       const devResetUrl = `/reset-password?token=${rawToken}`
-      console.log(`[AUTH SERVER ACTION] Reset URL: ${devResetUrl}`)
+
       return {
         success: true,
         message: "If an account exists with this email, password reset instructions have been generated.",
-        data: { devResetUrl },
+        // Only include devResetUrl in development mode for security
+        ...(process.env.NODE_ENV === "development" && {
+          data: { devResetUrl },
+        }),
       }
     }
   }
@@ -196,8 +199,8 @@ export async function updateStudentProfileAction(profileData: {
   bio?: string
 }): Promise<ActionResult> {
   const user = await getCurrentUser()
-  if (!user) {
-    return { success: false, error: "Authentication required." }
+  if (!user || user.role !== Role.STUDENT) {
+    return { success: false, error: "Candidate authorization required." }
   }
 
   const parsed = studentProfileSchema.safeParse(profileData)
@@ -255,8 +258,8 @@ export async function getStudentProfileAction(): Promise<ActionResult<{
   createdAt: string
 }>> {
   const user = await getCurrentUser()
-  if (!user) {
-    return { success: false, error: "Authentication required." }
+  if (!user || user.role !== Role.STUDENT) {
+    return { success: false, error: "Candidate authorization required." }
   }
 
   const dbConnected = await isDatabaseConnected()

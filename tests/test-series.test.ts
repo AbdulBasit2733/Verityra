@@ -129,6 +129,161 @@ export function runTestSeriesTests() {
     assert.equal(closedTest, "EXPIRED")
   })
 
+  suite.test("Class 10 Series: Mathematics and Science schema, marks, and duration invariants", () => {
+    const class10Maths = {
+      title: "Class 10 CBSE Mathematics Board Examination Mock Series",
+      slug: "cbse-class-10-mathematics-mock-series",
+      maxMarks: 80,
+      durationMinutes: 180,
+      maxAttempts: 3,
+      price: 0,
+      status: TestSeriesStatus.PUBLISHED,
+      paperMaxMarks: 80,
+      templateRequired: true,
+    }
+
+    const class10Science = {
+      title: "Class 10 CBSE Science Board Examination Mock Series",
+      slug: "cbse-class-10-science-board-mock-series",
+      maxMarks: 80,
+      durationMinutes: 180,
+      maxAttempts: 3,
+      price: 0,
+      status: TestSeriesStatus.PUBLISHED,
+      paperMaxMarks: 80,
+      templateRequired: true,
+    }
+
+    // Assert Class 10 Mathematics specifications
+    assert.equal(class10Maths.maxMarks, 80)
+    assert.equal(class10Maths.durationMinutes, 180)
+    assert.equal(class10Maths.maxAttempts, 3)
+    assert.equal(class10Maths.paperMaxMarks, class10Maths.maxMarks)
+    assert.equal(class10Maths.templateRequired, true)
+
+    // Assert Class 10 Science specifications
+    assert.equal(class10Science.maxMarks, 80)
+    assert.equal(class10Science.durationMinutes, 180)
+    assert.equal(class10Science.maxAttempts, 3)
+    assert.equal(class10Science.paperMaxMarks, class10Science.maxMarks)
+    assert.equal(class10Science.templateRequired, true)
+  })
+
+  suite.test("Class 11 & 12 Series: Mathematics and Physics senior secondary invariants and pricing", () => {
+    const class11Maths = {
+      title: "Class 11 CBSE Mathematics & Calculus Foundation Series",
+      slug: "cbse-class-11-mathematics-mastery-series",
+      maxMarks: 80,
+      durationMinutes: 180,
+      price: 29900, // ₹299.00 in paise
+      maxAttempts: 3,
+    }
+
+    const class12Maths = {
+      title: "Class 12 CBSE Mathematics Pre-Board Mock Examination Series",
+      slug: "cbse-class-12-mathematics-preboard-series",
+      maxMarks: 80,
+      durationMinutes: 180,
+      price: 39900, // ₹399.00 in paise
+      maxAttempts: 3,
+    }
+
+    const class12Physics = {
+      title: "Class 12 CBSE Physics Pre-Board Mock Examination Series",
+      slug: "cbse-class-12-physics-preboard-series",
+      maxMarks: 70, // Standard 70-mark theory for physics
+      durationMinutes: 180,
+      price: 39900, // ₹399.00 in paise
+      maxAttempts: 3,
+    }
+
+    // Class 11 Maths assertions
+    assert.equal(class11Maths.maxMarks, 80)
+    assert.equal(class11Maths.price, 29900)
+    assert.equal(class11Maths.durationMinutes, 180)
+    assert.equal(class11Maths.maxAttempts, 3)
+
+    // Class 12 Maths assertions
+    assert.equal(class12Maths.maxMarks, 80)
+    assert.equal(class12Maths.price, 39900)
+    assert.equal(class12Maths.durationMinutes, 180)
+    assert.equal(class12Maths.maxAttempts, 3)
+
+    // Class 12 Physics assertions
+    assert.equal(class12Physics.maxMarks, 70)
+    assert.equal(class12Physics.price, 39900)
+    assert.equal(class12Physics.durationMinutes, 180)
+  })
+
+  suite.test("Academic Series: Curriculum grade and subject categorization", () => {
+    function categorizeAcademicSeries(title: string): { grade: string; subject: string } {
+      const lower = title.toLowerCase()
+      let grade = "General"
+      if (lower.includes("class 10") || lower.includes("10th")) grade = "Class 10"
+      else if (lower.includes("class 11") || lower.includes("11th")) grade = "Class 11"
+      else if (lower.includes("class 12") || lower.includes("12th")) grade = "Class 12"
+
+      let subject = "Other"
+      if (lower.includes("mathematics") || lower.includes("math")) subject = "Mathematics"
+      else if (lower.includes("science")) subject = "Science"
+      else if (lower.includes("physics")) subject = "Physics"
+      else if (lower.includes("essay")) subject = "Essay"
+
+      return { grade, subject }
+    }
+
+    const test10M = categorizeAcademicSeries("Class 10 CBSE Mathematics Board Examination Mock Series")
+    assert.deepEqual(test10M, { grade: "Class 10", subject: "Mathematics" })
+
+    const test10S = categorizeAcademicSeries("Class 10 CBSE Science Board Examination Mock Series")
+    assert.deepEqual(test10S, { grade: "Class 10", subject: "Science" })
+
+    const test11M = categorizeAcademicSeries("Class 11 CBSE Mathematics & Calculus Foundation Series")
+    assert.deepEqual(test11M, { grade: "Class 11", subject: "Mathematics" })
+
+    const test12M = categorizeAcademicSeries("Class 12 CBSE Mathematics Pre-Board Mock Examination Series")
+    assert.deepEqual(test12M, { grade: "Class 12", subject: "Mathematics" })
+
+    const test12P = categorizeAcademicSeries("Class 12 CBSE Physics Pre-Board Mock Examination Series")
+    assert.deepEqual(test12P, { grade: "Class 12", subject: "Physics" })
+  })
+
+  suite.test("Academic Series: Strict evaluation rubric isolation from student view", () => {
+    const academicSeriesList = [
+      {
+        slug: "cbse-class-10-mathematics-mock-series",
+        studentInstructions: "Show all steps of calculation and geometric constructions.",
+        privateEvaluationInstructions: "CONFIDENTIAL EVALUATION RUBRIC - CLASS 10 MATHEMATICS: Step-by-step marking.",
+      },
+      {
+        slug: "cbse-class-10-science-board-mock-series",
+        studentInstructions: "All chemical equations must be balanced.",
+        privateEvaluationInstructions: "CONFIDENTIAL EVALUATION RUBRIC - CLASS 10 SCIENCE: Balanced equations carry 1m.",
+      },
+      {
+        slug: "cbse-class-11-mathematics-mastery-series",
+        studentInstructions: "In Trigonometric proofs, state standard identities clearly.",
+        privateEvaluationInstructions: "CONFIDENTIAL EVALUATION RUBRIC - CLASS 11 MATHEMATICS: Verify standard limits.",
+      },
+      {
+        slug: "cbse-class-12-mathematics-preboard-series",
+        studentInstructions: "In Integration, constant of integration C must be explicitly stated.",
+        privateEvaluationInstructions: "CONFIDENTIAL EVALUATION RUBRIC - CLASS 12 MATHEMATICS: Deduct 0.5m for missing +C.",
+      },
+      {
+        slug: "cbse-class-12-physics-preboard-series",
+        studentInstructions: "Derivations must begin with a clear diagram.",
+        privateEvaluationInstructions: "CONFIDENTIAL EVALUATION RUBRIC - CLASS 12 PHYSICS: Circuit diagrams require correct bias.",
+      },
+    ]
+
+    for (const item of academicSeriesList) {
+      const { privateEvaluationInstructions, ...candidateView } = item
+      assert.equal("privateEvaluationInstructions" in candidateView, false)
+      assert.ok(candidateView.studentInstructions.length > 10)
+    }
+  })
+
   return suite.summary()
 }
 

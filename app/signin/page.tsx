@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, Suspense } from "react"
+import { useState, useEffect, Suspense } from "react"
 import Link from "next/link"
-import { signIn } from "next-auth/react"
+import { signIn, getSession, useSession } from "next-auth/react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,17 +10,29 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Eye, EyeOff, Loader2, ArrowLeft, ShieldCheck, User } from "lucide-react"
+import { resolvePostLoginTarget } from "@/lib/auth-guard"
 
 function SignInForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const callbackUrl = searchParams.get("callbackUrl") || "/student/dashboard"
+  const { data: session, status } = useSession()
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+
+  // Redirect if user is already authenticated
+  useEffect(() => {
+    if (status === "authenticated" && session?.user) {
+      if (session.user.role === "ADMIN") {
+        router.replace("/admin")
+      } else {
+        router.replace("/student/dashboard")
+      }
+    }
+  }, [status, session, router])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -40,7 +52,18 @@ function SignInForm() {
         return
       }
 
-      router.push(callbackUrl)
+      // Fetch freshly signed-in session to obtain the user's role
+      const freshSession = await getSession()
+      const role = freshSession?.user?.role
+      const paramCallback = searchParams.get("callbackUrl")
+      let targetUrl = resolvePostLoginTarget(role, paramCallback)
+
+      // Fallback for offline demo credentials if role was not yet in session
+      if (!role && email.toLowerCase().trim() === "admin@verityra.com") {
+        targetUrl = "/admin"
+      }
+
+      router.push(targetUrl)
       router.refresh()
     } catch {
       setError("An unexpected error occurred. Please try again.")
@@ -143,7 +166,7 @@ function SignInForm() {
         <Button
           type="button"
           variant="outline"
-          onClick={() => signIn("google", { callbackUrl })}
+          onClick={() => signIn("google", { callbackUrl: searchParams.get("callbackUrl") || "/dashboard" })}
           className="w-full border-slate-200 text-sm font-semibold h-12 rounded-xl hover:bg-slate-50 flex items-center justify-center gap-3 text-slate-700 shadow-xs"
         >
           <svg className="h-5 w-5" viewBox="0 0 24 24">

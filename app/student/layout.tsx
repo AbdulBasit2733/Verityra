@@ -1,4 +1,4 @@
-import { getCurrentUser } from "@/lib/auth-guard"
+import { requireStudent } from "@/lib/auth-guard"
 import { PortalShell } from "@/components/portal-shell"
 
 export default async function StudentLayout({
@@ -6,13 +6,13 @@ export default async function StudentLayout({
 }: {
   children: React.ReactNode
 }) {
-  const user = await getCurrentUser()
+  const user = await requireStudent("/student/dashboard")
 
   return (
     <PortalShell
       role="STUDENT"
-      userName={user?.name}
-      userEmail={user?.email}
+      userName={user.name}
+      userEmail={user.email}
     >
       {children}
     </PortalShell>

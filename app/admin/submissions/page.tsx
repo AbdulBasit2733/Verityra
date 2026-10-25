@@ -6,20 +6,36 @@ import {
 
 export const dynamic = "force-dynamic"
 
-export default async function AdminSubmissionsPage() {
+export default async function AdminSubmissionsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string; limit?: string }>
+}) {
+  const params = await searchParams
+  const page = parseInt(params.page || '1', 10)
+  const limit = parseInt(params.limit || '25', 10)
+  const skip = (page - 1) * limit
+
   const dbConnected = await isDatabaseConnected()
 
   let submissions: any[] = []
+  let totalCount = 0
 
   if (dbConnected) {
-    submissions = await prisma.submission.findMany({
-      include: {
-        user: { select: { name: true, email: true } },
-        testSeries: { select: { title: true, maxMarks: true } },
-        evaluation: true,
-      },
-      orderBy: { submittedAt: "desc" },
-    })
+    // Fetch submissions and total count in parallel for better performance
+    [submissions, totalCount] = await Promise.all([
+      prisma.submission.findMany({
+        skip,
+        take: limit,
+        include: {
+          user: { select: { name: true, email: true } },
+          testSeries: { select: { title: true, maxMarks: true } },
+          evaluation: { select: { status: true, totalMarksAwarded: true, maxMarks: true, uncertaintyFlag: true } },
+        },
+        orderBy: { submittedAt: "desc" },
+      }),
+      prisma.submission.count(),
+    ])
   } else {
     submissions = [
       {
@@ -36,6 +52,7 @@ export default async function AdminSubmissionsPage() {
         },
       },
     ]
+    totalCount = 1
   }
 
   const rows: AdminSubmissionRow[] = submissions.map((sub) => ({
@@ -52,5 +69,14 @@ export default async function AdminSubmissionsPage() {
     submittedAt: new Date(sub.submittedAt).toISOString(),
   }))
 
-  return <AdminSubmissionsClient submissions={rows} />
+  const totalPages = Math.ceil(totalCount / limit)
+
+  return (
+    <AdminSubmissionsClient
+      submissions={rows}
+      currentPage={page}
+      totalPages={totalPages}
+      pageSize={limit}
+    />
+  )
 }

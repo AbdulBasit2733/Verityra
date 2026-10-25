@@ -51,7 +51,6 @@ export async function POST(req: Request) {
     // In production with an email provider (Resend, SendGrid, SMTP), send email here.
     // For logging/dev, we log the reset link safely without revealing in public response.
     const resetUrl = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/reset-password?token=${rawToken}`
-    console.log(`[AUTH] Password reset link generated for ${normalizedEmail}: ${resetUrl}`)
 
     return NextResponse.json({
       ...genericResponse,

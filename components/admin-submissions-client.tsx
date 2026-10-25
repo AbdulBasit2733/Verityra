@@ -26,8 +26,14 @@ export interface AdminSubmissionRow {
 
 export function AdminSubmissionsClient({
   submissions,
+  currentPage,
+  totalPages,
+  pageSize,
 }: {
   submissions: AdminSubmissionRow[]
+  currentPage?: number
+  totalPages?: number
+  pageSize?: number
 }) {
   const flaggedCount = submissions.filter(
     (s) => s.uncertaintyFlag || s.status === "REVIEW_REQUIRED"

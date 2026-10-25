@@ -111,7 +111,7 @@ export function Navbar() {
                   <DropdownMenuItem
                     render={
                       <Link
-                        href="/student/profile"
+                        href={isAdmin ? "/admin/profile" : "/student/profile"}
                         className="flex items-center cursor-pointer py-1.5 px-2 text-xs rounded-lg text-slate-700 hover:text-[#2A6AED] hover:bg-blue-50/50"
                       />
                     }
@@ -235,6 +235,17 @@ export function Navbar() {
                 >
                   <Button className="w-full h-10 rounded-lg bg-[#2A6AED] hover:bg-[#1E55C7] text-white text-xs font-semibold">
                     {isAdmin ? "Admin Panel" : "Student Dashboard"}
+                  </Button>
+                </Link>
+                <Link
+                  href={isAdmin ? "/admin/profile" : "/student/profile"}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Button
+                    variant="outline"
+                    className="w-full h-10 rounded-lg text-xs font-semibold border-slate-200 text-slate-700 hover:bg-slate-50"
+                  >
+                    Profile Settings
                   </Button>
                 </Link>
                 <Button

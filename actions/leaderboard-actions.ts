@@ -65,6 +65,7 @@ export async function getLeaderboardAction(testSeriesId?: string): Promise<Leade
   }
 
   // Find evaluations for test series where results are published
+  // OPTIMIZED: Use select instead of include to fetch only required fields
   const evaluations = await prisma.evaluation.findMany({
     where: {
       status: {
@@ -77,15 +78,16 @@ export async function getLeaderboardAction(testSeriesId?: string): Promise<Leade
         },
       },
     },
-    include: {
+    select: {
+      totalMarksAwarded: true,
+      maxMarks: true,
+      percentage: true,
       submission: {
-        include: {
-          user: {
-            select: { name: true, email: true },
-          },
-          testSeries: {
-            select: { title: true, maxMarks: true },
-          },
+        select: {
+          attemptNumber: true,
+          submittedAt: true,
+          user: { select: { name: true } },
+          testSeries: { select: { title: true } },
         },
       },
     },
@@ -93,7 +95,7 @@ export async function getLeaderboardAction(testSeriesId?: string): Promise<Leade
       { totalMarksAwarded: "desc" },
       { submission: { submittedAt: "asc" } }, // Tie breaker: earlier submission ranks higher
     ],
-    take: 50,
+    take: 100, // Increased from 50 for better coverage
   })
 
   return evaluations.map((item, index) => ({
@@ -104,6 +106,6 @@ export async function getLeaderboardAction(testSeriesId?: string): Promise<Leade
     maxMarks: item.maxMarks,
     percentage: item.percentage,
     attemptNumber: item.submission.attemptNumber,
-    submittedAt: item.submission.submittedAt.toLocaleDateString(),
+    submittedAt: item.submission.submittedAt.toISOString(),
   }))
 }

@@ -323,3 +323,86 @@ export async function uploadAnswerSheetTemplateAction(formData: FormData): Promi
   revalidatePath(`/admin/test-series/${testSeriesId}`)
   return { success: true, message: "Answer sheet template uploaded successfully." }
 }
+
+/**
+ * Server Action: Validate Test Series Deletion (Pre-flight Check)
+ * Checks if a test series has active registrations before allowing deletion
+ */
+export async function validateTestSeriesDeletionAction(
+  testSeriesId: string
+): Promise<ActionResult<{ canDelete: boolean; activeRegistrations: number }>> {
+  const user = await getCurrentUser()
+  if (!user || user.role !== Role.ADMIN) {
+    return { success: false, error: "Unauthorized. Admin privileges required." }
+  }
+
+  const dbConnected = await isDatabaseConnected()
+  if (!dbConnected) {
+    return {
+      success: false,
+      error: "Database connection required to validate deletion.",
+    }
+  }
+
+  const activeRegistrations = await prisma.testRegistration.count({
+    where: {
+      testSeriesId,
+      status: "ACTIVE",
+    },
+  })
+
+  if (activeRegistrations > 0) {
+    return {
+      success: false,
+      error: `Cannot delete test series with ${activeRegistrations} active registration${activeRegistrations > 1 ? "s" : ""}. Please archive instead or cancel all registrations first.`,
+      data: { canDelete: false, activeRegistrations },
+    }
+  }
+
+  return {
+    success: true,
+    message: "Test series can be safely deleted.",
+    data: { canDelete: true, activeRegistrations: 0 },
+  }
+}
+
+/**
+ * Server Action: Archive Test Series (Soft Delete)
+ * Safer alternative to deletion - marks test series as ARCHIVED
+ */
+export async function archiveTestSeriesAction(testSeriesId: string): Promise<ActionResult> {
+  const user = await getCurrentUser()
+  if (!user || user.role !== Role.ADMIN) {
+    return { success: false, error: "Unauthorized. Admin privileges required." }
+  }
+
+  const dbConnected = await isDatabaseConnected()
+  if (!dbConnected) {
+    return {
+      success: false,
+      error: "Database connection required.",
+    }
+  }
+
+  await prisma.testSeries.update({
+    where: { id: testSeriesId },
+    data: {
+      status: TestSeriesStatus.ARCHIVED,
+      isPublished: false,
+    },
+  })
+
+  await prisma.auditLog.create({
+    data: {
+      adminId: user.id,
+      action: "TEST_SERIES_ARCHIVED",
+      targetType: "TestSeries",
+      targetId: testSeriesId,
+      details: "Test series archived instead of deletion (safer preservation).",
+    },
+  })
+
+  revalidatePath("/admin/test-series")
+  revalidatePath(`/admin/test-series/${testSeriesId}`)
+  return { success: true, message: "Test series archived successfully." }
+}

@@ -25,7 +25,22 @@ export async function GET(req: NextRequest) {
     const safeFilePath = path.normalize(file).replace(/^(\.\.[\/\\])+/, "")
     const fullPath = path.join(LOCAL_STORAGE_DIR, bucket, safeFilePath)
 
-    // Authorization check for student submissions: only the owner or an admin can access
+    // Authorization checks based on file type
+    // 1. Question papers, model answers, and templates are ADMIN-ONLY
+    if (
+      safeFilePath.startsWith("papers/") ||
+      safeFilePath.startsWith("model-answers/") ||
+      safeFilePath.startsWith("templates/")
+    ) {
+      if (user.role !== Role.ADMIN) {
+        return NextResponse.json(
+          { error: "Forbidden: Admin access required for question papers, model answers, and templates" },
+          { status: 403 }
+        )
+      }
+    }
+
+    // 2. Student submissions: only the owner or an admin can access
     if (safeFilePath.startsWith("submissions/")) {
       const parts = safeFilePath.split("/")
       const ownerUserId = parts[2] // submissions/[testSeriesId]/[userId]/...

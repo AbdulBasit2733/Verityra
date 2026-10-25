@@ -1,13 +1,9 @@
-"use client"
-
 import * as React from "react"
-import { useRouter } from "next/navigation"
-import { RotateCcw } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { PageHeaderRefreshButton } from "./page-header-refresh"
 
 export interface PageHeaderProps {
-  icon: React.ComponentType<{ className?: string }>
+  icon?: React.ComponentType<{ className?: string }> | React.ReactNode
   title: string
   subtitle?: string
   badgeText?: string
@@ -17,7 +13,7 @@ export interface PageHeaderProps {
 }
 
 export function PageHeader({
-  icon: Icon,
+  icon,
   title,
   subtitle,
   badgeText,
@@ -25,16 +21,7 @@ export function PageHeader({
   children,
   className,
 }: PageHeaderProps) {
-  const router = useRouter()
-  const [isRefreshing, setIsRefreshing] = React.useState(false)
-
-  const handleRefresh = () => {
-    setIsRefreshing(true)
-    router.refresh()
-    setTimeout(() => {
-      setIsRefreshing(false)
-    }, 600)
-  }
+  const IconComponent = typeof icon === "function" ? icon : null
 
   return (
     <div
@@ -45,9 +32,15 @@ export function PageHeader({
     >
       {/* Left: Icon Tile + Title + Subtitle Stack */}
       <div className="flex items-center gap-3.5 min-w-0">
-        <div className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl bg-[#2A6AED] text-white shadow-xs shadow-blue-500/20 shrink-0">
-          <Icon className="h-6 w-6 sm:h-7 sm:w-7" />
-        </div>
+        {icon && (
+          <div className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl bg-[#2A6AED] text-white shadow-xs shadow-blue-500/20 shrink-0">
+            {IconComponent ? (
+              <IconComponent className="h-6 w-6 sm:h-7 sm:w-7" />
+            ) : React.isValidElement(icon) ? (
+              icon
+            ) : null}
+          </div>
+        )}
         <div className="min-w-0 space-y-0.5">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight truncate">
@@ -69,24 +62,7 @@ export function PageHeader({
 
       {/* Right: Refresh button + Action CTA buttons */}
       <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 shrink-0">
-        {showRefresh && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-            className="h-10 px-3.5 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-2xs"
-          >
-            <RotateCcw
-              className={cn(
-                "h-3.5 w-3.5 mr-1.5 transition-transform",
-                isRefreshing && "animate-spin"
-              )}
-            />
-            Refresh
-          </Button>
-        )}
+        {showRefresh && <PageHeaderRefreshButton />}
         {children}
       </div>
     </div>

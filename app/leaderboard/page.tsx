@@ -1,13 +1,14 @@
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
-import { getLeaderboardAction } from "@/actions/leaderboard-actions"
+import { getCachedLeaderboard } from "@/lib/cache"
 import { Badge } from "@/components/ui/badge"
 import { LeaderboardClient } from "@/components/leaderboard-client"
 
-export const dynamic = "force-dynamic"
+// Enable ISR with 5-minute revalidation (matches cache TTL)
+export const revalidate = 300
 
 export default async function LeaderboardPage() {
-  const rankings = await getLeaderboardAction()
+  const rankings = await getCachedLeaderboard()
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50/60 dark:bg-[#0B1120]">

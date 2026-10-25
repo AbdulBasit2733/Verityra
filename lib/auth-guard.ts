@@ -30,8 +30,13 @@ export async function requireAdmin(returnUrl?: string) {
 
 export async function requireStudent(returnUrl?: string) {
   const user = await requireAuth(returnUrl)
-  if (user.role !== Role.STUDENT && user.role !== Role.ADMIN) {
+  if (user.role === Role.ADMIN) {
+    redirect("/admin")
+  }
+  if (user.role !== Role.STUDENT) {
     redirect("/unauthorized")
   }
   return user
 }
+
+export { resolvePostLoginTarget } from "./auth-routing"

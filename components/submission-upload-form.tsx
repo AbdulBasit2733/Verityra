@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { useConfirm } from "@/components/providers/confirm-dialog-provider"
 import { useGlobalError } from "@/components/providers/error-dialog-provider"
 import { toast } from "@/components/ui/sonner"
-import { UploadCloud, Loader2, Lock, FileText } from "lucide-react"
+import { UploadCloud, Loader2, Lock, FileText, CheckCircle2, AlertCircle, Image as ImageIcon, FileCheck } from "lucide-react"
 import { submitAnswerSheetAction } from "@/actions/submission-actions"
 
 export function SubmissionUploadForm({
@@ -25,9 +25,39 @@ export function SubmissionUploadForm({
   const { showError } = useGlobalError()
   const [file, setFile] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [previewAcknowledged, setPreviewAcknowledged] = useState(false)
 
   const isLimitReached = attemptsUsed >= maxAttempts
   const nextAttempt = attemptsUsed + 1
+
+  // Generate preview when file is selected
+  useEffect(() => {
+    if (!file) {
+      setPreviewUrl(null)
+      setPreviewAcknowledged(false)
+      return
+    }
+
+    // For images, create an object URL for preview
+    if (file.type.startsWith("image/")) {
+      const url = URL.createObjectURL(file)
+      setPreviewUrl(url)
+
+      // Cleanup URL when component unmounts or file changes
+      return () => URL.revokeObjectURL(url)
+    }
+
+    // For PDFs, no preview URL needed (will show metadata instead)
+    setPreviewUrl(null)
+  }, [file])
+
+  // Helper: Estimate PDF page count based on file size (rough heuristic)
+  const estimatePageCount = (fileSize: number): number => {
+    // Average PDF page size: ~100-200KB for scanned handwriting
+    const avgPageSize = 150 * 1024 // 150KB
+    return Math.max(1, Math.round(fileSize / avgPageSize))
+  }
 
   if (isLimitReached) {
     return (
@@ -100,8 +130,7 @@ export function SubmissionUploadForm({
       setFile(null)
       setLoading(false)
       router.refresh()
-    } catch (err) {
-      console.error(err)
+    } catch {
       showError({
         title: "Unexpected Upload Error",
         message: "An unexpected network or server error occurred during submission.",
@@ -160,14 +189,94 @@ export function SubmissionUploadForm({
           </div>
         </label>
 
+        {/* File Preview Section */}
+        {file && (
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-4 space-y-3">
+            <div className="flex items-start gap-3">
+              <div className="h-10 w-10 rounded-lg bg-blue-100 dark:bg-blue-950 flex items-center justify-center shrink-0">
+                {file.type === "application/pdf" ? (
+                  <FileCheck className="h-5 w-5 text-[#2A6AED]" />
+                ) : (
+                  <ImageIcon className="h-5 w-5 text-[#2A6AED]" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
+                  {file.name}
+                </h4>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-slate-600 dark:text-slate-400">
+                  <span>{(file.size / (1024 * 1024)).toFixed(2)} MB</span>
+                  <span>•</span>
+                  <span>{file.type === "application/pdf" ? "PDF Document" : "Image File"}</span>
+                  {file.type === "application/pdf" && (
+                    <>
+                      <span>•</span>
+                      <span>~{estimatePageCount(file.size)} pages (estimated)</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Image Preview Thumbnail */}
+            {previewUrl && file.type.startsWith("image/") && (
+              <div className="rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden bg-white dark:bg-slate-800">
+                <img
+                  src={previewUrl}
+                  alt="Preview of uploaded file"
+                  className="w-full h-auto max-h-64 object-contain"
+                />
+              </div>
+            )}
+
+            {/* Legibility Checklist */}
+            <div className="space-y-2 pt-2 border-t border-slate-200 dark:border-slate-700">
+              <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                Before submitting, verify:
+              </p>
+              <ul className="space-y-1.5 text-xs text-slate-600 dark:text-slate-400">
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                  <span>All pages are upright (not rotated or upside-down)</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                  <span>Handwriting is clear and legible (no blur, sufficient lighting)</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                  <span>All answer sheet pages are included (no missing pages)</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <AlertCircle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                  <span className="font-medium">Illegible submissions may receive reduced scores</span>
+                </li>
+              </ul>
+
+              {/* Acknowledgment Checkbox */}
+              <label className="flex items-start gap-2.5 pt-2 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={previewAcknowledged}
+                  onChange={(e) => setPreviewAcknowledged(e.target.checked)}
+                  className="h-4 w-4 mt-0.5 rounded border-slate-300 text-[#2A6AED] focus:ring-[#2A6AED] cursor-pointer"
+                />
+                <span className="text-xs font-medium text-slate-700 dark:text-slate-300 group-hover:text-[#2A6AED] transition-colors">
+                  I confirm all pages are legible, upright, and complete
+                </span>
+              </label>
+            </div>
+          </div>
+        )}
+
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <p className="text-[11px] text-[#64748B]">
             * Submitting consumes 1 attempt allowance. Invalid file formats rejected prior to storage do not consume an attempt.
           </p>
           <Button
             type="submit"
-            disabled={!file || loading}
-            className="w-full sm:w-auto bg-[#2A6AED] hover:bg-[#1E55C7] text-white font-semibold text-xs sm:text-sm h-10 px-6 rounded-lg shrink-0"
+            disabled={!file || loading || !previewAcknowledged}
+            className="w-full sm:w-auto bg-[#2A6AED] hover:bg-[#1E55C7] text-white font-semibold text-xs sm:text-sm h-10 px-6 rounded-lg shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? (
               <>

@@ -4,6 +4,7 @@ import * as React from "react"
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, X } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
+import { formatDate, formatTime, formatDateTimeFull } from "@/lib/format"
 
 export type DateFilterPreset = "ALL" | "TODAY" | "LAST_7_DAYS" | "LAST_30_DAYS" | "CUSTOM"
 
@@ -267,20 +268,13 @@ export function FormattedDate({
   const parsed = new Date(date)
   if (isNaN(parsed.getTime())) return <span className="text-slate-400 text-xs">—</span>
 
-  const formattedDate = parsed.toLocaleDateString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  })
-
-  const formattedTime = parsed.toLocaleTimeString("en-IN", {
-    hour: "2-digit",
-    minute: "2-digit",
-  })
+  const formattedDate = formatDate(parsed)
+  const formattedTime = formatTime(parsed)
+  const fullDateTime = formatDateTimeFull(parsed)
 
   return (
     <span
-      title={parsed.toLocaleString()}
+      title={fullDateTime}
       className={cn("inline-flex items-center gap-1.5 text-xs text-slate-600 font-medium", className)}
     >
       <CalendarIcon className="h-3 w-3 text-slate-400 shrink-0" />

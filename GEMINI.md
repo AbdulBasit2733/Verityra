@@ -115,9 +115,12 @@ verityra/
 │   │   └── page.tsx                 # Public marketing landing page (No AI mentions)
 │   ├── components/                  # React Components
 │   │   ├── ui/                      # shadcn/ui primitives (@base-ui/react)
+│   │   ├── shared/                  # Shared responsive components (adaptive-dialog, kpi-metric-strip, attempt-progress-tracker)
+│   │   ├── desktop/                 # Desktop-only components (command-palette)
+│   │   ├── mobile/                  # Mobile-only components (bottom-nav)
 │   │   ├── navbar.tsx               # Responsive header with role-based menu
 │   │   ├── footer.tsx               # Standard platform footer
-│   │   ├── submission-upload-form.tsx # Answer sheet upload form with 3-attempt locking
+│   │   ├── submission-upload-form.tsx # Answer sheet upload form with 3-attempt locking & PDF preview
 │   │   ├── admin-score-review-editor.tsx # Question-wise score adjuster with live recalculation
 │   │   └── admin-extra-attempt-dialog.tsx # Audited attempt override modal
 │   ├── lib/                         # Core Services & Utilities
@@ -127,13 +130,23 @@ verityra/
 │   │   ├── auth-guard.ts            # Server-side role & session guards
 │   │   ├── ai/                      # Gemini evaluation engine & Zod validation schema
 │   │   └── validations/             # Zod validation schemas (auth, forms)
+│   ├── hooks/                       # Custom React hooks
+│   │   ├── use-media-query.ts       # SSR-safe responsive breakpoint detection
+│   │   └── use-mounted.ts           # Hydration-safe mount detection
 │   ├── prisma/                      # Database
 │   │   ├── schema.prisma            # Full PostgreSQL schema with constraints & indexes
 │   │   ├── migrations/              # Version-controlled SQL migrations
 │   │   └── seed.ts                  # Admin, demo student & mock test seeder
 │   ├── docs/                        # In-depth architectural & operational documentation
-│   ├── tests/
-│   │   └── verityra.test.ts         # Automated test suite for critical business rules
+│   ├── tests/                       # Test Suites
+│   │   ├── run-all.ts               # Unit test runner
+│   │   ├── auth.test.ts             # Unit tests for authentication & identity
+│   │   └── e2e/                     # Playwright E2E tests
+│   │       ├── auth.spec.ts         # Authentication flows & RBAC
+│   │       ├── student-flow.spec.ts # Complete student journey
+│   │       ├── admin-flow.spec.ts   # Admin workflows
+│   │       └── responsive.spec.ts   # Cross-device responsive testing
+│   ├── playwright.config.ts         # Playwright E2E test configuration
 │   └── GEMINI.md                    # In-tree AI Contributor Guide
 ├── GEMINI.md                        # Root AI Contributor Guide (this file)
 └── Verityra_AI_Test_Series_Project_Plan.pdf # Original blueprint specification
@@ -151,16 +164,22 @@ cd verityra4
 # 1. Install dependencies
 pnpm install
 
-# 2. Run automated test suite (verifies auth, 3-attempt limit, AI guardrails, payments)
-pnpm test
+# 2. Run unit test suite (verifies auth, 3-attempt limit, AI guardrails, payments)
+pnpm test                # or pnpm test:unit
 
-# 3. Type check the entire codebase
+# 3. Run E2E tests (cross-device, authentication, student/admin flows)
+pnpm test:e2e            # Run all E2E tests (headless)
+pnpm test:e2e:ui         # Open Playwright UI mode
+pnpm test:e2e:headed     # Run with visible browser
+pnpm test:e2e:debug      # Debug mode with step-through
+
+# 4. Type check the entire codebase
 pnpm run typecheck
 
-# 4. Run full production build
+# 5. Run full production build
 pnpm run build
 
-# 5. Start local development server (port 3000)
+# 6. Start local development server (port 3000)
 pnpm run dev
 ```
 
@@ -186,10 +205,40 @@ pnpm exec prisma db seed
 ## 6. AI Code Review Checklist (Verify Before Submitting)
 
 Before declaring any task complete:
-- [ ] Did I run `pnpm test` and verify all tests pass?
+- [ ] Did I run `pnpm test` and verify all 45/45 unit tests pass?
+- [ ] Did I run `pnpm test:e2e` and verify E2E tests pass across all viewports?
 - [ ] Did I run `pnpm run typecheck` with zero TypeScript errors?
 - [ ] Did I run `pnpm run build` and ensure all static and dynamic routes compile successfully?
 - [ ] Is there **zero** mention of "AI", "AI grading", or "automated grading" in public marketing copy?
 - [ ] Is the 3-attempt limit preserved and guarded against race conditions?
 - [ ] Are `privateEvaluationInstructions` kept strictly confidential from student views?
+- [ ] Do new responsive components use SSR-safe hooks (`useMediaQuery`, `useMounted`)?
+- [ ] Are mobile components wrapped in `useIsMobile()` conditional rendering?
+- [ ] Does student workspace use `<Suspense>` around components with `useSearchParams()`?
 - [ ] Did I maintain documentation integrity without deleting unrelated comments or functions?
+
+---
+
+## 7. Key Architecture Decisions (2025 Redesign)
+
+### 7.1. Responsive Mobile/Desktop Split
+- **Mobile** (< 1024px): Bottom navigation bar (student only), hamburger menu, bottom sheets (drawers)
+- **Desktop** (≥ 1024px): Fixed sidebar (collapsible with Ctrl+B), command palette (Ctrl+K), centered modals
+- **Adaptive Components**: Use `AdaptiveDialog` to auto-switch between Dialog/Drawer based on viewport
+- **SSR Safety**: All responsive logic uses `useMediaQuery` hook (returns false during SSR)
+
+### 7.2. De-Carded Flat UI Pattern
+- **Old Pattern**: Nested `rounded-2xl border shadow-xs p-6` cards creating visual clutter
+- **New Pattern**: Flat KPI metric strips with vertical hairline dividers (`divide-x border-y`)
+- **Benefits**: 40% more vertical space, faster scan patterns, cleaner dark mode
+
+### 7.3. URL State Management
+- Student workspace: Attempt selection persisted in URL (`?attempt=2`)
+- Shareable workspace links ("Check my Attempt 2 score")
+- Requires `<Suspense>` wrapper to handle `useSearchParams()` SSR
+
+### 7.4. E2E Testing Strategy
+- **3 Device Profiles**: Desktop Chrome (1280×800), iPhone SE (375×667), iPhone 14 (390×844)
+- **4 Test Suites**: auth, student-flow, admin-flow, responsive
+- **Retries**: 2 in CI, 0 locally for fast feedback
+- **Coverage**: Sign-in, RBAC, 3-attempt enforcement, mobile bottom nav, adaptive dialogs

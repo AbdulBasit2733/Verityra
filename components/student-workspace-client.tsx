@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
@@ -13,6 +14,7 @@ import { PageHeader } from "@/components/ui/page-header"
 import { KpiStatCard } from "@/components/ui/kpi-stat-card"
 import { SubmissionUploadForm } from "@/components/submission-upload-form"
 import { cn } from "@/lib/utils"
+import { AttemptProgressTracker } from "@/components/shared/attempt-progress-tracker"
 import {
   AlertTriangle,
   ArrowLeft,
@@ -84,16 +86,37 @@ export function StudentWorkspaceClient({
   templates: WorkspaceResourceItem[]
   submissions: WorkspaceSubmissionItem[]
 }) {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
   const attemptsRemaining = Math.max(0, maxAttempts - attemptsUsed)
-  const [selectedAttemptNumber, setSelectedAttemptNumber] = React.useState<number>(
-    submissions[0]?.attemptNumber || 1
+
+  // Read attempt number from URL, fallback to latest submission or 1
+  const attemptFromUrl = searchParams.get("attempt")
+  const defaultAttempt = submissions[0]?.attemptNumber || 1
+  const selectedAttemptNumber = attemptFromUrl
+    ? parseInt(attemptFromUrl, 10)
+    : defaultAttempt
+
+  // Function to update URL with new attempt number (shallow update, no scroll)
+  const setSelectedAttemptNumber = React.useCallback(
+    (attemptNumber: number) => {
+      const params = new URLSearchParams(searchParams.toString())
+      params.set("attempt", attemptNumber.toString())
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+    },
+    [searchParams, router, pathname]
   )
 
+  // Validate that selected attempt exists in submissions
   React.useEffect(() => {
-    if (submissions.length > 0 && !submissions.some((s) => s.attemptNumber === selectedAttemptNumber)) {
+    if (
+      submissions.length > 0 &&
+      !submissions.some((s) => s.attemptNumber === selectedAttemptNumber)
+    ) {
       setSelectedAttemptNumber(submissions[0].attemptNumber)
     }
-  }, [submissions, selectedAttemptNumber])
+  }, [submissions, selectedAttemptNumber, setSelectedAttemptNumber])
 
   const activeSubmission =
     submissions.find((s) => s.attemptNumber === selectedAttemptNumber) || submissions[0]
@@ -260,26 +283,31 @@ export function StudentWorkspaceClient({
         />
       </div>
 
-      {/* Progress Bar Strip */}
-      <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs space-y-2">
+      {/* Attempt Progress Tracker */}
+      <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs space-y-4">
         <div className="flex items-center justify-between text-xs">
           <span className="font-bold text-slate-900 dark:text-slate-100">
-            3-Attempt Guarantee Progression ({attemptsUsed} of {maxAttempts} consumed)
+            {maxAttempts > 3 ? "Extended Attempt Progression" : "3-Attempt Guarantee Progression"} ({attemptsUsed} of {maxAttempts} consumed)
           </span>
           <span className="font-bold text-[#2A6AED] dark:text-blue-400">
             {attemptsRemaining} remaining
           </span>
         </div>
+
+        {/* Dynamic Attempt Progress Nodes */}
+        <AttemptProgressTracker
+          attemptsUsed={attemptsUsed}
+          maxAttempts={maxAttempts}
+          submissions={submissions}
+          className="py-2"
+        />
+
+        {/* Progress Bar (Fallback Visual) */}
         <Progress
           value={attemptsUsed}
           max={maxAttempts}
           indicatorClassName={attemptsRemaining === 0 ? "bg-amber-500" : "bg-[#2A6AED]"}
         />
-        <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400 dark:text-slate-500 pt-0.5">
-          <span>Attempt 1: Diagnostic Baseline</span>
-          <span>Attempt 2: Rubric Refinement</span>
-          <span>Attempt 3: Exam Mastery</span>
-        </div>
       </div>
 
       {/* Workspace Tabs */}

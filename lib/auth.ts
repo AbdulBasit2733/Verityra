@@ -5,6 +5,16 @@ import { prisma, isDatabaseConnected } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
 import { Role, UserStatus } from "@prisma/client"
 
+const credentialsProviderFn =
+  typeof CredentialsProvider === "function"
+    ? CredentialsProvider
+    : (CredentialsProvider as unknown as { default: typeof CredentialsProvider }).default
+
+const googleProviderFn =
+  typeof GoogleProvider === "function"
+    ? GoogleProvider
+    : (GoogleProvider as unknown as { default: typeof GoogleProvider }).default
+
 export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
@@ -17,14 +27,14 @@ export const authOptions: NextAuthOptions = {
   providers: [
     ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
       ? [
-          GoogleProvider({
+          googleProviderFn({
             clientId: process.env.GOOGLE_CLIENT_ID,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET,
             allowDangerousEmailAccountLinking: false,
           }),
         ]
       : []),
-    CredentialsProvider({
+    credentialsProviderFn({
       name: "Credentials",
       credentials: {
         email: { label: "Email", type: "email" },
@@ -66,36 +76,41 @@ export const authOptions: NextAuthOptions = {
           }
         }
 
-        // Demo / offline fallback for development before PostgreSQL is running
-        if (
-          normalizedEmail === (process.env.ADMIN_INITIAL_EMAIL || "admin@verityra.com").toLowerCase() &&
-          credentials.password === (process.env.ADMIN_INITIAL_PASSWORD || "AdminSecurePassword123!")
-        ) {
-          return {
-            id: "admin-demo-user-id",
-            email: normalizedEmail,
-            name: process.env.ADMIN_INITIAL_NAME || "Verityra Admin (Local Dev)",
-            image: null,
-            role: Role.ADMIN,
-            status: UserStatus.ACTIVE,
+        // Demo / offline fallback ONLY in development
+        if (process.env.NODE_ENV === "development") {
+          if (
+            normalizedEmail === (process.env.ADMIN_INITIAL_EMAIL || "admin@verityra.com").toLowerCase() &&
+            credentials.password === (process.env.ADMIN_INITIAL_PASSWORD || "AdminSecurePassword123!")
+          ) {
+            return {
+              id: "admin-demo-user-id",
+              email: normalizedEmail,
+              name: process.env.ADMIN_INITIAL_NAME || "Verityra Admin (Local Dev)",
+              image: null,
+              role: Role.ADMIN,
+              status: UserStatus.ACTIVE,
+            }
           }
+
+          if (
+            normalizedEmail === "student@verityra.com" &&
+            credentials.password === "StudentSecurePassword123!"
+          ) {
+            return {
+              id: "student-demo-user-id",
+              email: "student@verityra.com",
+              name: "Demo Student",
+              image: null,
+              role: Role.STUDENT,
+              status: UserStatus.ACTIVE,
+            }
+          }
+
+          throw new Error("Invalid email or password. (Database is currently offline, you can use demo credentials).")
         }
 
-        if (
-          normalizedEmail === "student@verityra.com" &&
-          credentials.password === "StudentSecurePassword123!"
-        ) {
-          return {
-            id: "student-demo-user-id",
-            email: "student@verityra.com",
-            name: "Demo Student",
-            image: null,
-            role: Role.STUDENT,
-            status: UserStatus.ACTIVE,
-          }
-        }
-
-        throw new Error("Invalid email or password. (Database is currently offline, you can use demo credentials).")
+        // In production, database connection is required
+        throw new Error("Database connection required. Please contact support if this issue persists.")
       },
     }),
   ],

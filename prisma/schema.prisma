@@ -72,6 +72,14 @@ enum WebhookStatus {
   FAILED
 }
 
+enum JobStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+  RETRYING
+}
+
 model User {
   id            String         @id @default(cuid())
   name          String?
@@ -187,6 +195,8 @@ model TestSeries {
   @@index([status])
   @@index([isPublished])
   @@index([slug])
+  @@index([resultsPublished]) // NEW - for leaderboard filtering
+  @@index([resultsPublished, id]) // NEW - covering index for leaderboard
 }
 
 model TestPaper {
@@ -334,12 +344,16 @@ model Submission {
   testSeries   TestSeries       @relation(fields: [testSeriesId], references: [id], onDelete: Cascade)
   user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   evaluation   Evaluation?
+  evaluationJob EvaluationJob?
 
   @@unique([registrationId, attemptNumber]) // Strict attempt atomicity constraint
   @@index([registrationId])
   @@index([userId])
   @@index([testSeriesId])
   @@index([status])
+  @@index([submittedAt]) // NEW - for sorting by submission time
+  @@index([testSeriesId, status, submittedAt]) // NEW - composite for admin filtering
+  @@index([userId, status]) // NEW - for student dashboard queries
 }
 
 model Evaluation {
@@ -366,6 +380,9 @@ model Evaluation {
 
   @@index([submissionId])
   @@index([status])
+  @@index([totalMarksAwarded]) // NEW - for leaderboard sorting
+  @@index([status, totalMarksAwarded]) // NEW - composite for filtered leaderboard
+  @@index([status, evaluatedAt]) // NEW - for pending review queue
 }
 
 model QuestionEvaluation {
@@ -387,6 +404,7 @@ model QuestionEvaluation {
 
   @@index([evaluationId])
   @@index([questionNumber])
+  @@index([evaluationId, questionNumber]) // NEW - composite for ordered question queries
 }
 
 model WebhookEvent {
@@ -418,4 +436,23 @@ model AuditLog {
   @@index([adminId])
   @@index([targetType, targetId])
   @@index([createdAt])
+}
+
+model EvaluationJob {
+  id            String   @id @default(cuid())
+  submissionId  String   @unique
+  status        JobStatus @default(QUEUED)
+  attempts      Int      @default(0)
+  maxAttempts   Int      @default(3)
+  lastError     String?  @db.Text
+  queuedAt      DateTime @default(now())
+  startedAt     DateTime?
+  completedAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  submission Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  @@index([status, queuedAt]) // For finding queued/processing jobs in order
+  @@index([submissionId]) // For querying job status by submission
 }

@@ -156,8 +156,7 @@ export function TestRegistrationButton({
         }
         setLoading(false)
       }
-    } catch (err) {
-      console.error(err)
+    } catch {
       setError("An error occurred during payment processing.")
       setLoading(false)
     }

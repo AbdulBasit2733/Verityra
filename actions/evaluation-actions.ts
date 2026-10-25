@@ -3,6 +3,7 @@
 import { getCurrentUser } from "@/lib/auth-guard"
 import { prisma, isDatabaseConnected } from "@/lib/prisma"
 import { evaluateAnswerSheetWithGemini } from "@/lib/ai/gemini-evaluator"
+import { invalidateLeaderboardCache } from "@/lib/cache"
 import { EvaluationStatus, Role, SubmissionStatus } from "@prisma/client"
 import { revalidatePath } from "next/cache"
 import { ActionResult } from "./auth-actions"
@@ -106,6 +107,9 @@ export async function adminReviewScoreAction(
   revalidatePath(`/admin/submissions/${submissionId}`)
   revalidatePath("/admin/submissions")
   revalidatePath(`/student/tests/${evaluation.submission.testSeriesId}`)
+  // Revalidate leaderboard to update rankings immediately after score adjustments
+  revalidatePath("/leaderboard")
+  invalidateLeaderboardCache() // Invalidate cached leaderboard data
 
   return { success: true, message: "Scores and evaluation review saved successfully." }
 }

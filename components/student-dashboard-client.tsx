@@ -9,7 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DataTable, DataTableColumn, DataTableFilter } from "@/components/ui/data-table"
 import { FormattedDate } from "@/components/ui/date-picker"
 import { PageHeader } from "@/components/ui/page-header"
-import { KpiStatCard } from "@/components/ui/kpi-stat-card"
+import { KpiMetricStrip, KpiMetric } from "@/components/shared/kpi-metric-strip"
+import { SubmissionStatusBadge } from "@/components/submission-status-badge"
 import {
   Award,
   BookOpen,
@@ -225,22 +226,11 @@ export function StudentDashboardClient({
       sortable: true,
       sortAccessor: (s) => s.status,
       cell: (s) => (
-        <Badge
-          variant="outline"
-          className={
-            s.status === "COMPLETED"
-              ? "border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 text-[11px] font-semibold rounded-full"
-              : s.status === "REVIEW_REQUIRED"
-                ? "border-amber-200 dark:border-amber-900 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 text-[11px] font-semibold rounded-full"
-                : "border-blue-200 dark:border-blue-900 text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 text-[11px] font-semibold rounded-full"
-          }
-        >
-          {s.status === "COMPLETED"
-            ? "Evaluated"
-            : s.status === "REVIEW_REQUIRED"
-              ? "Educator Review"
-              : "Processing"}
-        </Badge>
+        <SubmissionStatusBadge
+          submissionId={s.id}
+          initialStatus={s.status}
+          initialPercentage={s.percentage}
+        />
       ),
     },
     {
@@ -341,37 +331,37 @@ export function StudentDashboardClient({
         </Link>
       </PageHeader>
 
-      {/* KPI Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiStatCard
+      {/* KPI Metric Strip - Flat Divided Design */}
+      <KpiMetricStrip columns={4}>
+        <KpiMetric
           label="Enrolled Test Series"
           value={totalRegistered}
           subtext="Active exam registrations"
           icon={BookOpen}
           variant="blue"
         />
-        <KpiStatCard
+        <KpiMetric
           label="Evaluated Submissions"
           value={submissions.length}
           subtext="Detailed scorecards produced"
           icon={FileCheck2}
           variant="emerald"
         />
-        <KpiStatCard
+        <KpiMetric
           label="Remaining Guarantee"
           value={totalAttemptsRemaining}
           subtext="Attempts left across tests"
           icon={Clock}
           variant="amber"
         />
-        <KpiStatCard
+        <KpiMetric
           label="Attempts Consumed"
           value={totalAttemptsUsed}
           subtext="Handwritten sheets evaluated"
           icon={Layers}
           variant="indigo"
         />
-      </div>
+      </KpiMetricStrip>
 
       {/* Tabs with DataTables */}
       <Tabs defaultValue="enrolled" className="space-y-4">
@@ -536,16 +526,11 @@ export function StudentDashboardClient({
                   </div>
 
                   <div className="flex items-center justify-between text-xs pt-1">
-                    <Badge
-                      variant="outline"
-                      className={
-                        s.status === "COMPLETED"
-                          ? "border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 text-[10px] font-semibold"
-                          : "border-amber-200 dark:border-amber-900 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 text-[10px] font-semibold"
-                      }
-                    >
-                      {s.status === "COMPLETED" ? "Evaluated" : s.status}
-                    </Badge>
+                    <SubmissionStatusBadge
+                      submissionId={s.id}
+                      initialStatus={s.status}
+                      initialPercentage={s.percentage}
+                    />
                     <span className="text-slate-400 text-[11px]">
                       <FormattedDate date={s.submittedAt} />
                     </span>

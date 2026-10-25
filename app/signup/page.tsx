@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
-import { signIn } from "next-auth/react"
+import { signIn, useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,6 +14,7 @@ import { registerStudentAction } from "@/actions/auth-actions"
 
 export default function SignUpPage() {
   const router = useRouter()
+  const { data: session, status } = useSession()
 
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
@@ -23,6 +24,17 @@ export default function SignUpPage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+
+  // Redirect if user is already authenticated
+  useEffect(() => {
+    if (status === "authenticated" && session?.user) {
+      if (session.user.role === "ADMIN") {
+        router.replace("/admin")
+      } else {
+        router.replace("/student/dashboard")
+      }
+    }
+  }, [status, session, router])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -203,7 +215,7 @@ export default function SignUpPage() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => signIn("google", { callbackUrl: "/student/dashboard" })}
+              onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
               className="w-full border-slate-200 text-sm font-semibold h-12 rounded-xl hover:bg-slate-50 flex items-center justify-center gap-3 text-slate-700 shadow-xs"
             >
               <svg className="h-5 w-5" viewBox="0 0 24 24">

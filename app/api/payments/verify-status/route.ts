@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma, isDatabaseConnected } from "@/lib/prisma"
+import { getCurrentUser } from "@/lib/auth-guard"
 import { PaymentStatus, RegistrationStatus } from "@prisma/client"
 import Razorpay from "razorpay"
 
 export async function POST(req: NextRequest) {
   try {
+    // Security: Require authentication
+    const user = await getCurrentUser()
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const { orderId } = await req.json()
     if (!orderId) {
       return NextResponse.json({ error: "Missing orderId" }, { status: 400 })
@@ -28,6 +35,11 @@ export async function POST(req: NextRequest) {
 
     if (!payment) {
       return NextResponse.json({ error: "Payment order not found" }, { status: 404 })
+    }
+
+    // Security: Verify user owns this payment or is admin
+    if (payment.userId !== user.id && user.role !== "ADMIN") {
+      return NextResponse.json({ error: "Forbidden: You can only check your own payments" }, { status: 403 })
     }
 
     if (payment.status === PaymentStatus.COMPLETED) {
