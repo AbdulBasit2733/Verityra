@@ -1,4 +1,4 @@
-import { Poppins } from "next/font/google"
+import { Plus_Jakarta_Sans, Inter, Poppins } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/components/auth-provider"
@@ -7,17 +7,31 @@ import { ErrorDialogProvider } from "@/components/providers/error-dialog-provide
 import { Toaster } from "@/components/ui/sonner"
 import { cn } from "@/lib/utils"
 
+const plusJakartaSans = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-plus-jakarta",
+  display: "swap",
+})
+
 const poppins = Poppins({
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800"],
+  weight: ["400", "500", "600", "700", "800"],
   variable: "--font-poppins",
   display: "swap",
 })
 
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-inter",
+  display: "swap",
+})
+
 export const metadata = {
-  title: "Verityra — Premier Subjective Test Series & Evaluation",
+  title: "Verityra — Premier Subjective Test Series & Evaluation Cloud",
   description:
-    "Rigorous test preparation with handwritten answer sheets, official templates, detailed rubrics, and comprehensive performance feedback.",
+    "Next-generation evaluation cloud for subjective examinations. Authentic pen-and-paper answer booklets, instant AI rubric grading, and 3-attempt diagnostic mastery.",
 }
 
 export default function RootLayout({
@@ -26,8 +40,12 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className={cn("antialiased", poppins.variable)}>
-      <body className="min-h-screen bg-background text-foreground">
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={cn("antialiased", plusJakartaSans.variable, poppins.variable, inter.variable)}
+    >
+      <body className="min-h-screen bg-background text-foreground font-sans">
         <ThemeProvider>
           <AuthProvider>
             <ConfirmDialogProvider>

@@ -8,8 +8,9 @@
 
 /* Map CSS variables to Tailwind tokens (v4 CSS-first) */
 @theme inline {
-  --font-heading: var(--font-poppins), "Poppins", sans-serif;
-  --font-sans: var(--font-poppins), "Poppins", sans-serif;
+  --font-heading: var(--font-plus-jakarta), "Plus Jakarta Sans", var(--font-poppins), sans-serif;
+  --font-sans: var(--font-plus-jakarta), "Plus Jakarta Sans", var(--font-inter), system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, monospace;
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -36,6 +37,8 @@
   --color-accent: var(--accent);
   --color-hover-accent: var(--hover-accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-score-accent: var(--score-accent);
+  --color-score-accent-foreground: var(--score-accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
@@ -100,6 +103,9 @@ input[type="number"]::-webkit-outer-spin-button {
   --hover-accent: #1E55C7;
   --accent-foreground: #ffffff;
 
+  --score-accent: #d97706;
+  --score-accent-foreground: #ffffff;
+
   --destructive: #dc2626;
   --destructive-foreground: #ffffff;
   --border: #e2e8f0;
@@ -156,6 +162,9 @@ input[type="number"]::-webkit-outer-spin-button {
   --accent: #3b82f6;
   --hover-accent: #2563eb;
   --accent-foreground: #ffffff;
+
+  --score-accent: #f59e0b;
+  --score-accent-foreground: #000000;
 
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
@@ -789,6 +798,33 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* ==========================================================================
+   Modern SaaS Bento Grid & Aurora Glassmorphism Utilities
+   ========================================================================== */
+.glass-card {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.aurora-glow-blue {
+  background: radial-gradient(circle at 50% 0%, rgba(37, 99, 235, 0.15) 0%, transparent 65%);
+}
+
+.dark .aurora-glow-blue {
+  background: radial-gradient(circle at 50% 0%, rgba(59, 130, 246, 0.22) 0%, transparent 70%);
+}
+
+.grid-dot-pattern {
+  background-image: radial-gradient(rgba(148, 163, 184, 0.25) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.dark .grid-dot-pattern {
+  background-image: radial-gradient(rgba(148, 163, 184, 0.12) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
 
 @utility no-scrollbar {
   -ms-overflow-style: none;
