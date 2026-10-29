@@ -54,7 +54,7 @@ export function TestRegistrationButton({
           onClick={() => router.push(`/student/tests/${testSeriesId}`)}
           className="w-full bg-primary hover:bg-hover-accent text-primary-foreground font-semibold text-sm h-12 rounded-xl"
         >
-          Open Candidate Workspace
+          Go To Test
           <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
       </div>

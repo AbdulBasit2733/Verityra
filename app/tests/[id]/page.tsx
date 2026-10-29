@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { TestRegistrationButton } from "@/components/test-registration-button"
 import { AlertCircle, ArrowLeft, Award, CheckCircle2, Clock, Download, FileText } from "lucide-react"
 import { normalizePrivateFileUrl } from "@/lib/supabase"
+import { PaymentStatus, RegistrationStatus } from "@prisma/client"
 
 export const dynamic = "force-dynamic"
 
@@ -21,8 +22,8 @@ export default async function TestDetailsPage({ params }: { params: Promise<{ id
   if (dbConnected) {
     testSeries = await prisma.testSeries.findFirst({ where: { OR: [{ id }, { slug: id }], isPublished: true }, include: { papers: true, templates: true } })
     if (testSeries && user) {
-      const registration = await prisma.testRegistration.findUnique({ where: { userId_testSeriesId: { userId: user.id, testSeriesId: testSeries.id } } })
-      isRegistered = !!registration
+      const registration = await prisma.testRegistration.findUnique({ where: { userId_testSeriesId: { userId: user.id, testSeriesId: testSeries.id } }, include: { payment: { select: { status: true } } } })
+      isRegistered = Boolean(registration && registration.status !== RegistrationStatus.CANCELLED && (testSeries.price === 0 || registration.payment?.status === PaymentStatus.COMPLETED))
     }
   }
 

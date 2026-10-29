@@ -125,7 +125,7 @@ export async function createRazorpayOrderAction(testSeriesId: string): Promise<
     },
   })
 
-  if (existingReg) {
+  if (existingReg && existingReg.status !== RegistrationStatus.CANCELLED) {
     return { success: false, error: "You already own access to this test series." }
   }
 
