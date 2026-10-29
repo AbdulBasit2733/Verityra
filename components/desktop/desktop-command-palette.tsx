@@ -118,6 +118,20 @@ const studentCommands: NavCommand[] = [
     category: "Navigation",
   },
   {
+    label: "My Tests",
+    href: "/student/tests",
+    icon: BookOpen,
+    keywords: ["registered", "free", "attempts", "take test"],
+    category: "Navigation",
+  },
+  {
+    label: "Purchases",
+    href: "/student/purchases",
+    icon: CreditCard,
+    keywords: ["paid", "orders", "payments", "bought", "access"],
+    category: "Navigation",
+  },
+  {
     label: "Profile & Settings",
     href: "/student/profile",
     icon: User,

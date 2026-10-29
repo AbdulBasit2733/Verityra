@@ -35,7 +35,7 @@ export function TestRegistrationButton({
     return (
       <Button
         onClick={() => router.push(`/signin?callbackUrl=/tests/${testSeriesId}`)}
-        className="w-full bg-[#2A6AED] hover:bg-[#1E55C7] text-white font-semibold text-sm h-12 rounded-xl shadow-md shadow-blue-500/20"
+        className="w-full bg-primary hover:bg-hover-accent text-primary-foreground font-semibold text-sm h-12 rounded-xl"
       >
         Sign In to Register
         <ArrowRight className="ml-2 h-4 w-4" />
@@ -46,13 +46,13 @@ export function TestRegistrationButton({
   if (isRegistered) {
     return (
       <div className="space-y-3">
-        <div className="flex items-center gap-2.5 p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold">
-          <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+        <div className="flex items-center gap-2.5 rounded-xl border border-chart-3/30 bg-chart-3/10 p-3.5 text-xs font-semibold text-foreground">
+          <CheckCircle2 className="h-4 w-4 shrink-0 text-chart-3" />
           <span>You have active access to this test series.</span>
         </div>
         <Button
           onClick={() => router.push(`/student/tests/${testSeriesId}`)}
-          className="w-full bg-[#2A6AED] hover:bg-[#1E55C7] text-white font-semibold text-sm h-12 rounded-xl shadow-md shadow-blue-500/20"
+          className="w-full bg-primary hover:bg-hover-accent text-primary-foreground font-semibold text-sm h-12 rounded-xl"
         >
           Open Candidate Workspace
           <ArrowRight className="ml-2 h-4 w-4" />
@@ -136,8 +136,8 @@ export function TestRegistrationButton({
         const rzp = new window.Razorpay(options)
         rzp.open()
         setLoading(false)
-      } else {
-        // Dev mode simulation: simulate immediate server verification
+      } else if (orderId.startsWith("order_dev_mock_") || keyId.includes("placeholder")) {
+        // Development-only simulation for explicitly marked mock orders.
         const verifyResult = await verifyPaymentAndRegisterAction({
           razorpayOrderId: orderId,
           razorpayPaymentId: "pay_simulated_" + Date.now(),
@@ -155,6 +155,9 @@ export function TestRegistrationButton({
           setError(verifyResult.error || "Payment failed.")
         }
         setLoading(false)
+      } else {
+        setError("Razorpay Checkout could not load. Please refresh the page and try again.")
+        setLoading(false)
       }
     } catch {
       setError("An error occurred during payment processing.")
@@ -171,8 +174,8 @@ export function TestRegistrationButton({
       )}
 
       {success && (
-        <Alert className="py-3 text-sm border-emerald-500 bg-emerald-50 text-emerald-800 rounded-xl">
-          <CheckCircle2 className="h-4 w-4 text-emerald-600 mr-2" />
+        <Alert className="rounded-xl border-chart-3/50 bg-chart-3/10 py-3 text-sm text-foreground">
+          <CheckCircle2 className="mr-2 h-4 w-4 text-chart-3" />
           <AlertDescription>{success}</AlertDescription>
         </Alert>
       )}
@@ -181,7 +184,7 @@ export function TestRegistrationButton({
         <Button
           onClick={handleFreeRegistration}
           disabled={loading}
-          className="w-full bg-[#2A6AED] hover:bg-[#1E55C7] text-white font-semibold text-sm h-12 rounded-xl shadow-md shadow-blue-500/20"
+          className="w-full bg-primary hover:bg-hover-accent text-primary-foreground font-semibold text-sm h-12 rounded-xl"
         >
           {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
           Register for Free Test
@@ -190,7 +193,7 @@ export function TestRegistrationButton({
         <Button
           onClick={handlePaidCheckout}
           disabled={loading}
-          className="w-full bg-[#2A6AED] hover:bg-[#1E55C7] text-white font-semibold text-sm h-12 rounded-xl shadow-md shadow-blue-500/20 flex items-center justify-center gap-2"
+          className="w-full bg-primary hover:bg-hover-accent text-primary-foreground font-semibold text-sm h-12 rounded-xl flex items-center justify-center gap-2"
         >
           {loading ? (
             <Loader2 className="h-4 w-4 animate-spin mr-2" />

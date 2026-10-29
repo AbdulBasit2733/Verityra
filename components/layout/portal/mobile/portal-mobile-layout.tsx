@@ -119,7 +119,7 @@ export function PortalMobileLayout({
         </div>
 
         {/* Right Actions: Quick Search, Bell, Theme, Avatar */}
-        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        <div className="hidden" aria-hidden="true">
           {/* Quick Search Trigger */}
           <button
             type="button"
@@ -246,7 +246,7 @@ export function PortalMobileLayout({
               <Link
                 href={role === "ADMIN" ? "/admin/profile" : "/student/profile"}
                 onClick={() => setDrawerOpen(false)}
-                className="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors group cursor-pointer"
+                className="hidden"
               >
                 <div className="h-9 w-9 rounded-full bg-[#2A6AED] text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
                   {initials}

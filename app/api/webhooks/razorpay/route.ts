@@ -4,30 +4,35 @@ import { PaymentStatus, RegistrationStatus, WebhookStatus } from "@prisma/client
 import crypto from "crypto"
 
 export async function POST(req: NextRequest) {
+  let receivedEventId: string | null = null
   try {
     const rawBody = await req.text()
     const signature = req.headers.get("x-razorpay-signature")
+    const headerEventId = req.headers.get("x-razorpay-event-id")
     const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET
 
     // Signature verification with HMAC SHA-256
-    if (webhookSecret && webhookSecret !== "placeholder_webhook_secret") {
-      if (!signature) {
-        return NextResponse.json({ error: "Missing x-razorpay-signature header" }, { status: 400 })
-      }
-
-      const expectedSignature = crypto
-        .createHmac("sha256", webhookSecret)
-        .update(rawBody)
-        .digest("hex")
-
-      if (expectedSignature !== signature) {
-        return NextResponse.json({ error: "Invalid webhook signature" }, { status: 400 })
-      }
+    if (!webhookSecret || webhookSecret === "placeholder_webhook_secret") {
+      console.error("[RAZORPAY WEBHOOK] RAZORPAY_WEBHOOK_SECRET is not configured")
+      return NextResponse.json({ error: "Webhook is not configured" }, { status: 503 })
+    }
+    if (!signature) {
+      return NextResponse.json({ error: "Missing x-razorpay-signature header" }, { status: 400 })
+    }
+    const expectedSignature = crypto.createHmac("sha256", webhookSecret).update(rawBody).digest("hex")
+    const expected = Buffer.from(expectedSignature, "hex")
+    const supplied = /^[a-f0-9]{64}$/i.test(signature) ? Buffer.from(signature, "hex") : Buffer.alloc(0)
+    if (supplied.length !== expected.length || !crypto.timingSafeEqual(supplied, expected)) {
+      return NextResponse.json({ error: "Invalid webhook signature" }, { status: 400 })
     }
 
     const payload = JSON.parse(rawBody)
-    const eventId = payload?.event_id || `evt_${Date.now()}`
     const eventType = payload?.event || "unknown"
+    const eventId = headerEventId || payload?.event_id || payload?.id
+    if (!eventId || eventType === "unknown") {
+      return NextResponse.json({ error: "Missing Razorpay event identity" }, { status: 400 })
+    }
+    receivedEventId = eventId
 
     const dbConnected = await isDatabaseConnected()
     if (!dbConnected) {
@@ -73,7 +78,12 @@ export async function POST(req: NextRequest) {
           where: { razorpayOrderId },
         })
 
-        if (paymentRecord && paymentRecord.status !== PaymentStatus.COMPLETED) {
+        if (
+          paymentRecord &&
+          paymentRecord.status !== PaymentStatus.COMPLETED &&
+          paymentRecord.status !== PaymentStatus.REFUNDED &&
+          paymentRecord.status !== PaymentStatus.REFUND_PENDING
+        ) {
           const testSeries = await prisma.testSeries.findUnique({
             where: { id: paymentRecord.testSeriesId },
           })
@@ -146,7 +156,7 @@ export async function POST(req: NextRequest) {
           where: { razorpayOrderId },
         })
 
-        if (paymentRecord && paymentRecord.status !== PaymentStatus.COMPLETED) {
+        if (paymentRecord && (paymentRecord.status === PaymentStatus.PENDING || paymentRecord.status === PaymentStatus.AUTHORIZED)) {
           await prisma.$transaction(async (tx) => {
             await tx.payment.update({
               where: { id: paymentRecord.id },
@@ -190,16 +200,28 @@ export async function POST(req: NextRequest) {
         })
 
         if (paymentRecord) {
+          const refundAmount = Number(refundEntity?.amount || 0)
+          const totalRefunded = Math.min(
+            paymentRecord.amount,
+            paymentRecord.amountRefunded + refundAmount
+          )
+          const refundCompleted = eventType === "refund.processed"
+          const nextStatus = refundCompleted
+            ? totalRefunded >= paymentRecord.amount
+              ? PaymentStatus.REFUNDED
+              : PaymentStatus.PARTIALLY_REFUNDED
+            : PaymentStatus.REFUND_PENDING
+
           await prisma.$transaction(async (tx) => {
             await tx.payment.update({
               where: { id: paymentRecord.id },
               data: {
-                status: PaymentStatus.REFUNDED,
-                amountRefunded: refundEntity?.amount || paymentRecord.amount,
+                status: nextStatus,
+                amountRefunded: totalRefunded,
               },
             })
 
-            if (paymentRecord.registrationId) {
+            if (nextStatus === PaymentStatus.REFUNDED && paymentRecord.registrationId) {
               await tx.testRegistration.update({
                 where: { id: paymentRecord.registrationId },
                 data: {
@@ -212,7 +234,7 @@ export async function POST(req: NextRequest) {
             await tx.paymentLedger.create({
               data: {
                 paymentId: paymentRecord.id,
-                eventType: "WEBHOOK_REFUND_PROCESSED",
+                eventType: refundCompleted ? "WEBHOOK_REFUND_PROCESSED" : "WEBHOOK_REFUND_PENDING",
                 actorType: "GATEWAY_WEBHOOK",
                 actorId: "razorpay",
                 details: `Razorpay webhook confirmed refund of ₹${(refundEntity?.amount || paymentRecord.amount) / 100}. Access cancelled.`,
@@ -232,9 +254,21 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Events that are valid but unrelated to a local order are still marked
+    // processed so Razorpay does not retry them forever.
+    await prisma.webhookEvent.update({
+      where: { eventId },
+      data: { status: WebhookStatus.PROCESSED, processedAt: new Date() },
+    })
     return NextResponse.json({ received: true })
   } catch (err) {
     console.error("[RAZORPAY WEBHOOK ERROR]", err)
+    if (receivedEventId) {
+      await prisma.webhookEvent.updateMany({
+        where: { eventId: receivedEventId, status: WebhookStatus.RECEIVED },
+        data: { status: WebhookStatus.FAILED },
+      }).catch((markError) => console.error("[RAZORPAY WEBHOOK] Failed to mark event:", markError))
+    }
     return NextResponse.json({ error: "Webhook processing failed" }, { status: 500 })
   }
 }

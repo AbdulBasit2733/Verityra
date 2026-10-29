@@ -16,7 +16,7 @@ const ALLOWED_MIME_TYPES = [
   "image/png",
   "image/webp",
 ]
-const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024 // 25 MB
+const MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024 // Keep scanned answer sheets under 2 MB
 
 /**
  * Server Action: Submit Handwritten Answer Sheet
@@ -48,7 +48,7 @@ export async function submitAnswerSheetAction(formData: FormData): Promise<Actio
   if (file.size > MAX_FILE_SIZE_BYTES) {
     return {
       success: false,
-      error: `File size exceeds the 25MB limit (current: ${(file.size / (1024 * 1024)).toFixed(2)} MB).`,
+      error: `File size exceeds the 2MB limit (current: ${(file.size / (1024 * 1024)).toFixed(2)} MB).`,
     }
   }
 

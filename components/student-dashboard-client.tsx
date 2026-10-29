@@ -52,10 +52,12 @@ export function StudentDashboardClient({
   userName,
   registrations,
   submissions,
+  showRegisteredTests = false,
 }: {
   userName: string
   registrations: StudentRegistrationRow[]
   submissions: StudentSubmissionRow[]
+  showRegisteredTests?: boolean
 }) {
   const totalRegistered = registrations.length
   const totalAttemptsUsed = registrations.reduce((acc, r) => acc + r.attemptsUsed, 0)
@@ -364,13 +366,13 @@ export function StudentDashboardClient({
       </KpiMetricStrip>
 
       {/* Tabs with DataTables */}
-      <Tabs defaultValue="enrolled" className="space-y-4">
+      <Tabs defaultValue={showRegisteredTests ? "enrolled" : "submissions"} className="space-y-4">
         <TabsList variant="line" className="border-b border-slate-200 dark:border-slate-800 w-full sm:w-auto justify-start">
-          <TabsTrigger value="enrolled" className="text-xs sm:text-sm font-semibold px-3 sm:px-4 py-2">
+          {showRegisteredTests && <TabsTrigger value="enrolled" className="text-xs sm:text-sm font-semibold px-3 sm:px-4 py-2">
             <BookOpen className="h-3.5 w-3.5 mr-1.5" />
             <span className="sm:hidden">Enrolled ({registrations.length})</span>
             <span className="hidden sm:inline">My Enrolled Test Series ({registrations.length})</span>
-          </TabsTrigger>
+          </TabsTrigger>}
           <TabsTrigger value="submissions" className="text-xs sm:text-sm font-semibold px-3 sm:px-4 py-2">
             <FileCheck2 className="h-3.5 w-3.5 mr-1.5" />
             <span className="sm:hidden">Evaluations ({submissions.length})</span>
@@ -378,7 +380,7 @@ export function StudentDashboardClient({
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="enrolled" className="pt-1">
+        {showRegisteredTests && <TabsContent value="enrolled" className="pt-1">
           <DataTable
             data={registrations}
             columns={registrationColumns}
@@ -487,7 +489,7 @@ export function StudentDashboardClient({
               </Link>
             }
           />
-        </TabsContent>
+        </TabsContent>}
 
         <TabsContent value="submissions" className="pt-1">
           <DataTable

@@ -6,6 +6,7 @@ import { ConfirmDialogProvider } from "@/components/providers/confirm-dialog-pro
 import { ErrorDialogProvider } from "@/components/providers/error-dialog-provider"
 import { Toaster } from "@/components/ui/sonner"
 import { cn } from "@/lib/utils"
+import Script from "next/script"
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -46,6 +47,7 @@ export default function RootLayout({
       className={cn("antialiased", plusJakartaSans.variable, poppins.variable, inter.variable)}
     >
       <body className="min-h-screen bg-background text-foreground font-sans">
+        <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="afterInteractive" />
         <ThemeProvider>
           <AuthProvider>
             <ConfirmDialogProvider>

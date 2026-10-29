@@ -585,3 +585,41 @@ function setAttempt(num: number) {
 - Better dark mode harmony (no card shadows)
 
 ---
+
+## 10. SaaS Application Layout Rules (Default for New Screens)
+
+These rules are the default for all new admin and student screens. Do not introduce a new visual pattern unless the screen has a documented interaction reason.
+
+### 10.1 Prefer SaaS surfaces over card stacks
+
+- Use one primary surface for a page section, with borders and spacing to create hierarchy.
+- Do not wrap every metric, row, action, or paragraph in its own rounded card.
+- Avoid nested cards (`card > card > card`) and repeated heavy shadows.
+- Prefer `border-b`, `border-y`, `divide-y`, whitespace, and typography for separation.
+- A card is appropriate for a focused decision surface such as checkout, confirmation, upload review, or a single high-priority summary.
+- Tables, KPI strips, and action toolbars should remain flat and scannable.
+
+### 10.2 Theme and component rules
+
+- Use semantic theme tokens: `bg-background`, `bg-card`, `bg-muted`, `bg-secondary`, `text-foreground`, `text-muted-foreground`, `border-border`, `bg-primary`, and `text-primary-foreground`.
+- Do not add hard-coded light-mode colors to new UI (`bg-white`, `text-slate-900`, `#2A6AED`) when a global token exists.
+- Every new screen must work in both light and dark themes without a separate layout implementation.
+- Use existing shadcn components for tables, buttons, badges, progress, alerts, pagination, dialogs, and forms.
+- Keep one primary action per visual region; secondary actions use outline or ghost variants.
+
+### 10.3 Student portal information architecture
+
+- `/student/dashboard` is for analytics, progress, recent submissions, scores, and activity summaries only.
+- `/student/tests` is the destination for free registered test series.
+- `/student/purchases` is the destination for paid test purchases and active payment-backed access.
+- The student sidebar keeps **My Tests** and **Purchases** as separate navigation items, using the same flat SaaS table pattern.
+- Each registered test row must show attempts, latest status, duration, marks, registration date, and a clear **Take Test** or **Give Test** action.
+- The test workspace owns writing-time guidance, timer controls, submission preparation, scan/PDF requirements, and evaluation history.
+
+### 10.4 Responsive behavior
+
+- Desktop: persistent sidebar, spacious table layout, and sticky decision panels only when they do not overlap the footer.
+- Mobile: single-column flow, no nested scroll traps, full-width actions, and sidebar/drawer access to all navigation items.
+- Hide scrollbars only when scrolling remains available and the interaction is discoverable; never use hidden scrollbars to conceal required content.
+
+---

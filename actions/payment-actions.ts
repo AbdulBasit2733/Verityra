@@ -305,11 +305,59 @@ export async function adminTriggerRefundAction(params: {
       return { success: false, error: "This payment has already been 100% refunded." }
     }
 
-    if (payment.status !== PaymentStatus.COMPLETED) {
+    const razorpayConfigured = Boolean(
+      process.env.RAZORPAY_KEY_ID &&
+      process.env.RAZORPAY_KEY_SECRET &&
+      process.env.RAZORPAY_KEY_ID !== "rzp_test_placeholder" &&
+      process.env.RAZORPAY_KEY_SECRET !== "placeholder_secret"
+    )
+    let recoveredRefundId: string | null = null
+
+    // A process can die after Razorpay accepts the refund but before the DB
+    // transaction commits. Reconcile that state before allowing another refund.
+    if (payment.status === PaymentStatus.REFUND_PENDING) {
+      if (!razorpayConfigured || !payment.razorpayPaymentId) {
+        return { success: false, error: "Refund is still being reconciled. Please retry after Razorpay credentials are available." }
+      }
+      try {
+        const razorpay = new Razorpay({
+          key_id: process.env.RAZORPAY_KEY_ID!,
+          key_secret: process.env.RAZORPAY_KEY_SECRET!,
+        })
+        const refundsResponse = await razorpay.payments.fetchMultipleRefund(payment.razorpayPaymentId)
+        const matchingRefund = refundsResponse.items?.find(
+          (refund: any) => refund.amount === payment.amount && refund.status === "processed"
+        )
+        if (matchingRefund?.id) {
+          recoveredRefundId = matchingRefund.id
+          await prisma.payment.updateMany({
+            where: { id: payment.id, status: PaymentStatus.REFUND_PENDING },
+            data: { status: PaymentStatus.COMPLETED },
+          })
+          payment.status = PaymentStatus.COMPLETED
+        } else {
+          await prisma.payment.updateMany({
+            where: { id: payment.id, status: PaymentStatus.REFUND_PENDING },
+            data: { status: PaymentStatus.COMPLETED },
+          })
+          payment.status = PaymentStatus.COMPLETED
+        }
+      } catch (reconcileError) {
+        console.error("[adminTriggerRefundAction] Failed to reconcile pending refund:", reconcileError)
+        return { success: false, error: "Could not verify the pending refund with Razorpay. Please retry shortly." }
+      }
+    }
+
+    if (payment.status !== PaymentStatus.COMPLETED && !recoveredRefundId) {
       return {
         success: false,
         error: `Cannot refund payment in '${payment.status}' status. Only COMPLETED payments can be refunded.`,
       }
+    }
+
+    const existingRefund = payment.refunds.find((refund) => refund.status === "PROCESSED")
+    if (existingRefund) {
+      return { success: false, error: "A refund has already been recorded for this payment." }
     }
 
     // 2. 7-Day Return Policy Check
@@ -334,15 +382,18 @@ export async function adminTriggerRefundAction(params: {
     }
 
     // 4. Trigger Razorpay Refund API
-    let razorpayRefundId = `rfnd_${Date.now()}`
-    const idempotencyKey = `idemp_ref_${payment.id}_${Date.now()}`
+    const idempotencyKey = `idemp_ref_${payment.id}`
+    const claim = await prisma.payment.updateMany({
+      where: { id: payment.id, status: PaymentStatus.COMPLETED },
+      data: { status: PaymentStatus.REFUND_PENDING },
+    })
+    if (claim.count !== 1) {
+      return { success: false, error: "This payment is already being refunded or has changed state. Refresh and try again." }
+    }
 
-    if (
-      process.env.RAZORPAY_KEY_ID &&
-      process.env.RAZORPAY_KEY_SECRET &&
-      process.env.RAZORPAY_KEY_ID !== "rzp_test_placeholder" &&
-      payment.razorpayPaymentId
-    ) {
+    let razorpayRefundId = recoveredRefundId || `rfnd_${Date.now()}`
+
+    if (!recoveredRefundId && razorpayConfigured && payment.razorpayPaymentId) {
       try {
         const razorpay = new Razorpay({
           key_id: process.env.RAZORPAY_KEY_ID,
@@ -357,16 +408,23 @@ export async function adminTriggerRefundAction(params: {
             reason: params.reason,
             policy: isWithin7Days ? "7_DAY_RETURN_WINDOW" : "SUPERADMIN_OVERRIDE",
           },
-          receipt: `rcpt_${payment.id.slice(-8)}`,
+          receipt: `refund_${payment.id}`,
         })
         razorpayRefundId = rzpRefund.id
       } catch (rzpErr: any) {
         console.error("[adminTriggerRefundAction] Razorpay API Error:", rzpErr)
+        await prisma.payment.update({
+          where: { id: payment.id },
+          data: { status: PaymentStatus.COMPLETED },
+        }).catch((resetError) => console.error("[adminTriggerRefundAction] Failed to reset refund claim:", resetError))
         return {
           success: false,
           error: `Razorpay Gateway Error: ${rzpErr.error?.description || rzpErr.message || "Failed to process refund with bank."}`,
         }
       }
+    } else if (!recoveredRefundId && process.env.NODE_ENV === "production") {
+      await prisma.payment.update({ where: { id: payment.id }, data: { status: PaymentStatus.COMPLETED } })
+      return { success: false, error: "Razorpay refund configuration is missing. No refund was submitted." }
     }
 
     // 5. Atomic Transaction: Update payment, revoke registration, log audit & ledger

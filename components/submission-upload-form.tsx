@@ -11,6 +11,8 @@ import { toast } from "@/components/ui/sonner"
 import { UploadCloud, Loader2, Lock, FileText, CheckCircle2, AlertCircle, Image as ImageIcon, FileCheck } from "lucide-react"
 import { submitAnswerSheetAction } from "@/actions/submission-actions"
 
+const MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024
+
 export function SubmissionUploadForm({
   testSeriesId,
   attemptsUsed,
@@ -150,7 +152,7 @@ export function SubmissionUploadForm({
               Submit Attempt #{nextAttempt} of {maxAttempts}
             </h3>
             <p className="text-xs text-[#64748B]">
-              Upload your scanned handwritten response booklet (PDF or clear image pages, max 25MB).
+              Upload your scanned handwritten response booklet (PDF or clear image pages, max 2MB).
             </p>
           </div>
         </div>
@@ -178,13 +180,22 @@ export function SubmissionUploadForm({
               id="answerSheetFile"
               type="file"
               accept=".pdf,image/jpeg,image/png,image/webp"
-              onChange={(e) => setFile(e.target.files?.[0] || null)}
+              onChange={(e) => {
+                const selectedFile = e.target.files?.[0] || null
+                if (selectedFile && selectedFile.size > MAX_FILE_SIZE_BYTES) {
+                  toast.warning("File is too large", { description: "Please compress the scanned booklet to 2 MB or less before uploading." })
+                  e.currentTarget.value = ""
+                  setFile(null)
+                  return
+                }
+                setFile(selectedFile)
+              }}
               className="hidden"
             />
             <p className="text-[11px] sm:text-xs text-[#64748B]">
               {file
                 ? `File size: ${(file.size / (1024 * 1024)).toFixed(2)} MB • Ready for encrypted submission`
-                : "PDF, JPG, PNG or WEBP up to 25MB • Upright orientation recommended"}
+                : "PDF, JPG, PNG or WEBP up to 2MB • Upright orientation recommended"}
             </p>
           </div>
         </label>

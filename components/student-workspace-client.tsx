@@ -27,6 +27,7 @@ import {
   FileText,
   Info,
   UploadCloud,
+  Timer,
 } from "lucide-react"
 
 export interface WorkspaceQuestionScore {
@@ -104,6 +105,32 @@ export function StudentWorkspaceClient({
   const router = useRouter()
   const pathname = usePathname()
   const attemptsRemaining = Math.max(0, maxAttempts - attemptsUsed)
+  const timerStorageKey = `verityra-writing-timer:${testSeriesId}`
+  const [writingStartedAt, setWritingStartedAt] = React.useState<number | null>(null)
+  const [clockNow, setClockNow] = React.useState(0)
+
+  React.useEffect(() => {
+    const stored = window.localStorage.getItem(timerStorageKey)
+    if (stored) setWritingStartedAt(Number(stored))
+  }, [timerStorageKey])
+
+  React.useEffect(() => {
+    if (!writingStartedAt) return
+    setClockNow(Date.now())
+    const interval = window.setInterval(() => setClockNow(Date.now()), 1000)
+    return () => window.clearInterval(interval)
+  }, [writingStartedAt])
+
+  const elapsedWritingMinutes = writingStartedAt && clockNow
+    ? Math.floor((clockNow - writingStartedAt) / 60000)
+    : 0
+
+  const startWritingTimer = () => {
+    const startedAt = Date.now()
+    window.localStorage.setItem(timerStorageKey, String(startedAt))
+    setWritingStartedAt(startedAt)
+    setClockNow(startedAt)
+  }
 
   // Read attempt number from URL, fallback to latest submission or 1
   const attemptFromUrl = searchParams.get("attempt")
@@ -325,6 +352,23 @@ export function StudentWorkspaceClient({
           max={maxAttempts}
           indicatorClassName={attemptsRemaining === 0 ? "bg-amber-500" : "bg-[#2A6AED]"}
         />
+      </div>
+
+      <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 sm:p-5">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <Timer className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+            <div>
+              <p className="text-sm font-semibold text-foreground">Writing and upload time planner</p>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">Plan {durationMinutes} minutes for writing, then keep approximately 15–30 minutes for photographing/scanning pages and converting them into one clear PDF under 1–2 MB.</p>
+            </div>
+          </div>
+          <Button type="button" size="sm" onClick={startWritingTimer} disabled={Boolean(writingStartedAt)} className="shrink-0 gap-2">
+            <Timer className="h-4 w-4" />
+            {writingStartedAt ? `Writing time: ${elapsedWritingMinutes} min` : "Start writing timer"}
+          </Button>
+        </div>
+        {writingStartedAt && <p className="mt-3 border-t border-primary/15 pt-3 text-xs text-muted-foreground">Timer started locally for this test. Upload your scanned answer sheet from the Submit Handwritten Booklet section when ready.</p>}
       </div>
 
       {/* Workspace Tabs */}

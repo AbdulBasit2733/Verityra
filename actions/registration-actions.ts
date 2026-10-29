@@ -132,9 +132,44 @@ export async function createRazorpayOrderAction(testSeriesId: string): Promise<
   const key_id = process.env.RAZORPAY_KEY_ID
   const key_secret = process.env.RAZORPAY_KEY_SECRET
 
-  let razorpayOrderId = `order_${Date.now()}`
+  const razorpayConfigured = Boolean(
+    key_id &&
+    key_secret &&
+    key_id !== "rzp_test_placeholder" &&
+    key_secret !== "placeholder_secret"
+  )
+  if (process.env.NODE_ENV === "production" && !razorpayConfigured) {
+    return { success: false, error: "Razorpay is not configured. Payment checkout is temporarily unavailable." }
+  }
 
-  if (key_id && key_secret && key_id !== "rzp_test_placeholder") {
+  // Reuse a recent pending order when a student double-clicks or refreshes
+  // checkout. This prevents multiple live orders for one purchase attempt.
+  const recentPending = await prisma.payment.findFirst({
+    where: {
+      userId: user.id,
+      testSeriesId: testSeries.id,
+      status: PaymentStatus.PENDING,
+      createdAt: { gte: new Date(Date.now() - 30 * 60 * 1000) },
+    },
+    orderBy: { createdAt: "desc" },
+  })
+  if (recentPending) {
+    return {
+      success: true,
+      message: "An existing payment attempt is still active.",
+      data: {
+        orderId: recentPending.razorpayOrderId,
+        amount: recentPending.amount,
+        currency: recentPending.currency,
+        keyId: key_id || "rzp_test_placeholder",
+        testTitle: testSeries.title,
+      },
+    }
+  }
+
+  let razorpayOrderId = `order_dev_mock_${Date.now()}`
+
+  if (razorpayConfigured) {
     const razorpay = new Razorpay({ key_id, key_secret })
     const order = await razorpay.orders.create({
       amount: testSeries.price,
@@ -188,6 +223,14 @@ export async function verifyPaymentAndRegisterAction(input: {
 
   const key_secret = process.env.RAZORPAY_KEY_SECRET
 
+  if (process.env.NODE_ENV === "production" && (!key_secret || key_secret === "placeholder_secret")) {
+    return { success: false, error: "Razorpay payment verification is not configured." }
+  }
+
+  if (!input.razorpayOrderId || !input.razorpayPaymentId || !input.razorpaySignature) {
+    return { success: false, error: "Incomplete Razorpay payment verification details." }
+  }
+
   // Verify HMAC signature server-side
   if (key_secret && key_secret !== "placeholder_secret") {
     const generatedSignature = crypto
@@ -195,7 +238,11 @@ export async function verifyPaymentAndRegisterAction(input: {
       .update(`${input.razorpayOrderId}|${input.razorpayPaymentId}`)
       .digest("hex")
 
-    if (generatedSignature !== input.razorpaySignature) {
+    const expected = Buffer.from(generatedSignature, "hex")
+    const supplied = /^[a-f0-9]{64}$/i.test(input.razorpaySignature)
+      ? Buffer.from(input.razorpaySignature, "hex")
+      : Buffer.alloc(0)
+    if (supplied.length !== expected.length || !crypto.timingSafeEqual(supplied, expected)) {
       return { success: false, error: "Payment verification failed. Invalid digital signature." }
     }
   }
@@ -214,6 +261,26 @@ export async function verifyPaymentAndRegisterAction(input: {
 
   if (!testSeries) {
     return { success: false, error: "Test series not found." }
+  }
+
+  const payment = await prisma.payment.findUnique({
+    where: { razorpayOrderId: input.razorpayOrderId },
+  })
+  if (!payment) return { success: false, error: "Payment order not found." }
+  if (payment.userId !== user.id || payment.testSeriesId !== input.testSeriesId) {
+    return { success: false, error: "This payment does not belong to the current account or test series." }
+  }
+  if (payment.amount !== testSeries.price || payment.currency !== "INR") {
+    return { success: false, error: "Payment amount or currency does not match the test series." }
+  }
+  if (payment.status === PaymentStatus.REFUNDED || payment.status === PaymentStatus.REFUND_PENDING) {
+    return { success: false, error: "This payment is no longer eligible for registration." }
+  }
+  if (payment.status === PaymentStatus.COMPLETED && payment.razorpayPaymentId === input.razorpayPaymentId) {
+    return { success: true, message: "Payment was already verified and access is active." }
+  }
+  if (payment.status === PaymentStatus.COMPLETED && payment.razorpayPaymentId !== input.razorpayPaymentId) {
+    return { success: false, error: "This order was already completed with a different payment. Please contact support." }
   }
 
   // Atomically fulfill payment and create registration in a transaction
@@ -240,7 +307,7 @@ export async function verifyPaymentAndRegisterAction(input: {
 
     // 2. Mark payment as completed and link to registration
     await tx.payment.update({
-      where: { razorpayOrderId: input.razorpayOrderId },
+      where: { id: payment.id },
       data: {
         razorpayPaymentId: input.razorpayPaymentId,
         razorpaySignature: input.razorpaySignature,

@@ -58,6 +58,17 @@ const studentNavItems: NavItem[] = [
     label: "Dashboard",
     href: "/student/dashboard",
     icon: LayoutDashboard,
+    exact: true,
+  },
+  {
+    label: "My Tests",
+    href: "/student/tests",
+    icon: BookOpen,
+  },
+  {
+    label: "Purchases",
+    href: "/student/purchases",
+    icon: CreditCard,
   },
   {
     label: "Profile & Settings",
@@ -130,9 +141,6 @@ export function PortalShell({
   function isItemActive(item: NavItem) {
     if (item.exact) {
       return pathname === item.href
-    }
-    if (item.href === "/student/dashboard" && pathname.startsWith("/student/tests")) {
-      return true
     }
     return pathname === item.href || pathname.startsWith(`${item.href}/`)
   }

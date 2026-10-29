@@ -28,7 +28,18 @@ export async function claimEvaluationRun(
     })
 
     if (!current) throw new EvaluationRunError("Submission not found.", "NOT_FOUND")
-    const recordedRuns = Math.max(current.aiEvaluationRuns, current.evaluation ? 1 : 0)
+    // The counter is a fast-path, not the source of truth. Older runs can
+    // exist after a partial recovery, so always include the persisted maximum
+    // run number before allocating the next unique (submissionId, runNumber).
+    const persistedRuns = await tx.evaluationRun.aggregate({
+      where: { submissionId },
+      _max: { runNumber: true },
+    })
+    const recordedRuns = Math.max(
+      current.aiEvaluationRuns,
+      current.evaluation ? 1 : 0,
+      persistedRuns._max.runNumber || 0
+    )
     if (recordedRuns >= MAX_AI_EVALUATION_RUNS) {
       throw new EvaluationRunError("This submission has used all 3 AI evaluation runs.", "LIMIT_REACHED")
     }
@@ -61,17 +72,27 @@ export async function claimEvaluationRun(
       throw new EvaluationRunError("This submission is already being evaluated.", "ALREADY_PROCESSING")
     }
 
-    return tx.evaluationRun.create({
-      data: {
-        submissionId,
-        runNumber: recordedRuns + 1,
-        trigger,
-        status: EvaluationStatus.PROCESSING,
-        evaluatorModel: "pending",
-        generalFeedback: "",
-        startedAt: new Date(),
-      },
-    })
+    try {
+      return await tx.evaluationRun.create({
+        data: {
+          submissionId,
+          runNumber: recordedRuns + 1,
+          trigger,
+          status: EvaluationStatus.PROCESSING,
+          evaluatorModel: "pending",
+          generalFeedback: "",
+          startedAt: new Date(),
+        },
+      })
+    } catch (error) {
+      // A concurrent request may win the unique run allocation between the
+      // counter update and insert. Return a user-safe retry message instead of
+      // leaking Prisma P2002.
+      if (error && typeof error === "object" && "code" in error && error.code === "P2002") {
+        throw new EvaluationRunError("This submission was already claimed for evaluation. Refresh and check its status.", "ALREADY_PROCESSING")
+      }
+      throw error
+    }
   }, { maxWait: 10_000, timeout: 30_000 })
 }
 

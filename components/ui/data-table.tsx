@@ -91,6 +91,7 @@ export interface DataTableProps<T> {
   defaultViewMode?: "auto" | "table" | "grid"
   renderCard?: (row: T, index: number, serialNumber: number) => React.ReactNode
   gridClassName?: string
+  tableClassName?: string
 }
 
 export function DataTable<T>({
@@ -113,6 +114,7 @@ export function DataTable<T>({
   defaultViewMode = "auto",
   renderCard,
   gridClassName,
+  tableClassName,
 }: DataTableProps<T>) {
   const [viewMode, setViewMode] = React.useState<"auto" | "table" | "grid">(defaultViewMode)
   const [searchQuery, setSearchQuery] = React.useState("")
@@ -622,8 +624,8 @@ export function DataTable<T>({
               : "hidden md:block"
         )}
       >
-        <Table>
-          <TableHeader>
+        <Table className={tableClassName}>
+          <TableHeader className="sticky top-0 z-10">
             <TableRow className="bg-muted/50 hover:bg-muted/70 border-b border-border">
               {/* Sr. Column Header matching reference screenshots */}
               {showSerialNumber && (
