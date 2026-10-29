@@ -78,9 +78,14 @@ export const authOptions: NextAuthOptions = {
 
         // Demo / offline fallback ONLY in development
         if (process.env.NODE_ENV === "development") {
+          const adminInitialEmail = process.env.ADMIN_INITIAL_EMAIL?.trim().toLowerCase()
+          const adminInitialPassword = process.env.ADMIN_INITIAL_PASSWORD
+
           if (
-            normalizedEmail === (process.env.ADMIN_INITIAL_EMAIL || "admin@verityra.com").toLowerCase() &&
-            credentials.password === (process.env.ADMIN_INITIAL_PASSWORD || "AdminSecurePassword123!")
+            adminInitialEmail &&
+            adminInitialPassword &&
+            normalizedEmail === adminInitialEmail &&
+            credentials.password === adminInitialPassword
           ) {
             return {
               id: "admin-demo-user-id",

@@ -3,9 +3,10 @@
 import { getCurrentUser } from "@/lib/auth-guard"
 import { prisma, isDatabaseConnected } from "@/lib/prisma"
 import { uploadPrivateFile } from "@/lib/supabase"
-import { evaluateAnswerSheetWithGemini } from "@/lib/ai/gemini-evaluator"
+import { evaluateAnswerSheetWithGemini, getGeminiModelName } from "@/lib/ai/gemini-evaluator"
 import { queueEvaluation } from "@/lib/queue/evaluation-queue"
-import { EvaluationStatus, RegistrationStatus, SubmissionStatus } from "@prisma/client"
+import { claimEvaluationRun, failEvaluationRun, persistEvaluationRun } from "@/lib/evaluation/evaluation-run-service"
+import { RegistrationStatus, SubmissionStatus } from "@prisma/client"
 import { revalidatePath } from "next/cache"
 import { ActionResult } from "./auth-actions"
 
@@ -27,8 +28,10 @@ export async function submitAnswerSheetAction(formData: FormData): Promise<Actio
     return { success: false, error: "Authentication required to submit answers." }
   }
 
-  const testSeriesId = formData.get("testSeriesId") as string
-  const file = formData.get("file") as File | null
+  const testSeriesIdValue = formData.get("testSeriesId")
+  const fileValue = formData.get("file")
+  const testSeriesId = typeof testSeriesIdValue === "string" ? testSeriesIdValue : ""
+  const file = fileValue instanceof File ? fileValue : null
 
   if (!testSeriesId || !file) {
     return { success: false, error: "Test series ID and answer sheet file are required." }
@@ -102,7 +105,8 @@ export async function submitAnswerSheetAction(formData: FormData): Promise<Actio
   // 5. Upload File Securely to Private Storage
   const fileBytes = Buffer.from(await file.arrayBuffer())
   const attemptToReserve = registration.attemptsUsed + 1
-  const storagePath = `submissions/${testSeriesId}/${user.id}/attempt_${attemptToReserve}_${Date.now()}_${file.name}`
+  const safeFileName = (file.name.split(/[\\/]/).pop() || "answer-sheet").replace(/[^\w.-]/g, "_")
+  const storagePath = `submissions/${testSeriesId}/${user.id}/attempt_${attemptToReserve}_${Date.now()}_${safeFileName}`
 
   let uploadedFileUrl: string
   try {
@@ -144,7 +148,7 @@ export async function submitAnswerSheetAction(formData: FormData): Promise<Actio
           fileUrl: uploadedFileUrl,
           fileType: file.type,
           fileSizeBytes: file.size,
-          status: SubmissionStatus.PROCESSING,
+          status: SubmissionStatus.PENDING,
         },
       })
 
@@ -161,8 +165,17 @@ export async function submitAnswerSheetAction(formData: FormData): Promise<Actio
     return { success: false, error: "Database transaction failed. Please try again." }
   }
 
+  let evaluationRun
+  try {
+    evaluationRun = await claimEvaluationRun(submission.id, "AUTOMATIC")
+  } catch (runError: any) {
+    console.error("[EVALUATION RUN CLAIM ERROR]", runError)
+    await prisma.submission.update({ where: { id: submission.id }, data: { status: SubmissionStatus.FAILED } })
+    return { success: false, error: "Submission saved, but evaluation could not be queued. Please contact an administrator." }
+  }
+
   // 7. Trigger AI Evaluation Workflow (Async Queue)
-  // Attempt to queue evaluation in background; fall back to synchronous if Redis unavailable
+  // Queue evaluation in the background; only local development may use the sync fallback.
   const jobId = await queueEvaluation({
     submissionId: submission.id,
     testSeriesId: registration.testSeriesId,
@@ -170,11 +183,14 @@ export async function submitAnswerSheetAction(formData: FormData): Promise<Actio
     fileUrl: uploadedFileUrl,
     fileBuffer: fileBytes.toString('base64'), // Pass buffer to avoid re-downloading
     mimeType: file.type,
+    runId: evaluationRun.id,
+    runNumber: evaluationRun.runNumber,
   })
 
-  if (!jobId) {
-    // Redis not available - fall back to synchronous evaluation (legacy path)
-    console.warn('[Submission] Redis unavailable, falling back to synchronous evaluation')
+  let evaluationFailed = false
+  if (!jobId && process.env.NODE_ENV === "development") {
+    // Keep local development usable without Redis; production is always asynchronous.
+    console.warn('[Submission] Redis unavailable in development, using synchronous evaluation')
 
     try {
       const testSeries = registration.testSeries
@@ -190,63 +206,23 @@ export async function submitAnswerSheetAction(formData: FormData): Promise<Actio
         studentAnswerSheetUrl: uploadedFileUrl,
       })
 
-      // Compute application-level totals
-      let totalScore = 0
-      aiResult.questions.forEach((q) => {
-        totalScore += q.marksAwarded
-      })
-
-      const percentage = Number(((totalScore / testSeries.maxMarks) * 100).toFixed(2))
-
-      // Determine status: if uncertainty or legibility warnings triggered, flag for REVIEW_REQUIRED
-      const evalStatus =
-        aiResult.uncertaintyFlag || aiResult.legibilityWarning
-          ? EvaluationStatus.REVIEW_REQUIRED
-          : EvaluationStatus.COMPLETED
-
-      await prisma.$transaction(async (tx) => {
-        const evaluation = await tx.evaluation.create({
-          data: {
-            submissionId: submission.id,
-            totalMarksAwarded: totalScore,
-            maxMarks: testSeries.maxMarks,
-            percentage,
-            generalFeedback: aiResult.generalFeedback,
-            legibilityWarning: aiResult.legibilityWarning,
-            uncertaintyFlag: aiResult.uncertaintyFlag,
-            status: evalStatus,
-            evaluatedAt: new Date(),
-            questions: {
-              create: aiResult.questions.map((q) => ({
-                questionNumber: q.questionNumber,
-                maxMarks: q.maxMarks,
-                marksAwarded: q.marksAwarded,
-                feedback: q.feedback,
-                missingConcepts: q.missingConcepts,
-                isLegible: q.isLegible,
-                isUncertain: q.isUncertain,
-              })),
-            },
-          },
-        })
-
-        await tx.submission.update({
-          where: { id: submission.id },
-          data: {
-            status:
-              evalStatus === EvaluationStatus.REVIEW_REQUIRED
-                ? SubmissionStatus.REVIEW_REQUIRED
-                : SubmissionStatus.COMPLETED,
-          },
-        })
+      await persistEvaluationRun({
+        runId: evaluationRun.id,
+        submissionId: submission.id,
+        result: aiResult,
+        maxMarks: testSeries.maxMarks,
+        evaluatorModel: getGeminiModelName(),
       })
     } catch (evalErr) {
       console.error("[EVALUATION FAILED]", evalErr)
-      await prisma.submission.update({
-        where: { id: submission.id },
-        data: { status: SubmissionStatus.FAILED },
-      })
+      evaluationFailed = true
+      await failEvaluationRun(evaluationRun.id, evalErr instanceof Error ? evalErr.message : "Evaluation failed")
     }
+  } else if (!jobId) {
+    evaluationFailed = true
+    await failEvaluationRun(evaluationRun.id, "Evaluation worker is unavailable. Configure REDIS_URL and start the worker.")
+  } else {
+    evaluationFailed = false
   }
 
   revalidatePath(`/student/tests/${testSeriesId}`)
@@ -255,7 +231,9 @@ export async function submitAnswerSheetAction(formData: FormData): Promise<Actio
 
   const evaluationMessage = jobId
     ? "Your submission is being evaluated. Results will be available shortly."
-    : "Evaluation completed."
+    : evaluationFailed
+      ? "Your submission was saved, but evaluation failed. It remains retryable from the admin submissions page."
+      : "Evaluation completed."
 
   return {
     success: true,

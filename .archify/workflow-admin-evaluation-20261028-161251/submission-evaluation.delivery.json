@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "da489303-dac3-407c-8779-c519dbda37ce",
+  "status": "current",
+  "command": "deliver",
+  "type": "workflow",
+  "input": "D:\\Abdul Basit\\Freelance\\Verityra\\verityra4\\.archify\\workflow-admin-evaluation-20261028-161251\\candidate.json",
+  "output": "D:\\Abdul Basit\\Freelance\\Verityra\\verityra4\\.archify\\workflow-admin-evaluation-20261028-161251\\submission-evaluation.html",
+  "specification": {
+    "sha256": "b28f5d3e81089c16277dc2227290cc2410a62c9e06baf79d68365a88c22f735d",
+    "bytes": 5088
+  },
+  "artifact": {
+    "sha256": "9a299d8c9c2297777f9bf6286570bc45157dc8d844f1de08d04076e2cceea8ee",
+    "bytes": 760062
+  }
+}

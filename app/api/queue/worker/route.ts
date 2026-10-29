@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createEvaluationWorker } from '@/lib/queue/evaluation-queue'
+import { getCurrentUser } from '@/lib/auth-guard'
+import { Role } from '@prisma/client'
 
 /**
  * Evaluation Worker Management API
@@ -34,6 +36,13 @@ import { createEvaluationWorker } from '@/lib/queue/evaluation-queue'
 let workerInstance: any = null
 let workerStartTime: number | null = null
 
+async function authorizeWorkerManagement(request: Request) {
+  const internalSecret = process.env.EVALUATION_WORKER_SECRET
+  if (internalSecret && request.headers.get('x-evaluation-worker-secret') === internalSecret) return true
+  const user = await getCurrentUser()
+  return user?.role === Role.ADMIN
+}
+
 // Auto-start worker on module load (runs once per server process)
 if (process.env.AUTO_START_WORKER !== 'false') {
   try {
@@ -50,8 +59,9 @@ if (process.env.AUTO_START_WORKER !== 'false') {
 /**
  * GET - Start or check worker
  */
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    if (!(await authorizeWorkerManagement(request))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     if (!workerInstance) {
       workerInstance = createEvaluationWorker()
 
@@ -98,8 +108,9 @@ export async function GET() {
 /**
  * POST - Health check / status
  */
-export async function POST() {
+export async function POST(request: Request) {
   try {
+    if (!(await authorizeWorkerManagement(request))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const isRunning = !!workerInstance
     const uptime = workerStartTime ? Math.floor((Date.now() - workerStartTime) / 1000) : null
 
@@ -130,8 +141,9 @@ export async function POST() {
  * DELETE - Stop worker (graceful shutdown)
  * Use with caution - typically only needed for maintenance
  */
-export async function DELETE() {
+export async function DELETE(request: Request) {
   try {
+    if (!(await authorizeWorkerManagement(request))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     if (!workerInstance) {
       return NextResponse.json({
         status: 'not_running',

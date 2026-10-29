@@ -21,7 +21,7 @@ GOOGLE_CLIENT_ID="[client-id].apps.googleusercontent.com"
 GOOGLE_CLIENT_SECRET="[client-secret]"
 
 GEMINI_API_KEY="[your-gemini-api-key]"
-GEMINI_MODEL="gemini-2.5-flash"
+GEMINI_MODEL="gemini-3.8-flash"
 
 RAZORPAY_KEY_ID="rzp_live_[your-key-id]"
 RAZORPAY_KEY_SECRET="[your-razorpay-secret]"

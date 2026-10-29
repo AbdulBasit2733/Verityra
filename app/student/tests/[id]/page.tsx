@@ -6,6 +6,7 @@ import {
   StudentWorkspaceClient,
   WorkspaceSubmissionItem,
 } from "@/components/student-workspace-client"
+import { normalizePrivateFileUrl } from "@/lib/supabase"
 
 export const dynamic = "force-dynamic"
 
@@ -42,6 +43,10 @@ export default async function StudentTestWorkspacePage({
                   orderBy: { questionNumber: "asc" },
                 },
               },
+            },
+            evaluationRuns: {
+              orderBy: { runNumber: "asc" },
+              include: { questions: { orderBy: { questionNumber: "asc" } } },
             },
           },
           orderBy: { attemptNumber: "desc" },
@@ -148,7 +153,7 @@ export default async function StudentTestWorkspacePage({
     id: sub.id,
     attemptNumber: sub.attemptNumber,
     status: sub.status,
-    fileUrl: sub.fileUrl || null,
+    fileUrl: normalizePrivateFileUrl(sub.fileUrl),
     submittedAt: new Date(sub.submittedAt).toISOString(),
     evaluation: sub.evaluation
       ? {
@@ -167,9 +172,34 @@ export default async function StudentTestWorkspacePage({
             feedback: q.feedback,
             missingConcepts: q.missingConcepts || null,
             isLegible: q.isLegible !== false,
+            scoreBand: q.scoreBand,
+            scoreExplanation: q.scoreExplanation,
+            strengths: q.strengths,
+            examinerExpectation: q.examinerExpectation,
+            improvementAdvice: q.improvementAdvice,
           })),
         }
       : null,
+    evaluationRuns: sub.evaluation ? (sub.evaluationRuns || []).map((run: any) => ({
+          id: run.id,
+          runNumber: run.runNumber,
+          trigger: run.trigger,
+          status: run.status,
+          totalMarksAwarded: run.totalMarksAwarded,
+          maxMarks: run.maxMarks,
+          questions: (run.questions || []).map((q: any) => ({
+            id: q.id,
+            questionNumber: q.questionNumber,
+            maxMarks: q.maxMarks,
+            marksAwarded: q.marksAwarded,
+            feedback: q.scoreExplanation,
+            missingConcepts: q.missingConcepts || null,
+            strengths: q.strengths,
+            examinerExpectation: q.examinerExpectation,
+            improvementAdvice: q.improvementAdvice,
+            isLegible: q.isLegible !== false,
+          })),
+    })) : [],
   }))
 
   // Note: Only studentInstructions are passed — privateEvaluationInstructions are never projected to student views.
@@ -189,12 +219,12 @@ export default async function StudentTestWorkspacePage({
         papers={(testSeries.papers || []).map((p: any) => ({
           id: p.id,
           title: p.title,
-          fileUrl: p.fileUrl,
+          fileUrl: normalizePrivateFileUrl(p.fileUrl) || "",
         }))}
         templates={(testSeries.templates || []).map((t: any) => ({
           id: t.id,
           title: t.title,
-          fileUrl: t.fileUrl,
+          fileUrl: normalizePrivateFileUrl(t.fileUrl) || "",
         }))}
         submissions={serializedSubmissions}
       />

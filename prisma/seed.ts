@@ -272,6 +272,35 @@ async function main() {
   })
   console.log(`Demo Student provisioned: ${student.email}`)
 
+  // 2b. Provision deterministic student fixtures for admin/list/table tests.
+  // These upserts are safe to run repeatedly and use a dedicated seed domain.
+  const testStudentPasswordHash = await bcrypt.hash("StudentTestPassword123!", 12)
+  const testStudents = await Promise.all(
+    Array.from({ length: 10 }, async (_, index) => {
+      const number = String(index + 1).padStart(2, "0")
+      return prisma.user.upsert({
+        where: { email: `test.student${number}@seed.verityra.com` },
+        update: {},
+        create: {
+          name: `Test Student ${number}`,
+          email: `test.student${number}@seed.verityra.com`,
+          passwordHash: testStudentPasswordHash,
+          role: Role.STUDENT,
+          status: UserStatus.ACTIVE,
+          emailVerified: new Date(),
+          profile: {
+            create: {
+              educationLevel: "Seeded test candidate",
+              institution: "Verityra QA Fixtures",
+              targetExam: "Admin panel testing",
+            },
+          },
+        },
+      })
+    })
+  )
+  console.log(`Test students provisioned: ${testStudents.length}`)
+
   // 3. Seed Existing Base Series (UPSC & State PSC)
   const baseSeries = [
     {
@@ -424,6 +453,26 @@ async function main() {
       },
     })
     console.log(`Registered demo student for Class 10 Mathematics mock.`)
+
+    for (const testStudent of testStudents) {
+      await prisma.testRegistration.upsert({
+        where: {
+          userId_testSeriesId: {
+            userId: testStudent.id,
+            testSeriesId: maths10th.id,
+          },
+        },
+        update: {},
+        create: {
+          userId: testStudent.id,
+          testSeriesId: maths10th.id,
+          status: RegistrationStatus.ACTIVE,
+          attemptsUsed: 0,
+          maxAttempts: 3,
+        },
+      })
+    }
+    console.log(`Registered ${testStudents.length} test students for Class 10 Mathematics mock.`)
   }
 
   console.log("Database seed complete.")

@@ -1,8 +1,9 @@
-import { prisma, isDatabaseConnected } from "@/lib/prisma"
+import { prisma } from "@/lib/prisma"
 import {
   AdminSubmissionRow,
   AdminSubmissionsClient,
 } from "@/components/admin-submissions-client"
+import { normalizePrivateFileUrl } from "@/lib/supabase"
 
 export const dynamic = "force-dynamic"
 
@@ -16,13 +17,11 @@ export default async function AdminSubmissionsPage({
   const limit = parseInt(params.limit || '25', 10)
   const skip = (page - 1) * limit
 
-  const dbConnected = await isDatabaseConnected()
-
   let submissions: any[] = []
   let totalCount = 0
 
-  if (dbConnected) {
-    // Fetch submissions and total count in parallel for better performance
+  try {
+    // The queries themselves are the health check; avoid an extra round trip to the database.
     [submissions, totalCount] = await Promise.all([
       prisma.submission.findMany({
         skip,
@@ -36,7 +35,7 @@ export default async function AdminSubmissionsPage({
       }),
       prisma.submission.count(),
     ])
-  } else {
+  } catch {
     submissions = [
       {
         id: "sub-1",
@@ -65,10 +64,10 @@ export default async function AdminSubmissionsPage({
     totalMarksAwarded: sub.evaluation ? sub.evaluation.totalMarksAwarded : null,
     maxMarks: sub.evaluation ? sub.evaluation.maxMarks : sub.testSeries?.maxMarks || 250,
     uncertaintyFlag: Boolean(sub.evaluation?.uncertaintyFlag),
-    fileUrl: sub.fileUrl || null,
+    fileUrl: normalizePrivateFileUrl(sub.fileUrl),
     submittedAt: new Date(sub.submittedAt).toISOString(),
+    aiEvaluationRuns: sub.aiEvaluationRuns || 0,
   }))
-
   const totalPages = Math.ceil(totalCount / limit)
 
   return (

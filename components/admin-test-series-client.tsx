@@ -13,6 +13,7 @@ import { useConfirm } from "@/components/providers/confirm-dialog-provider"
 import { useGlobalError } from "@/components/providers/error-dialog-provider"
 import { toast } from "@/components/ui/sonner"
 import { togglePublishTestSeriesAction } from "@/actions/test-series-actions"
+import { AdminTestSeriesMaxMarksEditor } from "@/components/admin-test-series-max-marks-editor"
 import { cn } from "@/lib/utils"
 import {
   BookOpen,
@@ -238,6 +239,12 @@ export function AdminTestSeriesClient({
               </Button>
             </Link>
 
+            <AdminTestSeriesMaxMarksEditor
+              testSeriesId={t.id}
+              initialMaxMarks={t.maxMarks}
+              compact
+            />
+
             {/* Candidate View External Link */}
             <Link href={`/tests/${t.id}`} target="_blank">
               <Button
@@ -355,7 +362,7 @@ export function AdminTestSeriesClient({
           return (
             <div
               key={t.id}
-              className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs hover:border-[#2A6AED]/40 hover:shadow-md transition-all flex flex-col justify-between gap-4"
+              className="rounded-xl border border-border bg-card p-4 sm:p-5 shadow-none hover:border-primary/40 transition-colors flex flex-col justify-between gap-4"
             >
               <div className="space-y-3">
                 {/* Header: SN + Status + Price */}

@@ -1,5 +1,32 @@
-import { GoogleGenAI } from "@google/genai"
-import { aiEvaluationResponseSchema, AiEvaluationResult } from "./evaluation-schema"
+import { GoogleGenAI, type Part } from "@google/genai"
+import {
+  aiEvaluationResponseSchema,
+  AiEvaluationResult,
+} from "./evaluation-schema"
+
+export const DEFAULT_GEMINI_MODEL = "gemini-3.8-flash"
+const CURRENT_FREE_FALLBACK_GEMINI_MODEL = "gemini-3.5-flash-lite"
+const LEGACY_GEMINI_MODEL = "gemini-2.5-flash-lite"
+
+export function getGeminiModelName(): string {
+  const configuredModel =
+    process.env.GEMINI_MODEL?.trim() || DEFAULT_GEMINI_MODEL
+  return configuredModel === LEGACY_GEMINI_MODEL
+    ? CURRENT_FREE_FALLBACK_GEMINI_MODEL
+    : configuredModel
+}
+
+export function assertGeminiApiKeyConfigured(
+  apiKey: string | undefined,
+  runtimeEnvironment = process.env.NODE_ENV
+): void {
+  if (
+    (!apiKey || apiKey === "your-gemini-api-key") &&
+    runtimeEnvironment !== "development"
+  ) {
+    throw new Error("GEMINI_API_KEY must be configured outside development.")
+  }
+}
 
 export type EvaluationInput = {
   testTitle: string
@@ -18,16 +45,26 @@ export async function evaluateAnswerSheetWithGemini(
   input: EvaluationInput
 ): Promise<AiEvaluationResult> {
   const apiKey = process.env.GEMINI_API_KEY
-  const modelName = process.env.GEMINI_MODEL || "gemini-2.5-flash"
+  const modelName = getGeminiModelName()
 
-  // If no Gemini API key is configured, provide a realistic structured fallback for local development
+  assertGeminiApiKeyConfigured(apiKey)
+
+  // Keep the mock evaluator confined to local development.
   if (!apiKey || apiKey === "your-gemini-api-key") {
-    console.warn("[GEMINI EVALUATION] GEMINI_API_KEY not set. Using simulated evaluation result.")
+    console.warn(
+      "[GEMINI EVALUATION] GEMINI_API_KEY not set. Using simulated evaluation result."
+    )
     return simulateEvaluation(input)
   }
 
   try {
-    const ai = new GoogleGenAI({ apiKey })
+    const ai = new GoogleGenAI({
+      apiKey,
+      httpOptions: {
+        // Never leave a worker job active forever when the provider hangs.
+        timeout: 10 * 60 * 1000,
+      },
+    })
 
     const systemPrompt = `
 You are Verityra's expert academic evaluator. Your mission is to impartially, rigorously, and constructively evaluate the student's handwritten answer sheet against the provided question rubric and private evaluation instructions.
@@ -50,8 +87,13 @@ You MUST respond strictly with valid JSON conforming to the following structure:
       "questionNumber": "Q1",
       "maxMarks": 10,
       "marksAwarded": 8.5,
+      "scoreBand": "GOOD",
+      "scoreExplanation": "Correctly explains the main concept and supports it with the required reasoning.",
+      "strengths": "Clear definition and logically ordered steps.",
       "feedback": "Clear explanation of the core concept. Minor calculation error in step 3.",
       "missingConcepts": "Omitted the boundary condition check in conclusion.",
+      "examinerExpectation": "Define the concept, show the key steps, and address the boundary condition.",
+      "improvementAdvice": "Add the boundary-condition check before the final conclusion.",
       "isLegible": true,
       "isUncertain": false
     }
@@ -72,7 +114,7 @@ ${input.privateEvaluationInstructions}
 Please evaluate the attached student answer sheet thoroughly and return the structured JSON evaluation.
 `
 
-    const contents: any[] = [{ text: userPrompt }]
+    const contents: Part[] = [{ text: userPrompt }]
 
     // Attach student answer sheet document/image if buffer is provided
     if (input.studentAnswerSheetBuffer && input.studentAnswerSheetMimeType) {
@@ -84,17 +126,49 @@ Please evaluate the attached student answer sheet thoroughly and return the stru
       })
     }
 
-    const response = await ai.models.generateContent({
-      model: modelName,
-      contents,
-      config: {
-        systemInstruction: systemPrompt,
-        responseMimeType: "application/json",
-      },
-    })
+    let response
+    try {
+      response = await ai.models.generateContent({
+        model: modelName,
+        contents,
+        config: {
+          systemInstruction: systemPrompt,
+          responseMimeType: "application/json",
+        },
+      })
+    } catch (error: any) {
+      // Temporary 503s are common on free-tier capacity. Retry once on a smaller
+      // free model instead of making the admin wait through repeated failures.
+      if (
+        ![404, 503].includes(error?.status) ||
+        modelName === CURRENT_FREE_FALLBACK_GEMINI_MODEL
+      ) {
+        throw error
+      }
+
+      console.warn(
+        `[GEMINI EVALUATION] ${modelName} unavailable; retrying with ${CURRENT_FREE_FALLBACK_GEMINI_MODEL}.`
+      )
+      response = await ai.models.generateContent({
+        model: CURRENT_FREE_FALLBACK_GEMINI_MODEL,
+        contents,
+        config: {
+          systemInstruction: systemPrompt,
+          responseMimeType: "application/json",
+        },
+      })
+    }
 
     const responseText = response.text || ""
     const parsedJson = JSON.parse(responseText)
+    if (Array.isArray(parsedJson.questions)) {
+      parsedJson.questions = parsedJson.questions.map(
+        (question: Record<string, unknown>) => ({
+          ...question,
+          scoreBand: normalizeScoreBand(question.scoreBand),
+        })
+      )
+    }
     const validated = aiEvaluationResponseSchema.parse(parsedJson)
 
     // Enforce upper bounds on awarded marks
@@ -110,24 +184,19 @@ Please evaluate the attached student answer sheet thoroughly and return the stru
     return validated
   } catch (error) {
     console.error("[GEMINI EVALUATION ERROR]", error)
-    // Return fallback with uncertainty flag so it routes to admin review
-    return {
-      generalFeedback: "Automated evaluation encountered an ambiguity or model exception. Sent to Admin Review.",
-      legibilityWarning: false,
-      uncertaintyFlag: true,
-      questions: [
-        {
-          questionNumber: "Q1",
-          maxMarks: input.maxMarks,
-          marksAwarded: 0,
-          feedback: "Manual review required by educator due to processing exception.",
-          missingConcepts: "Pending educator review",
-          isLegible: true,
-          isUncertain: true,
-        },
-      ],
-    }
+    throw error
   }
+}
+
+function normalizeScoreBand(value: unknown): "GOOD" | "PARTIAL" | "WEAK" {
+  const normalized = String(value ?? "PARTIAL")
+    .trim()
+    .toUpperCase()
+    .replace(/[\s_-]+/g, "")
+  if (["GOOD", "STRONG", "CORRECT", "EXCELLENT"].includes(normalized))
+    return "GOOD"
+  if (["WEAK", "POOR", "BAD", "INCORRECT"].includes(normalized)) return "WEAK"
+  return "PARTIAL"
 }
 
 /**
@@ -152,8 +221,18 @@ function simulateEvaluation(input: EvaluationInput): AiEvaluationResult {
         questionNumber: "Q1",
         maxMarks: q1Max,
         marksAwarded: q1Awarded,
-        feedback: "Comprehensive explanation following all key points in the rubric. Logical progression.",
-        missingConcepts: "Could cite specific real-world precedent to strengthen the thesis.",
+        scoreBand: "GOOD",
+        scoreExplanation:
+          "The answer covers the main criteria with accurate reasoning.",
+        strengths: "Clear structure and accurate core concepts.",
+        feedback:
+          "Comprehensive explanation following all key points in the rubric. Logical progression.",
+        missingConcepts:
+          "Could cite specific real-world precedent to strengthen the thesis.",
+        examinerExpectation:
+          "Address the core concept, supporting evidence, and a clear conclusion.",
+        improvementAdvice:
+          "Add one specific supporting example and strengthen the conclusion.",
         isLegible: true,
         isUncertain: false,
       },
@@ -161,8 +240,17 @@ function simulateEvaluation(input: EvaluationInput): AiEvaluationResult {
         questionNumber: "Q2",
         maxMarks: q2Max,
         marksAwarded: q2Awarded,
-        feedback: "Correct methodology applied. Minor notation inconsistency midway through the derivation.",
+        scoreBand: "GOOD",
+        scoreExplanation:
+          "The method is correct and reaches the expected result with a minor omission.",
+        strengths: "Correct methodology and mostly clear working.",
+        feedback:
+          "Correct methodology applied. Minor notation inconsistency midway through the derivation.",
         missingConcepts: "Alternative interpretation not mentioned.",
+        examinerExpectation:
+          "Show each required step and address alternative interpretations where relevant.",
+        improvementAdvice:
+          "Keep notation consistent and mention the alternative interpretation.",
         isLegible: true,
         isUncertain: false,
       },
@@ -170,8 +258,17 @@ function simulateEvaluation(input: EvaluationInput): AiEvaluationResult {
         questionNumber: "Q3",
         maxMarks: q3Max,
         marksAwarded: q3Awarded,
-        feedback: "Accurate conclusions drawn. Neat handwriting and well-labeled points.",
+        scoreBand: "GOOD",
+        scoreExplanation:
+          "The conclusion is accurate and the answer meets the main marking criteria.",
+        strengths: "Accurate conclusions and well-labeled points.",
+        feedback:
+          "Accurate conclusions drawn. Neat handwriting and well-labeled points.",
         missingConcepts: "None. Met all required marking criteria.",
+        examinerExpectation:
+          "Present accurate conclusions with relevant labels and supporting explanation.",
+        improvementAdvice:
+          "Add a concise final synthesis to make the answer more complete.",
         isLegible: true,
         isUncertain: false,
       },

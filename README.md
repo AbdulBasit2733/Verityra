@@ -28,7 +28,7 @@ Candidates practice under authentic examination conditions: downloading margin-a
 - **Database & ORM**: PostgreSQL (Supabase) + Prisma ORM
 - **Authentication**: NextAuth.js (Credentials + Google OAuth)
 - **Storage**: Private Supabase Storage / Secure Local Vault
-- **Evaluation**: Google Gemini Multimodal API (`gemini-2.5-flash`)
+- **Evaluation**: Google Gemini Multimodal API (`gemini-3.8-flash` by default)
 - **Payments**: Razorpay Node SDK
 - **Testing**: Native assert + TSX runner (42 modular domain tests)
 

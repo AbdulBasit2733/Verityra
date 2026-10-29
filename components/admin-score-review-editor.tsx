@@ -18,10 +18,12 @@ import { adminReviewScoreAction } from "@/actions/evaluation-actions"
 export function AdminScoreReviewEditor({
   submissionId,
   initialEvaluation,
+  evaluationRuns = [],
   fileUrl,
 }: {
   submissionId: string
   initialEvaluation: any
+  evaluationRuns?: any[]
   fileUrl: string
 }) {
   const router = useRouter()
@@ -155,6 +157,10 @@ export function AdminScoreReviewEditor({
               Missing: {q.missingConcepts}
             </p>
           )}
+          <p className="text-[11px] text-slate-600">Why: {q.scoreExplanation || q.feedback}</p>
+          <p className="text-[11px] text-emerald-800">Strengths: {q.strengths || "Not recorded"}</p>
+          <p className="text-[11px] text-blue-800">Examiner expected: {q.examinerExpectation || "Core concepts and clear reasoning."}</p>
+          <p className="text-[11px] text-indigo-800">Improve: {q.improvementAdvice || "Strengthen the missing concepts."}</p>
         </div>
       ),
     },
@@ -220,6 +226,21 @@ export function AdminScoreReviewEditor({
           </a>
         </div>
       </div>
+
+      {evaluationRuns.length > 0 && (
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 space-y-2">
+          <h3 className="text-sm font-bold text-slate-900">AI Evaluation History</h3>
+          <div className="grid gap-2 sm:grid-cols-3">
+            {evaluationRuns.map((run) => (
+              <div key={run.id} className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs">
+                <p className="font-bold">Run {run.runNumber} · {run.trigger === "AUTOMATIC" ? "Automatic" : "Admin re-evaluation"}</p>
+                <p className="text-slate-600">{run.totalMarksAwarded}/{run.maxMarks} · {run.status}</p>
+                <p className="text-slate-500">{run.questions?.length || 0} question reports</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Question-wise Score Adjustment DataTable */}
       <div className="space-y-2">

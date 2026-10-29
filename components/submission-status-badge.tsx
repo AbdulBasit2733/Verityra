@@ -53,10 +53,17 @@ export function SubmissionStatusBadge({
 
     let mounted = true
     let pollInterval: NodeJS.Timeout
+    let inFlight = false
+    const controller = new AbortController()
 
     const pollStatus = async () => {
+      if (inFlight) return
+      inFlight = true
       try {
-        const response = await fetch(`/api/submissions/${submissionId}/status`)
+        const response = await fetch(`/api/submissions/${submissionId}/status`, {
+          signal: controller.signal,
+          cache: 'no-store',
+        })
 
         if (!response.ok) {
           console.error('[Polling] Failed to fetch status:', response.statusText)
@@ -93,6 +100,8 @@ export function SubmissionStatusBadge({
       } catch (error) {
         console.error('[Polling] Error fetching submission status:', error)
         // Continue polling even on error - might be temporary network issue
+      } finally {
+        inFlight = false
       }
     }
 
@@ -104,6 +113,7 @@ export function SubmissionStatusBadge({
 
     return () => {
       mounted = false
+      controller.abort()
       clearInterval(pollInterval)
     }
   }, [submissionId, status, isPolling])

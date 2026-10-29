@@ -18,6 +18,7 @@ import {
   ArrowLeft,
   Download,
 } from "lucide-react"
+import { normalizePrivateFileUrl } from "@/lib/supabase"
 
 export const dynamic = "force-dynamic"
 
@@ -207,9 +208,10 @@ export default async function TestDetailsPage({
                         </div>
                         {isRegistered ? (
                           <a
-                            href={tpl.fileUrl}
+                            href={normalizePrivateFileUrl(tpl.fileUrl) || "#"}
                             target="_blank"
                             rel="noreferrer"
+                            download
                             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#2A6AED] text-white font-semibold hover:bg-[#1E55C7] text-xs shadow-xs"
                           >
                             <Download className="h-4 w-4" />

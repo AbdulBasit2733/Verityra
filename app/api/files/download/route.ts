@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getCurrentUser } from "@/lib/auth-guard"
-import { Role } from "@prisma/client"
+import { RegistrationStatus, Role } from "@prisma/client"
+import { prisma } from "@/lib/prisma"
+import { getSupabase } from "@/lib/supabase"
 import fs from "fs"
 import path from "path"
 
@@ -17,59 +19,71 @@ export async function GET(req: NextRequest) {
     const bucket = searchParams.get("bucket") || "verityra-private"
     const file = searchParams.get("file")
 
-    if (!file) {
-      return NextResponse.json({ error: "File parameter required" }, { status: 400 })
+    if (!file || bucket !== "verityra-private") {
+      return NextResponse.json({ error: "A valid private file is required." }, { status: 400 })
     }
 
-    // Security check: prevent directory traversal
-    const safeFilePath = path.normalize(file).replace(/^(\.\.[\/\\])+/, "")
-    const fullPath = path.join(LOCAL_STORAGE_DIR, bucket, safeFilePath)
-
-    // Authorization checks based on file type
-    // 1. Question papers, model answers, and templates are ADMIN-ONLY
-    if (
-      safeFilePath.startsWith("papers/") ||
-      safeFilePath.startsWith("model-answers/") ||
-      safeFilePath.startsWith("templates/")
-    ) {
-      if (user.role !== Role.ADMIN) {
-        return NextResponse.json(
-          { error: "Forbidden: Admin access required for question papers, model answers, and templates" },
-          { status: 403 }
-        )
-      }
+    const safeFilePath = path.posix.normalize(file.replace(/\\/g, "/"))
+    if (safeFilePath.startsWith("../") || safeFilePath === ".." || path.posix.isAbsolute(safeFilePath)) {
+      return NextResponse.json({ error: "Invalid file path." }, { status: 400 })
     }
 
-    // 2. Student submissions: only the owner or an admin can access
-    if (safeFilePath.startsWith("submissions/")) {
-      const parts = safeFilePath.split("/")
-      const ownerUserId = parts[2] // submissions/[testSeriesId]/[userId]/...
+    const [fileType, testSeriesId, ownerUserId] = safeFilePath.split("/")
+    if (!testSeriesId || !safeFilePath.includes("/")) {
+      return NextResponse.json({ error: "Invalid file path." }, { status: 400 })
+    }
+
+    if (fileType === "submissions") {
       if (user.role !== Role.ADMIN && user.id !== ownerUserId) {
         return NextResponse.json({ error: "Access denied to this student submission" }, { status: 403 })
       }
-    }
-
-    if (!fs.existsSync(fullPath)) {
-      // In development if sample file requested, serve a dummy response
-      return new NextResponse(
-        `%PDF-1.4\n% Verityra Document\n1 0 obj\n<< /Title (Verityra Document) >>\nendobj\ntrailer\n<< /Root 1 0 R >>\n%%EOF`,
-        {
-          headers: {
-            "Content-Type": "application/pdf",
-            "Content-Disposition": `inline; filename="${path.basename(safeFilePath)}"`,
+    } else if (fileType === "papers" || fileType === "templates") {
+      if (user.role !== Role.ADMIN) {
+        const registration = await prisma.testRegistration.findFirst({
+          where: {
+            userId: user.id,
+            testSeriesId,
+            status: { in: [RegistrationStatus.ACTIVE, RegistrationStatus.COMPLETED] },
           },
+          select: { id: true },
+        })
+        if (!registration) {
+          return NextResponse.json({ error: "Register for this test series to access its documents." }, { status: 403 })
         }
-      )
+      }
+    } else if (fileType === "model-answers") {
+      if (user.role !== Role.ADMIN) {
+        return NextResponse.json({ error: "Admin access required." }, { status: 403 })
+      }
+    } else {
+      return NextResponse.json({ error: "Unsupported private file." }, { status: 400 })
     }
 
-    const fileBuffer = fs.readFileSync(fullPath)
+    let fileBuffer: Buffer
+    const supabase = getSupabase()
+    if (supabase) {
+      const { data, error } = await supabase.storage.from(bucket).download(safeFilePath)
+      if (error || !data) {
+        return NextResponse.json({ error: "File not found." }, { status: 404 })
+      }
+      fileBuffer = Buffer.from(await data.arrayBuffer())
+    } else {
+      const fullPath = path.resolve(LOCAL_STORAGE_DIR, bucket, safeFilePath)
+      const storageRoot = path.resolve(LOCAL_STORAGE_DIR, bucket) + path.sep
+      if (!fullPath.startsWith(storageRoot) || !fs.existsSync(fullPath)) {
+        return NextResponse.json({ error: "File not found." }, { status: 404 })
+      }
+      fileBuffer = await fs.promises.readFile(fullPath)
+    }
+
     const ext = path.extname(safeFilePath).toLowerCase()
     let contentType = "application/octet-stream"
     if (ext === ".pdf") contentType = "application/pdf"
     else if (ext === ".jpg" || ext === ".jpeg") contentType = "image/jpeg"
     else if (ext === ".png") contentType = "image/png"
+    else if (ext === ".webp") contentType = "image/webp"
 
-    return new NextResponse(fileBuffer, {
+    return new NextResponse(new Uint8Array(fileBuffer), {
       headers: {
         "Content-Type": contentType,
         "Content-Disposition": `inline; filename="${path.basename(safeFilePath)}"`,

@@ -9,7 +9,7 @@ import {
   changePasswordSchema,
 } from "@/lib/validations/auth"
 import { prisma, isDatabaseConnected } from "@/lib/prisma"
-import { getCurrentUser } from "@/lib/auth-guard"
+import { getCurrentUser, resolvePersistedAdminActor } from "@/lib/auth-guard"
 import bcrypt from "bcryptjs"
 import crypto from "crypto"
 import { Role, UserStatus } from "@prisma/client"
@@ -336,13 +336,16 @@ export async function getAdminProfileAction(): Promise<ActionResult<{
     }
   }
 
+  const actor = await resolvePersistedAdminActor(user)
+  if (!actor.success) return { success: false, error: actor.error }
+
   const [dbUser, reviewCount] = await Promise.all([
     prisma.user.findUnique({
-      where: { id: user.id },
+      where: { id: actor.user.id },
       include: { profile: true },
     }),
     prisma.auditLog.count({
-      where: { adminId: user.id },
+      where: { adminId: actor.user.id },
     }),
   ])
 
@@ -387,15 +390,18 @@ export async function updateAdminProfileAction(data: {
     return { success: true, message: "Admin profile updated (development mode)." }
   }
 
+  const actor = await resolvePersistedAdminActor(user)
+  if (!actor.success) return { success: false, error: actor.error }
+
   await prisma.$transaction([
     prisma.user.update({
-      where: { id: user.id },
+      where: { id: actor.user.id },
       data: { name: parsed.data.name },
     }),
     prisma.studentProfile.upsert({
-      where: { userId: user.id },
+      where: { userId: actor.user.id },
       create: {
-        userId: user.id,
+        userId: actor.user.id,
         phoneNumber: parsed.data.phoneNumber,
         bio: parsed.data.bio,
       },
@@ -406,10 +412,10 @@ export async function updateAdminProfileAction(data: {
     }),
     prisma.auditLog.create({
       data: {
-        adminId: user.id,
+        adminId: actor.user.id,
         action: "UPDATE_ADMIN_PROFILE",
         targetType: "USER",
-        targetId: user.id,
+        targetId: actor.user.id,
         details: JSON.stringify({
           name: parsed.data.name,
           updatedAt: new Date().toISOString(),
@@ -449,8 +455,15 @@ export async function changePasswordAction(data: {
     return { success: true, message: "Password updated successfully (development mode)." }
   }
 
+  let userId = user.id
+  if (user.role === Role.ADMIN) {
+    const actor = await resolvePersistedAdminActor(user)
+    if (!actor.success) return { success: false, error: actor.error }
+    userId = actor.user.id
+  }
+
   const dbUser = await prisma.user.findUnique({
-    where: { id: user.id },
+    where: { id: userId },
   })
 
   if (!dbUser || !dbUser.passwordHash) {
@@ -468,7 +481,7 @@ export async function changePasswordAction(data: {
   const newHash = await bcrypt.hash(newPassword, 12)
 
   await prisma.user.update({
-    where: { id: user.id },
+    where: { id: userId },
     data: { passwordHash: newHash },
   })
 
@@ -476,10 +489,10 @@ export async function changePasswordAction(data: {
   if (user.role === Role.ADMIN) {
     await prisma.auditLog.create({
       data: {
-        adminId: user.id,
+        adminId: userId,
         action: "PASSWORD_CHANGED",
         targetType: "SECURITY",
-        targetId: user.id,
+        targetId: userId,
         details: JSON.stringify({ timestamp: new Date().toISOString() }),
       },
     })
@@ -490,4 +503,3 @@ export async function changePasswordAction(data: {
     message: "Your password has been changed successfully. Use your new password on your next sign in.",
   }
 }
-

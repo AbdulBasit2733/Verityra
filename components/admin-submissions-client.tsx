@@ -8,7 +8,12 @@ import { DataTable, DataTableColumn, DataTableFilter } from "@/components/ui/dat
 import { FormattedDate } from "@/components/ui/date-picker"
 import { PageHeader } from "@/components/ui/page-header"
 import { KpiStatCard } from "@/components/ui/kpi-stat-card"
-import { AlertTriangle, CheckCircle2, Download, Edit, FileCheck2, FileText } from "lucide-react"
+import { AlertTriangle, CheckCircle2, Download, Edit, FileCheck2, FileText, Loader2, RotateCcw } from "lucide-react"
+import { adminReevaluateSubmissionAction } from "@/actions/evaluation-actions"
+import { useGlobalError } from "@/components/providers/error-dialog-provider"
+import { useConfirm } from "@/components/providers/confirm-dialog-provider"
+import { toast } from "@/components/ui/sonner"
+import { useRouter } from "next/navigation"
 
 export interface AdminSubmissionRow {
   id: string
@@ -22,6 +27,74 @@ export interface AdminSubmissionRow {
   uncertaintyFlag: boolean
   fileUrl?: string | null
   submittedAt: string
+  aiEvaluationRuns: number
+}
+
+export function AdminSubmissionEvaluationTrigger({
+  submissionId,
+  compact = false,
+  aiEvaluationRuns = 0,
+  maxAiEvaluationRuns = 3,
+}: {
+  submissionId: string
+  compact?: boolean
+  aiEvaluationRuns?: number
+  maxAiEvaluationRuns?: number
+}) {
+  const router = useRouter()
+  const { showError } = useGlobalError()
+  const confirm = useConfirm()
+  const [loading, setLoading] = React.useState(false)
+
+  async function handleEvaluate() {
+    const confirmed = await confirm({
+      title: "Queue AI re-evaluation?",
+      description: `This will use AI evaluation run ${aiEvaluationRuns + 1} of ${maxAiEvaluationRuns}.`,
+      confirmText: "Re-evaluate",
+      cancelText: "Cancel",
+      variant: "default",
+    })
+    if (!confirmed) return
+    setLoading(true)
+    try {
+      const result = await adminReevaluateSubmissionAction(submissionId)
+      if (!result.success) {
+        showError({
+          title: "AI Evaluation Failed",
+          message: result.error || "Could not evaluate this submission.",
+          code: "SUBMISSION_EVALUATION_ERR",
+        })
+        return
+      }
+
+      toast.success("Re-evaluation queued", { description: result.message })
+      router.refresh()
+    } catch {
+      showError({
+        title: "AI Evaluation Failed",
+        message: "An unexpected error occurred while evaluating the answer sheet.",
+        code: "SUBMISSION_EVALUATION_ERR",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <Button
+      type="button"
+      size="sm"
+      variant={compact ? "outline" : "default"}
+      className={compact
+        ? "h-8 px-3 border-amber-200 text-amber-800 hover:bg-amber-50 font-semibold text-xs rounded-lg"
+        : "h-10 px-4 bg-[#2A6AED] hover:bg-[#1E55C7] text-white rounded-xl"}
+      disabled={loading}
+      onClick={handleEvaluate}
+    >
+      {loading ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="mr-1.5 h-3.5 w-3.5" />}
+      {loading ? "Queueing..." : `Re-evaluate (${aiEvaluationRuns}/${maxAiEvaluationRuns})`}
+    </Button>
+  )
 }
 
 export function AdminSubmissionsClient({
@@ -161,11 +234,15 @@ export function AdminSubmissionsClient({
       className: "text-right",
       cell: (s) => (
         <div className="flex items-center justify-end gap-1.5">
+          {(s.status === "COMPLETED" || s.status === "FAILED" || s.status === "REVIEW_REQUIRED") && s.aiEvaluationRuns < 3 && (
+            <AdminSubmissionEvaluationTrigger submissionId={s.id} compact aiEvaluationRuns={s.aiEvaluationRuns} />
+          )}
           {s.fileUrl && (
             <a
               href={s.fileUrl}
               target="_blank"
               rel="noreferrer"
+              download
               title="Download scanned candidate booklet"
               className="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-[#2A6AED] hover:bg-blue-50 dark:hover:bg-blue-950 transition-colors"
             >
@@ -301,7 +378,7 @@ export function AdminSubmissionsClient({
         renderCard={(s, _index, sn) => (
           <div
             key={s.id}
-            className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs hover:border-[#2A6AED]/40 hover:shadow-md transition-all flex flex-col justify-between gap-4"
+            className="rounded-xl border border-border bg-card p-4 sm:p-5 shadow-none hover:border-primary/40 transition-colors flex flex-col justify-between gap-4"
           >
             <div className="space-y-3">
               {/* Card Header: SN + Attempt + Status */}
@@ -392,11 +469,15 @@ export function AdminSubmissionsClient({
 
             {/* Actions */}
             <div className="flex items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+              {(s.status === "COMPLETED" || s.status === "FAILED" || s.status === "REVIEW_REQUIRED") && s.aiEvaluationRuns < 3 && (
+                <AdminSubmissionEvaluationTrigger submissionId={s.id} compact aiEvaluationRuns={s.aiEvaluationRuns} />
+              )}
               {s.fileUrl && (
                 <a
                   href={s.fileUrl}
                   target="_blank"
                   rel="noreferrer"
+                  download
                   title="Download booklet"
                   className="inline-flex items-center justify-center h-8 px-2.5 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-[#2A6AED] hover:bg-blue-50 dark:hover:bg-blue-950 text-xs font-semibold gap-1 transition-colors"
                 >
@@ -407,7 +488,7 @@ export function AdminSubmissionsClient({
               <Link href={`/admin/submissions/${s.id}`} className="flex-1">
                 <Button
                   size="sm"
-                  className="w-full h-8 px-3 bg-[#2A6AED] hover:bg-[#1E55C7] text-white font-semibold text-xs rounded-lg shadow-2xs"
+                  className="w-full h-8 px-3 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs rounded-lg shadow-none"
                 >
                   <Edit className="h-3.5 w-3.5 mr-1" />
                   Review Score

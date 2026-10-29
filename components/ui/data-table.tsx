@@ -288,7 +288,7 @@ export function DataTable<T>({
   return (
     <div
       className={cn(
-        "rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs overflow-hidden",
+        "rounded-xl border border-border bg-card shadow-card overflow-hidden",
         className
       )}
     >
@@ -297,7 +297,7 @@ export function DataTable<T>({
           Row 1: Search input + Column Selector + Toolbar Actions
           Row 2: Dropdown filters + Date Picker + Reset Filters
       ========================================================================= */}
-      <div className="p-4 sm:p-5 border-b border-slate-200/80 dark:border-slate-800 space-y-3 bg-white dark:bg-slate-900">
+      <div className="p-4 sm:p-5 border-b border-border space-y-3 bg-card">
         {/* Tier 1: Search & Right Tools */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           <div className="relative flex-1 max-w-2xl">
@@ -309,7 +309,7 @@ export function DataTable<T>({
                 setCurrentPage(1)
               }}
               placeholder={searchPlaceholder}
-              className="h-10 pl-10 pr-9 rounded-xl border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 text-xs sm:text-sm shadow-2xs focus-visible:ring-[#2A6AED]/20 focus-visible:border-[#2A6AED]"
+              className="h-10 pl-10 pr-9 rounded-lg border-border bg-muted/50 text-xs sm:text-sm shadow-none focus-visible:ring-primary/20 focus-visible:border-primary"
             />
             {searchQuery && (
               <button
@@ -366,7 +366,7 @@ export function DataTable<T>({
             {/* Columns (N/N) Dropdown Selector */}
             <DropdownMenu>
               <DropdownMenuTrigger
-                className="inline-flex h-9 sm:h-10 items-center gap-1.5 sm:gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 sm:px-3.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors outline-none cursor-pointer shadow-2xs"
+                className="inline-flex h-9 sm:h-10 items-center gap-1.5 sm:gap-2 rounded-lg border border-border bg-card px-2.5 sm:px-3.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors outline-none cursor-pointer shadow-none"
               >
                 <SlidersHorizontal className="h-3.5 w-3.5 text-slate-500" />
                 <span className="hidden sm:inline">
@@ -422,14 +422,14 @@ export function DataTable<T>({
                     className={cn(
                       "inline-flex h-9 items-center gap-2 rounded-xl border px-3 text-xs font-semibold transition-colors outline-none cursor-pointer shadow-2xs",
                       isFiltered
-                        ? "border-[#2A6AED]/30 bg-[#EFF6FF] dark:bg-blue-950/50 text-[#2A6AED] dark:text-blue-400"
-                        : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                        ? "border-primary/30 bg-secondary text-secondary-foreground"
+                        : "border-border bg-card text-foreground hover:bg-muted"
                     )}
                   >
                     <FilterIcon className="h-3.5 w-3.5 shrink-0 opacity-70" />
                     <span>{filter.label}</span>
                     {isFiltered && activeOption && (
-                      <Badge className="ml-0.5 h-5 rounded-md bg-[#2A6AED] px-1.5 py-0 text-[10px] font-bold text-white border-0">
+                      <Badge className="ml-0.5 h-5 rounded-md bg-primary px-1.5 py-0 text-[10px] font-bold text-primary-foreground border-0">
                         {activeOption.label}
                       </Badge>
                     )}
@@ -557,7 +557,7 @@ export function DataTable<T>({
               return (
                 <div
                   key={keyExtractor(row)}
-                  className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/90 p-4 shadow-2xs space-y-3"
+                  className="rounded-xl border border-border bg-card p-4 shadow-none space-y-3"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-2">
@@ -624,7 +624,7 @@ export function DataTable<T>({
       >
         <Table>
           <TableHeader>
-            <TableRow className="bg-slate-50/80 dark:bg-slate-800/60 hover:bg-slate-50/80 border-b border-slate-200/80 dark:border-slate-800">
+            <TableRow className="bg-muted/50 hover:bg-muted/70 border-b border-border">
               {/* Sr. Column Header matching reference screenshots */}
               {showSerialNumber && (
                 <TableHead className="w-14 h-11 px-4 text-center text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -736,7 +736,7 @@ export function DataTable<T>({
       {/* =========================================================================
           GLOBAL PAGINATION FOOTER
       ========================================================================= */}
-      <div className="px-4 sm:px-5 py-3.5 bg-white dark:bg-slate-900 border-t border-slate-200/80 dark:border-slate-800">
+      <div className="px-4 sm:px-5 py-3.5 bg-card border-t border-border">
         <GlobalPagination
           currentPage={currentPage}
           totalPages={Math.max(1, Math.ceil(sortedData.length / pageSize))}

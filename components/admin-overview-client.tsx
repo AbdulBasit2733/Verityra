@@ -401,7 +401,7 @@ export function AdminOverviewClient({
             defaultPageSize={10}
             showSerialNumber={true}
             renderCard={(s, idx, serialNumber) => (
-              <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/90 p-4 sm:p-5 shadow-2xs space-y-3 flex flex-col justify-between">
+              <div className="rounded-xl border border-border bg-card p-4 sm:p-5 shadow-none space-y-3 flex flex-col justify-between">
                 <div className="space-y-2">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2">
@@ -480,7 +480,7 @@ export function AdminOverviewClient({
             defaultPageSize={10}
             showSerialNumber={true}
             renderCard={(a, idx, serialNumber) => (
-              <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/90 p-4 shadow-2xs space-y-2.5">
+              <div className="rounded-xl border border-border bg-card p-4 shadow-none space-y-2.5">
                 <div className="flex items-start justify-between gap-2">
                   <Badge
                     variant="outline"

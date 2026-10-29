@@ -139,7 +139,7 @@ export function AdminTestDocumentForms({ testSeriesId }: { testSeriesId: string 
             <Label className="text-xs font-bold text-[#0F172A]">Paper PDF File</Label>
             <Input
               type="file"
-              accept=".pdf"
+              accept=".pdf,image/jpeg,image/png,image/webp"
               required
               onChange={(e) => setPaperFile(e.target.files?.[0] || null)}
               className="mt-1 border-slate-200 bg-white text-xs sm:text-sm h-10 rounded-lg"
@@ -198,7 +198,7 @@ export function AdminTestDocumentForms({ testSeriesId }: { testSeriesId: string 
             <Label className="text-xs font-bold text-[#0F172A]">Template PDF / Image File</Label>
             <Input
               type="file"
-              accept=".pdf,image/png,image/jpeg"
+              accept=".pdf,image/png,image/jpeg,image/webp"
               required
               onChange={(e) => setTemplateFile(e.target.files?.[0] || null)}
               className="mt-1 border-slate-200 bg-white text-xs sm:text-sm h-10 rounded-lg"

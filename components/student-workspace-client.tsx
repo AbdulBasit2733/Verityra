@@ -36,6 +36,11 @@ export interface WorkspaceQuestionScore {
   marksAwarded: number
   feedback: string
   missingConcepts: string | null
+  scoreBand?: string
+  scoreExplanation?: string
+  strengths?: string
+  examinerExpectation?: string
+  improvementAdvice?: string
   isLegible: boolean
 }
 
@@ -55,6 +60,15 @@ export interface WorkspaceSubmissionItem {
     uncertaintyFlag: boolean
     questions: WorkspaceQuestionScore[]
   } | null
+  evaluationRuns?: Array<{
+    id: string
+    runNumber: number
+    trigger: string
+    status: string
+    totalMarksAwarded: number
+    maxMarks: number
+    questions: Array<WorkspaceQuestionScore & { examinerExpectation?: string; improvementAdvice?: string }>
+  }>
 }
 
 export interface WorkspaceResourceItem {
@@ -120,6 +134,9 @@ export function StudentWorkspaceClient({
 
   const activeSubmission =
     submissions.find((s) => s.attemptNumber === selectedAttemptNumber) || submissions[0]
+  const [selectedRunNumber, setSelectedRunNumber] = React.useState<number | null>(null)
+  const selectedRun = activeSubmission?.evaluationRuns?.find((run) => run.runNumber === selectedRunNumber)
+  const reportQuestions = selectedRun?.questions || activeSubmission?.evaluation?.questions || []
 
   const questionColumns: DataTableColumn<WorkspaceQuestionScore>[] = [
     {
@@ -406,10 +423,10 @@ export function StudentWorkspaceClient({
                       </span>
                       <div className="flex items-baseline gap-2.5 mt-1">
                         <span className="text-3xl font-black text-[#2A6AED] dark:text-blue-400">
-                          {activeSubmission.evaluation.totalMarksAwarded}
+                          {selectedRun?.totalMarksAwarded ?? activeSubmission.evaluation.totalMarksAwarded}
                         </span>
                         <span className="text-sm font-bold text-slate-500">
-                          / {activeSubmission.evaluation.maxMarks} marks
+                          / {selectedRun?.maxMarks ?? activeSubmission.evaluation.maxMarks} marks
                         </span>
                         <Badge className="bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border-0 text-[11px] font-bold rounded-full">
                           {activeSubmission.evaluation.percentage}%
@@ -436,13 +453,27 @@ export function StudentWorkspaceClient({
                     </div>
                   )}
 
+                  {(activeSubmission.evaluationRuns?.length || 0) > 0 && (
+                    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3">
+                      <span className="text-xs font-bold text-slate-600 dark:text-slate-300">Evaluation runs:</span>
+                      <Button type="button" size="sm" variant={selectedRunNumber === null ? "default" : "outline"} onClick={() => setSelectedRunNumber(null)}>
+                        Latest
+                      </Button>
+                      {(activeSubmission.evaluationRuns || []).map((run) => (
+                        <Button key={run.id} type="button" size="sm" variant={selectedRunNumber === run.runNumber ? "default" : "outline"} onClick={() => setSelectedRunNumber(run.runNumber)}>
+                          Run {run.runNumber}
+                        </Button>
+                      ))}
+                    </div>
+                  )}
+
                   {/* Question-by-Question DataTable */}
                   <div className="space-y-3">
                     <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100">
                       Question-by-Question Rubric Scoring
                     </h3>
                     <DataTable
-                      data={activeSubmission.evaluation.questions || []}
+                       data={reportQuestions}
                       columns={questionColumns}
                       keyExtractor={(q) => q.id}
                       searchPlaceholder="Search questions, feedback, or missing concepts..."
@@ -466,6 +497,7 @@ export function StudentWorkspaceClient({
                                 <span className="text-[11px] font-semibold text-slate-400">
                                   ({ratio}% credit)
                                 </span>
+                                 {q.scoreBand && <Badge variant="outline" className="text-[10px]">{q.scoreBand}</Badge>}
                               </div>
                               <Badge
                                 variant="outline"
@@ -483,10 +515,14 @@ export function StudentWorkspaceClient({
                               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
                                 Rubric Feedback
                               </span>
-                              <p className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed">
-                                {q.feedback}
+                               <p className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed">
+                                 {q.scoreExplanation || q.feedback}
                               </p>
                             </div>
+
+                             {q.strengths && <p className="text-xs text-emerald-800 bg-emerald-50 p-2 rounded-lg">Strengths: {q.strengths}</p>}
+                             {q.examinerExpectation && <p className="text-xs text-blue-800 bg-blue-50 p-2 rounded-lg">Examiner expected: {q.examinerExpectation}</p>}
+                             {q.improvementAdvice && <p className="text-xs text-indigo-800 bg-indigo-50 p-2 rounded-lg">How to improve: {q.improvementAdvice}</p>}
 
                             {q.missingConcepts && (
                               <div className="pt-1">
@@ -547,6 +583,7 @@ export function StudentWorkspaceClient({
                       href={paper.fileUrl}
                       target="_blank"
                       rel="noreferrer"
+                      download
                       className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-[#2A6AED] text-white font-semibold hover:bg-[#1E55C7] text-[11px] shrink-0 shadow-2xs"
                     >
                       <Download className="h-3.5 w-3.5" />
@@ -577,6 +614,7 @@ export function StudentWorkspaceClient({
                       href={tpl.fileUrl}
                       target="_blank"
                       rel="noreferrer"
+                      download
                       className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 text-[11px] shrink-0 shadow-2xs"
                     >
                       <Download className="h-3.5 w-3.5 text-[#2A6AED] dark:text-blue-400" />

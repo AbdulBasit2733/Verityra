@@ -2,6 +2,11 @@ import assert from "node:assert/strict"
 import { TestSuite } from "./test-utils"
 import { aiEvaluationResponseSchema } from "../lib/ai/evaluation-schema"
 import { EvaluationStatus } from "@prisma/client"
+import {
+  assertGeminiApiKeyConfigured,
+  DEFAULT_GEMINI_MODEL,
+  getGeminiModelName,
+} from "../lib/ai/gemini-evaluator"
 
 export function runEvaluationTests() {
   const suite = new TestSuite("Module: AI Evaluation Engine & Scoring Invariants")
@@ -41,6 +46,22 @@ export function runEvaluationTests() {
       assert.equal(parsed.data.questions.length, 2)
       assert.equal(parsed.data.questions[0].marksAwarded, 8.5)
     }
+  })
+
+  suite.test("Schema: Normalizes lowercase score bands returned by the provider", () => {
+    const parsed = aiEvaluationResponseSchema.safeParse({
+      generalFeedback: "Needs stronger evidence.",
+      questions: [{
+        questionNumber: "Q1",
+        maxMarks: 10,
+        marksAwarded: 5,
+        feedback: "Partial answer.",
+        scoreBand: "partial",
+      }],
+    })
+
+    assert.equal(parsed.success, true)
+    if (parsed.success) assert.equal(parsed.data.questions[0].scoreBand, "PARTIAL")
   })
 
   suite.test("Schema: Rejects malformed question item (e.g. negative marks or missing questionNumber)", () => {
@@ -110,6 +131,29 @@ export function runEvaluationTests() {
       resolveEvaluationRouting({ legibilityWarning: false, uncertaintyFlag: false }),
       EvaluationStatus.COMPLETED
     )
+  })
+
+  suite.test("Configuration: Uses the current default Gemini model and honors an explicit override", () => {
+    const originalModel = process.env.GEMINI_MODEL
+    try {
+      delete process.env.GEMINI_MODEL
+      assert.equal(getGeminiModelName(), DEFAULT_GEMINI_MODEL)
+
+      process.env.GEMINI_MODEL = "custom-enabled-model"
+      assert.equal(getGeminiModelName(), "custom-enabled-model")
+    } finally {
+      if (originalModel === undefined) delete process.env.GEMINI_MODEL
+      else process.env.GEMINI_MODEL = originalModel
+    }
+  })
+
+  suite.test("Configuration: Missing credentials fail outside development, not as a fabricated evaluation", () => {
+    assert.throws(() => assertGeminiApiKeyConfigured(undefined, "production"), /GEMINI_API_KEY must be configured/)
+    assert.throws(
+      () => assertGeminiApiKeyConfigured("your-gemini-api-key", "production"),
+      /GEMINI_API_KEY must be configured/
+    )
+    assert.doesNotThrow(() => assertGeminiApiKeyConfigured(undefined, "development"))
   })
 
   suite.test("Admin Override: Adjusting individual question scores recalculates total and status", () => {

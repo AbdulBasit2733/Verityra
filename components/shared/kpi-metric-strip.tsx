@@ -36,8 +36,8 @@ export function KpiMetricStrip({ children, className, columns = 4 }: KpiMetricSt
   return (
     <div
       className={cn(
-        "border-y border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900",
-        "divide-x divide-slate-200/80 dark:divide-slate-800",
+        "border-y border-border bg-card",
+        "divide-x divide-border",
         "grid",
         gridCols[columns],
         className
@@ -72,12 +72,12 @@ const variantStyles: Record<
   }
 > = {
   blue: {
-    iconBg: "bg-blue-50/70 dark:bg-blue-950/40",
-    iconColor: "text-[#2A6AED] dark:text-blue-400",
+    iconBg: "bg-secondary",
+    iconColor: "text-primary",
   },
   indigo: {
-    iconBg: "bg-indigo-50/70 dark:bg-indigo-950/40",
-    iconColor: "text-indigo-600 dark:text-indigo-400",
+    iconBg: "bg-secondary",
+    iconColor: "text-primary",
   },
   emerald: {
     iconBg: "bg-emerald-50/70 dark:bg-emerald-950/40",
@@ -92,8 +92,8 @@ const variantStyles: Record<
     iconColor: "text-rose-600 dark:text-rose-400",
   },
   slate: {
-    iconBg: "bg-slate-100 dark:bg-slate-800",
-    iconColor: "text-slate-600 dark:text-slate-400",
+    iconBg: "bg-muted",
+    iconColor: "text-muted-foreground",
   },
 }
 
@@ -112,7 +112,7 @@ export function KpiMetric({
     <div
       className={cn(
         "flex items-center gap-3 sm:gap-4 px-4 sm:px-6 py-4 sm:py-5",
-        "hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors",
+        "hover:bg-muted/50 transition-colors",
         className
       )}
     >
@@ -131,7 +131,7 @@ export function KpiMetric({
         <div className="flex items-baseline gap-2">
           <p
             className={cn(
-              "text-xl sm:text-2xl lg:text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight truncate",
+              "text-xl sm:text-2xl lg:text-3xl font-extrabold text-foreground tracking-tight truncate",
               styles.valueColor
             )}
           >
@@ -150,11 +150,11 @@ export function KpiMetric({
             </span>
           )}
         </div>
-        <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block truncate mt-0.5">
+        <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground block truncate mt-0.5">
           {label}
         </span>
         {subtext && (
-          <span className="text-[11px] text-slate-500 dark:text-slate-400 block truncate mt-0.5">
+          <span className="text-[11px] text-muted-foreground block truncate mt-0.5">
             {subtext}
           </span>
         )}

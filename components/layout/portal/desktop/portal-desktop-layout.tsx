@@ -95,14 +95,14 @@ export function PortalDesktopLayout({
       .toUpperCase() || "VT"
 
   return (
-    <div className="hidden lg:flex min-h-screen bg-slate-50/50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 w-full overflow-x-hidden">
+    <div className="hidden lg:flex min-h-screen bg-background text-foreground w-full overflow-x-hidden">
       {/* =========================================================
           DESKTOP LEFT SIDEBAR (Screen L: >= 1024px)
           Collapsible: w-64 expanded | w-16 collapsed (Ctrl+B)
       ========================================================= */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 bg-white dark:bg-slate-900 border-r border-slate-200/80 dark:border-slate-800 z-40 select-none shadow-2xs transition-all duration-300 ease-in-out flex flex-col justify-between",
+          "fixed inset-y-0 left-0 bg-card border-r border-border z-40 select-none shadow-none transition-all duration-300 ease-in-out flex flex-col justify-between",
           sidebarCollapsed ? "w-16" : "w-64"
         )}
       >
@@ -161,7 +161,7 @@ export function PortalDesktopLayout({
                           className={cn(
                             "flex items-center rounded-xl text-xs font-bold transition-all duration-150 group justify-center p-2.5 w-full cursor-pointer",
                             active
-                              ? "bg-[#2A6AED] text-white shadow-sm shadow-blue-500/20"
+                              ? "bg-primary text-primary-foreground shadow-sm"
                               : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-slate-100"
                           )}
                         >
@@ -189,7 +189,7 @@ export function PortalDesktopLayout({
                     className={cn(
                       "flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all duration-150 group cursor-pointer",
                       active
-                        ? "bg-[#2A6AED] text-white shadow-sm shadow-blue-500/20"
+                        ? "bg-primary text-primary-foreground shadow-sm"
                         : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-slate-100"
                     )}
                   >
@@ -406,7 +406,7 @@ export function PortalDesktopLayout({
                   description: "All evaluation queues and security audits are up to date.",
                 })
               }}
-              className="relative h-9 w-9 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-2xs cursor-pointer"
+              className="relative h-9 w-9 rounded-xl border border-border bg-card flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors shadow-none cursor-pointer"
               aria-label="View notifications"
             >
               <Bell className="h-4 w-4" />

@@ -77,7 +77,7 @@ flowchart TD
 | **CSS & Design** | Tailwind CSS v4 + `@base-ui/react` | Tailwind v4 (CSS-first `@theme`) | 60/30/10 EdTech color system, dark-mode harmony, accessible accessible primitives. |
 | **Database & ORM** | PostgreSQL + Prisma ORM | Prisma `6.19.3` | Relational consistency, compound unique constraints, acid transactions, type-safe queries. |
 | **Authentication** | NextAuth.js | `4.24.15` | JWT session cookies, bcrypt password hashing (cost 12), Google OAuth provider. |
-| **AI Evaluation** | Google Gemini Multimodal | `@google/genai` (`gemini-2.5-flash`) | Multi-page PDF/image document parsing, question transcription, structured rubric grading. |
+| **AI Evaluation** | Google Gemini Multimodal | `@google/genai` (`gemini-3.8-flash` by default) | Multi-page PDF/image document parsing, question transcription, structured rubric grading. |
 | **Payments** | Razorpay Node SDK | `razorpay` `2.9.8` | Order creation, server-side HMAC SHA-256 signature verification, atomic enrollment. |
 | **Object Storage** | Supabase Storage / Local Vault | Private `verityra-private` bucket | Encrypted storage of candidate answer booklets and official question templates. |
 | **Testing** | Node Test Runner + `tsx` | Strict assertion runner | Automated validation of invariants, schema limits, score clamps, and HMAC security. |

@@ -1,6 +1,6 @@
 "use server"
 
-import { requireAdmin, getCurrentUser } from "@/lib/auth-guard"
+import { requireAdmin, resolvePersistedAdminActor } from "@/lib/auth-guard"
 import { prisma, isDatabaseConnected } from "@/lib/prisma"
 import { PaymentStatus, RegistrationStatus, RefundReason } from "@prisma/client"
 import { revalidatePath } from "next/cache"
@@ -255,7 +255,7 @@ export async function adminTriggerRefundAction(params: {
   override7DayPolicy?: boolean
 }): Promise<ActionResult<{ refundId: string; amountRefunded: number }>> {
   try {
-    const admin = await requireAdmin("/admin/payments")
+    const sessionAdmin = await requireAdmin("/admin/payments")
     const dbConnected = await isDatabaseConnected()
 
     if (!params.paymentId) {
@@ -276,6 +276,10 @@ export async function adminTriggerRefundAction(params: {
         },
       }
     }
+
+    const actor = await resolvePersistedAdminActor(sessionAdmin)
+    if (!actor.success) return { success: false, error: actor.error }
+    const admin = actor.user
 
     // 1. Fetch Payment with existing relations
     const payment = await prisma.payment.findUnique({

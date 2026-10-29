@@ -31,10 +31,9 @@ Authorization is strictly verified on every protected Server Component and Serve
 
 ## 4. Initial Administrator Provisioning
 
-The first administrator is provisioned via the secure seed script:
+The first administrator is provisioned via the seed script using the configured `ADMIN_INITIAL_EMAIL` and `ADMIN_INITIAL_PASSWORD`:
 ```bash
 pnpm exec prisma db seed
 ```
-Credentials:
-- Email: `admin@verityra.com` (or value of `ADMIN_INITIAL_EMAIL`)
-- Password: `AdminSecurePassword123!` (or value of `ADMIN_INITIAL_PASSWORD`)
+
+In development, an offline demo admin session can be reconciled to this configured account after the database reconnects. Provisioning is development-only, requires both variables, and never promotes an existing non-admin account. Database-backed admin actions use the persisted user ID for audit records.

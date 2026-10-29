@@ -59,8 +59,8 @@ function PaginationLink({
       className={cn(
         "inline-flex h-8 min-w-8 items-center justify-center rounded-lg px-2.5 text-xs font-semibold transition-colors outline-none select-none cursor-pointer disabled:pointer-events-none disabled:opacity-50",
         isActive
-          ? "bg-[#2A6AED] text-white shadow-2xs"
-          : "border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100",
+          ? "bg-primary text-primary-foreground shadow-2xs"
+          : "border border-border bg-card text-foreground hover:bg-muted hover:text-foreground",
         className
       )}
       {...props}
@@ -108,7 +108,7 @@ function PaginationEllipsis({
     <span
       aria-hidden
       data-slot="pagination-ellipsis"
-      className={cn("flex h-8 w-8 items-center justify-center text-slate-400", className)}
+      className={cn("flex h-8 w-8 items-center justify-center text-muted-foreground", className)}
       {...props}
     >
       <MoreHorizontal className="h-4 w-4" />

@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getEvaluationStatus } from '@/lib/queue/evaluation-queue'
+import { getCurrentUser } from '@/lib/auth-guard'
+import { Role } from '@prisma/client'
 
 /**
  * Submission Status Polling Endpoint
@@ -38,12 +40,17 @@ export async function GET(
       return NextResponse.json({ error: 'Submission ID required' }, { status: 400 })
     }
 
+    const sessionUser = await getCurrentUser()
+    if (!sessionUser) return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+
     // Fetch submission with evaluation data
     const submission = await prisma.submission.findUnique({
       where: { id: submissionId },
       select: {
         id: true,
+         userId: true,
         status: true,
+         aiEvaluationRuns: true,
         submittedAt: true,
         evaluation: {
           select: {
@@ -62,6 +69,9 @@ export async function GET(
     if (!submission) {
       return NextResponse.json({ error: 'Submission not found' }, { status: 404 })
     }
+    if (sessionUser.role !== Role.ADMIN && submission.userId !== sessionUser.id) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+    }
 
     // Fetch job status from queue (if available)
     const jobStatus = await getEvaluationStatus(submissionId)
@@ -70,6 +80,7 @@ export async function GET(
     const response = {
       submissionId: submission.id,
       submissionStatus: submission.status,
+      aiEvaluationRuns: submission.aiEvaluationRuns,
       submittedAt: submission.submittedAt.toISOString(),
 
       // Evaluation data (if available)

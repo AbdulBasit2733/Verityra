@@ -84,7 +84,7 @@ export function PortalMobileLayout({
         ]
 
   return (
-    <div className="flex lg:hidden min-h-screen flex-col bg-slate-50/50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 w-full overflow-x-hidden">
+    <div className="flex lg:hidden min-h-screen flex-col bg-background text-foreground w-full overflow-x-hidden">
       {/* =========================================================
           1. MOBILE & TABLET STICKY TOPBAR (Screens S & M: < 1024px)
       ========================================================= */}
@@ -104,7 +104,7 @@ export function PortalMobileLayout({
             href={role === "ADMIN" ? "/admin" : "/student/dashboard"}
             className="flex items-center gap-2 min-w-0"
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#2A6AED] text-white font-extrabold text-sm shadow-xs shrink-0">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground font-extrabold text-sm shadow-xs shrink-0">
               V
             </div>
             <div className="min-w-0 truncate">
@@ -220,7 +220,7 @@ export function PortalMobileLayout({
                       className={cn(
                         "flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-colors min-h-[44px]",
                         active
-                          ? "bg-[#2A6AED] text-white shadow-xs"
+                          ? "bg-primary text-primary-foreground shadow-xs"
                           : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80"
                       )}
                     >

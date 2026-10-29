@@ -86,7 +86,7 @@ Any contribution must strictly uphold these six core invariants:
 | **Database** | PostgreSQL (Supabase) | Prisma ORM `6.19.3` |
 | **Authentication** | NextAuth.js | `4.24.15` (JWT strategy, Credentials + Google) |
 | **Storage Vault** | Supabase Storage / Protected Local Vault | `verityra-private` bucket |
-| **AI Evaluation** | Google Gemini Multimodal API | `@google/genai` (`gemini-2.5-flash`) |
+| **AI Evaluation** | Google Gemini Multimodal API | `@google/genai` (`gemini-3.8-flash` by default) |
 | **Payments** | Razorpay | `razorpay` 2.9.8 (HMAC SHA-256 verification) |
 | **Package Manager** | `pnpm` | `10.x` |
 

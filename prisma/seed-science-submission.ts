@@ -1,4 +1,5 @@
 import { PrismaClient, SubmissionStatus, EvaluationStatus, RegistrationStatus } from "@prisma/client"
+import { getGeminiModelName } from "../lib/ai/gemini-evaluator"
 
 const prisma = new PrismaClient()
 
@@ -484,6 +485,7 @@ async function main() {
         legibilityWarning: false,
         uncertaintyFlag: false,
         status: EvaluationStatus.COMPLETED,
+        evaluatorModel: getGeminiModelName(),
         evaluatedAt: new Date(),
         reviewedAt: new Date(),
         reviewedBy: "Automated Evaluation Engine v1.0",
@@ -510,6 +512,7 @@ async function main() {
         legibilityWarning: false,
         uncertaintyFlag: false,
         status: EvaluationStatus.COMPLETED,
+        evaluatorModel: getGeminiModelName(),
         evaluatedAt: new Date(),
         reviewedAt: new Date(),
         reviewedBy: "Automated Evaluation Engine v1.0",

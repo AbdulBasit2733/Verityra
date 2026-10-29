@@ -52,7 +52,7 @@ export async function uploadPrivateFile(
 
     return {
       path: data.path,
-      url: `${bucketName}/${data.path}`,
+      url: privateFileDownloadUrl(bucketName, data.path),
     }
   }
 
@@ -67,8 +67,58 @@ export async function uploadPrivateFile(
 
   return {
     path: filePath,
-    url: `/api/files/download?bucket=${encodeURIComponent(bucketName)}&file=${encodeURIComponent(filePath)}`,
+    url: privateFileDownloadUrl(bucketName, filePath),
   }
+}
+
+export function privateFileDownloadUrl(bucketName: string, filePath: string): string {
+  return `/api/files/download?bucket=${encodeURIComponent(bucketName)}&file=${encodeURIComponent(filePath)}`
+}
+
+export function normalizePrivateFileUrl(fileUrl: string | null | undefined): string | null {
+  if (!fileUrl) return null
+  if (fileUrl.startsWith("/") || /^https?:\/\//i.test(fileUrl)) return fileUrl
+
+  const reference = parsePrivateFileReference(fileUrl)
+  return reference ? privateFileDownloadUrl(reference.bucket, reference.filePath) : null
+}
+
+export function parsePrivateFileReference(
+  fileUrl: string
+): { bucket: string; filePath: string } | null {
+  if (fileUrl.startsWith("/")) {
+    try {
+      const url = new URL(fileUrl, "http://localhost")
+      const bucket = url.searchParams.get("bucket") || "verityra-private"
+      const filePath = url.searchParams.get("file")
+      return bucket && filePath ? { bucket, filePath } : null
+    } catch {
+      return null
+    }
+  }
+
+  const separator = fileUrl.indexOf("/")
+  if (separator <= 0 || separator === fileUrl.length - 1) return null
+  return { bucket: fileUrl.slice(0, separator), filePath: fileUrl.slice(separator + 1) }
+}
+
+export async function downloadPrivateFile(bucketName: string, filePath: string): Promise<Buffer> {
+  const supabase = getSupabase()
+
+  if (supabase) {
+    const { data, error } = await supabase.storage.from(bucketName).download(filePath)
+    if (error || !data) {
+      throw new Error(`Failed to download from Supabase storage: ${error?.message || "File not found"}`)
+    }
+    return Buffer.from(await data.arrayBuffer())
+  }
+
+  const fullPath = path.resolve(LOCAL_STORAGE_DIR, bucketName, filePath)
+  const storageRoot = path.resolve(LOCAL_STORAGE_DIR, bucketName) + path.sep
+  if (!fullPath.startsWith(storageRoot) || !fs.existsSync(fullPath)) {
+    throw new Error("Stored file was not found.")
+  }
+  return fs.promises.readFile(fullPath)
 }
 
 /**

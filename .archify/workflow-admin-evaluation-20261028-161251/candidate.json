@@ -1,0 +1,81 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Verityra Admin Evaluation Retry",
+    "output": ".archify/workflow-admin-evaluation-20261028-161251/submission-evaluation.html",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    { "id": "admin_ui", "label": "Admin Submissions UI" },
+    { "id": "action", "label": "Admin Server Action" },
+    { "id": "services", "label": "Private Storage + Gemini" },
+    { "id": "database", "label": "Persisted State" }
+  ],
+  "mainPath": [
+    "admin_click",
+    "authorize",
+    "claim",
+    "download",
+    "evaluate",
+    "persist"
+  ],
+  "nodes": [
+    { "id": "admin_click", "lane": "admin_ui", "col": 0, "type": "frontend", "label": "Admin clicks Evaluate", "sublabel": "retry row action", "width": 150 },
+    { "id": "authorize", "lane": "action", "col": 1, "type": "security", "label": "Authorize admin", "sublabel": "session + persisted actor", "width": 150 },
+    { "id": "claim", "lane": "action", "col": 2, "type": "backend", "label": "Claim submission", "sublabel": "conditional PROCESSING update", "width": 170 },
+    { "id": "download", "lane": "services", "col": 3, "type": "cloud", "label": "Download answer sheet", "sublabel": "private storage", "width": 160 },
+    { "id": "evaluate", "lane": "services", "col": 4, "type": "external", "label": "Call Gemini", "sublabel": "awaited in the action request", "width": 160 },
+    { "id": "persist", "lane": "database", "col": 5, "type": "database", "label": "Commit evaluation", "sublabel": "score + audit + COMPLETED / REVIEW_REQUIRED", "width": 220 },
+    { "id": "recover", "lane": "action", "col": 5, "type": "backend", "label": "Catch + restore status", "sublabel": "FAILED or REVIEW_REQUIRED", "width": 190 },
+    { "id": "error_ui", "lane": "admin_ui", "col": 5, "type": "frontend", "label": "Show error", "sublabel": "no refresh on failure", "width": 160 }
+  ],
+  "edges": [
+    { "id": "click-auth", "from": "admin_click", "to": "authorize", "label": "Server Action", "variant": "emphasis", "role": "main" },
+    { "id": "auth-claim", "from": "authorize", "to": "claim", "label": "authorized + retryable", "role": "main" },
+    { "id": "claim-download", "from": "claim", "to": "download", "label": "set PROCESSING", "variant": "emphasis" },
+    { "id": "download-evaluate", "from": "download", "to": "evaluate", "label": "file bytes", "role": "main" },
+    { "id": "evaluate-persist", "from": "evaluate", "to": "persist", "label": "validated result", "variant": "emphasis" },
+    { "id": "evaluate-error", "from": "evaluate", "to": "recover", "label": "provider / processing error", "variant": "dashed", "role": "error" },
+    { "id": "recover-ui", "from": "recover", "to": "error_ui", "label": "failure response", "variant": "dashed", "role": "return" }
+  ],
+  "cards": [
+    {
+      "dot": "amber",
+      "title": "Why the admin page can look stuck",
+      "items": [
+        "The action writes PROCESSING before waiting for storage and Gemini synchronously.",
+        "On a returned error, the client displays the error but does not refresh its server-rendered row. The displayed value may be stale.",
+        "Success revalidates the submissions routes and the client calls router.refresh.",
+        "Reload once. FAILED or REVIEW_REQUIRED means stale UI. If still PROCESSING, recovery may have failed or execution stopped before it."
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Scalability and edge cases",
+      "items": [
+        "The admin retry waits on Gemini in the request; 2.6 minutes is consistent with the inline provider call. No explicit timeout or stale-processing watchdog is visible.",
+        "Student uploads normally try BullMQ and use synchronous fallback when queueEvaluation returns null; the admin retry bypasses BullMQ.",
+        "Queue insertion happens before its database upsert. If Redis accepted the job but the upsert fails, the caller may fall back to inline evaluation while the queued job still exists.",
+        "The worker route has no visible auth guard for its GET start and DELETE stop controls."
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Hydration warning is separate",
+      "items": [
+        "The app's body does not render cz-shortcut-listen. The browser-only attribute is consistent with an extension mutating the DOM; test in a private window with extensions disabled.",
+        "This warning does not explain the database submission status."
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Inspected working-tree source",
+      "items": [
+        "Admin UI/action: components/admin-submissions-client.tsx and actions/evaluation-actions.ts.",
+        "Student queue/fallback: actions/submission-actions.ts and lib/queue/evaluation-queue.ts; worker startup: app/api/queue/worker/route.ts.",
+        "This describes the inspected working tree. Several cited files have uncommitted changes, so it is not presented as a verifiable snapshot of Git HEAD."
+      ]
+    }
+  ]
+}

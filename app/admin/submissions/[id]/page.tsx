@@ -3,37 +3,30 @@ import { notFound } from "next/navigation"
 import { prisma, isDatabaseConnected } from "@/lib/prisma"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
 import { AdminScoreReviewEditor } from "@/components/admin-score-review-editor"
+import { AdminSubmissionEvaluationTrigger } from "@/components/admin-submissions-client"
 import { PageHeader } from "@/components/ui/page-header"
-import { ArrowLeft, FileCheck2 } from "lucide-react"
+import { ArrowLeft, CheckCircle2, Clock3, ExternalLink, FileCheck2, FileText, UserRound } from "lucide-react"
 import { formatDateTimeFull } from "@/lib/format"
+import { normalizePrivateFileUrl } from "@/lib/supabase"
+import { getEvaluationStatus } from "@/lib/queue/evaluation-queue"
 
 export const dynamic = "force-dynamic"
 
-export default async function AdminSubmissionReviewPage({
-  params,
-}: {
-  params: Promise<{ id: string }>
-}) {
+export default async function AdminSubmissionReviewPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const dbConnected = await isDatabaseConnected()
-
   let submission: any = null
 
   if (dbConnected) {
+    await getEvaluationStatus(id).catch(() => null)
     submission = await prisma.submission.findUnique({
       where: { id },
       include: {
         user: true,
         testSeries: true,
-        evaluation: {
-          include: {
-            questions: {
-              orderBy: { questionNumber: "asc" },
-            },
-          },
-        },
+        evaluation: { include: { questions: { orderBy: { questionNumber: "asc" } } } },
+        evaluationRuns: { orderBy: { runNumber: "asc" }, include: { questions: { orderBy: { questionNumber: "asc" } } } },
       },
     })
   }
@@ -41,103 +34,71 @@ export default async function AdminSubmissionReviewPage({
   if (!submission) {
     if (id.startsWith("sub-") || id.startsWith("demo-")) {
       submission = {
-        id,
-        attemptNumber: 1,
-        status: "REVIEW_REQUIRED",
-        fileUrl: "/api/files/download?file=submissions/demo/sample-attempt.pdf",
-        submittedAt: new Date(),
+        id, attemptNumber: 1, status: "REVIEW_REQUIRED", fileUrl: "/api/files/download?file=submissions/demo/sample-attempt.pdf", submittedAt: new Date(),
         user: { name: "Aarav Sharma", email: "aarav@example.com" },
-        testSeries: {
-          title: "UPSC Civil Services General Studies Paper I Mock",
-          maxMarks: 250,
-        },
-        evaluation: {
-          id: "eval-1",
-          totalMarksAwarded: 184.5,
-          maxMarks: 250,
-          percentage: 73.8,
-          status: "REVIEW_REQUIRED",
-          generalFeedback:
-            "Overall solid presentation. Flagged for review due to question 2 diagram handwriting ambiguity.",
-          uncertaintyFlag: true,
-          questions: [
-            {
-              id: "q-1",
-              questionNumber: "Q1",
-              maxMarks: 10,
-              marksAwarded: 7.5,
-              feedback: "Accurate historical chronology.",
-              missingConcepts: "Could cite the Ashokan rock edicts.",
-            },
-            {
-              id: "q-2",
-              questionNumber: "Q2",
-              maxMarks: 15,
-              marksAwarded: 10.0,
-              feedback: "Handwriting in diagram annotations required educator verification.",
-              missingConcepts: "Omitted microclimatic impact.",
-            },
-          ],
-        },
+        testSeries: { title: "UPSC Civil Services General Studies Paper I Mock", maxMarks: 250 },
+        evaluation: { id: "eval-1", totalMarksAwarded: 184.5, maxMarks: 250, percentage: 73.8, status: "REVIEW_REQUIRED", generalFeedback: "Overall solid presentation. Flagged for review due to question 2 diagram handwriting ambiguity.", uncertaintyFlag: true, questions: [{ id: "q-1", questionNumber: "Q1", maxMarks: 10, marksAwarded: 7.5, feedback: "Accurate historical chronology.", missingConcepts: "Could cite the Ashokan rock edicts." }, { id: "q-2", questionNumber: "Q2", maxMarks: 15, marksAwarded: 10, feedback: "Handwriting in diagram annotations required educator verification.", missingConcepts: "Omitted microclimatic impact." }] },
+        evaluationRuns: [], aiEvaluationRuns: 0,
       }
-    } else {
-      notFound()
-    }
+    } else notFound()
   }
 
+  const fileUrl = normalizePrivateFileUrl(submission.fileUrl) || "#"
+  const statusLabel = submission.status === "REVIEW_REQUIRED" ? "Review required" : submission.status === "COMPLETED" ? "Completed" : submission.status
+  const statusClass = submission.status === "COMPLETED" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : submission.status === "REVIEW_REQUIRED" ? "border-amber-200 bg-amber-50 text-amber-800" : "border-blue-200 bg-blue-50 text-blue-700"
+
   return (
-    <div className="space-y-6 max-w-5xl">
-      {/* Page Header */}
-      <PageHeader
-        icon={FileCheck2}
-        title="Review Candidate Answer Sheet"
-        subtitle={`Viewing: ${submission.testSeries?.title || "Test Series"} · Attempt #${submission.attemptNumber} by ${submission.user?.name || "Candidate"}`}
-        showRefresh={false}
-      >
-        <Link href="/admin/submissions">
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-10 px-3.5 rounded-xl border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-2xs"
-          >
-            <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
-            Back to Submissions
-          </Button>
-        </Link>
+    <div className="mx-auto w-full max-w-7xl space-y-6">
+      <PageHeader icon={FileCheck2} title="Submission Review" subtitle={submission.testSeries?.title || "Candidate answer sheet"} showRefresh={false}>
+        <Link href="/admin/submissions"><Button variant="outline" size="sm" className="h-10 rounded-lg px-3.5 text-xs font-semibold"><ArrowLeft className="mr-1.5 h-3.5 w-3.5" /> Back to submissions</Button></Link>
       </PageHeader>
 
-      {/* Candidate Summary Card */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs">
-        <div className="flex items-center gap-3">
-          <Badge className="bg-[#2A6AED] text-white text-xs font-bold border-0 px-3 py-1 rounded-full shadow-2xs">
-            Attempt #{submission.attemptNumber}
-          </Badge>
-          <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-            Submitted on {formatDateTimeFull(submission.submittedAt)}
-          </span>
+      <section className="border-y border-border bg-card px-4 py-4 sm:px-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex min-w-0 items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"><UserRound className="h-5 w-5" /></div>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2"><h2 className="truncate text-base font-bold text-foreground">{submission.user?.name || "Unknown candidate"}</h2><Badge variant="outline" className="text-[11px] font-semibold">Attempt #{submission.attemptNumber}</Badge><Badge variant="outline" className={`text-[11px] font-semibold ${statusClass}`}>{statusLabel}</Badge></div>
+              <p className="mt-0.5 truncate text-xs text-muted-foreground">{submission.user?.email || "No email"} · Submitted {formatDateTimeFull(submission.submittedAt)}</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+            <a href={fileUrl} target="_blank" rel="noreferrer" className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-semibold text-foreground hover:bg-muted"><FileText className="h-3.5 w-3.5" /> Open answer sheet <ExternalLink className="h-3 w-3" /></a>
+            {submission.evaluation && (submission.status === "COMPLETED" || submission.status === "REVIEW_REQUIRED" || submission.status === "FAILED") && submission.aiEvaluationRuns < 3 ? <AdminSubmissionEvaluationTrigger submissionId={submission.id} aiEvaluationRuns={submission.aiEvaluationRuns || 0} compact /> : null}
+          </div>
         </div>
-        <div className="sm:text-right border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-100 dark:border-slate-800">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-            Candidate Identity
-          </span>
-          <span className="font-bold text-slate-900 dark:text-slate-100 text-xs sm:text-sm">
-            {submission.user?.name}
-          </span>
-          <span className="text-[11px] text-slate-500 dark:text-slate-400 block">{submission.user?.email}</span>
-        </div>
-      </div>
+      </section>
 
       {submission.evaluation ? (
-        <AdminScoreReviewEditor
-          submissionId={submission.id}
-          initialEvaluation={submission.evaluation}
-          fileUrl={submission.fileUrl}
-        />
-      ) : (
-        <div className="border-y border-slate-200 py-10 text-center text-xs sm:text-sm text-[#64748B]">
-          Evaluation has not been initialized for this submission yet.
+        <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_260px]">
+          <main className="min-w-0"><AdminScoreReviewEditor submissionId={submission.id} initialEvaluation={submission.evaluation} evaluationRuns={submission.evaluationRuns || []} fileUrl={fileUrl} /></main>
+          <aside className="space-y-4 xl:sticky xl:top-6">
+            <section className="space-y-3 border border-border bg-card p-4">
+              <div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-primary" /><h2 className="text-sm font-bold text-foreground">Review checklist</h2></div>
+              <ChecklistRow label="Candidate identity" value={submission.user?.name || "Available"} />
+              <ChecklistRow label="Evaluation runs" value={`${submission.aiEvaluationRuns || 0} / 3 used`} />
+              <ChecklistRow label="Score status" value={submission.evaluation.status} />
+              {submission.evaluation.uncertaintyFlag || submission.evaluation.legibilityWarning ? <p className="border-l-2 border-amber-500 bg-amber-50/60 px-3 py-2 text-xs leading-relaxed text-amber-900">Scan or evaluation uncertainty requires human verification.</p> : <p className="border-l-2 border-emerald-500 bg-emerald-50/60 px-3 py-2 text-xs leading-relaxed text-emerald-800">No uncertainty flags were reported.</p>}
+            </section>
+            <section className="border border-border bg-card p-4">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Current score</p>
+              <p className="mt-1 text-3xl font-extrabold text-primary">{submission.evaluation.totalMarksAwarded}<span className="text-base font-semibold text-muted-foreground"> / {submission.evaluation.maxMarks}</span></p>
+              <p className="text-xs text-muted-foreground">{submission.evaluation.percentage}% overall</p>
+            </section>
+          </aside>
         </div>
+      ) : (
+        <section className="border border-dashed border-border px-6 py-12 text-center">
+          <Clock3 className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
+          <h2 className="text-sm font-bold text-foreground">Evaluation is not available yet</h2>
+          <p className="mx-auto mt-1 max-w-md text-xs leading-relaxed text-muted-foreground">The submission is waiting for evaluation or needs to be retried. You can open the answer sheet while the queue is processing.</p>
+          <div className="mt-5 flex flex-wrap justify-center gap-2"><a href={fileUrl} target="_blank" rel="noreferrer" className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-semibold"><FileText className="h-3.5 w-3.5" /> Open answer sheet</a>{(submission.status === "PENDING" || submission.status === "FAILED") && <AdminSubmissionEvaluationTrigger submissionId={submission.id} />}</div>
+        </section>
       )}
     </div>
   )
+}
+
+function ChecklistRow({ label, value }: { label: string; value: string }) {
+  return <div className="flex items-start justify-between gap-3 border-t border-border pt-2 text-xs"><span className="text-muted-foreground">{label}</span><span className="text-right font-semibold text-foreground">{value}</span></div>
 }
