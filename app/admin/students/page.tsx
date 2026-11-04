@@ -13,15 +13,17 @@ export default async function AdminStudentsPage() {
 
   if (dbConnected) {
     registrations = await prisma.testRegistration.findMany({
-      include: {
+      take: 100,
+      select: {
+        id: true,
+        attemptsUsed: true,
+        maxAttempts: true,
+        registeredAt: true,
         user: {
-          select: { id: true, name: true, email: true, status: true },
+          select: { name: true, email: true },
         },
         testSeries: {
-          select: { id: true, title: true, maxMarks: true },
-        },
-        submissions: {
-          select: { id: true, attemptNumber: true, status: true },
+          select: { title: true },
         },
       },
       orderBy: { registeredAt: "desc" },

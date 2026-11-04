@@ -28,6 +28,7 @@ export async function registerFreeTestAction(testSeriesId: string): Promise<Acti
 
   const testSeries = await prisma.testSeries.findUnique({
     where: { id: testSeriesId },
+    select: { id: true, title: true, price: true, isPublished: true, maxAttempts: true },
   })
 
   if (!testSeries || !testSeries.isPublished) {
@@ -105,6 +106,7 @@ export async function createRazorpayOrderAction(testSeriesId: string): Promise<
 
   const testSeries = await prisma.testSeries.findUnique({
     where: { id: testSeriesId },
+    select: { id: true, title: true, price: true, isPublished: true, maxAttempts: true },
   })
 
   if (!testSeries || !testSeries.isPublished) {
@@ -257,6 +259,7 @@ export async function verifyPaymentAndRegisterAction(input: {
 
   const testSeries = await prisma.testSeries.findUnique({
     where: { id: input.testSeriesId },
+    select: { id: true, price: true, maxAttempts: true },
   })
 
   if (!testSeries) {

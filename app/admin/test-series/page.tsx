@@ -13,7 +13,15 @@ export default async function AdminTestSeriesPage() {
 
   if (dbConnected) {
     testSeriesList = await prisma.testSeries.findMany({
-      include: {
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        price: true,
+        status: true,
+        maxMarks: true,
+        maxAttempts: true,
+        createdAt: true,
         _count: {
           select: {
             registrations: true,

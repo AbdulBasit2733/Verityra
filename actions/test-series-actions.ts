@@ -5,6 +5,7 @@ import { prisma, isDatabaseConnected } from "@/lib/prisma"
 import { uploadPrivateFile } from "@/lib/supabase"
 import { Role, TestSeriesStatus } from "@prisma/client"
 import { revalidatePath } from "next/cache"
+import { invalidateTestCatalogCache, invalidateLeaderboardCache } from "@/lib/cache"
 import { ActionResult } from "./auth-actions"
 
 const DOCUMENT_MIME_TYPES = ["application/pdf", "image/jpeg", "image/png", "image/webp"]
@@ -106,6 +107,7 @@ export async function createTestSeriesAction(input: CreateTestSeriesInput): Prom
 
   revalidatePath("/admin/test-series")
   revalidatePath("/tests")
+  invalidateTestCatalogCache()
 
   return { success: true, message: "Test series created successfully.", data: { id: created.id } }
 }
@@ -167,6 +169,7 @@ export async function updateTestSeriesAction(
   revalidatePath(`/admin/test-series/${id}`)
   revalidatePath("/admin/test-series")
   revalidatePath("/tests")
+  invalidateTestCatalogCache()
 
   return { success: true, message: "Test series updated successfully." }
 }
@@ -206,6 +209,7 @@ export async function togglePublishTestSeriesAction(id: string, publish: boolean
 
   revalidatePath("/admin/test-series")
   revalidatePath("/tests")
+  invalidateTestCatalogCache()
   return { success: true, message: `Test series ${publish ? "published" : "unpublished"} successfully.` }
 }
 
@@ -242,6 +246,8 @@ export async function togglePublishResultsAction(testSeriesId: string, publish: 
   revalidatePath(`/admin/test-series/${testSeriesId}`)
   revalidatePath(`/tests/${testSeriesId}`)
   revalidatePath("/leaderboard")
+  invalidateLeaderboardCache()
+  invalidateTestCatalogCache()
 
   return { success: true, message: `Results ${publish ? "published to students and leaderboard" : "hidden"}.` }
 }

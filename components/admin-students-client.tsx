@@ -7,7 +7,12 @@ import { DataTable, DataTableColumn, DataTableFilter } from "@/components/ui/dat
 import { FormattedDate } from "@/components/ui/date-picker"
 import { PageHeader } from "@/components/ui/page-header"
 import { KpiStatCard } from "@/components/ui/kpi-stat-card"
-import { AdminExtraAttemptDialog } from "@/components/admin-extra-attempt-dialog"
+import dynamic from "next/dynamic"
+
+const AdminExtraAttemptDialog = dynamic(
+  () => import("@/components/admin-extra-attempt-dialog").then((mod) => mod.AdminExtraAttemptDialog),
+  { ssr: false }
+)
 import { AlertTriangle, ShieldCheck, Users } from "lucide-react"
 
 export interface AdminStudentRegistrationRow {

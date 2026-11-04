@@ -4,7 +4,7 @@ import { prisma, isDatabaseConnected } from "@/lib/prisma"
 import { Badge } from "@/components/ui/badge"
 import { TestCatalogClient, TestCatalogItem } from "@/components/test-catalog-client"
 
-export const dynamic = "force-dynamic"
+export const revalidate = 300
 
 export default async function TestsCatalogPage() {
   const dbConnected = await isDatabaseConnected()
@@ -16,9 +16,23 @@ export default async function TestsCatalogPage() {
       where: {
         isPublished: true,
       },
-      include: {
-        papers: true,
-        templates: true,
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        description: true,
+        price: true,
+        maxMarks: true,
+        durationMinutes: true,
+        maxAttempts: true,
+        studentInstructions: true,
+        createdAt: true,
+        _count: {
+          select: {
+            papers: true,
+            templates: true,
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
     })
@@ -136,8 +150,8 @@ export default async function TestsCatalogPage() {
     durationMinutes: test.durationMinutes || 180,
     maxAttempts: test.maxAttempts || 3,
     studentInstructions: test.studentInstructions || "",
-    papersCount: test.papers?.length || 0,
-    templatesCount: test.templates?.length || 0,
+    papersCount: test._count?.papers ?? test.papers?.length ?? 0,
+    templatesCount: test._count?.templates ?? test.templates?.length ?? 0,
     createdAt: test.createdAt ? new Date(test.createdAt).toISOString() : new Date().toISOString(),
   }))
 

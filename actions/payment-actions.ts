@@ -172,19 +172,53 @@ export async function getAdminPaymentsAction(): Promise<ActionResult<{ payments:
 
     const payments = await prisma.payment.findMany({
       orderBy: { createdAt: "desc" },
-      include: {
-        user: true,
+      take: 100,
+      select: {
+        id: true,
+        userId: true,
+        testSeriesId: true,
+        razorpayOrderId: true,
+        razorpayPaymentId: true,
+        amount: true,
+        amountRefunded: true,
+        currency: true,
+        status: true,
+        paymentMethod: true,
+        bankReference: true,
+        createdAt: true,
+        user: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
         registration: {
-          include: {
-            testSeries: true,
+          select: {
+            attemptsUsed: true,
+            maxAttempts: true,
+            testSeries: {
+              select: {
+                title: true,
+              },
+            },
             _count: {
               select: { submissions: true },
             },
           },
         },
         refunds: {
-          include: {
-            admin: true,
+          take: 1,
+          orderBy: { createdAt: "desc" },
+          select: {
+            razorpayRefundId: true,
+            reason: true,
+            adminNotes: true,
+            createdAt: true,
+            admin: {
+              select: {
+                name: true,
+              },
+            },
           },
         },
       },

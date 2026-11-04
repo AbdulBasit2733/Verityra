@@ -15,9 +15,14 @@ import {
   Compass,
   Trophy,
 } from "lucide-react"
-import { DesktopCommandPalette } from "@/components/desktop/desktop-command-palette"
+import dynamic from "next/dynamic"
 import { PortalDesktopLayout, NavItem } from "@/components/layout/portal/desktop/portal-desktop-layout"
 import { PortalMobileLayout } from "@/components/layout/portal/mobile/portal-mobile-layout"
+
+const DesktopCommandPalette = dynamic(
+  () => import("@/components/desktop/desktop-command-palette").then((mod) => mod.DesktopCommandPalette),
+  { ssr: false }
+)
 
 const adminNavItems: NavItem[] = [
   {

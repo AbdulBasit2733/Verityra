@@ -7,9 +7,17 @@ import { DataTable, DataTableColumn, DataTableFilter } from "@/components/ui/dat
 import { FormattedDate } from "@/components/ui/date-picker"
 import { PageHeader } from "@/components/ui/page-header"
 import { KpiStatCard } from "@/components/ui/kpi-stat-card"
-import { AdminRefundDialog } from "@/components/admin-refund-dialog"
-import { AdminPaymentLedgerSheet } from "@/components/admin-payment-ledger-sheet"
+import dynamic from "next/dynamic"
 import { useGlobalError } from "@/components/providers/error-dialog-provider"
+
+const AdminRefundDialog = dynamic(
+  () => import("@/components/admin-refund-dialog").then((mod) => mod.AdminRefundDialog),
+  { ssr: false }
+)
+const AdminPaymentLedgerSheet = dynamic(
+  () => import("@/components/admin-payment-ledger-sheet").then((mod) => mod.AdminPaymentLedgerSheet),
+  { ssr: false }
+)
 import { toast } from "@/components/ui/sonner"
 import {
   AlertTriangle,

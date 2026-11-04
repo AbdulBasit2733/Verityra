@@ -1,5 +1,7 @@
 "use client"
 
+import * as React from "react"
+import { useMemo } from "react"
 import { Award, BadgeCheck, Clock, Medal, Trophy } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
@@ -11,7 +13,7 @@ import { LeaderboardRankCard } from "./leaderboard-rank-card"
 
 export function LeaderboardDesktop({ rankings }: { rankings: LeaderboardEntry[] }) {
   const top = rankings.slice(0, 3)
-  const columns: DataTableColumn<LeaderboardEntry>[] = [
+  const columns = useMemo<DataTableColumn<LeaderboardEntry>[]>(() => [
     { id: "rank", header: "Rank", sortable: true, sortAccessor: (r) => r.rank, className: "w-20 text-center", cell: (r) => <span className="font-black text-primary">#{r.rank}</span> },
     { id: "student", header: "Candidate", sortable: true, sortAccessor: (r) => r.studentName, searchAccessor: (r) => `${r.studentName} ${r.testTitle}`, cell: (r) => <span className="font-bold text-foreground">{r.studentName}</span> },
     { id: "test", header: "Examination module", sortable: true, sortAccessor: (r) => r.testTitle, cell: (r) => <span className="block max-w-sm truncate font-medium text-muted-foreground">{r.testTitle}</span> },
@@ -19,11 +21,12 @@ export function LeaderboardDesktop({ rankings }: { rankings: LeaderboardEntry[] 
     { id: "percentage", header: "Percentage", sortable: true, sortAccessor: (r) => r.percentage, className: "text-right", cell: (r) => <Badge variant={r.percentage >= 75 ? "default" : "secondary"} className="text-xs">{r.percentage.toFixed(1)}%</Badge> },
     { id: "attempt", header: "Attempt", sortable: true, sortAccessor: (r) => r.attemptNumber, cell: (r) => <Badge variant="outline" className="text-[10px]">Attempt {r.attemptNumber}</Badge> },
     { id: "date", header: "Submitted", sortable: true, sortAccessor: (r) => new Date(r.submittedAt), cell: (r) => <FormattedDate date={r.submittedAt} /> },
-  ]
-  const filters: DataTableFilter<LeaderboardEntry>[] = [
+  ], [])
+
+  const filters = useMemo<DataTableFilter<LeaderboardEntry>[]>(() => [
     { id: "attempt", label: "Attempt", accessor: (r) => String(r.attemptNumber), options: [1, 2, 3].map((n) => ({ label: `Attempt ${n}`, value: String(n) })) },
     { id: "bracket", label: "Score bracket", accessor: (r) => r.percentage >= 75 ? "TOP" : r.percentage >= 60 ? "HIGH" : r.percentage >= 50 ? "PASS" : "BELOW", options: [{ label: "Top tier (75%+)", value: "TOP" }, { label: "High score (60–74%)", value: "HIGH" }, { label: "Passing (50–59%)", value: "PASS" }, { label: "Below passing", value: "BELOW" }] },
-  ]
+  ], [])
   return <div className="hidden lg:block">
     <Tabs defaultValue="overview" className="space-y-6">
       <TabsList variant="line" className="w-full justify-start border-b border-border">

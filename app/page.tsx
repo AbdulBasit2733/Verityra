@@ -35,15 +35,24 @@ import {
   Users,
   ChevronRight,
 } from "lucide-react"
-import { getLeaderboardAction } from "@/actions/leaderboard-actions"
+import dynamicImport from "next/dynamic"
+import { getCachedLeaderboard } from "@/lib/cache"
 import { KpiMetricStrip, KpiMetric } from "@/components/shared/kpi-metric-strip"
-import { InteractiveRubricShowcase } from "@/components/interactive-rubric-showcase"
 import { HeroCockpitPreview } from "@/components/hero-cockpit-preview"
 
-export const dynamic = "force-dynamic"
+const InteractiveRubricShowcase = dynamicImport(
+  () => import("@/components/interactive-rubric-showcase").then((mod) => mod.InteractiveRubricShowcase),
+  {
+    loading: () => (
+      <div className="h-96 w-full animate-pulse rounded-3xl bg-slate-100 dark:bg-slate-900" />
+    ),
+  }
+)
+
+export const revalidate = 300
 
 export default async function HomePage() {
-  const leaderboardPreview = await getLeaderboardAction()
+  const leaderboardPreview = await getCachedLeaderboard()
 
   const featuredTests = [
     {

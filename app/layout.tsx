@@ -17,14 +17,14 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 
 const poppins = Poppins({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
+  weight: ["400", "600"],
   variable: "--font-poppins",
   display: "swap",
 })
 
 const inter = Inter({
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["400", "500"],
   variable: "--font-inter",
   display: "swap",
 })
@@ -47,7 +47,7 @@ export default function RootLayout({
       className={cn("antialiased", plusJakartaSans.variable, poppins.variable, inter.variable)}
     >
       <body className="min-h-screen bg-background text-foreground font-sans">
-        <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="afterInteractive" />
+        <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
         <ThemeProvider>
           <AuthProvider>
             <ConfirmDialogProvider>

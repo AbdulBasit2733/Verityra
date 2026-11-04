@@ -303,6 +303,7 @@ export async function adminReviewScoreAction(
   // Update questions and recalculate total
   await prisma.$transaction(async (tx) => {
     let newTotal = 0
+    const updatePromises: Promise<any>[] = []
 
     for (const q of evaluation.questions) {
       const adjustment = adjustments.find((a) => a.questionEvaluationId === q.id)
@@ -313,15 +314,21 @@ export async function adminReviewScoreAction(
       newTotal += clampedMarks
 
       if (adjustment) {
-        await tx.questionEvaluation.update({
-          where: { id: q.id },
-          data: {
-            adminOverrideMarks: clampedMarks,
-            marksAwarded: clampedMarks,
-            adminNotes: adjustment.adminNotes,
-          },
-        })
+        updatePromises.push(
+          tx.questionEvaluation.update({
+            where: { id: q.id },
+            data: {
+              adminOverrideMarks: clampedMarks,
+              marksAwarded: clampedMarks,
+              adminNotes: adjustment.adminNotes,
+            },
+          })
+        )
       }
+    }
+
+    if (updatePromises.length > 0) {
+      await Promise.all(updatePromises)
     }
 
     const percentage = Number(((newTotal / evaluation.maxMarks) * 100).toFixed(2))

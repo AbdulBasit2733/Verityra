@@ -16,28 +16,64 @@ export default async function StudentDashboardPage() {
   let submissions: any[] = []
 
   if (dbConnected) {
-    registrations = await prisma.testRegistration.findMany({
-      where: { userId: user.id },
-      include: {
-        testSeries: true,
-        submissions: {
-          include: {
-            evaluation: true,
+    ;[registrations, submissions] = await Promise.all([
+      prisma.testRegistration.findMany({
+        where: { userId: user.id },
+        select: {
+          id: true,
+          testSeriesId: true,
+          attemptsUsed: true,
+          maxAttempts: true,
+          registeredAt: true,
+          testSeries: {
+            select: {
+              title: true,
+              maxMarks: true,
+              durationMinutes: true,
+            },
           },
-          orderBy: { attemptNumber: "desc" },
+          submissions: {
+            take: 1,
+            orderBy: { attemptNumber: "desc" },
+            select: {
+              status: true,
+              evaluation: {
+                select: {
+                  totalMarksAwarded: true,
+                  percentage: true,
+                  generalFeedback: true,
+                },
+              },
+            },
+          },
         },
-      },
-      orderBy: { registeredAt: "desc" },
-    })
-
-    submissions = await prisma.submission.findMany({
-      where: { userId: user.id },
-      include: {
-        testSeries: true,
-        evaluation: true,
-      },
-      orderBy: { submittedAt: "desc" },
-    })
+        orderBy: { registeredAt: "desc" },
+      }),
+      prisma.submission.findMany({
+        where: { userId: user.id },
+        select: {
+          id: true,
+          testSeriesId: true,
+          attemptNumber: true,
+          status: true,
+          submittedAt: true,
+          testSeries: {
+            select: {
+              id: true,
+              title: true,
+            },
+          },
+          evaluation: {
+            select: {
+              totalMarksAwarded: true,
+              maxMarks: true,
+              percentage: true,
+            },
+          },
+        },
+        orderBy: { submittedAt: "desc" },
+      }),
+    ])
   }
 
   // Fallback demo records if DB is not yet running

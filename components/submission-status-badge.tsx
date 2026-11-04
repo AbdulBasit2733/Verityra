@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Badge } from '@/components/ui/badge'
 import { Loader2 } from 'lucide-react'
 
@@ -40,6 +41,7 @@ export function SubmissionStatusBadge({
   initialStatus,
   initialPercentage,
 }: SubmissionStatusBadgeProps) {
+  const router = useRouter()
   const [status, setStatus] = useState(initialStatus)
   const [percentage, setPercentage] = useState(initialPercentage)
   const [progress, setProgress] = useState(0)
@@ -87,7 +89,7 @@ export function SubmissionStatusBadge({
           // Wait a bit before refreshing to ensure cache is updated
           setTimeout(() => {
             if (mounted) {
-              window.location.reload()
+              router.refresh()
             }
           }, 1000)
         }
