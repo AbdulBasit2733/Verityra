@@ -80,16 +80,16 @@ const variantStyles: Record<
     iconColor: "text-primary",
   },
   emerald: {
-    iconBg: "bg-emerald-50/70 dark:bg-emerald-950/40",
-    iconColor: "text-emerald-600 dark:text-emerald-400",
+    iconBg: "bg-emerald-50 dark:bg-emerald-950/40",
+    iconColor: "text-emerald-700 dark:text-emerald-300",
   },
   amber: {
-    iconBg: "bg-amber-50/70 dark:bg-amber-950/40",
-    iconColor: "text-amber-600 dark:text-amber-400",
+    iconBg: "bg-amber-50 dark:bg-amber-950/40",
+    iconColor: "text-amber-800 dark:text-amber-300",
   },
   rose: {
-    iconBg: "bg-rose-50/70 dark:bg-rose-950/40",
-    iconColor: "text-rose-600 dark:text-rose-400",
+    iconBg: "bg-rose-50 dark:bg-rose-950/40",
+    iconColor: "text-rose-700 dark:text-rose-300",
   },
   slate: {
     iconBg: "bg-muted",

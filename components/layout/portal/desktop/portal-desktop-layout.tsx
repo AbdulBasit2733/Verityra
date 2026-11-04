@@ -109,7 +109,7 @@ export function PortalDesktopLayout({
         {/* Brand Header */}
         <div
           className={cn(
-            "h-16 flex items-center border-b border-slate-200/80 dark:border-slate-800",
+            "h-16 flex items-center border-b border-border",
             sidebarCollapsed ? "justify-center px-2" : "justify-between px-5"
           )}
         >
@@ -238,7 +238,7 @@ export function PortalDesktopLayout({
         </div>
 
         {/* Bottom Profile, Quick Links & Collapse Button */}
-        <div className="p-3.5 border-t border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-2.5">
+        <div className="p-3.5 border-t border-border bg-card space-y-2.5">
           {sidebarCollapsed ? (
             <TooltipProvider>
               {/* Collapsed: Show only avatar */}
@@ -342,7 +342,7 @@ export function PortalDesktopLayout({
         )}
       >
         {/* Sticky Command Topbar */}
-        <header className="sticky top-0 z-30 h-16 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-6 lg:px-8 flex items-center justify-between gap-4">
+        <header className="sticky top-0 z-30 h-16 bg-card/95 backdrop-blur-md border-b border-border px-6 lg:px-8 flex items-center justify-between gap-4">
           {/* Global Search Input - Opens Command Palette (Ctrl+K) */}
           <div className="relative flex-1 max-w-xl min-w-0">
             <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />

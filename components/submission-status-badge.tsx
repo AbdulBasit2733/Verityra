@@ -126,7 +126,7 @@ export function SubmissionStatusBadge({
       <div className="flex flex-col gap-1.5">
         <Badge
           variant="outline"
-          className="border-blue-200 dark:border-blue-900 text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 text-[10px] font-semibold animate-pulse"
+          className="border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 text-[10px] font-semibold animate-pulse"
         >
           <Loader2 className="h-2.5 w-2.5 mr-1 animate-spin" />
           Evaluating...
@@ -148,7 +148,7 @@ export function SubmissionStatusBadge({
     return (
       <Badge
         variant="outline"
-        className="border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 text-[10px] font-semibold"
+        className="border-emerald-300 dark:border-emerald-700/60 text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 text-[10px] font-semibold"
       >
         Evaluated
         {percentage !== null && percentage !== undefined && ` (${percentage.toFixed(1)}%)`}
@@ -161,7 +161,7 @@ export function SubmissionStatusBadge({
     return (
       <Badge
         variant="outline"
-        className="border-amber-200 dark:border-amber-900 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 text-[10px] font-semibold"
+        className="border-amber-300 dark:border-amber-700/60 text-amber-900 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 text-[10px] font-semibold"
       >
         Under Review
       </Badge>
@@ -173,7 +173,7 @@ export function SubmissionStatusBadge({
     return (
       <Badge
         variant="outline"
-        className="border-red-200 dark:border-red-900 text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/50 text-[10px] font-semibold"
+        className="border-red-300 dark:border-red-700/60 text-red-800 dark:text-red-300 bg-red-50 dark:bg-red-950/40 text-[10px] font-semibold"
       >
         Failed
       </Badge>
@@ -184,7 +184,7 @@ export function SubmissionStatusBadge({
   return (
     <Badge
       variant="outline"
-      className="border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-900 text-[10px] font-semibold"
+      className="border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-900 text-[10px] font-semibold"
     >
       {status}
     </Badge>

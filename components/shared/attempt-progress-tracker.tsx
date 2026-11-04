@@ -86,11 +86,11 @@ export function AttemptProgressTracker({
                 className={cn(
                   "flex items-center justify-center rounded-full transition-all",
                   state === "completed" &&
-                    "h-8 w-8 bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400",
+                    "h-8 w-8 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300",
                   state === "available" &&
-                    "h-8 w-8 bg-blue-100 dark:bg-blue-950 text-[#2A6AED] dark:text-blue-400",
+                    "h-8 w-8 bg-blue-100 dark:bg-blue-950/60 text-[#2A6AED] dark:text-blue-300",
                   state === "locked" &&
-                    "h-8 w-8 bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600"
+                    "h-8 w-8 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
                 )}
                 title={getAttemptLabel(attemptNumber)}
               >
@@ -101,9 +101,9 @@ export function AttemptProgressTracker({
               <span
                 className={cn(
                   "text-[10px] font-bold uppercase tracking-wide",
-                  state === "completed" && "text-emerald-600 dark:text-emerald-400",
-                  state === "available" && "text-[#2A6AED] dark:text-blue-400",
-                  state === "locked" && "text-slate-400 dark:text-slate-600"
+                  state === "completed" && "text-emerald-800 dark:text-emerald-300",
+                  state === "available" && "text-[#2A6AED] dark:text-blue-300",
+                  state === "locked" && "text-slate-600 dark:text-slate-400"
                 )}
               >
                 {attemptNumber}
@@ -116,8 +116,8 @@ export function AttemptProgressTracker({
                 className={cn(
                   "h-0.5 flex-1 min-w-[16px] mx-1",
                   state === "completed"
-                    ? "bg-emerald-300 dark:bg-emerald-800"
-                    : "bg-slate-200 dark:bg-slate-700"
+                    ? "bg-emerald-400 dark:bg-emerald-800"
+                    : "bg-slate-300 dark:bg-slate-700"
                 )}
               />
             )}
@@ -143,7 +143,7 @@ export function AttemptProgressTrackerCompact({
   return (
     <div className={cn("flex items-center gap-2 text-sm", className)}>
       <div className="flex items-center gap-1">
-        <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+        <CheckCircle2 className="h-4 w-4 text-emerald-700 dark:text-emerald-300" />
         <span className="font-semibold text-foreground">{completedCount}</span>
         <span className="text-muted-foreground">done</span>
       </div>
@@ -151,7 +151,7 @@ export function AttemptProgressTrackerCompact({
       <div className="h-4 w-px bg-slate-300 dark:bg-slate-700" />
 
       <div className="flex items-center gap-1">
-        <Circle className="h-4 w-4 text-[#2A6AED] dark:text-blue-400" />
+        <Circle className="h-4 w-4 text-[#2A6AED] dark:text-blue-300" />
         <span className="font-semibold text-foreground">{availableCount}</span>
         <span className="text-muted-foreground">left</span>
       </div>
@@ -159,7 +159,7 @@ export function AttemptProgressTrackerCompact({
       {maxAttempts > 3 && (
         <>
           <div className="h-4 w-px bg-slate-300 dark:bg-slate-700" />
-          <span className="text-xs font-medium text-amber-600 dark:text-amber-400">
+          <span className="text-xs font-medium text-amber-800 dark:text-amber-300">
             +{maxAttempts - 3} extra
           </span>
         </>

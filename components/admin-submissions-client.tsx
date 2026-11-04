@@ -173,14 +173,14 @@ export function AdminSubmissionsClient({
       sortAccessor: (s) => s.status,
       cell: (s) => (
         <Badge
-          variant="outline"
-          className={
+          variant={
             s.status === "COMPLETED"
-              ? "border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 text-[11px] font-semibold rounded-full"
+              ? "success"
               : s.status === "REVIEW_REQUIRED"
-                ? "border-amber-200 dark:border-amber-900 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 text-[11px] font-semibold rounded-full"
-                : "border-blue-200 dark:border-blue-900 text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 text-[11px] font-semibold rounded-full"
+                ? "warning"
+                : "info"
           }
+          className="text-[11px] font-semibold rounded-full"
         >
           {s.status === "COMPLETED"
             ? "Completed"

@@ -88,13 +88,13 @@ export function PortalMobileLayout({
       {/* =========================================================
           1. MOBILE & TABLET STICKY TOPBAR (Screens S & M: < 1024px)
       ========================================================= */}
-      <header className="sticky top-0 z-30 h-16 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-4 sm:px-6 flex items-center justify-between gap-3">
+      <header className="sticky top-0 z-30 h-16 bg-card/95 backdrop-blur-md border-b border-border px-4 sm:px-6 flex items-center justify-between gap-3">
         {/* Left: Drawer Toggle Button & Brand Icon */}
         <div className="flex items-center gap-2.5 min-w-0">
           <button
             type="button"
             onClick={() => setDrawerOpen(true)}
-            className="h-10 w-10 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-center text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shrink-0 shadow-2xs active:scale-95 transition-all cursor-pointer"
+            className="h-10 w-10 rounded-xl border border-border bg-card flex items-center justify-center text-foreground hover:bg-muted shrink-0 shadow-2xs active:scale-95 transition-all cursor-pointer"
             aria-label="Open navigation drawer"
           >
             <Menu className="h-5 w-5" />

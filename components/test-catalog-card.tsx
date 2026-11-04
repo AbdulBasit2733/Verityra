@@ -12,7 +12,7 @@ export function TestCatalogCard({ item, compact = false }: { item: TestCatalogIt
       <CardHeader className={compact ? "gap-1.5" : "gap-3"}>
         <div className="flex items-start justify-between gap-3">
           <Badge variant="secondary" className="rounded-full text-[10px] font-bold uppercase tracking-wide">{item.durationMinutes} min</Badge>
-          {isFree ? <Badge className="rounded-full bg-emerald-600 text-[10px] font-bold text-white">Free</Badge> : <span className="text-lg font-extrabold text-primary">₹{(item.price / 100).toLocaleString()}</span>}
+          {isFree ? <Badge variant="success" className="rounded-full text-[10px] font-bold">Free</Badge> : <span className="text-lg font-extrabold text-primary">₹{(item.price / 100).toLocaleString()}</span>}
         </div>
         <CardTitle className={compact ? "text-base leading-snug" : "line-clamp-2 text-lg leading-snug"}>{item.title}</CardTitle>
         <p className={compact ? "line-clamp-2 text-xs leading-relaxed text-muted-foreground" : "line-clamp-3 text-sm leading-relaxed text-muted-foreground"}>{item.description}</p>

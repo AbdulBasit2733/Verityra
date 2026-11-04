@@ -10,13 +10,13 @@ const buttonVariants = cva(
         default:
           "bg-primary text-primary-foreground shadow-sm hover:bg-[#1E55C7] hover:shadow-md active:scale-[0.99]",
         outline:
-          "border-border bg-white hover:bg-muted hover:text-foreground hover:border-slate-300 aria-expanded:bg-muted aria-expanded:text-foreground shadow-xs",
+          "border-border bg-card hover:bg-muted hover:text-foreground hover:border-slate-400 dark:hover:border-slate-500 aria-expanded:bg-muted aria-expanded:text-foreground shadow-xs",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-[#DBEAFE] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground font-semibold",
+          "bg-secondary text-secondary-foreground border border-blue-200/60 dark:border-blue-900/40 hover:bg-[#DBEAFE] dark:hover:bg-[#1E3A8A]/40 aria-expanded:bg-secondary aria-expanded:text-secondary-foreground font-semibold",
         ghost:
           "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50",
         destructive:
-          "bg-destructive/10 text-destructive border border-destructive/20 hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
+          "bg-red-50 text-red-800 border border-red-300 hover:bg-red-100 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800/60 dark:hover:bg-red-900/40 focus-visible:border-destructive/40 focus-visible:ring-destructive/20",
         link: "text-primary underline-offset-4 hover:underline font-semibold",
       },
       size: {
