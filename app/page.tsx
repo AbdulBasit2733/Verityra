@@ -889,8 +889,17 @@ export default async function HomePage() {
             </div>
           </div>
         </section>
-      </main>
 
+        <section className="border-b border-slate-200/80 bg-[#F1F6FF] py-16 sm:py-24">
+          <div className="mx-auto flex max-w-7xl flex-col items-center gap-5 px-4 text-center sm:px-6 lg:px-8">
+            <Badge className="rounded-full border border-blue-200 bg-white text-[#145DEB]">Public Question Paper Library</Badge>
+            <h2 className="max-w-2xl font-heading text-3xl font-extrabold tracking-tight text-[#071B3A] sm:text-4xl">Explore Question Papers</h2>
+            <p className="max-w-2xl text-sm leading-7 text-slate-600 sm:text-base">Find and download question papers for school, entrance, and competitive examinations.</p>
+            <Link href="/question-papers"><Button className="rounded-xl bg-[#145DEB] px-6 hover:bg-[#0F4DC7]">Browse All Question Papers <ArrowRight data-icon="inline-end" /></Button></Link>
+          </div>
+        </section>
+      </main>
+      
       <Footer />
     </div>
   )

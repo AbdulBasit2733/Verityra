@@ -14,6 +14,9 @@ import {
   CreditCard,
   Compass,
   Trophy,
+  FileText,
+  Download,
+  ClipboardList,
 } from "lucide-react"
 import dynamic from "next/dynamic"
 import { PortalDesktopLayout, NavItem } from "@/components/layout/portal/desktop/portal-desktop-layout"
@@ -69,6 +72,21 @@ const studentNavItems: NavItem[] = [
     label: "My Tests",
     href: "/student/tests",
     icon: BookOpen,
+  },
+  {
+    label: "My Evaluations",
+    href: "/student/evaluations",
+    icon: ClipboardList,
+  },
+  {
+    label: "Question Papers",
+    href: "/question-papers",
+    icon: FileText,
+  },
+  {
+    label: "Downloads",
+    href: "/student/downloads",
+    icon: Download,
   },
   {
     label: "Purchases",
