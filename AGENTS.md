@@ -1,0 +1,66 @@
+# Verityra Autonomous Agent Instruction & Skill Orchestration Matrix
+<!-- Applicable across Antigravity, Claude Code, OpenAI Codex, and Cursor -->
+
+## 1. Prime Directive: Mandatory Skill Routing
+For **EVERY** user prompt, you MUST NOT jump directly into writing ad-hoc, unverified code. You MUST analyze the prompt's intent, activate the corresponding specialized skills installed in the workspace and global `.agents/` environment, and produce all required documentation (`.md`) artifacts.
+
+---
+
+## 2. Intent-to-Skill Routing Matrix
+
+| Prompt Category | Trigger Signals | Primary Mandatory Skills | Supporting Skills | Required Output Artifacts (`.md`) |
+| :--- | :--- | :--- | :--- | :--- |
+| **New Features & Strategy** | "build", "create", "feature", "idea", "add functionality" | `using-superpowers`<br>`brainstorming`<br>`office-hours` (gstack) | `spec` (gstack)<br>`to-spec` (mattpocock) | `docs/specs/[feature]-spec.md`<br>`PRD.md` update |
+| **Scoping & Stress-Testing** | "scope", "challenge", "grill", "critique", "review idea" | `grill-me` (mattpocock)<br>`grilling`<br>`plan-ceo-review` (gstack) | `grill-with-docs`<br>`loop-me` | `docs/adr/[decision].md`<br>Questionnaire / Risk Log |
+| **Planning & Task Breakdown** | "plan", "how should we", "breakdown", "roadmap", "architecture" | `writing-plans` (superpowers)<br>`to-tickets` (mattpocock)<br>`plan-eng-review` (gstack) | `wayfinder` (mattpocock)<br>`executing-plans` | `docs/plans/[task]-plan.md`<br>Implementation Checklist |
+| **UI, Styling & Design System** | "UI", "design", "css", "styling", "component", "brand", "banner" | `.agents/skills/brand`<br>`.agents/skills/design-system`<br>`.agents/skills/ui-ux-pro-max` | `design-consultation` (gstack)<br>`design-review` (gstack)<br>`.agents/skills/ui-styling` | `docs/specs/[component]-design.md`<br>Token Diffs |
+| **Bug Fixing & Diagnostics** | "bug", "broken", "error", "fix", "failing", "why is this slow" | `systematic-debugging` (superpowers)<br>`diagnosing-bugs` (mattpocock)<br>`investigate` (gstack) | `diagnosing-superpowers`<br>`careful` | Reproduction Test (`tests/*.test.ts`)<br>Root Cause Analysis |
+| **Implementation & TDD** | "code", "implement", "write test", "refactor" | `test-driven-development` (superpowers)<br>`tdd` (mattpocock)<br>`implement` | `codebase-design`<br>`deslop-shared-libs` | Unit tests first (`tests/*.test.ts`)<br>Implementation diffs |
+| **Verification & Quality Assurance** | "verify", "test", "ready to ship", "done", "check" | `verification-before-completion`<br>`qa` (gstack)<br>`review` (gstack) | `test-audit` (gstack)<br>`cso` (security audit) | `docs/qa/[feature]-verification.md`<br>Execution evidence logs |
+| **Session Handoff & Retrospective** | "handoff", "summary", "retro", "wrap up", "next steps" | `handoff` (mattpocock)<br>`retro` (gstack)<br>`writing-for-agents` | `chief-of-staff`<br>`claude-handoff` | `docs/handoffs/[date]-session.md`<br>`walkthrough.md` |
+
+---
+
+## 3. Mandatory Documentation Artifacts (`.md` Files)
+
+Whenever completing non-trivial tasks, the agent MUST generate or update the following standardized Markdown documentation:
+
+1. **Specification (`docs/specs/[feature-name].md`)**:
+   - Executive summary and user user stories.
+   - API contract definitions and Zod validation schemas.
+   - Edge cases, error handling, and authorization rules.
+2. **Implementation Plan (`docs/plans/[task-name].md`)**:
+   - Sequential, phased implementation tasks with checkboxes `[ ]`.
+   - Explicit file changes (`[MODIFY]`, `[NEW]`, `[DELETE]`).
+   - Automated verification commands and rollback criteria.
+3. **Architecture Decision Records (`docs/adr/[YYYY-MM-DD]-[decision-title].md`)**:
+   - Status: Accepted / Rejected / Superseded.
+   - Context, alternatives considered, decision outcome, and consequences.
+4. **Verification & Quality Report (`docs/qa/[feature-name]-verification.md`)**:
+   - Automated test outputs (`pnpm test`).
+   - TypeScript compilation status (`pnpm run typecheck`).
+   - Production build logs (`pnpm run build`).
+5. **Session Handoff (`docs/handoffs/[YYYY-MM-DD]-[topic].md`)**:
+   - Current task status, completed changes, blocking items, and next steps for subsequent sessions.
+
+---
+
+## 4. Domain Invariants & Design System Guidelines
+
+- **Primary Brand Accent**: `#2A6AED` (Electric Sapphire / Royal Indigo). Never substitute with unapproved purples or generic blues.
+- **Color Harmony (60-30-10 Rule)**:
+  - **60%**: Neutral backgrounds (`#F8FAFC` slate-50 canvas, `#FFFFFF` cards, dark mode equivalents).
+  - **30%**: Structural layout, borders (`#E2E8F0` / `#CBD5E1`), text (`#0F172A` / `#334155`), and subtle accents.
+  - **10%**: High-contrast `#2A6AED` focal points (primary CTA buttons, active tabs, key metric highlights).
+- **Candidate Isolation**: Evaluation rubrics, model prompts, and internal moderator notes are strictly isolated from candidate-facing queries and endpoints.
+- **Attempt Ceiling**: The 3-attempt ceiling per test registration is strictly enforced and compensated only on terminal system failures.
+- **Evidence Before Assertion**: Never state that code is working or verified without executing the actual test/build command and providing real command output.
+
+---
+
+## 5. Subagent & Teamwork Coordination
+When working on complex multi-faceted tasks, divide work among specialized subagent roles:
+- **`planner`**: Evaluates requirements, interviews ambiguities (`grill-me`), and drafts `PRD.md` & `docs/plans/*.md`.
+- **`ui-designer`**: Enforces `.agents/skills/design-system` and produces pixel-perfect, accessible components.
+- **`qa-engineer`**: Writes tests upfront following `test-driven-development`, validates edge cases, and executes CI runs.
+- **`reviewer`**: Audits changes for memory leaks, socket leaks, security vulnerabilities, and adherence to `AGENTS.md`.
