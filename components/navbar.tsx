@@ -43,7 +43,10 @@ export function Navbar() {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-1 text-[13px] lg:text-sm font-medium text-slate-600">
             <Link href="/tests" className="nav-item px-3 py-1.5 rounded-lg">
-              Explore Tests
+              Test Series
+            </Link>
+            <Link href="/question-papers" className="nav-item px-3 py-1.5 rounded-lg">
+              Question Papers
             </Link>
             <Link href="/#how-it-works" className="nav-item px-3 py-1.5 rounded-lg">
               How It Works
