@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { ArrowRight, Check, ChevronRight, FileText, Layers3, PenLine, ScanLine, Sparkles, Trophy, UploadCloud } from "lucide-react"
+import { ArrowRight, BarChart3, Check, ChevronRight, FileText, Layers3, PenLine, ScanLine, Sparkles, Trophy, UploadCloud } from "lucide-react"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { buttonVariants } from "@/components/ui/button"
@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 
 const visualSources = {
-  hero: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Hero-section-eM7DnOksYx6WdT8Ig4NPbFaDxAh3aE.png",
+  hero: "/images/verityra-hero-answer-sheet.png",
   steps: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Section-2-UD6a6mBXhGMjBEGUqUffowOHQ3V2cg.png",
   progression: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/section-3-Ph2u4BO3F6PIqKrZGydt0KrS0C9sCZ.png",
   evaluation: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/section-4-l737KECOl1eQ8TGoUuAf3b7Hm7TTES.png",
@@ -42,9 +42,14 @@ export default function HomePage() {
                 <a href="#how-it-works" className={cn(buttonVariants({ variant: "outline", size: "lg" }), "rounded-xl border-blue-300 bg-white/70 px-6 text-[#071b3a] hover:bg-white")}>How It Works <ChevronRight data-icon="inline-end" /></a>
               </div>
               <div className="mt-9 flex flex-wrap gap-x-5 gap-y-3 text-sm font-semibold text-[#25466f]">{benefits.map((benefit) => <span key={benefit} className="inline-flex items-center gap-2"><Check className="text-emerald-500" />{benefit}</span>)}</div>
+              <div className="mt-8 hidden max-w-3xl items-center justify-between gap-4 rounded-3xl border border-blue-100 bg-white/75 px-5 py-4 shadow-lg shadow-blue-900/5 backdrop-blur md:flex">{[[FileText, "Download", "Margin Booklet"], [PenLine, "Handwrite", "Your Answers"], [UploadCloud, "Scan &", "Upload (PDF)"], [BarChart3, "Get Detailed", "Rubric Feedback"]].map(([Icon, title, caption], index) => <div key={title as string} className="flex min-w-0 items-center gap-3"><div className="text-center"><Icon className="mx-auto text-[#1465ed]" /><p className="mt-1 text-xs font-bold leading-tight text-[#142b4d]">{title as string}<br />{caption as string}</p></div>{index < 3 && <ArrowRight className="size-4 shrink-0 text-slate-400" />}</div>)}</div>
             </div>
-            <div className="relative lg:-mr-24">
-              <div className="overflow-hidden rounded-[2rem] border border-white/80 bg-white/70 p-2 shadow-2xl shadow-blue-900/15 backdrop-blur"><img src={visualSources.hero} alt="Handwritten answer booklet and rubric evaluation preview" className="h-auto w-full rounded-[1.5rem]" /></div>
+            <div className="relative min-h-[460px] lg:-mr-24">
+              <div className="absolute inset-x-0 top-0 overflow-hidden rounded-[2rem] border border-white/80 bg-white/70 p-2 shadow-2xl shadow-blue-900/15 backdrop-blur"><img src={visualSources.hero} alt="AI-generated handwritten civil services answer booklet with exam books and pen" className="aspect-[4/3] w-full rounded-[1.5rem] object-cover object-right" /></div>
+              <div className="absolute bottom-5 right-0 w-[min(92%,430px)] rounded-[1.5rem] border border-white bg-white/95 p-5 shadow-2xl shadow-blue-950/20 backdrop-blur sm:bottom-2 sm:right-4">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-4"><div className="flex items-center gap-3"><span className="flex size-10 items-center justify-center rounded-xl bg-blue-100 text-[#1465ed]"><FileText /></span><div><p className="font-heading text-base font-bold">Rubric Evaluation</p><p className="text-xs text-slate-500">Question 1</p></div></div><span className="rounded-lg bg-blue-100 px-3 py-2 text-lg font-bold text-[#1465ed]">12 / 15</span></div>
+                <div className="mt-4 space-y-3">{[["Content & Relevance", "4 / 5", "80%"], ["Structure & Flow", "3 / 5", "60%"], ["Use of Keywords", "2 / 3", "67%"], ["Constitutional Reference", "2 / 2", "100%"], ["Language & Presentation", "1 / 2", "50%"]].map(([label, score, width]) => <div key={label} className="grid grid-cols-[1fr_auto] items-center gap-3 text-sm"><div className="flex min-w-0 items-center gap-2"><Check className="size-4 shrink-0 rounded-full bg-blue-100 p-0.5 text-[#1465ed]" /><span className="truncate text-slate-700">{label}</span></div><div className="flex items-center gap-2"><span className="hidden text-xs text-slate-500 sm:inline">{score}</span><span className="h-2 w-16 overflow-hidden rounded-full bg-blue-100"><span className="block h-full rounded-full bg-[#1465ed]" style={{ width }} /></span></div></div>)}</div>
+              </div>
             </div>
           </div>
         </section>
