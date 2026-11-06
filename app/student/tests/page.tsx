@@ -12,7 +12,24 @@ export default async function StudentRegisteredTestsPage() {
   if (dbConnected) {
     const registrations = await prisma.testRegistration.findMany({
       where: { userId: user.id, payment: null },
-      include: { testSeries: true, submissions: { select: { status: true } } },
+      select: {
+        id: true,
+        testSeriesId: true,
+        attemptsUsed: true,
+        maxAttempts: true,
+        registeredAt: true,
+        testSeries: {
+          select: {
+            title: true,
+            maxMarks: true,
+            durationMinutes: true,
+          },
+        },
+        submissions: {
+          orderBy: { attemptNumber: "desc" },
+          select: { status: true },
+        },
+      },
       orderBy: { registeredAt: "desc" },
     })
     tests = registrations.map((registration) => ({

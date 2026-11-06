@@ -288,6 +288,7 @@ model Payment {
   logs         PaymentLedger[]
 
   @@index([userId])
+  @@index([userId, createdAt])
   @@index([testSeriesId])
   @@index([registrationId])
   @@index([razorpayOrderId])

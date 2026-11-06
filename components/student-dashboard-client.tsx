@@ -66,256 +66,268 @@ export function StudentDashboardClient({
     0
   )
 
-  const registrationColumns: DataTableColumn<StudentRegistrationRow>[] = [
-    {
-      id: "title",
-      header: "Enrolled Test Series",
-      sortable: true,
-      sortAccessor: (r) => r.testTitle,
-      searchAccessor: (r) => `${r.testTitle} ${r.latestFeedback || ""}`,
-      cell: (r) => (
-        <div className="space-y-1 max-w-md whitespace-normal">
-          <Link
-            href={`/student/tests/${r.testSeriesId}`}
-            className="font-bold text-slate-900 dark:text-slate-100 hover:text-[#2A6AED] dark:hover:text-blue-400 transition-colors block leading-snug"
-          >
-            {r.testTitle}
-          </Link>
-          <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-500 dark:text-slate-400">
-            <span className="inline-flex items-center gap-1">
-              <Clock className="h-3 w-3 text-slate-400" />
-              {r.durationMinutes} mins
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <Award className="h-3 w-3 text-[#2A6AED] dark:text-blue-400" />
-              {r.maxMarks} Marks
-            </span>
-          </div>
-        </div>
-      ),
-    },
-    {
-      id: "attempts",
-      header: "3-Attempt Quota",
-      sortable: true,
-      sortAccessor: (r) => r.attemptsUsed,
-      cell: (r) => {
-        const left = Math.max(0, r.maxAttempts - r.attemptsUsed)
-        return (
-          <div className="w-40 space-y-1.5">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-bold text-slate-900 dark:text-slate-100">
-                {r.attemptsUsed} / {r.maxAttempts} used
+  const registrationColumns: DataTableColumn<StudentRegistrationRow>[] = React.useMemo(
+    () => [
+      {
+        id: "title",
+        header: "Enrolled Test Series",
+        sortable: true,
+        sortAccessor: (r) => r.testTitle,
+        searchAccessor: (r) => `${r.testTitle} ${r.latestFeedback || ""}`,
+        cell: (r) => (
+          <div className="space-y-1 max-w-md whitespace-normal">
+            <Link
+              href={`/student/tests/${r.testSeriesId}`}
+              className="font-bold text-slate-900 dark:text-slate-100 hover:text-[#2A6AED] dark:hover:text-blue-400 transition-colors block leading-snug"
+            >
+              {r.testTitle}
+            </Link>
+            <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-500 dark:text-slate-400">
+              <span className="inline-flex items-center gap-1">
+                <Clock className="h-3 w-3 text-slate-400" />
+                {r.durationMinutes} mins
               </span>
-              <span
-                className={
-                  left > 0
-                    ? "text-[11px] font-semibold text-emerald-600 dark:text-emerald-400"
-                    : "text-[11px] font-semibold text-amber-600 dark:text-amber-400"
-                }
-              >
-                {left} left
+              <span className="inline-flex items-center gap-1">
+                <Award className="h-3 w-3 text-[#2A6AED] dark:text-blue-400" />
+                {r.maxMarks} Marks
               </span>
             </div>
-            <Progress
-              value={r.attemptsUsed}
-              max={r.maxAttempts}
-              indicatorClassName={left === 0 ? "bg-amber-500" : "bg-[#2A6AED]"}
-            />
           </div>
-        )
+        ),
       },
-    },
-    {
-      id: "latestScore",
-      header: "Latest Score",
-      sortable: true,
-      sortAccessor: (r) => r.latestScore ?? -1,
-      cell: (r) =>
-        r.latestScore !== null ? (
-          <div className="space-y-0.5">
-            <span className="font-extrabold text-[#2A6AED] dark:text-blue-400 text-sm">
-              {r.latestScore} / {r.maxMarks}
-            </span>
-            <span className="block text-[11px] font-medium text-slate-500 dark:text-slate-400">
-              {r.latestPercentage}% score
-            </span>
-          </div>
-        ) : (
-          <span className="text-slate-400 text-xs">No attempt submitted</span>
+      {
+        id: "attempts",
+        header: "3-Attempt Quota",
+        sortable: true,
+        sortAccessor: (r) => r.attemptsUsed,
+        cell: (r) => {
+          const left = Math.max(0, r.maxAttempts - r.attemptsUsed)
+          return (
+            <div className="w-40 space-y-1.5">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-bold text-slate-900 dark:text-slate-100">
+                  {r.attemptsUsed} / {r.maxAttempts} used
+                </span>
+                <span
+                  className={
+                    left > 0
+                      ? "text-[11px] font-semibold text-emerald-600 dark:text-emerald-400"
+                      : "text-[11px] font-semibold text-amber-600 dark:text-amber-400"
+                  }
+                >
+                  {left} left
+                </span>
+              </div>
+              <Progress
+                value={r.attemptsUsed}
+                max={r.maxAttempts}
+                indicatorClassName={left === 0 ? "bg-amber-500" : "bg-[#2A6AED]"}
+              />
+            </div>
+          )
+        },
+      },
+      {
+        id: "latestScore",
+        header: "Latest Score",
+        sortable: true,
+        sortAccessor: (r) => r.latestScore ?? -1,
+        cell: (r) =>
+          r.latestScore !== null ? (
+            <div className="space-y-0.5">
+              <span className="font-extrabold text-[#2A6AED] dark:text-blue-400 text-sm">
+                {r.latestScore} / {r.maxMarks}
+              </span>
+              <span className="block text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                {r.latestPercentage}% score
+              </span>
+            </div>
+          ) : (
+            <span className="text-slate-400 text-xs">No attempt submitted</span>
+          ),
+      },
+      {
+        id: "registeredAt",
+        header: "Enrolled On",
+        sortable: true,
+        sortAccessor: (r) => new Date(r.registeredAt),
+        cell: (r) => <FormattedDate date={r.registeredAt} />,
+      },
+      {
+        id: "action",
+        header: "Action",
+        headerClassName: "text-right",
+        className: "text-right",
+        cell: (r) => (
+          <Link href={`/student/tests/${r.testSeriesId}`}>
+            <Button
+              size="sm"
+              className="h-8 px-3 rounded-lg bg-[#2A6AED] hover:bg-[#1E55C7] text-white text-xs font-semibold shadow-2xs"
+            >
+              Open Workspace
+            </Button>
+          </Link>
         ),
-    },
-    {
-      id: "registeredAt",
-      header: "Enrolled On",
-      sortable: true,
-      sortAccessor: (r) => new Date(r.registeredAt),
-      cell: (r) => <FormattedDate date={r.registeredAt} />,
-    },
-    {
-      id: "action",
-      header: "Action",
-      headerClassName: "text-right",
-      className: "text-right",
-      cell: (r) => (
-        <Link href={`/student/tests/${r.testSeriesId}`}>
-          <Button
-            size="sm"
-            className="h-8 px-3 rounded-lg bg-[#2A6AED] hover:bg-[#1E55C7] text-white text-xs font-semibold shadow-2xs"
+      },
+    ],
+    []
+  )
+
+  const registrationFilters: DataTableFilter<StudentRegistrationRow>[] = React.useMemo(
+    () => [
+      {
+        id: "attemptStatus",
+        label: "Attempts Remaining",
+        accessor: (r) =>
+          r.attemptsUsed >= r.maxAttempts ? "EXHAUSTED" : "AVAILABLE",
+        options: [
+          { label: "Attempts Available", value: "AVAILABLE" },
+          { label: "Quota Exhausted", value: "EXHAUSTED" },
+        ],
+      },
+      {
+        id: "maxMarks",
+        label: "Marks Weightage",
+        accessor: (r) => (r.maxMarks >= 250 ? "FULL_MOCK" : "SECTIONAL"),
+        options: [
+          { label: "Full Mock (≥ 250 Marks)", value: "FULL_MOCK" },
+          { label: "Sectional / Essay (< 250 Marks)", value: "SECTIONAL" },
+        ],
+      },
+    ],
+    []
+  )
+
+  const submissionColumns: DataTableColumn<StudentSubmissionRow>[] = React.useMemo(
+    () => [
+      {
+        id: "testTitle",
+        header: "Test Series",
+        sortable: true,
+        sortAccessor: (s) => s.testTitle,
+        searchAccessor: (s) => `${s.testTitle} ${s.status}`,
+        cell: (s) => (
+          <Link
+            href={`/student/tests/${s.testSeriesId}`}
+            className="font-bold text-slate-900 dark:text-slate-100 hover:text-[#2A6AED] dark:hover:text-blue-400 transition-colors block max-w-xs truncate"
           >
-            Open Workspace
-          </Button>
-        </Link>
-      ),
-    },
-  ]
-
-  const registrationFilters: DataTableFilter<StudentRegistrationRow>[] = [
-    {
-      id: "attemptStatus",
-      label: "Attempts Remaining",
-      accessor: (r) =>
-        r.attemptsUsed >= r.maxAttempts ? "EXHAUSTED" : "AVAILABLE",
-      options: [
-        { label: "Attempts Available", value: "AVAILABLE" },
-        { label: "Quota Exhausted", value: "EXHAUSTED" },
-      ],
-    },
-    {
-      id: "maxMarks",
-      label: "Marks Weightage",
-      accessor: (r) => (r.maxMarks >= 250 ? "FULL_MOCK" : "SECTIONAL"),
-      options: [
-        { label: "Full Mock (≥ 250 Marks)", value: "FULL_MOCK" },
-        { label: "Sectional / Essay (< 250 Marks)", value: "SECTIONAL" },
-      ],
-    },
-  ]
-
-  const submissionColumns: DataTableColumn<StudentSubmissionRow>[] = [
-    {
-      id: "testTitle",
-      header: "Test Series",
-      sortable: true,
-      sortAccessor: (s) => s.testTitle,
-      searchAccessor: (s) => `${s.testTitle} ${s.status}`,
-      cell: (s) => (
-        <Link
-          href={`/student/tests/${s.testSeriesId}`}
-          className="font-bold text-slate-900 dark:text-slate-100 hover:text-[#2A6AED] dark:hover:text-blue-400 transition-colors block max-w-xs truncate"
-        >
-          {s.testTitle}
-        </Link>
-      ),
-    },
-    {
-      id: "attemptNumber",
-      header: "Attempt",
-      sortable: true,
-      sortAccessor: (s) => s.attemptNumber,
-      cell: (s) => (
-        <Badge
-          variant="outline"
-          className="text-[11px] font-semibold border-blue-200 dark:border-blue-900 text-[#2A6AED] dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 rounded-full"
-        >
-          Attempt #{s.attemptNumber} of 3
-        </Badge>
-      ),
-    },
-    {
-      id: "status",
-      header: "Evaluation Status",
-      sortable: true,
-      sortAccessor: (s) => s.status,
-      cell: (s) => (
-        <SubmissionStatusBadge
-          submissionId={s.id}
-          initialStatus={s.status}
-          initialPercentage={s.percentage}
-        />
-      ),
-    },
-    {
-      id: "score",
-      header: "Score",
-      sortable: true,
-      sortAccessor: (s) => s.totalMarksAwarded ?? -1,
-      cell: (s) =>
-        s.totalMarksAwarded !== null ? (
-          <span className="font-extrabold text-[#2A6AED] dark:text-blue-400">
-            {s.totalMarksAwarded} / {s.maxMarks}{" "}
-            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-              ({s.percentage}%)
-            </span>
-          </span>
-        ) : (
-          <span className="text-slate-400 text-xs">Pending Evaluation</span>
+            {s.testTitle}
+          </Link>
         ),
-    },
-    {
-      id: "submittedAt",
-      header: "Submitted On",
-      sortable: true,
-      sortAccessor: (s) => new Date(s.submittedAt),
-      cell: (s) => <FormattedDate date={s.submittedAt} includeTime />,
-    },
-    {
-      id: "action",
-      header: "Report",
-      headerClassName: "text-right",
-      className: "text-right",
-      cell: (s) => (
-        <Link href={`/student/tests/${s.testSeriesId}`}>
-          <Button
-            size="sm"
+      },
+      {
+        id: "attemptNumber",
+        header: "Attempt",
+        sortable: true,
+        sortAccessor: (s) => s.attemptNumber,
+        cell: (s) => (
+          <Badge
             variant="outline"
-            className="h-8 px-3 rounded-lg border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-[#2A6AED] dark:hover:text-blue-400 shadow-2xs"
+            className="text-[11px] font-semibold border-blue-200 dark:border-blue-900 text-[#2A6AED] dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 rounded-full"
           >
-            View Breakdown
-          </Button>
-        </Link>
-      ),
-    },
-  ]
-
-  const submissionFilters: DataTableFilter<StudentSubmissionRow>[] = [
-    {
-      id: "status",
-      label: "Status",
-      accessor: (s) => s.status,
-      options: [
-        { label: "Evaluated", value: "COMPLETED" },
-        { label: "Educator Review", value: "REVIEW_REQUIRED" },
-        { label: "Processing", value: "PROCESSING" },
-      ],
-    },
-    {
-      id: "attempt",
-      label: "Attempt #",
-      accessor: (s) => String(s.attemptNumber),
-      options: [
-        { label: "Attempt #1", value: "1" },
-        { label: "Attempt #2", value: "2" },
-        { label: "Attempt #3", value: "3" },
-      ],
-    },
-    {
-      id: "scoreTier",
-      label: "Score Bracket",
-      accessor: (s) => {
-        if (s.percentage === null) return "PENDING"
-        if (s.percentage >= 70) return "HIGH"
-        if (s.percentage >= 50) return "AVERAGE"
-        return "LOW"
+            Attempt #{s.attemptNumber} of 3
+          </Badge>
+        ),
       },
-      options: [
-        { label: "High Marks (≥ 70%)", value: "HIGH" },
-        { label: "Average Marks (50–69%)", value: "AVERAGE" },
-        { label: "Needs Improvement (< 50%)", value: "LOW" },
-        { label: "Pending Evaluation", value: "PENDING" },
-      ],
-    },
-  ]
+      {
+        id: "status",
+        header: "Evaluation Status",
+        sortable: true,
+        sortAccessor: (s) => s.status,
+        cell: (s) => (
+          <SubmissionStatusBadge
+            submissionId={s.id}
+            initialStatus={s.status}
+            initialPercentage={s.percentage}
+          />
+        ),
+      },
+      {
+        id: "score",
+        header: "Score",
+        sortable: true,
+        sortAccessor: (s) => s.totalMarksAwarded ?? -1,
+        cell: (s) =>
+          s.totalMarksAwarded !== null ? (
+            <span className="font-extrabold text-[#2A6AED] dark:text-blue-400">
+              {s.totalMarksAwarded} / {s.maxMarks}{" "}
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                ({s.percentage}%)
+              </span>
+            </span>
+          ) : (
+            <span className="text-slate-400 text-xs">Pending Evaluation</span>
+          ),
+      },
+      {
+        id: "submittedAt",
+        header: "Submitted On",
+        sortable: true,
+        sortAccessor: (s) => new Date(s.submittedAt),
+        cell: (s) => <FormattedDate date={s.submittedAt} includeTime />,
+      },
+      {
+        id: "action",
+        header: "Report",
+        headerClassName: "text-right",
+        className: "text-right",
+        cell: (s) => (
+          <Link href={`/student/tests/${s.testSeriesId}`}>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 px-3 rounded-lg border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-[#2A6AED] dark:hover:text-blue-400 shadow-2xs"
+            >
+              View Breakdown
+            </Button>
+          </Link>
+        ),
+      },
+    ],
+    []
+  )
+
+  const submissionFilters: DataTableFilter<StudentSubmissionRow>[] = React.useMemo(
+    () => [
+      {
+        id: "status",
+        label: "Status",
+        accessor: (s) => s.status,
+        options: [
+          { label: "Evaluated", value: "COMPLETED" },
+          { label: "Educator Review", value: "REVIEW_REQUIRED" },
+          { label: "Processing", value: "PROCESSING" },
+        ],
+      },
+      {
+        id: "attempt",
+        label: "Attempt #",
+        accessor: (s) => String(s.attemptNumber),
+        options: [
+          { label: "Attempt #1", value: "1" },
+          { label: "Attempt #2", value: "2" },
+          { label: "Attempt #3", value: "3" },
+        ],
+      },
+      {
+        id: "scoreTier",
+        label: "Score Bracket",
+        accessor: (s) => {
+          if (s.percentage === null) return "PENDING"
+          if (s.percentage >= 70) return "HIGH"
+          if (s.percentage >= 50) return "AVERAGE"
+          return "LOW"
+        },
+        options: [
+          { label: "High Marks (≥ 70%)", value: "HIGH" },
+          { label: "Average Marks (50–69%)", value: "AVERAGE" },
+          { label: "Needs Improvement (< 50%)", value: "LOW" },
+          { label: "Pending Evaluation", value: "PENDING" },
+        ],
+      },
+    ],
+    []
+  )
 
   return (
     <div className="space-y-6">

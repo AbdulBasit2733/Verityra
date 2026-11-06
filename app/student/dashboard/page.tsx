@@ -51,6 +51,7 @@ export default async function StudentDashboardPage() {
       }),
       prisma.submission.findMany({
         where: { userId: user.id },
+        take: 20,
         select: {
           id: true,
           testSeriesId: true,

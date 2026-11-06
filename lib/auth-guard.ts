@@ -1,3 +1,4 @@
+import { cache } from "react"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
@@ -34,10 +35,10 @@ export function canProvisionDevelopmentAdmin(
   )
 }
 
-export async function getCurrentUser() {
+export const getCurrentUser = cache(async () => {
   const session = await getServerSession(authOptions)
   return session?.user ?? null
-}
+})
 
 export async function resolvePersistedAdminActor(
   sessionUser: NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>

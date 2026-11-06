@@ -1,4 +1,3 @@
-import { Suspense } from "react"
 import { redirect } from "next/navigation"
 import { requireStudent } from "@/lib/auth-guard"
 import { prisma, isDatabaseConnected } from "@/lib/prisma"
@@ -28,25 +27,93 @@ export default async function StudentTestWorkspacePage({
         userId: user.id,
         OR: [{ testSeriesId: id }, { testSeries: { slug: id } }],
       },
-      include: {
+      select: {
+        id: true,
+        attemptsUsed: true,
+        maxAttempts: true,
         testSeries: {
-          include: {
-            papers: true,
-            templates: true,
+          select: {
+            id: true,
+            title: true,
+            maxMarks: true,
+            durationMinutes: true,
+            studentInstructions: true,
+            papers: {
+              select: {
+                id: true,
+                title: true,
+                fileUrl: true,
+              },
+            },
+            templates: {
+              select: {
+                id: true,
+                title: true,
+                fileUrl: true,
+              },
+            },
           },
         },
         submissions: {
-          include: {
+          select: {
+            id: true,
+            attemptNumber: true,
+            status: true,
+            fileUrl: true,
+            submittedAt: true,
             evaluation: {
-              include: {
+              select: {
+                id: true,
+                totalMarksAwarded: true,
+                maxMarks: true,
+                percentage: true,
+                generalFeedback: true,
+                legibilityWarning: true,
+                uncertaintyFlag: true,
                 questions: {
                   orderBy: { questionNumber: "asc" },
+                  select: {
+                    id: true,
+                    questionNumber: true,
+                    maxMarks: true,
+                    marksAwarded: true,
+                    feedback: true,
+                    missingConcepts: true,
+                    scoreBand: true,
+                    scoreExplanation: true,
+                    strengths: true,
+                    examinerExpectation: true,
+                    improvementAdvice: true,
+                    isLegible: true,
+                  },
                 },
               },
             },
             evaluationRuns: {
               orderBy: { runNumber: "asc" },
-              include: { questions: { orderBy: { questionNumber: "asc" } } },
+              select: {
+                id: true,
+                runNumber: true,
+                trigger: true,
+                status: true,
+                totalMarksAwarded: true,
+                maxMarks: true,
+                questions: {
+                  orderBy: { questionNumber: "asc" },
+                  select: {
+                    id: true,
+                    questionNumber: true,
+                    maxMarks: true,
+                    marksAwarded: true,
+                    scoreExplanation: true,
+                    missingConcepts: true,
+                    strengths: true,
+                    examinerExpectation: true,
+                    improvementAdvice: true,
+                    isLegible: true,
+                  },
+                },
+              },
             },
           },
           orderBy: { attemptNumber: "desc" },
@@ -204,30 +271,28 @@ export default async function StudentTestWorkspacePage({
 
   // Note: Only studentInstructions are passed — privateEvaluationInstructions are never projected to student views.
   return (
-    <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2A6AED]" /></div>}>
-      <StudentWorkspaceClient
-        testSeriesId={testSeries.id}
-        title={testSeries.title}
-        maxMarks={testSeries.maxMarks || 250}
-        durationMinutes={testSeries.durationMinutes || 180}
-        studentInstructions={
-          testSeries.studentInstructions ||
-          "1. Number all responses clearly inside the left margin.\n2. Scan all pages upright into a single clear PDF before uploading."
-        }
-        attemptsUsed={registration.attemptsUsed}
-        maxAttempts={registration.maxAttempts}
-        papers={(testSeries.papers || []).map((p: any) => ({
-          id: p.id,
-          title: p.title,
-          fileUrl: normalizePrivateFileUrl(p.fileUrl) || "",
-        }))}
-        templates={(testSeries.templates || []).map((t: any) => ({
-          id: t.id,
-          title: t.title,
-          fileUrl: normalizePrivateFileUrl(t.fileUrl) || "",
-        }))}
-        submissions={serializedSubmissions}
-      />
-    </Suspense>
+    <StudentWorkspaceClient
+      testSeriesId={testSeries.id}
+      title={testSeries.title}
+      maxMarks={testSeries.maxMarks || 250}
+      durationMinutes={testSeries.durationMinutes || 180}
+      studentInstructions={
+        testSeries.studentInstructions ||
+        "1. Number all responses clearly inside the left margin.\n2. Scan all pages upright into a single clear PDF before uploading."
+      }
+      attemptsUsed={registration.attemptsUsed}
+      maxAttempts={registration.maxAttempts}
+      papers={(testSeries.papers || []).map((p: any) => ({
+        id: p.id,
+        title: p.title,
+        fileUrl: normalizePrivateFileUrl(p.fileUrl) || "",
+      }))}
+      templates={(testSeries.templates || []).map((t: any) => ({
+        id: t.id,
+        title: t.title,
+        fileUrl: normalizePrivateFileUrl(t.fileUrl) || "",
+      }))}
+      submissions={serializedSubmissions}
+    />
   )
 }

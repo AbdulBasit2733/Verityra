@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
+import dynamic from "next/dynamic"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -12,7 +13,6 @@ import { DataTable, DataTableColumn, DataTableFilter } from "@/components/ui/dat
 import { FormattedDate } from "@/components/ui/date-picker"
 import { PageHeader } from "@/components/ui/page-header"
 import { KpiStatCard } from "@/components/ui/kpi-stat-card"
-import { SubmissionUploadForm } from "@/components/submission-upload-form"
 import { cn } from "@/lib/utils"
 import { AttemptProgressTracker } from "@/components/shared/attempt-progress-tracker"
 import {
@@ -29,6 +29,17 @@ import {
   UploadCloud,
   Timer,
 } from "lucide-react"
+
+const SubmissionUploadForm = dynamic(
+  () => import("@/components/submission-upload-form").then((m) => m.SubmissionUploadForm),
+  {
+    loading: () => (
+      <div className="rounded-2xl border border-border bg-card p-8 text-center text-xs text-muted-foreground shadow-xs">
+        Loading submission upload interface...
+      </div>
+    ),
+  }
+)
 
 export interface WorkspaceQuestionScore {
   id: string
@@ -78,6 +89,72 @@ export interface WorkspaceResourceItem {
   fileUrl: string
 }
 
+function WorkspaceWritingTimer({
+  testSeriesId,
+  durationMinutes,
+}: {
+  testSeriesId: string
+  durationMinutes: number
+}) {
+  const timerStorageKey = `verityra-writing-timer:${testSeriesId}`
+  const [writingStartedAt, setWritingStartedAt] = React.useState<number | null>(null)
+  const [clockNow, setClockNow] = React.useState(0)
+
+  React.useEffect(() => {
+    const stored = window.localStorage.getItem(timerStorageKey)
+    if (stored) setWritingStartedAt(Number(stored))
+  }, [timerStorageKey])
+
+  React.useEffect(() => {
+    if (!writingStartedAt) return
+    setClockNow(Date.now())
+    const interval = window.setInterval(() => setClockNow(Date.now()), 1000)
+    return () => window.clearInterval(interval)
+  }, [writingStartedAt])
+
+  const elapsedWritingMinutes = writingStartedAt && clockNow
+    ? Math.floor((clockNow - writingStartedAt) / 60000)
+    : 0
+
+  const startWritingTimer = () => {
+    const startedAt = Date.now()
+    window.localStorage.setItem(timerStorageKey, String(startedAt))
+    setWritingStartedAt(startedAt)
+    setClockNow(startedAt)
+  }
+
+  return (
+    <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 sm:p-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3">
+          <Timer className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+          <div>
+            <p className="text-sm font-semibold text-foreground">Writing and upload time planner</p>
+            <p className="mt-1 text-xs leading-5 text-muted-foreground">
+              Plan {durationMinutes} minutes for writing, then keep approximately 15–30 minutes for photographing/scanning pages and converting them into one clear PDF under 1–2 MB.
+            </p>
+          </div>
+        </div>
+        <Button
+          type="button"
+          size="sm"
+          onClick={startWritingTimer}
+          disabled={Boolean(writingStartedAt)}
+          className="shrink-0 gap-2"
+        >
+          <Timer className="h-4 w-4" />
+          {writingStartedAt ? `Writing time: ${elapsedWritingMinutes} min` : "Start writing timer"}
+        </Button>
+      </div>
+      {writingStartedAt && (
+        <p className="mt-3 border-t border-primary/15 pt-3 text-xs text-muted-foreground">
+          Timer started locally for this test. Upload your scanned answer sheet from the Submit Handwritten Booklet section when ready.
+        </p>
+      )}
+    </div>
+  )
+}
+
 export function StudentWorkspaceClient({
   testSeriesId,
   title,
@@ -105,32 +182,6 @@ export function StudentWorkspaceClient({
   const router = useRouter()
   const pathname = usePathname()
   const attemptsRemaining = Math.max(0, maxAttempts - attemptsUsed)
-  const timerStorageKey = `verityra-writing-timer:${testSeriesId}`
-  const [writingStartedAt, setWritingStartedAt] = React.useState<number | null>(null)
-  const [clockNow, setClockNow] = React.useState(0)
-
-  React.useEffect(() => {
-    const stored = window.localStorage.getItem(timerStorageKey)
-    if (stored) setWritingStartedAt(Number(stored))
-  }, [timerStorageKey])
-
-  React.useEffect(() => {
-    if (!writingStartedAt) return
-    setClockNow(Date.now())
-    const interval = window.setInterval(() => setClockNow(Date.now()), 1000)
-    return () => window.clearInterval(interval)
-  }, [writingStartedAt])
-
-  const elapsedWritingMinutes = writingStartedAt && clockNow
-    ? Math.floor((clockNow - writingStartedAt) / 60000)
-    : 0
-
-  const startWritingTimer = () => {
-    const startedAt = Date.now()
-    window.localStorage.setItem(timerStorageKey, String(startedAt))
-    setWritingStartedAt(startedAt)
-    setClockNow(startedAt)
-  }
 
   // Read attempt number from URL, fallback to latest submission or 1
   const attemptFromUrl = searchParams.get("attempt")
@@ -165,114 +216,120 @@ export function StudentWorkspaceClient({
   const selectedRun = activeSubmission?.evaluationRuns?.find((run) => run.runNumber === selectedRunNumber)
   const reportQuestions = selectedRun?.questions || activeSubmission?.evaluation?.questions || []
 
-  const questionColumns: DataTableColumn<WorkspaceQuestionScore>[] = [
-    {
-      id: "questionNumber",
-      header: "Question",
-      sortable: true,
-      sortAccessor: (q) => {
-        const match = q.questionNumber.match(/\d+/)
-        return match ? parseInt(match[0], 10) : q.questionNumber
+  const questionColumns: DataTableColumn<WorkspaceQuestionScore>[] = React.useMemo(
+    () => [
+      {
+        id: "questionNumber",
+        header: "Question",
+        sortable: true,
+        sortAccessor: (q) => {
+          const match = q.questionNumber.match(/\d+/)
+          return match ? parseInt(match[0], 10) : q.questionNumber
+        },
+        searchAccessor: (q) =>
+          `${q.questionNumber} ${q.feedback} ${q.missingConcepts || ""}`,
+        className: "w-24 font-bold text-[#2A6AED] dark:text-blue-400",
+        cell: (q) => q.questionNumber,
       },
-      searchAccessor: (q) =>
-        `${q.questionNumber} ${q.feedback} ${q.missingConcepts || ""}`,
-      className: "w-24 font-bold text-[#2A6AED] dark:text-blue-400",
-      cell: (q) => q.questionNumber,
-    },
-    {
-      id: "score",
-      header: "Awarded / Max",
-      sortable: true,
-      sortAccessor: (q) => q.marksAwarded,
-      className: "w-36",
-      cell: (q) => {
-        const ratio = q.maxMarks > 0 ? Math.round((q.marksAwarded / q.maxMarks) * 100) : 0
-        return (
-          <div className="space-y-0.5">
-            <span className="font-extrabold text-slate-900 dark:text-slate-100">
-              {q.marksAwarded} / {q.maxMarks}
-            </span>
-            <span className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-              {ratio}% credit
-            </span>
-          </div>
-        )
+      {
+        id: "score",
+        header: "Awarded / Max",
+        sortable: true,
+        sortAccessor: (q) => q.marksAwarded,
+        className: "w-36",
+        cell: (q) => {
+          const ratio = q.maxMarks > 0 ? Math.round((q.marksAwarded / q.maxMarks) * 100) : 0
+          return (
+            <div className="space-y-0.5">
+              <span className="font-extrabold text-slate-900 dark:text-slate-100">
+                {q.marksAwarded} / {q.maxMarks}
+              </span>
+              <span className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                {ratio}% credit
+              </span>
+            </div>
+          )
+        },
       },
-    },
-    {
-      id: "feedback",
-      header: "Rubric Evaluation Feedback",
-      sortable: false,
-      className: "whitespace-normal min-w-[260px]",
-      cell: (q) => (
-        <p className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed">{q.feedback}</p>
-      ),
-    },
-    {
-      id: "missingConcepts",
-      header: "Improvement Notes & Omissions",
-      sortable: false,
-      className: "whitespace-normal min-w-[240px]",
-      cell: (q) =>
-        q.missingConcepts ? (
-          <p className="text-xs text-amber-900 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 p-2.5 rounded-lg border border-amber-200 dark:border-amber-900 leading-relaxed">
-            {q.missingConcepts}
-          </p>
-        ) : (
-          <span className="text-xs text-slate-400 italic">No omissions identified</span>
+      {
+        id: "feedback",
+        header: "Rubric Evaluation Feedback",
+        sortable: false,
+        className: "whitespace-normal min-w-[260px]",
+        cell: (q) => (
+          <p className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed">{q.feedback}</p>
         ),
-    },
-    {
-      id: "legibility",
-      header: "Legibility",
-      sortable: true,
-      sortAccessor: (q) => (q.isLegible ? 1 : 0),
-      className: "w-28 text-center",
-      cell: (q) =>
-        q.isLegible ? (
-          <Badge
-            variant="outline"
-            className="border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 text-[10px] font-semibold rounded-full"
-          >
-            Clear
-          </Badge>
-        ) : (
-          <Badge
-            variant="outline"
-            className="border-amber-200 dark:border-amber-900 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 text-[10px] font-semibold rounded-full"
-          >
-            Unclear
-          </Badge>
-        ),
-    },
-  ]
+      },
+      {
+        id: "missingConcepts",
+        header: "Improvement Notes & Omissions",
+        sortable: false,
+        className: "whitespace-normal min-w-[240px]",
+        cell: (q) =>
+          q.missingConcepts ? (
+            <p className="text-xs text-amber-900 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 p-2.5 rounded-lg border border-amber-200 dark:border-amber-900 leading-relaxed">
+              {q.missingConcepts}
+            </p>
+          ) : (
+            <span className="text-xs text-slate-400 italic">No omissions identified</span>
+          ),
+      },
+      {
+        id: "legibility",
+        header: "Legibility",
+        sortable: true,
+        sortAccessor: (q) => (q.isLegible ? 1 : 0),
+        className: "w-28 text-center",
+        cell: (q) =>
+          q.isLegible ? (
+            <Badge
+              variant="outline"
+              className="border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 text-[10px] font-semibold rounded-full"
+            >
+              Clear
+            </Badge>
+          ) : (
+            <Badge
+              variant="outline"
+              className="border-amber-200 dark:border-amber-900 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 text-[10px] font-semibold rounded-full"
+            >
+              Unclear
+            </Badge>
+          ),
+      },
+    ],
+    []
+  )
 
-  const questionFilters: DataTableFilter<WorkspaceQuestionScore>[] = [
-    {
-      id: "scoreBand",
-      label: "Score Band",
-      accessor: (q) => {
-        const ratio = q.maxMarks > 0 ? (q.marksAwarded / q.maxMarks) * 100 : 0
-        if (ratio >= 70) return "HIGH"
-        if (ratio >= 40) return "MEDIUM"
-        return "LOW"
+  const questionFilters: DataTableFilter<WorkspaceQuestionScore>[] = React.useMemo(
+    () => [
+      {
+        id: "scoreBand",
+        label: "Score Band",
+        accessor: (q) => {
+          const ratio = q.maxMarks > 0 ? (q.marksAwarded / q.maxMarks) * 100 : 0
+          if (ratio >= 70) return "HIGH"
+          if (ratio >= 40) return "MEDIUM"
+          return "LOW"
+        },
+        options: [
+          { label: "High Marks (≥ 70%)", value: "HIGH" },
+          { label: "Medium Marks (40–69%)", value: "MEDIUM" },
+          { label: "Low Marks (< 40%)", value: "LOW" },
+        ],
       },
-      options: [
-        { label: "High Marks (≥ 70%)", value: "HIGH" },
-        { label: "Medium Marks (40–69%)", value: "MEDIUM" },
-        { label: "Low Marks (< 40%)", value: "LOW" },
-      ],
-    },
-    {
-      id: "legibility",
-      label: "Legibility",
-      accessor: (q) => (q.isLegible ? "CLEAR" : "UNCLEAR"),
-      options: [
-        { label: "Clear Script", value: "CLEAR" },
-        { label: "Unclear Script", value: "UNCLEAR" },
-      ],
-    },
-  ]
+      {
+        id: "legibility",
+        label: "Legibility",
+        accessor: (q) => (q.isLegible ? "CLEAR" : "UNCLEAR"),
+        options: [
+          { label: "Clear Script", value: "CLEAR" },
+          { label: "Unclear Script", value: "UNCLEAR" },
+        ],
+      },
+    ],
+    []
+  )
 
   return (
     <div className="space-y-6">
@@ -354,22 +411,8 @@ export function StudentWorkspaceClient({
         />
       </div>
 
-      <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 sm:p-5">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-start gap-3">
-            <Timer className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-            <div>
-              <p className="text-sm font-semibold text-foreground">Writing and upload time planner</p>
-              <p className="mt-1 text-xs leading-5 text-muted-foreground">Plan {durationMinutes} minutes for writing, then keep approximately 15–30 minutes for photographing/scanning pages and converting them into one clear PDF under 1–2 MB.</p>
-            </div>
-          </div>
-          <Button type="button" size="sm" onClick={startWritingTimer} disabled={Boolean(writingStartedAt)} className="shrink-0 gap-2">
-            <Timer className="h-4 w-4" />
-            {writingStartedAt ? `Writing time: ${elapsedWritingMinutes} min` : "Start writing timer"}
-          </Button>
-        </div>
-        {writingStartedAt && <p className="mt-3 border-t border-primary/15 pt-3 text-xs text-muted-foreground">Timer started locally for this test. Upload your scanned answer sheet from the Submit Handwritten Booklet section when ready.</p>}
-      </div>
+      {/* Writing & Upload Time Planner (Isolated Timer Component) */}
+      <WorkspaceWritingTimer testSeriesId={testSeriesId} durationMinutes={durationMinutes} />
 
       {/* Workspace Tabs */}
       <Tabs defaultValue={submissions.length > 0 ? "evaluations" : "upload"} className="space-y-6">
