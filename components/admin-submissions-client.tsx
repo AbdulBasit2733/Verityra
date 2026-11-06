@@ -239,7 +239,7 @@ export function AdminSubmissionsClient({
           )}
           {s.fileUrl && (
             <a
-              href={s.fileUrl}
+              href={s.fileUrl.includes("?") ? `${s.fileUrl}&download=1` : `${s.fileUrl}?download=1`}
               target="_blank"
               rel="noreferrer"
               download
@@ -474,7 +474,7 @@ export function AdminSubmissionsClient({
               )}
               {s.fileUrl && (
                 <a
-                  href={s.fileUrl}
+                  href={s.fileUrl.includes("?") ? `${s.fileUrl}&download=1` : `${s.fileUrl}?download=1`}
                   target="_blank"
                   rel="noreferrer"
                   download

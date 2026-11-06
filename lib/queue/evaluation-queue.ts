@@ -1,8 +1,9 @@
 import { Queue, Worker, Job } from 'bullmq'
-import { getRedisConnection } from './connection'
+import { getRedisConnection, getWorkerRedisConnection } from './connection'
 import { prisma } from '@/lib/prisma'
 import { evaluateAnswerSheetWithGemini, getGeminiModelName } from '@/lib/ai/gemini-evaluator'
 import { invalidateLeaderboardCache } from '@/lib/cache'
+import { sendEvaluationReadyEmail } from '@/lib/email'
 import { EvaluationStatus, SubmissionStatus } from '@prisma/client'
 import { failEvaluationRun, persistEvaluationRun } from '@/lib/evaluation/evaluation-run-service'
 import { downloadPrivateFile, parsePrivateFileReference } from '@/lib/supabase'
@@ -12,14 +13,16 @@ export interface EvaluationJobData {
   testSeriesId: string
   userId: string
   fileUrl: string
-  fileBuffer?: string // Base64 encoded buffer
+  fileBuffer?: string // Optional legacy base64 fallback
   mimeType: string
   runId: string
   runNumber: number
 }
 
-let evaluationQueue: Queue<EvaluationJobData> | null = null
-let evaluationWorker: Worker<EvaluationJobData> | null = null
+const globalForQueue = globalThis as unknown as {
+  evaluationQueue: Queue<EvaluationJobData> | null | undefined
+  evaluationWorker: Worker<EvaluationJobData> | null | undefined
+}
 
 /**
  * Get or create evaluation queue
@@ -28,8 +31,8 @@ export function getEvaluationQueue(): Queue<EvaluationJobData> | null {
   const connection = getRedisConnection()
   if (!connection) return null
 
-  if (!evaluationQueue) {
-    evaluationQueue = new Queue<EvaluationJobData>('evaluation', {
+  if (!globalForQueue.evaluationQueue) {
+    globalForQueue.evaluationQueue = new Queue<EvaluationJobData>('evaluation', {
       connection,
       defaultJobOptions: {
         attempts: 3,
@@ -37,13 +40,13 @@ export function getEvaluationQueue(): Queue<EvaluationJobData> | null {
           type: 'exponential',
           delay: 2000,
         },
-        removeOnComplete: 1000, // Keep last 1000 completed jobs
-        removeOnFail: 5000, // Keep last 5000 failed jobs for debugging
+        removeOnComplete: 200, // Keep last 200 completed jobs to bound Redis RAM
+        removeOnFail: 500, // Keep last 500 failed jobs for debugging
       },
     })
   }
 
-  return evaluationQueue
+  return globalForQueue.evaluationQueue
 }
 
 /**
@@ -51,14 +54,14 @@ export function getEvaluationQueue(): Queue<EvaluationJobData> | null {
  * Call this once on server startup or in a dedicated worker process
  */
 export function createEvaluationWorker(): Worker<EvaluationJobData> | null {
-  const connection = getRedisConnection()
-  if (!connection) return null
+  const workerConnection = getWorkerRedisConnection()
+  if (!workerConnection) return null
 
-  if (evaluationWorker) {
-    return evaluationWorker
+  if (globalForQueue.evaluationWorker) {
+    return globalForQueue.evaluationWorker
   }
 
-  evaluationWorker = new Worker<EvaluationJobData>(
+  globalForQueue.evaluationWorker = new Worker<EvaluationJobData>(
     'evaluation',
     async (job: Job<EvaluationJobData>) => {
       const { submissionId, testSeriesId, fileUrl, fileBuffer, mimeType, runId } = job.data
@@ -80,6 +83,9 @@ export function createEvaluationWorker(): Worker<EvaluationJobData> | null {
         const submission = await prisma.submission.findUnique({
           where: { id: submissionId },
           include: {
+            user: {
+              select: { name: true, email: true },
+            },
             testSeries: {
               include: {
                 papers: { orderBy: { createdAt: 'desc' }, take: 1 },
@@ -144,6 +150,22 @@ export function createEvaluationWorker(): Worker<EvaluationJobData> | null {
           invalidateLeaderboardCache() // Invalidate cached leaderboard
         }
 
+        if (submission.user?.email) {
+          await sendEvaluationReadyEmail({
+            to: submission.user.email,
+            name: submission.user.name,
+            testSeriesId: submission.testSeriesId,
+            testTitle: submission.testSeries.title,
+            attemptNumber: submission.attemptNumber,
+            totalMarksAwarded: persisted.totalMarksAwarded,
+            maxMarks: submission.testSeries.maxMarks,
+            percentage: persisted.percentage,
+            requiresReview: persisted.status === EvaluationStatus.REVIEW_REQUIRED,
+          }).catch((emailErr) => {
+            console.error(`[Worker] Failed to send evaluation ready email:`, emailErr)
+          })
+        }
+
         console.log(`[Worker] Job ${job.id} completed successfully`)
 
         return {
@@ -171,14 +193,29 @@ export function createEvaluationWorker(): Worker<EvaluationJobData> | null {
 
         // BullMQ attemptsMade starts at 0, so the third delivery is attempt 2.
         if (job.attemptsMade >= 2) {
-          await prisma.submission
+          const failedSub = await prisma.submission
             .update({
               where: { id: submissionId },
               data: { status: SubmissionStatus.FAILED },
+              select: { registrationId: true },
             })
             .catch((dbError) => {
               console.error(`[Worker] Failed to mark submission as failed:`, dbError)
+              return null
             })
+
+          // Compensate candidate quota on terminal system failure of initial run
+          if (failedSub?.registrationId && job.data.runNumber === 1) {
+            await prisma.testRegistration
+              .update({
+                where: { id: failedSub.registrationId },
+                data: { maxAttempts: { increment: 1 } },
+              })
+              .catch((regError) => {
+                console.error(`[Worker] Failed to compensate candidate attempt quota:`, regError)
+              })
+          }
+
           await failEvaluationRun(runId, error.message || 'Evaluation failed after retries').catch((runError) => {
             console.error(`[Worker] Failed to mark evaluation run ${runId} failed:`, runError)
           })
@@ -188,7 +225,7 @@ export function createEvaluationWorker(): Worker<EvaluationJobData> | null {
       }
     },
     {
-      connection: getRedisConnection()!,
+      connection: workerConnection,
       // Gemini multimodal evaluation can take several minutes for a scanned
       // booklet. The default 30s lock causes BullMQ to mark valid jobs stalled.
       concurrency: Math.max(1, Number(process.env.EVALUATION_WORKER_CONCURRENCY || 2)),
@@ -203,19 +240,19 @@ export function createEvaluationWorker(): Worker<EvaluationJobData> | null {
   )
 
   // Worker event listeners
-  evaluationWorker.on('completed', (job) => {
+  globalForQueue.evaluationWorker.on('completed', (job) => {
     console.log(`[Worker] Job ${job.id} completed`)
   })
 
-  evaluationWorker.on('failed', (job, err) => {
+  globalForQueue.evaluationWorker.on('failed', (job, err) => {
     console.error(`[Worker] Job ${job?.id} failed:`, err.message)
   })
 
-  evaluationWorker.on('error', (err) => {
+  globalForQueue.evaluationWorker.on('error', (err) => {
     console.error('[Worker] Worker error:', err)
   })
 
-  return evaluationWorker
+  return globalForQueue.evaluationWorker
 }
 
 /**
@@ -430,12 +467,12 @@ export async function getEvaluationStatus(submissionId: string) {
  * Clean up queue connections on shutdown
  */
 export async function shutdownQueue() {
-  if (evaluationWorker) {
-    await evaluationWorker.close()
-    evaluationWorker = null
+  if (globalForQueue.evaluationWorker) {
+    await globalForQueue.evaluationWorker.close().catch(() => undefined)
+    globalForQueue.evaluationWorker = null
   }
-  if (evaluationQueue) {
-    await evaluationQueue.close()
-    evaluationQueue = null
+  if (globalForQueue.evaluationQueue) {
+    await globalForQueue.evaluationQueue.close().catch(() => undefined)
+    globalForQueue.evaluationQueue = null
   }
 }

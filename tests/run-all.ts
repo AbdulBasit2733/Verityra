@@ -5,6 +5,7 @@ import { runSubmissionTests } from "./submissions.test"
 import { runEvaluationTests } from "./evaluation.test"
 import { runPaymentTests } from "./payments.test"
 import { runFileStorageTests } from "./file-storage.test"
+import { runEmailTests } from "./email.test"
 import { TestResult } from "./test-utils"
 
 console.log("================================================================================")
@@ -22,6 +23,7 @@ try {
   results.push(runEvaluationTests())
   results.push(runPaymentTests())
   results.push(runFileStorageTests())
+  results.push(runEmailTests())
 } catch (err: any) {
   console.error("FATAL ERROR IN TEST SUITE RUNNER:", err)
   process.exit(1)

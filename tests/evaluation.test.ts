@@ -5,6 +5,7 @@ import { EvaluationStatus } from "@prisma/client"
 import {
   assertGeminiApiKeyConfigured,
   DEFAULT_GEMINI_MODEL,
+  extractAndParseJson,
   getGeminiModelName,
 } from "../lib/ai/gemini-evaluator"
 
@@ -179,6 +180,17 @@ export function runEvaluationTests() {
     const percentage = Number(((newTotal / testSeriesMaxMarks) * 100).toFixed(2))
     assert.equal(percentage, 66.0)
     assert.equal(EvaluationStatus.ADJUSTED, "ADJUSTED")
+  })
+
+  suite.test("JSON Sanitization: extractAndParseJson strips markdown fences and surrounding prose", () => {
+    const fencedJson = "Here is the evaluation:\n```json\n{\"generalFeedback\": \"Good work\", \"questions\": []}\n```\nThank you."
+    const parsedFenced = extractAndParseJson(fencedJson) as { generalFeedback: string; questions: unknown[] }
+    assert.equal(parsedFenced.generalFeedback, "Good work")
+    assert.deepEqual(parsedFenced.questions, [])
+
+    const rawJson = "{\"generalFeedback\": \"Clean JSON\", \"questions\": []}"
+    const parsedRaw = extractAndParseJson(rawJson) as { generalFeedback: string }
+    assert.equal(parsedRaw.generalFeedback, "Clean JSON")
   })
 
   return suite.summary()

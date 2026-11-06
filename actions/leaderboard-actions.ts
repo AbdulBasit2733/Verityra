@@ -84,6 +84,8 @@ export async function getLeaderboardAction(testSeriesId?: string): Promise<Leade
       percentage: true,
       submission: {
         select: {
+          userId: true,
+          testSeriesId: true,
           attemptNumber: true,
           submittedAt: true,
           user: { select: { name: true } },
@@ -95,10 +97,23 @@ export async function getLeaderboardAction(testSeriesId?: string): Promise<Leade
       { totalMarksAwarded: "desc" },
       { submission: { submittedAt: "asc" } }, // Tie breaker: earlier submission ranks higher
     ],
-    take: 100, // Increased from 50 for better coverage
+    take: 250, // Fetch sufficient buffer before candidate deduplication
   })
 
-  return evaluations.map((item, index) => ({
+  // Deduplicate so each candidate only occupies their best rank per test series
+  const uniqueCandidateEntries: typeof evaluations = []
+  const seenCandidateTestKeys = new Set<string>()
+
+  for (const item of evaluations) {
+    const key = `${item.submission.userId}:${item.submission.testSeriesId}`
+    if (!seenCandidateTestKeys.has(key)) {
+      seenCandidateTestKeys.add(key)
+      uniqueCandidateEntries.push(item)
+      if (uniqueCandidateEntries.length >= 100) break
+    }
+  }
+
+  return uniqueCandidateEntries.map((item, index) => ({
     rank: index + 1,
     studentName: item.submission.user.name || "Anonymous Candidate",
     testTitle: item.submission.testSeries.title,

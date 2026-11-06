@@ -14,12 +14,16 @@ import { SubmissionStatusBadge } from "@/components/submission-status-badge"
 import {
   Award,
   BookOpen,
+  CheckCircle2,
   Clock,
   Compass,
   FileCheck2,
   GraduationCap,
   Layers,
+  Loader2,
+  MailWarning,
 } from "lucide-react"
+import { resendVerificationEmailAction } from "@/actions/auth-actions"
 
 export interface StudentRegistrationRow {
   id: string
@@ -50,15 +54,38 @@ export interface StudentSubmissionRow {
 
 export function StudentDashboardClient({
   userName,
+  userEmail,
+  isEmailVerified = true,
   registrations,
   submissions,
   showRegisteredTests = false,
 }: {
   userName: string
+  userEmail?: string
+  isEmailVerified?: boolean
   registrations: StudentRegistrationRow[]
   submissions: StudentSubmissionRow[]
   showRegisteredTests?: boolean
 }) {
+  const [resendingVerify, setResendingVerify] = React.useState(false)
+  const [verifyFeedback, setVerifyFeedback] = React.useState<string | null>(null)
+
+  async function handleResendVerification() {
+    setResendingVerify(true)
+    setVerifyFeedback(null)
+    try {
+      const res = await resendVerificationEmailAction(userEmail)
+      if (res.success) {
+        setVerifyFeedback(res.message || "Verification link sent to your email.")
+      } else {
+        setVerifyFeedback(res.error || "Unable to send verification link right now.")
+      }
+    } catch {
+      setVerifyFeedback("Failed to send verification link.")
+    } finally {
+      setResendingVerify(false)
+    }
+  }
   const totalRegistered = registrations.length
   const totalAttemptsUsed = registrations.reduce((acc, r) => acc + r.attemptsUsed, 0)
   const totalAttemptsRemaining = registrations.reduce(
@@ -150,7 +177,7 @@ export function StudentDashboardClient({
         id: "registeredAt",
         header: "Enrolled On",
         sortable: true,
-        sortAccessor: (r) => new Date(r.registeredAt),
+        sortAccessor: (r) => new Date(r.registeredAt).getTime(),
         cell: (r) => <FormattedDate date={r.registeredAt} />,
       },
       {
@@ -263,7 +290,7 @@ export function StudentDashboardClient({
         id: "submittedAt",
         header: "Submitted On",
         sortable: true,
-        sortAccessor: (s) => new Date(s.submittedAt),
+        sortAccessor: (s) => new Date(s.submittedAt).getTime(),
         cell: (s) => <FormattedDate date={s.submittedAt} includeTime />,
       },
       {
@@ -344,6 +371,45 @@ export function StudentDashboardClient({
           </Button>
         </Link>
       </PageHeader>
+
+      {!isEmailVerified && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50/80 dark:border-amber-900/50 dark:bg-amber-950/30 p-4 text-sm">
+          <div className="flex items-start sm:items-center gap-3">
+            <MailWarning className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5 sm:mt-0" />
+            <div>
+              <p className="font-bold text-slate-900 dark:text-slate-100">
+                Verify your email address
+              </p>
+              <p className="text-xs text-slate-600 dark:text-slate-400">
+                {verifyFeedback ||
+                  "Confirm your email to receive instant AI scorecard and rubric alerts."}
+              </p>
+            </div>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={resendingVerify}
+            onClick={handleResendVerification}
+            className="h-9 px-3.5 rounded-xl border-amber-300 bg-white hover:bg-amber-50 text-xs font-bold text-slate-900 shrink-0"
+          >
+            {resendingVerify ? (
+              <>
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                Sending...
+              </>
+            ) : verifyFeedback ? (
+              <>
+                <CheckCircle2 className="mr-1.5 h-3.5 w-3.5 text-emerald-600" />
+                Resend Again
+              </>
+            ) : (
+              "Resend Verification Link"
+            )}
+          </Button>
+        </div>
+      )}
 
       {/* KPI Metric Strip - Flat Divided Design */}
       <KpiMetricStrip columns={4}>

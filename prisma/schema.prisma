@@ -260,6 +260,7 @@ model TestRegistration {
   @@index([testSeriesId])
   @@index([status])
   @@index([userId, registeredAt])
+  @@index([testSeriesId, status])
 }
 
 model Payment {
@@ -293,6 +294,7 @@ model Payment {
   @@index([registrationId])
   @@index([razorpayOrderId])
   @@index([razorpayPaymentId])
+  @@index([status, createdAt])
   @@index([status])
   @@index([createdAt])
 }
@@ -487,6 +489,7 @@ model WebhookEvent {
   createdAt   DateTime      @default(now())
 
   @@index([eventId])
+  @@index([status, createdAt])
   @@index([status])
 }
 

@@ -13,7 +13,7 @@ import { DataTable, DataTableColumn } from "@/components/ui/data-table"
 import { useConfirm } from "@/components/providers/confirm-dialog-provider"
 import { useGlobalError } from "@/components/providers/error-dialog-provider"
 import { toast } from "@/components/ui/sonner"
-import { FileText, Loader2, ShieldCheck } from "lucide-react"
+import { Download, FileText, Loader2, ShieldCheck } from "lucide-react"
 import { adminReviewScoreAction } from "@/actions/evaluation-actions"
 
 export function AdminScoreReviewEditor({ submissionId, initialEvaluation, evaluationRuns = [], fileUrl }: { submissionId: string; initialEvaluation: any; evaluationRuns?: any[]; fileUrl: string }) {
@@ -97,7 +97,10 @@ export function AdminScoreReviewEditor({ submissionId, initialEvaluation, evalua
             <div className="px-4 py-4 sm:px-5"><span className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Evaluation status</span><Badge variant="outline" className="mt-2 text-xs font-semibold">{initialEvaluation.status}</Badge></div>
           </div>
           {initialEvaluation.generalFeedback && <div className="border border-border bg-card p-4"><p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">General evaluator feedback</p><p className="mt-2 text-sm leading-relaxed text-foreground">{initialEvaluation.generalFeedback}</p></div>}
-          <a href={fileUrl} target="_blank" rel="noreferrer" className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-primary px-4 text-xs font-semibold text-primary-foreground hover:bg-primary/90"><FileText className="h-3.5 w-3.5" /> Open scanned booklet</a>
+          <div className="flex flex-wrap items-center gap-3">
+            <a href={fileUrl} target="_blank" rel="noreferrer" className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-primary px-4 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"><FileText className="h-3.5 w-3.5" /> Open scanned booklet</a>
+            <a href={fileUrl.includes("?") ? `${fileUrl}&download=1` : `${fileUrl}?download=1`} download target="_blank" rel="noreferrer" className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-4 text-xs font-semibold text-foreground hover:bg-muted transition-colors"><Download className="h-3.5 w-3.5" /> Download booklet</a>
+          </div>
         </TabsContent>
 
         <TabsContent value="history" className="space-y-3 pt-1">

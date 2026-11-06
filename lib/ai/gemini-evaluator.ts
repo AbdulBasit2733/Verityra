@@ -160,7 +160,7 @@ Please evaluate the attached student answer sheet thoroughly and return the stru
     }
 
     const responseText = response.text || ""
-    const parsedJson = JSON.parse(responseText)
+    const parsedJson = extractAndParseJson(responseText)
     if (Array.isArray(parsedJson.questions)) {
       parsedJson.questions = parsedJson.questions.map(
         (question: Record<string, unknown>) => ({
@@ -185,6 +185,24 @@ Please evaluate the attached student answer sheet thoroughly and return the stru
   } catch (error) {
     console.error("[GEMINI EVALUATION ERROR]", error)
     throw error
+  }
+}
+
+export function extractAndParseJson(rawText: string): Record<string, unknown> {
+  const cleaned = rawText
+    .replace(/^\s*```(?:json)?\s*/i, "")
+    .replace(/\s*```\s*$/i, "")
+    .trim()
+
+  try {
+    return JSON.parse(cleaned)
+  } catch {
+    const firstBrace = cleaned.indexOf("{")
+    const lastBrace = cleaned.lastIndexOf("}")
+    if (firstBrace !== -1 && lastBrace > firstBrace) {
+      return JSON.parse(cleaned.slice(firstBrace, lastBrace + 1))
+    }
+    throw new Error("Evaluator response did not contain valid JSON.")
   }
 }
 

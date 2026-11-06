@@ -85,7 +85,7 @@ export function StudentPurchasesClient({ purchases }: { purchases: StudentPurcha
         id: "createdAt",
         header: "Date",
         sortable: true,
-        sortAccessor: (row) => new Date(row.createdAt),
+        sortAccessor: (row) => new Date(row.createdAt).getTime(),
         cell: (row) => <FormattedDate date={row.createdAt} includeTime />,
       },
       {

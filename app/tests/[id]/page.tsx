@@ -6,7 +6,7 @@ import { prisma, isDatabaseConnected } from "@/lib/prisma"
 import { getCurrentUser } from "@/lib/auth-guard"
 import { Badge } from "@/components/ui/badge"
 import { TestRegistrationButton } from "@/components/test-registration-button"
-import { AlertCircle, ArrowLeft, Award, CheckCircle2, Clock, Download, FileText } from "lucide-react"
+import { AlertCircle, ArrowLeft, Award, CheckCircle2, Clock, Download, Eye, FileText } from "lucide-react"
 import { normalizePrivateFileUrl } from "@/lib/supabase"
 import { PaymentStatus, RegistrationStatus } from "@prisma/client"
 
@@ -53,7 +53,26 @@ export default async function TestDetailsPage({ params }: { params: Promise<{ id
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-8 sm:px-6 lg:grid-cols-[minmax(0,1fr)_410px] lg:px-8 lg:py-10"><div className="min-w-0 rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-8">
         <section className="border-b border-border pb-10"><h2 className="text-2xl font-semibold tracking-tight">What you will practice</h2><p className="mt-3 text-sm leading-7 text-muted-foreground">Build a complete written response under realistic examination conditions. Follow the prescribed format and use the report after submission to improve future attempts.</p></section>
         <section className="border-b border-border py-10"><div className="flex items-start gap-3"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary text-primary"><FileText className="h-4 w-4" /></div><div><h2 className="text-xl font-semibold">Instructions before you begin</h2><p className="mt-1 text-sm text-muted-foreground">Keep these guidelines open while preparing your answer sheet.</p></div></div><div className="mt-6 whitespace-pre-line border-l-2 border-primary/35 pl-5 text-sm leading-7 text-foreground/80">{testSeries.studentInstructions}</div><div className="mt-6 flex items-start gap-3 rounded-xl border border-score-accent/30 bg-score-accent/10 px-4 py-3 text-sm"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-score-accent" /><p><span className="font-semibold">Attempt policy:</span> You can submit up to {testSeries.maxAttempts} accepted responses. Each submission is evaluated separately.</p></div></section>
-        {testSeries.templates && testSeries.templates.length > 0 && <section className="pt-10"><div className="flex items-start gap-3"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary text-primary"><Download className="h-4 w-4" /></div><div><h2 className="text-xl font-semibold">Answer sheet template</h2><p className="mt-1 text-sm text-muted-foreground">Use the prescribed format for a consistent evaluation.</p></div></div><div className="mt-6 divide-y divide-border border-y border-border">{testSeries.templates.map((tpl: any) => <div key={tpl.id} className="flex flex-col gap-4 py-5 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-semibold">{tpl.title}</p><p className="mt-1 text-xs text-muted-foreground">{tpl.templateRequired ? "Required for this series" : "Recommended format"}</p></div>{isRegistered ? <a href={normalizePrivateFileUrl(tpl.fileUrl) || "#"} target="_blank" rel="noreferrer" download className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-primary px-3.5 text-xs font-semibold text-primary-foreground hover:bg-hover-accent"><Download className="h-3.5 w-3.5" />Download</a> : <span className="text-xs font-medium text-muted-foreground">Available after enrollment</span>}</div>)}</div></section>}
+        {testSeries.templates && testSeries.templates.length > 0 && <section className="pt-10"><div className="flex items-start gap-3"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary text-primary"><Download className="h-4 w-4" /></div><div><h2 className="text-xl font-semibold">Answer sheet template</h2><p className="mt-1 text-sm text-muted-foreground">Use the prescribed format for a consistent evaluation.</p></div></div><div className="mt-6 divide-y divide-border border-y border-border">{testSeries.templates.map((tpl: any) => {
+          const fileUrl = normalizePrivateFileUrl(tpl.fileUrl) || "#"
+          const downloadUrl = fileUrl.includes("?") ? `${fileUrl}&download=1` : `${fileUrl}?download=1`
+          return (
+            <div key={tpl.id} className="flex flex-col gap-4 py-5 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold">{tpl.title}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{tpl.templateRequired ? "Required for this series" : "Recommended format"}</p>
+              </div>
+              {isRegistered ? (
+                <div className="flex items-center gap-2">
+                  <a href={fileUrl} target="_blank" rel="noreferrer" className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-3 text-xs font-semibold text-foreground hover:bg-muted transition-colors"><Eye className="h-3.5 w-3.5" />Preview</a>
+                  <a href={downloadUrl} target="_blank" rel="noreferrer" download className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-primary px-3.5 text-xs font-semibold text-primary-foreground hover:bg-hover-accent shadow-2xs transition-colors"><Download className="h-3.5 w-3.5" />Download</a>
+                </div>
+              ) : (
+                <span className="text-xs font-medium text-muted-foreground">Available after enrollment</span>
+              )}
+            </div>
+          )
+        })}</div></section>}
       </div><div className="hidden lg:block" aria-hidden="true" /></div>
     </main>
     <Footer />

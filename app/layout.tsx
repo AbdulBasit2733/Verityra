@@ -1,4 +1,4 @@
-import { Plus_Jakarta_Sans, Inter, Poppins } from "next/font/google"
+import { Plus_Jakarta_Sans, Inter } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/components/auth-provider"
@@ -10,21 +10,12 @@ import Script from "next/script"
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
   variable: "--font-plus-jakarta",
-  display: "swap",
-})
-
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["400", "600"],
-  variable: "--font-poppins",
   display: "swap",
 })
 
 const inter = Inter({
   subsets: ["latin"],
-  weight: ["400", "500"],
   variable: "--font-inter",
   display: "swap",
 })
@@ -44,7 +35,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={cn("antialiased", plusJakartaSans.variable, poppins.variable, inter.variable)}
+      className={cn("antialiased", plusJakartaSans.variable, inter.variable)}
     >
       <body className="min-h-screen bg-background text-foreground font-sans">
         <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />

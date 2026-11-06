@@ -66,6 +66,9 @@ export async function createTestSeriesAction(input: CreateTestSeriesInput): Prom
 
   const dbConnected = await isDatabaseConnected()
   if (!dbConnected) {
+    if (process.env.NODE_ENV === "production") {
+      return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+    }
     return {
       success: true,
       message: "Test series created (Dev Mode). Connect PostgreSQL to persist permanently.",
@@ -126,6 +129,9 @@ export async function updateTestSeriesAction(
 
   const dbConnected = await isDatabaseConnected()
   if (!dbConnected) {
+    if (process.env.NODE_ENV === "production") {
+      return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+    }
     return { success: true, message: "Test series updated (Dev Mode)." }
   }
 
@@ -184,6 +190,9 @@ export async function togglePublishTestSeriesAction(id: string, publish: boolean
   }
 
   const dbConnected = await isDatabaseConnected()
+  if (!dbConnected && process.env.NODE_ENV === "production") {
+    return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+  }
   if (dbConnected) {
     const actor = await resolvePersistedAdminActor(sessionUser)
     if (!actor.success) return { success: false, error: actor.error }
@@ -223,6 +232,9 @@ export async function togglePublishResultsAction(testSeriesId: string, publish: 
   }
 
   const dbConnected = await isDatabaseConnected()
+  if (!dbConnected && process.env.NODE_ENV === "production") {
+    return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+  }
   if (dbConnected) {
     const actor = await resolvePersistedAdminActor(sessionUser)
     if (!actor.success) return { success: false, error: actor.error }

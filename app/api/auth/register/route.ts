@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server"
 import { registerSchema } from "@/lib/validations/auth"
 import { prisma, isDatabaseConnected } from "@/lib/prisma"
+import { sendVerificationEmail } from "@/lib/email"
 import bcrypt from "bcryptjs"
+import crypto from "crypto"
 import { Role, UserStatus } from "@prisma/client"
 
 export async function POST(req: Request) {
@@ -68,6 +70,33 @@ export async function POST(req: Request) {
         createdAt: true,
       },
     })
+
+    try {
+      const rawToken = crypto.randomBytes(32).toString("hex")
+      const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex")
+      const expires = new Date(Date.now() + 24 * 60 * 60 * 1000)
+
+      await prisma.verificationToken.deleteMany({
+        where: { identifier: normalizedEmail },
+      })
+
+      await prisma.verificationToken.create({
+        data: {
+          identifier: normalizedEmail,
+          token: tokenHash,
+          expires,
+        },
+      })
+
+      await sendVerificationEmail({
+        to: normalizedEmail,
+        name,
+        rawToken,
+        expiresInHours: 24,
+      })
+    } catch (verifyErr) {
+      console.error("[Register API] Failed to send verification email:", verifyErr)
+    }
 
     return NextResponse.json(
       {

@@ -10,6 +10,12 @@ import {
 } from "@/lib/validations/auth"
 import { prisma, isDatabaseConnected } from "@/lib/prisma"
 import { getCurrentUser, resolvePersistedAdminActor } from "@/lib/auth-guard"
+import { checkRateLimit } from "@/lib/rate-limit"
+import {
+  sendPasswordChangedEmail,
+  sendPasswordResetEmail,
+  sendVerificationEmail,
+} from "@/lib/email"
 import bcrypt from "bcryptjs"
 import crypto from "crypto"
 import { Role, UserStatus } from "@prisma/client"
@@ -41,8 +47,19 @@ export async function registerStudentAction(formData: {
   const { name, email, password } = parsed.data
   const normalizedEmail = email.toLowerCase().trim()
 
+  const rateLimit = checkRateLimit(`register:${normalizedEmail}`, 5, 60_000)
+  if (!rateLimit.allowed) {
+    return {
+      success: false,
+      error: `Too many registration attempts. Please wait ${rateLimit.retryAfterSeconds} seconds before trying again.`,
+    }
+  }
+
   const dbConnected = await isDatabaseConnected()
   if (!dbConnected) {
+    if (process.env.NODE_ENV === "production") {
+      return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+    }
     return {
       success: true,
       message: "Registration received (PostgreSQL offline dev mode). Sign in using demo student or configure DATABASE_URL.",
@@ -62,23 +79,61 @@ export async function registerStudentAction(formData: {
 
   const passwordHash = await bcrypt.hash(password, 12)
 
-  // Strictly enforce Role.STUDENT
-  await prisma.user.create({
-    data: {
-      name,
-      email: normalizedEmail,
-      passwordHash,
-      role: Role.STUDENT,
-      status: UserStatus.ACTIVE,
-      profile: {
-        create: {},
+  // Strictly enforce Role.STUDENT with concurrent P2002 race-condition guard
+  try {
+    await prisma.user.create({
+      data: {
+        name,
+        email: normalizedEmail,
+        passwordHash,
+        role: Role.STUDENT,
+        status: UserStatus.ACTIVE,
+        profile: {
+          create: {},
+        },
       },
-    },
-  })
+    })
+  } catch (createError: any) {
+    if (createError?.code === "P2002") {
+      return {
+        success: false,
+        error: "An account with this email address already exists. Please sign in instead.",
+      }
+    }
+    throw createError
+  }
+
+  // Generate verification token and dispatch welcome/verification email via Resend
+  try {
+    const rawToken = crypto.randomBytes(32).toString("hex")
+    const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex")
+    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+
+    await prisma.verificationToken.deleteMany({
+      where: { identifier: normalizedEmail },
+    })
+
+    await prisma.verificationToken.create({
+      data: {
+        identifier: normalizedEmail,
+        token: tokenHash,
+        expires,
+      },
+    })
+
+    await sendVerificationEmail({
+      to: normalizedEmail,
+      name,
+      rawToken,
+      expiresInHours: 24,
+    })
+  } catch (emailErr) {
+    console.error("[Auth] Failed to dispatch verification email on signup:", emailErr)
+  }
 
   return {
     success: true,
-    message: "Your account has been created successfully. You may now sign in.",
+    message: "Your account has been created successfully. We have sent a verification link to your email.",
   }
 }
 
@@ -93,11 +148,24 @@ export async function requestPasswordResetAction(email: string): Promise<ActionR
   }
 
   const normalizedEmail = email.toLowerCase().trim()
+
+  const rateLimit = checkRateLimit(`pwd-reset:${normalizedEmail}`, 5, 60_000)
+  if (!rateLimit.allowed) {
+    return {
+      success: false,
+      error: `Too many reset requests. Please wait ${rateLimit.retryAfterSeconds} seconds before trying again.`,
+    }
+  }
+
   const dbConnected = await isDatabaseConnected()
+  if (!dbConnected && process.env.NODE_ENV === "production") {
+    return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+  }
 
   if (dbConnected) {
     const user = await prisma.user.findUnique({
       where: { email: normalizedEmail },
+      select: { id: true, name: true, email: true },
     })
 
     if (user) {
@@ -113,11 +181,18 @@ export async function requestPasswordResetAction(email: string): Promise<ActionR
         },
       })
 
+      await sendPasswordResetEmail({
+        to: normalizedEmail,
+        name: user.name,
+        rawToken,
+        expiresInMinutes: 60,
+      })
+
       const devResetUrl = `/reset-password?token=${rawToken}`
 
       return {
         success: true,
-        message: "If an account exists with this email, password reset instructions have been generated.",
+        message: "If an account exists with this email, password reset instructions have been sent.",
         // Only include devResetUrl in development mode for security
         ...(process.env.NODE_ENV === "development" && {
           data: { devResetUrl },
@@ -128,7 +203,7 @@ export async function requestPasswordResetAction(email: string): Promise<ActionR
 
   return {
     success: true,
-    message: "If an account exists with this email, password reset instructions have been generated.",
+    message: "If an account exists with this email, password reset instructions have been sent.",
   }
 }
 
@@ -151,6 +226,9 @@ export async function resetPasswordAction(data: {
 
   const dbConnected = await isDatabaseConnected()
   if (!dbConnected) {
+    if (process.env.NODE_ENV === "production") {
+      return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+    }
     return {
       success: true,
       message: "Password reset successful (development mode). You can now sign in.",
@@ -170,20 +248,207 @@ export async function resetPasswordAction(data: {
 
   const passwordHash = await bcrypt.hash(password, 12)
 
-  await prisma.$transaction([
+  const [updatedUser] = await prisma.$transaction([
     prisma.user.update({
       where: { email: resetRecord.email },
       data: { passwordHash },
+      select: { name: true, email: true },
     }),
-    prisma.passwordResetToken.update({
-      where: { id: resetRecord.id },
+    // Invalidate all active reset tokens for this email to prevent replay attacks
+    prisma.passwordResetToken.updateMany({
+      where: { email: resetRecord.email, usedAt: null },
       data: { usedAt: new Date() },
     }),
   ])
 
+  if (updatedUser?.email) {
+    await sendPasswordChangedEmail({
+      to: updatedUser.email,
+      name: updatedUser.name,
+    }).catch((err) => console.error("[Auth] Failed to send password changed alert:", err))
+  }
+
   return {
     success: true,
     message: "Your password has been reset successfully. You can now sign in with your new password.",
+  }
+}
+
+/**
+ * Server Action: Verify Email Address
+ * Validates SHA-256 verification token and marks user emailVerified.
+ */
+export async function verifyEmailAction(params: {
+  email: string
+  token: string
+}): Promise<ActionResult> {
+  const normalizedEmail = params.email?.toLowerCase().trim()
+  const rawToken = params.token?.trim()
+
+  if (!normalizedEmail || !rawToken) {
+    return {
+      success: false,
+      error: "Missing email address or verification token.",
+    }
+  }
+
+  const dbConnected = await isDatabaseConnected()
+  if (!dbConnected) {
+    if (process.env.NODE_ENV === "production") {
+      return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+    }
+    return {
+      success: true,
+      message: "Email verified successfully (development mode).",
+    }
+  }
+
+  const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex")
+
+  const record = await prisma.verificationToken.findUnique({
+    where: {
+      identifier_token: {
+        identifier: normalizedEmail,
+        token: tokenHash,
+      },
+    },
+  })
+
+  if (!record) {
+    const existingUser = await prisma.user.findUnique({
+      where: { email: normalizedEmail },
+      select: { emailVerified: true },
+    })
+    if (existingUser?.emailVerified) {
+      return {
+        success: true,
+        message: "Your email address is already verified. You can continue to your dashboard.",
+      }
+    }
+    return {
+      success: false,
+      error: "This verification link is invalid or has already been used.",
+    }
+  }
+
+  if (record.expires < new Date()) {
+    await prisma.verificationToken
+      .delete({
+        where: {
+          identifier_token: {
+            identifier: normalizedEmail,
+            token: tokenHash,
+          },
+        },
+      })
+      .catch(() => undefined)
+
+    return {
+      success: false,
+      error: "This verification link has expired. Please request a new verification email.",
+    }
+  }
+
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { email: normalizedEmail },
+      data: { emailVerified: new Date() },
+    }),
+    prisma.verificationToken.deleteMany({
+      where: { identifier: normalizedEmail },
+    }),
+  ])
+
+  revalidatePath("/student/dashboard")
+  revalidatePath("/student/profile")
+
+  return {
+    success: true,
+    message: "Your email address has been verified successfully.",
+  }
+}
+
+/**
+ * Server Action: Resend Verification Email
+ */
+export async function resendVerificationEmailAction(
+  emailInput?: string
+): Promise<ActionResult<{ devVerificationUrl?: string }>> {
+  const sessionUser = await getCurrentUser()
+  const targetEmail = (emailInput || sessionUser?.email || "").toLowerCase().trim()
+
+  if (!targetEmail) {
+    return { success: false, error: "Please provide a valid email address." }
+  }
+
+  const rateLimit = checkRateLimit(`resend-verify:${targetEmail}`, 3, 60_000)
+  if (!rateLimit.allowed) {
+    return {
+      success: false,
+      error: `Please wait ${rateLimit.retryAfterSeconds} seconds before requesting another verification email.`,
+    }
+  }
+
+  const dbConnected = await isDatabaseConnected()
+  if (!dbConnected) {
+    if (process.env.NODE_ENV === "production") {
+      return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+    }
+    return {
+      success: true,
+      message: "Verification email dispatched (development mode).",
+    }
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { email: targetEmail },
+    select: { id: true, name: true, email: true, emailVerified: true },
+  })
+
+  if (!user) {
+    // Generic message to prevent email enumeration
+    return {
+      success: true,
+      message: "If an unverified account exists for this email, a new verification link has been sent.",
+    }
+  }
+
+  if (user.emailVerified) {
+    return {
+      success: true,
+      message: "Your email address is already verified.",
+    }
+  }
+
+  const rawToken = crypto.randomBytes(32).toString("hex")
+  const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex")
+  const expires = new Date(Date.now() + 24 * 60 * 60 * 1000)
+
+  await prisma.verificationToken.deleteMany({
+    where: { identifier: targetEmail },
+  })
+
+  await prisma.verificationToken.create({
+    data: {
+      identifier: targetEmail,
+      token: tokenHash,
+      expires,
+    },
+  })
+
+  const dispatch = await sendVerificationEmail({
+    to: targetEmail,
+    name: user.name,
+    rawToken,
+    expiresInHours: 24,
+  })
+
+  return {
+    success: true,
+    message: "A fresh verification link has been sent to your email address.",
+    ...(process.env.NODE_ENV === "development" && {
+      data: { devVerificationUrl: dispatch.verificationUrl },
+    }),
   }
 }
 
@@ -210,6 +475,9 @@ export async function updateStudentProfileAction(profileData: {
 
   const dbConnected = await isDatabaseConnected()
   if (!dbConnected) {
+    if (process.env.NODE_ENV === "production") {
+      return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+    }
     return { success: true, message: "Profile updated successfully (dev mode)." }
   }
 
@@ -264,6 +532,9 @@ export async function getStudentProfileAction(): Promise<ActionResult<{
 
   const dbConnected = await isDatabaseConnected()
   if (!dbConnected) {
+    if (process.env.NODE_ENV === "production") {
+      return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+    }
     return {
       success: true,
       data: {
@@ -322,6 +593,9 @@ export async function getAdminProfileAction(): Promise<ActionResult<{
 
   const dbConnected = await isDatabaseConnected()
   if (!dbConnected) {
+    if (process.env.NODE_ENV === "production") {
+      return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+    }
     return {
       success: true,
       data: {
@@ -387,6 +661,9 @@ export async function updateAdminProfileAction(data: {
 
   const dbConnected = await isDatabaseConnected()
   if (!dbConnected) {
+    if (process.env.NODE_ENV === "production") {
+      return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+    }
     return { success: true, message: "Admin profile updated (development mode)." }
   }
 
@@ -450,8 +727,19 @@ export async function changePasswordAction(data: {
 
   const { currentPassword, newPassword } = parsed.data
 
+  const rateLimit = checkRateLimit(`change-pwd:${user.id}`, 5, 60_000)
+  if (!rateLimit.allowed) {
+    return {
+      success: false,
+      error: `Too many password change attempts. Please wait ${rateLimit.retryAfterSeconds} seconds before trying again.`,
+    }
+  }
+
   const dbConnected = await isDatabaseConnected()
   if (!dbConnected) {
+    if (process.env.NODE_ENV === "production") {
+      return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+    }
     return { success: true, message: "Password updated successfully (development mode)." }
   }
 

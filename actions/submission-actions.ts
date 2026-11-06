@@ -54,6 +54,9 @@ export async function submitAnswerSheetAction(formData: FormData): Promise<Actio
 
   const dbConnected = await isDatabaseConnected()
   if (!dbConnected) {
+    if (process.env.NODE_ENV === "production") {
+      return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+    }
     return {
       success: true,
       message: "Submission accepted (Dev Mode). Evaluation completed.",
@@ -181,7 +184,6 @@ export async function submitAnswerSheetAction(formData: FormData): Promise<Actio
     testSeriesId: registration.testSeriesId,
     userId: user.id,
     fileUrl: uploadedFileUrl,
-    fileBuffer: fileBytes.toString('base64'), // Pass buffer to avoid re-downloading
     mimeType: file.type,
     runId: evaluationRun.id,
     runNumber: evaluationRun.runNumber,

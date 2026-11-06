@@ -300,6 +300,9 @@ export async function adminTriggerRefundAction(params: {
     }
 
     if (!dbConnected) {
+      if (process.env.NODE_ENV === "production") {
+        return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+      }
       // Dev mode mock success
       return {
         success: true,

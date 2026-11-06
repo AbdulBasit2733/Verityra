@@ -28,6 +28,13 @@ export function SignUpFormCore({ isMobile }: SignUpFormCoreProps) {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const redirectTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (redirectTimerRef.current) clearTimeout(redirectTimerRef.current)
+    }
+  }, [])
 
   // Redirect if user is already authenticated
   useEffect(() => {
@@ -69,7 +76,8 @@ export function SignUpFormCore({ isMobile }: SignUpFormCoreProps) {
       setSuccess(result.message || "Registration successful! You may now sign in.")
       setLoading(false)
 
-      setTimeout(() => {
+      if (redirectTimerRef.current) clearTimeout(redirectTimerRef.current)
+      redirectTimerRef.current = setTimeout(() => {
         router.push("/signin")
       }, 1500)
     } catch {

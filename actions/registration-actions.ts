@@ -2,6 +2,7 @@
 
 import { getCurrentUser } from "@/lib/auth-guard"
 import { prisma, isDatabaseConnected } from "@/lib/prisma"
+import { sendEnrollmentReceiptEmail } from "@/lib/email"
 import { PaymentStatus, RegistrationStatus } from "@prisma/client"
 import { revalidatePath } from "next/cache"
 import crypto from "crypto"
@@ -19,6 +20,9 @@ export async function registerFreeTestAction(testSeriesId: string): Promise<Acti
 
   const dbConnected = await isDatabaseConnected()
   if (!dbConnected) {
+    if (process.env.NODE_ENV === "production") {
+      return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+    }
     return {
       success: true,
       message: "Successfully registered for test series (Dev Mode).",
@@ -53,15 +57,34 @@ export async function registerFreeTestAction(testSeriesId: string): Promise<Acti
     return { success: false, error: "You are already registered for this test series." }
   }
 
-  const registration = await prisma.testRegistration.create({
-    data: {
-      userId: user.id,
+  let registration
+  try {
+    registration = await prisma.testRegistration.create({
+      data: {
+        userId: user.id,
+        testSeriesId,
+        status: RegistrationStatus.ACTIVE,
+        attemptsUsed: 0,
+        maxAttempts: testSeries.maxAttempts,
+      },
+    })
+  } catch (createErr: any) {
+    if (createErr?.code === "P2002") {
+      return { success: false, error: "You are already registered for this test series." }
+    }
+    throw createErr
+  }
+
+  if (user.email) {
+    await sendEnrollmentReceiptEmail({
+      to: user.email,
+      name: user.name,
       testSeriesId,
-      status: RegistrationStatus.ACTIVE,
-      attemptsUsed: 0,
+      testTitle: testSeries.title,
+      amountPaise: 0,
       maxAttempts: testSeries.maxAttempts,
-    },
-  })
+    }).catch((err) => console.error("[Registration] Failed to send free enrollment receipt:", err))
+  }
 
   revalidatePath(`/tests/${testSeriesId}`)
   revalidatePath("/student/dashboard")
@@ -92,6 +115,9 @@ export async function createRazorpayOrderAction(testSeriesId: string): Promise<
 
   const dbConnected = await isDatabaseConnected()
   if (!dbConnected) {
+    if (process.env.NODE_ENV === "production") {
+      return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+    }
     return {
       success: true,
       data: {
@@ -251,6 +277,9 @@ export async function verifyPaymentAndRegisterAction(input: {
 
   const dbConnected = await isDatabaseConnected()
   if (!dbConnected) {
+    if (process.env.NODE_ENV === "production") {
+      return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+    }
     return {
       success: true,
       message: "Payment verified successfully (Dev Mode). Access unlocked!",
@@ -259,7 +288,7 @@ export async function verifyPaymentAndRegisterAction(input: {
 
   const testSeries = await prisma.testSeries.findUnique({
     where: { id: input.testSeriesId },
-    select: { id: true, price: true, maxAttempts: true },
+    select: { id: true, title: true, price: true, maxAttempts: true },
   })
 
   if (!testSeries) {
@@ -323,6 +352,18 @@ export async function verifyPaymentAndRegisterAction(input: {
       },
     })
   })
+
+  if (user.email) {
+    await sendEnrollmentReceiptEmail({
+      to: user.email,
+      name: user.name,
+      testSeriesId: input.testSeriesId,
+      testTitle: testSeries.title,
+      amountPaise: testSeries.price,
+      maxAttempts: testSeries.maxAttempts,
+      orderId: input.razorpayOrderId,
+    }).catch((err) => console.error("[Registration] Failed to send paid enrollment receipt:", err))
+  }
 
   revalidatePath(`/tests/${input.testSeriesId}`)
   revalidatePath("/student/dashboard")

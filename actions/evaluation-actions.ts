@@ -277,6 +277,9 @@ export async function adminReviewScoreAction(
 
   const dbConnected = await isDatabaseConnected()
   if (!dbConnected) {
+    if (process.env.NODE_ENV === "production") {
+      return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+    }
     return { success: true, message: "Review saved (Dev Mode)." }
   }
 
@@ -391,6 +394,9 @@ export async function adminGrantExtraAttemptAction(
 
   const dbConnected = await isDatabaseConnected()
   if (!dbConnected) {
+    if (process.env.NODE_ENV === "production") {
+      return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+    }
     return { success: true, message: "Extra attempt granted (Dev Mode)." }
   }
 

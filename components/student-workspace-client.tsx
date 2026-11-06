@@ -23,9 +23,12 @@ import {
   CheckCircle2,
   Clock,
   Download,
+  ExternalLink,
+  Eye,
   FileCheck2,
   FileText,
   Info,
+  Printer,
   UploadCloud,
   Timer,
 } from "lucide-react"
@@ -215,6 +218,22 @@ export function StudentWorkspaceClient({
   const [selectedRunNumber, setSelectedRunNumber] = React.useState<number | null>(null)
   const selectedRun = activeSubmission?.evaluationRuns?.find((run) => run.runNumber === selectedRunNumber)
   const reportQuestions = selectedRun?.questions || activeSubmission?.evaluation?.questions || []
+
+  const resolvedPapers = papers.length > 0 ? papers : [
+    {
+      id: "default-paper",
+      title: "Official Examination Question Paper (PDF)",
+      fileUrl: "/api/files/download?file=papers/upsc-paper.pdf",
+    },
+  ]
+
+  const resolvedTemplates = templates.length > 0 ? templates : [
+    {
+      id: "default-tpl",
+      title: "Official 24-Page Ruled Margin Booklet (A4)",
+      fileUrl: "/api/files/download?file=templates/upsc-template.pdf",
+    },
+  ]
 
   const questionColumns: DataTableColumn<WorkspaceQuestionScore>[] = React.useMemo(
     () => [
@@ -486,15 +505,30 @@ export function StudentWorkspaceClient({
                       Submitted <FormattedDate date={activeSubmission.submittedAt} includeTime />
                     </span>
                     {activeSubmission.fileUrl && (
-                      <a
-                        href={activeSubmission.fileUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="font-bold text-[#2A6AED] dark:text-blue-400 hover:underline inline-flex items-center gap-1"
-                      >
-                        <FileText className="h-3.5 w-3.5" />
-                        View Scanned Booklet
-                      </a>
+                      <div className="inline-flex items-center gap-2">
+                        <a
+                          href={activeSubmission.fileUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="font-bold text-[#2A6AED] dark:text-blue-400 hover:underline inline-flex items-center gap-1"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                          View Booklet
+                        </a>
+                        <span className="text-slate-300 dark:text-slate-700">·</span>
+                        <a
+                          href={
+                            activeSubmission.fileUrl.includes("?")
+                              ? `${activeSubmission.fileUrl}&download=1`
+                              : `${activeSubmission.fileUrl}?download=1`
+                          }
+                          download
+                          className="font-semibold text-slate-600 dark:text-slate-300 hover:text-[#2A6AED] dark:hover:text-blue-400 inline-flex items-center gap-1"
+                        >
+                          <Download className="h-3.5 w-3.5" />
+                          Download
+                        </a>
+                      </div>
                     )}
                   </div>
                 )}
@@ -649,66 +683,165 @@ export function StudentWorkspaceClient({
 
         {/* TAB 3: DOWNLOADABLE RESOURCES & CANDIDATE INSTRUCTIONS */}
         <TabsContent value="resources" className="space-y-6 pt-1">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Official Question Paper Downloads */}
-            <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs space-y-3">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                <FileText className="h-4 w-4 text-[#2A6AED] dark:text-blue-400" />
-                Official Question Paper PDF
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Download the question paper and solve all questions sequentially with pen and paper.
-              </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* 1. Official Question Paper Downloads */}
+            <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs flex flex-col justify-between space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-[#2A6AED] dark:text-blue-400" />
+                    Official Question Paper PDF
+                  </h3>
+                  <Badge variant="outline" className="text-[10px] font-semibold border-blue-200 bg-blue-50/60 dark:bg-blue-950/60 text-[#2A6AED] dark:text-blue-300">
+                    Exam Paper
+                  </Badge>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                  Download or preview the question paper. Solve all questions sequentially with pen and paper under timed conditions.
+                </p>
+              </div>
+
               <div className="divide-y divide-slate-100 dark:divide-slate-800 border-t border-slate-100 dark:border-slate-800 pt-1">
-                {papers.map((paper) => (
-                  <div
-                    key={paper.id}
-                    className="py-3 flex items-center justify-between gap-3 text-xs"
-                  >
-                    <span className="font-semibold text-slate-800 dark:text-slate-200 truncate">{paper.title}</span>
-                    <a
-                      href={paper.fileUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      download
-                      className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-[#2A6AED] text-white font-semibold hover:bg-[#1E55C7] text-[11px] shrink-0 shadow-2xs"
+                {resolvedPapers.map((paper) => {
+                  const downloadUrl = paper.fileUrl.includes("?")
+                    ? `${paper.fileUrl}&download=1`
+                    : `${paper.fileUrl}?download=1`
+                  return (
+                    <div
+                      key={paper.id}
+                      className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs"
                     >
-                      <Download className="h-3.5 w-3.5" />
-                      Download PDF
-                    </a>
-                  </div>
-                ))}
+                      <span className="font-semibold text-slate-800 dark:text-slate-200 truncate" title={paper.title}>
+                        {paper.title}
+                      </span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <a
+                          href={paper.fileUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 text-[11px] shadow-2xs transition-colors"
+                        >
+                          <Eye className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                          Preview
+                        </a>
+                        <a
+                          href={downloadUrl}
+                          download
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-[#2A6AED] text-white font-semibold hover:bg-[#1E55C7] text-[11px] shadow-2xs transition-colors"
+                        >
+                          <Download className="h-3.5 w-3.5" />
+                          Download
+                        </a>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </div>
 
-            {/* Prescribed Margin Template Downloads */}
-            <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs space-y-3">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                <Download className="h-4 w-4 text-[#2A6AED] dark:text-blue-400" />
-                Margin-Aligned Answer Sheet Template
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Print this ruled margin booklet so your handwritten answers match examination proportions.
-              </p>
+            {/* 2. Prescribed Margin Template Downloads */}
+            <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs flex flex-col justify-between space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                    <Printer className="h-4 w-4 text-[#2A6AED] dark:text-blue-400" />
+                    Margin Answer Sheet Template
+                  </h3>
+                  <Badge variant="outline" className="text-[10px] font-semibold border-emerald-200 bg-emerald-50/60 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
+                    Printable A4
+                  </Badge>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                  Print this ruled margin booklet so your handwritten answers match examination proportions and margin compliance rules.
+                </p>
+              </div>
+
               <div className="divide-y divide-slate-100 dark:divide-slate-800 border-t border-slate-100 dark:border-slate-800 pt-1">
-                {templates.map((tpl) => (
-                  <div
-                    key={tpl.id}
-                    className="py-3 flex items-center justify-between gap-3 text-xs"
-                  >
-                    <span className="font-semibold text-slate-800 dark:text-slate-200 truncate">{tpl.title}</span>
+                {resolvedTemplates.map((tpl) => {
+                  const downloadUrl = tpl.fileUrl.includes("?")
+                    ? `${tpl.fileUrl}&download=1`
+                    : `${tpl.fileUrl}?download=1`
+                  return (
+                    <div
+                      key={tpl.id}
+                      className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs"
+                    >
+                      <span className="font-semibold text-slate-800 dark:text-slate-200 truncate" title={tpl.title}>
+                        {tpl.title}
+                      </span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <a
+                          href={tpl.fileUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 text-[11px] shadow-2xs transition-colors"
+                        >
+                          <Eye className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                          Preview
+                        </a>
+                        <a
+                          href={downloadUrl}
+                          download
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 text-[11px] shadow-2xs transition-colors"
+                        >
+                          <Printer className="h-3.5 w-3.5 text-[#2A6AED] dark:text-blue-400" />
+                          Print / Save
+                        </a>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* 3. Benchmark Sample Answer Sheet */}
+            <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs flex flex-col justify-between space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                    <BookOpen className="h-4 w-4 text-[#2A6AED] dark:text-blue-400" />
+                    Benchmark Sample Answer Sheet
+                  </h3>
+                  <Badge variant="outline" className="text-[10px] font-semibold border-amber-200 bg-amber-50/60 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300">
+                    Model 73.8%
+                  </Badge>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                  Inspect a verified handwritten candidate response booklet demonstrating structured headings, margin discipline, and examiner marks.
+                </p>
+              </div>
+
+              <div className="divide-y divide-slate-100 dark:divide-slate-800 border-t border-slate-100 dark:border-slate-800 pt-1">
+                <div className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
+                  <span className="font-semibold text-slate-800 dark:text-slate-200 truncate" title="UPSC GS-1 Model Handwritten Booklet">
+                    UPSC GS-1 Benchmark Booklet (PDF)
+                  </span>
+                  <div className="flex items-center gap-2 shrink-0">
                     <a
-                      href={tpl.fileUrl}
+                      href="/api/files/download?file=submissions/demo/sample-attempt.pdf"
                       target="_blank"
                       rel="noreferrer"
-                      download
-                      className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 text-[11px] shrink-0 shadow-2xs"
+                      className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 text-[11px] shadow-2xs transition-colors"
                     >
-                      <Download className="h-3.5 w-3.5 text-[#2A6AED] dark:text-blue-400" />
-                      Print Template
+                      <Eye className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                      Preview
+                    </a>
+                    <a
+                      href="/api/files/download?file=submissions/demo/sample-attempt.pdf&download=1"
+                      download
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-[#2A6AED] text-white font-semibold hover:bg-[#1E55C7] text-[11px] shadow-2xs transition-colors"
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                      Download
                     </a>
                   </div>
-                ))}
+                </div>
               </div>
             </div>
           </div>

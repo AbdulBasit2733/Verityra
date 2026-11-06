@@ -14,9 +14,10 @@ export default async function StudentDashboardPage() {
 
   let registrations: any[] = []
   let submissions: any[] = []
+  let isEmailVerified = true
 
   if (dbConnected) {
-    ;[registrations, submissions] = await Promise.all([
+    const [regList, subList, dbUser] = await Promise.all([
       prisma.testRegistration.findMany({
         where: { userId: user.id },
         select: {
@@ -74,7 +75,14 @@ export default async function StudentDashboardPage() {
         },
         orderBy: { submittedAt: "desc" },
       }),
+      prisma.user.findUnique({
+        where: { id: user.id },
+        select: { emailVerified: true },
+      }),
     ])
+    registrations = regList
+    submissions = subList
+    isEmailVerified = Boolean(dbUser?.emailVerified)
   }
 
   // Fallback demo records if DB is not yet running
@@ -167,6 +175,8 @@ export default async function StudentDashboardPage() {
   return (
     <StudentDashboardClient
       userName={user.name || "Candidate"}
+      userEmail={user.email || ""}
+      isEmailVerified={isEmailVerified}
       registrations={registrationRows}
       submissions={submissionRows}
     />

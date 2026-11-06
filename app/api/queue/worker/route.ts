@@ -43,8 +43,11 @@ async function authorizeWorkerManagement(request: Request) {
   return user?.role === Role.ADMIN
 }
 
-// Auto-start worker on module load (runs once per server process)
-if (process.env.AUTO_START_WORKER !== 'false') {
+// Only auto-start worker when explicitly enabled and never during Next.js build phase
+if (
+  process.env.AUTO_START_WORKER === 'true' &&
+  process.env.NEXT_PHASE !== 'phase-production-build'
+) {
   try {
     workerInstance = createEvaluationWorker()
     if (workerInstance) {

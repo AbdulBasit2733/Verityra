@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -30,6 +30,23 @@ export function TestRegistrationButton({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
+  const redirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (redirectTimerRef.current) {
+        clearTimeout(redirectTimerRef.current)
+      }
+    }
+  }, [])
+
+  function scheduleRedirect() {
+    if (redirectTimerRef.current) clearTimeout(redirectTimerRef.current)
+    redirectTimerRef.current = setTimeout(() => {
+      router.push(`/student/tests/${testSeriesId}`)
+      router.refresh()
+    }, 1200)
+  }
 
   if (!isSignedIn) {
     return (
@@ -76,10 +93,7 @@ export function TestRegistrationButton({
 
       setSuccess(result.message || "Registered successfully!")
       setLoading(false)
-      setTimeout(() => {
-        router.push(`/student/tests/${testSeriesId}`)
-        router.refresh()
-      }, 1200)
+      scheduleRedirect()
     } catch {
       setError("An unexpected error occurred during registration.")
       setLoading(false)
@@ -120,10 +134,7 @@ export function TestRegistrationButton({
 
             if (verifyResult.success) {
               setSuccess("Payment successful! Access granted.")
-              setTimeout(() => {
-                router.push(`/student/tests/${testSeriesId}`)
-                router.refresh()
-              }, 1200)
+              scheduleRedirect()
             } else {
               setError(verifyResult.error || "Payment verification failed.")
             }
@@ -147,10 +158,7 @@ export function TestRegistrationButton({
 
         if (verifyResult.success) {
           setSuccess("Payment verified in development mode! Access unlocked.")
-          setTimeout(() => {
-            router.push(`/student/tests/${testSeriesId}`)
-            router.refresh()
-          }, 1200)
+          scheduleRedirect()
         } else {
           setError(verifyResult.error || "Payment failed.")
         }

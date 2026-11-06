@@ -93,7 +93,7 @@ export function StudentRegisteredTestsClient({
         id: "registeredAt",
         header: "Registered",
         sortable: true,
-        sortAccessor: (row) => new Date(row.registeredAt),
+        sortAccessor: (row) => new Date(row.registeredAt).getTime(),
         cell: (row) => <FormattedDate date={row.registeredAt} />,
       },
       {

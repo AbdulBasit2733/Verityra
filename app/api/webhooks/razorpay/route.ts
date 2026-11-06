@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma, isDatabaseConnected } from "@/lib/prisma"
+import { sendEnrollmentReceiptEmail } from "@/lib/email"
 import { PaymentStatus, RegistrationStatus, WebhookStatus } from "@prisma/client"
 import crypto from "crypto"
 
@@ -138,6 +139,25 @@ export async function POST(req: NextRequest) {
               },
             })
           })
+
+          // Send enrollment receipt email asynchronously after webhook fulfillment
+          const fulfilledUser = await prisma.user.findUnique({
+            where: { id: paymentRecord.userId },
+            select: { name: true, email: true },
+          })
+          if (fulfilledUser?.email && testSeries) {
+            await sendEnrollmentReceiptEmail({
+              to: fulfilledUser.email,
+              name: fulfilledUser.name,
+              testSeriesId: paymentRecord.testSeriesId,
+              testTitle: testSeries.title,
+              amountPaise: paymentRecord.amount,
+              maxAttempts: testSeries.maxAttempts || 3,
+              orderId: razorpayOrderId,
+            }).catch((err) =>
+              console.error("[RAZORPAY WEBHOOK] Failed to send enrollment receipt:", err)
+            )
+          }
         }
       }
     }

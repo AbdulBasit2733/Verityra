@@ -99,7 +99,17 @@ export function parsePrivateFileReference(
 
   const separator = fileUrl.indexOf("/")
   if (separator <= 0 || separator === fileUrl.length - 1) return null
-  return { bucket: fileUrl.slice(0, separator), filePath: fileUrl.slice(separator + 1) }
+
+  const firstSegment = fileUrl.slice(0, separator)
+  if (firstSegment === "verityra-private") {
+    return { bucket: firstSegment, filePath: fileUrl.slice(separator + 1) }
+  }
+
+  if (["papers", "templates", "submissions", "model-answers"].includes(firstSegment)) {
+    return { bucket: "verityra-private", filePath: fileUrl }
+  }
+
+  return { bucket: firstSegment, filePath: fileUrl.slice(separator + 1) }
 }
 
 export async function downloadPrivateFile(bucketName: string, filePath: string): Promise<Buffer> {

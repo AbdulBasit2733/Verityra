@@ -8,7 +8,7 @@
 
 /* Map CSS variables to Tailwind tokens (v4 CSS-first) */
 @theme inline {
-  --font-heading: var(--font-plus-jakarta), "Plus Jakarta Sans", var(--font-poppins), sans-serif;
+  --font-heading: var(--font-plus-jakarta), "Plus Jakarta Sans", sans-serif;
   --font-sans: var(--font-plus-jakarta), "Plus Jakarta Sans", var(--font-inter), system-ui, sans-serif;
   --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, monospace;
 

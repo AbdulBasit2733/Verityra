@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { forgotPasswordSchema } from "@/lib/validations/auth"
 import { prisma, isDatabaseConnected } from "@/lib/prisma"
+import { sendPasswordResetEmail } from "@/lib/email"
 import crypto from "crypto"
 
 export async function POST(req: Request) {
@@ -48,13 +49,16 @@ export async function POST(req: Request) {
       },
     })
 
-    // In production with an email provider (Resend, SendGrid, SMTP), send email here.
-    // For logging/dev, we log the reset link safely without revealing in public response.
-    const resetUrl = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/reset-password?token=${rawToken}`
+    const dispatch = await sendPasswordResetEmail({
+      to: normalizedEmail,
+      name: user.name,
+      rawToken,
+      expiresInMinutes: 60,
+    })
 
     return NextResponse.json({
       ...genericResponse,
-      devResetUrl: process.env.NODE_ENV === "development" ? resetUrl : undefined,
+      devResetUrl: process.env.NODE_ENV === "development" ? dispatch.resetUrl : undefined,
     })
   } catch (err: unknown) {
     console.error("Forgot password error:", err)
