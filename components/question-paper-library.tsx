@@ -4,8 +4,9 @@ import { useMemo, useState } from "react"
 import Link from "next/link"
 import { BookOpen, Download, FileText, Search, SlidersHorizontal } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 
 export type QuestionPaperItem = {
@@ -92,12 +93,19 @@ export function QuestionPaperLibrary({ papers }: { papers: QuestionPaperItem[] }
                   <Badge variant="outline">Public access</Badge>
                 </div>
                 <div className="flex gap-2">
-                  <Button asChild variant="outline" className="flex-1 rounded-xl border-[#BFD5FA] text-[#145DEB]">
-                    <Link href={`/question-papers/${paper.id}`}><BookOpen data-icon="inline-start" /> Preview</Link>
-                  </Button>
-                  <Button asChild className="flex-1 rounded-xl bg-[#145DEB] hover:bg-[#0F4DC7]">
-                    <a href={paper.fileUrl} download><Download data-icon="inline-start" /> Download</a>
-                  </Button>
+                  <Link
+                    href={`/question-papers/${paper.id}`}
+                    className={cn(buttonVariants({ variant: "outline" }), "flex-1 rounded-xl border-[#BFD5FA] text-[#145DEB]")}
+                  >
+                    <BookOpen data-icon="inline-start" /> Preview
+                  </Link>
+                  <a
+                    href={paper.fileUrl}
+                    download
+                    className={cn(buttonVariants(), "flex-1 rounded-xl bg-[#145DEB] hover:bg-[#0F4DC7]")}
+                  >
+                    <Download data-icon="inline-start" /> Download
+                  </a>
                 </div>
               </CardContent>
             </Card>
