@@ -7,6 +7,7 @@ const withBundleAnalyzer = bundleAnalyzer({
 
 const nextConfig: NextConfig = {
   experimental: {
+    agentUpgrade: "security",
     serverActions: {
       bodySizeLimit: "30mb",
     },
