@@ -16,6 +16,7 @@ The public landing page is composed from reusable sections in `components/landin
 
 - Light canvas and paper surfaces with navy text and Electric Sapphire emphasis.
 - Use the canonical `--surface-*`, `--ink-*`, `--line-*`, and `--brand-sapphire*` tokens where available.
+- Align the hero, exam strip, navbar, and content sections to the shared `max-w-7xl` container and `px-5 / sm:px-8 / lg:px-10` gutters.
 - CSS-only rings, circles, and rounded geometric shapes add depth without additional raster assets.
 - Keep body copy readable, actions at least 44px high, and decorative shapes hidden from assistive technology.
 - Sections reflow from one column on phones to three-card grids on desktop; the hero image is reserved for desktop widths.

@@ -47,7 +47,7 @@ export function Navbar({
     <header
       className={`sticky top-0 z-50 w-full border-b backdrop-blur-xl ${isLightAppearance ? "border-slate-200 bg-white/95" : "border-border/80 bg-background/90"}`}
     >
-      <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between gap-4 px-4 sm:h-[72px] sm:gap-6 sm:px-8 lg:h-[76px] lg:px-10">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-5 sm:h-[72px] sm:gap-6 sm:px-8 lg:h-[76px] lg:px-10">
         <Link
           href="/"
           className="group flex shrink-0 items-center gap-2.5"
