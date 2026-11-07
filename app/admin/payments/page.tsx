@@ -1,6 +1,6 @@
 import { requireAdmin } from "@/lib/auth-guard"
 import { getAdminPaymentsAction } from "@/actions/payment-actions"
-import { AdminPaymentsClient } from "@/components/admin-payments-client"
+import { AdminPaymentsClient } from "@/components/admin/payments/admin-payments-client"
 
 export const dynamic = "force-dynamic"
 

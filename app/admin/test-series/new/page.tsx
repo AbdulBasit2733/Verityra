@@ -2,7 +2,7 @@ import Link from "next/link"
 import { ArrowLeft, BookOpen } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { PageHeader } from "@/components/ui/page-header"
-import { AdminTestSeriesEditor } from "@/components/admin-test-series-editor"
+import { AdminTestSeriesEditor } from "@/components/admin/test-series/admin-test-series-editor"
 
 export default function CreateTestSeriesPage() {
   return (

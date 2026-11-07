@@ -23,14 +23,9 @@ export async function POST(req: Request) {
 
     const dbConnected = await isDatabaseConnected()
     if (!dbConnected) {
-      // In dev mode before DB is connected, inform user gracefully
       return NextResponse.json(
-        {
-          success: true,
-          message:
-            "Registration recorded (Database offline dev mode). You can sign in with demo credentials or configure PostgreSQL.",
-        },
-        { status: 201 }
+        { error: "Database temporarily unavailable. Please try again later." },
+        { status: 503 }
       )
     }
 
@@ -88,12 +83,16 @@ export async function POST(req: Request) {
         },
       })
 
-      await sendVerificationEmail({
+      const dispatch = await sendVerificationEmail({
         to: normalizedEmail,
         name,
         rawToken,
         expiresInHours: 24,
       })
+
+      if (!dispatch.success) {
+        console.error("[Register API] sendVerificationEmail unsuccessful:", dispatch.error)
+      }
     } catch (verifyErr) {
       console.error("[Register API] Failed to send verification email:", verifyErr)
     }

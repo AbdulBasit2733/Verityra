@@ -3,6 +3,8 @@
 ## Core Rules & Skill Integration
 This project operates under the **Verityra Autonomous Agent Instruction & Skill Orchestration Matrix**. For all user interactions, adhere strictly to the protocols defined in [AGENTS.md](./AGENTS.md).
 
+Start with [docs/ai/README.md](./docs/ai/README.md). `AGENTS.md` is the canonical cross-agent contract; this file is only the Claude Code entry point.
+
 ## Available Agent Skills
 - **Local Workspace Skills (`.agents/skills/`)**:
   - `brand`: Tone of voice, visual identity standards, asset validation.

@@ -246,62 +246,7 @@ async function main() {
   })
   console.log(`Administrator provisioned: ${admin.email}`)
 
-  // 2. Provision Demo Student
-  const studentEmail = "student@verityra.com"
-  const studentPassword = "StudentSecurePassword123!"
-  const studentPasswordHash = await bcrypt.hash(studentPassword, 12)
-
-  const student = await prisma.user.upsert({
-    where: { email: studentEmail },
-    update: {},
-    create: {
-      name: "Aarav Sharma",
-      email: studentEmail,
-      passwordHash: studentPasswordHash,
-      role: Role.STUDENT,
-      status: UserStatus.ACTIVE,
-      emailVerified: new Date(),
-      profile: {
-        create: {
-          educationLevel: "Senior Secondary / Aspirant",
-          institution: "Delhi Public School / State Board",
-          targetExam: "CBSE Boards / Competitive",
-        },
-      },
-    },
-  })
-  console.log(`Demo Student provisioned: ${student.email}`)
-
-  // 2b. Provision deterministic student fixtures for admin/list/table tests.
-  // These upserts are safe to run repeatedly and use a dedicated seed domain.
-  const testStudentPasswordHash = await bcrypt.hash("StudentTestPassword123!", 12)
-  const testStudents = await Promise.all(
-    Array.from({ length: 10 }, async (_, index) => {
-      const number = String(index + 1).padStart(2, "0")
-      return prisma.user.upsert({
-        where: { email: `test.student${number}@seed.verityra.com` },
-        update: {},
-        create: {
-          name: `Test Student ${number}`,
-          email: `test.student${number}@seed.verityra.com`,
-          passwordHash: testStudentPasswordHash,
-          role: Role.STUDENT,
-          status: UserStatus.ACTIVE,
-          emailVerified: new Date(),
-          profile: {
-            create: {
-              educationLevel: "Seeded test candidate",
-              institution: "Verityra QA Fixtures",
-              targetExam: "Admin panel testing",
-            },
-          },
-        },
-      })
-    })
-  )
-  console.log(`Test students provisioned: ${testStudents.length}`)
-
-  // 3. Seed Existing Base Series (UPSC & State PSC)
+  // 2. Seed Existing Base Series (UPSC & State PSC)
   const baseSeries = [
     {
       title: "UPSC Civil Services General Studies Paper I Mock",
@@ -428,51 +373,6 @@ async function main() {
     }
 
     console.log(`Seeded test series: ${testSeries.title} (${testSeries.slug})`)
-  }
-
-  // 4. Register demo student for the 10th Mathematics test as well as UPSC mock
-  const maths10th = await prisma.testSeries.findUnique({
-    where: { slug: "cbse-class-10-mathematics-mock-series" },
-  })
-
-  if (maths10th) {
-    await prisma.testRegistration.upsert({
-      where: {
-        userId_testSeriesId: {
-          userId: student.id,
-          testSeriesId: maths10th.id,
-        },
-      },
-      update: {},
-      create: {
-        userId: student.id,
-        testSeriesId: maths10th.id,
-        status: RegistrationStatus.ACTIVE,
-        attemptsUsed: 0,
-        maxAttempts: 3,
-      },
-    })
-    console.log(`Registered demo student for Class 10 Mathematics mock.`)
-
-    for (const testStudent of testStudents) {
-      await prisma.testRegistration.upsert({
-        where: {
-          userId_testSeriesId: {
-            userId: testStudent.id,
-            testSeriesId: maths10th.id,
-          },
-        },
-        update: {},
-        create: {
-          userId: testStudent.id,
-          testSeriesId: maths10th.id,
-          status: RegistrationStatus.ACTIVE,
-          attemptsUsed: 0,
-          maxAttempts: 3,
-        },
-      })
-    }
-    console.log(`Registered ${testStudents.length} test students for Class 10 Mathematics mock.`)
   }
 
   console.log("Database seed complete.")

@@ -1,6 +1,6 @@
 import { requireAdmin } from "@/lib/auth-guard"
 import { getAdminProfileAction } from "@/actions/auth-actions"
-import { AdminProfileClient } from "@/components/admin-profile-client"
+import { AdminProfileClient } from "@/components/admin/profile/admin-profile-client"
 
 export const dynamic = "force-dynamic"
 

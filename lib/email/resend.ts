@@ -84,6 +84,29 @@ export async function sendEmail(payload: EmailPayload): Promise<EmailDispatchRes
     })
 
     if (error) {
+      const isSandboxRestriction =
+        (error as any)?.statusCode === 403 ||
+        (error as any)?.statusCode === 422 ||
+        error.message?.includes("testing emails to your own email address") ||
+        error.message?.includes("Invalid `to` field")
+
+      // In non-production/dev environments, don't let Resend sandbox limitation block developers
+      if (isSandboxRestriction && process.env.NODE_ENV !== "production") {
+        const recipient = Array.isArray(payload.to) ? payload.to.join(", ") : payload.to
+        console.warn(`[Email:SandboxNotice] Resend is restricted to sending to account owner email when unverified domain (onboarding@resend.dev) is used.`)
+        console.warn(`[Email:SandboxNotice] Recipient was: ${recipient}`)
+        console.log(`[Email:SimulationFallback] To: ${recipient} | Subject: ${payload.subject}`)
+        if (payload.previewUrl) {
+          console.log(`[Email:SimulationFallback] Action URL: ${payload.previewUrl}`)
+        }
+        return {
+          success: true,
+          simulated: true,
+          id: `sim_sandbox_${Date.now()}`,
+          error: error.message,
+        }
+      }
+
       console.error("[Email:ResendError]", error)
       return {
         success: false,
@@ -97,6 +120,19 @@ export async function sendEmail(payload: EmailPayload): Promise<EmailDispatchRes
       id: data?.id,
     }
   } catch (err: any) {
+    if (process.env.NODE_ENV !== "production") {
+      const recipient = Array.isArray(payload.to) ? payload.to.join(", ") : payload.to
+      console.warn(`[Email:DevFallback] Unexpected Resend failure: ${err?.message || err}. Falling back to simulation for: ${recipient}`)
+      if (payload.previewUrl) {
+        console.log(`[Email:DevFallback] Action URL: ${payload.previewUrl}`)
+      }
+      return {
+        success: true,
+        simulated: true,
+        id: `sim_dev_${Date.now()}`,
+        error: err?.message,
+      }
+    }
     console.error("[Email:UnexpectedError]", err)
     return {
       success: false,

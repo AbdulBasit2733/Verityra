@@ -56,6 +56,10 @@ export async function POST(req: Request) {
       expiresInMinutes: 60,
     })
 
+    if (!dispatch.success) {
+      console.error("[Forgot Password API] sendPasswordResetEmail unsuccessful:", dispatch.error)
+    }
+
     return NextResponse.json({
       ...genericResponse,
       devResetUrl: process.env.NODE_ENV === "development" ? dispatch.resetUrl : undefined,

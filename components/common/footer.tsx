@@ -33,7 +33,7 @@ export function Footer({
               <ul className="mt-3 space-y-2 text-sm text-slate-600">
                 <li>
                   <Link className="hover:text-[#1E55C7]" href="/tests">
-                    Explore test series
+                    Test Series
                   </Link>
                 </li>
                 <li>
@@ -46,7 +46,7 @@ export function Footer({
                     className="hover:text-[#1E55C7]"
                     href="/question-papers"
                   >
-                    Question papers
+                    Resources
                   </Link>
                 </li>
                 <li>
@@ -173,7 +173,7 @@ export function Footer({
                   href="/tests"
                   className="inline-block py-0.5 transition-colors hover:text-white"
                 >
-                  Explore Tests
+                  Test Series
                 </Link>
               </li>
               <li>
@@ -189,7 +189,7 @@ export function Footer({
                   href="/question-papers"
                   className="inline-block py-0.5 transition-colors hover:text-white"
                 >
-                  Question Papers
+                  Resources
                 </Link>
               </li>
               <li>

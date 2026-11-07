@@ -9,7 +9,6 @@ import {
 } from "../lib/validations/auth"
 import { Role } from "@prisma/client"
 import { resolvePostLoginTarget } from "../lib/auth-routing"
-import { canProvisionDevelopmentAdmin } from "../lib/auth-guard"
 
 export function runAuthTests() {
   const suite = new TestSuite("Module: Authentication & Identity")
@@ -150,39 +149,6 @@ export function runAuthTests() {
   suite.test("RBAC: Role enumeration defines explicit STUDENT and ADMIN values", () => {
     assert.equal(Role.STUDENT, "STUDENT")
     assert.equal(Role.ADMIN, "ADMIN")
-  })
-
-  suite.test("RBAC: Development admin provisioning requires the exact configured fallback identity", () => {
-    const sessionUser = {
-      id: "admin-demo-user-id",
-      email: "admin@example.com",
-      role: Role.ADMIN,
-    }
-
-    assert.equal(
-      canProvisionDevelopmentAdmin(
-        sessionUser,
-        { email: " ADMIN@example.com ", password: "configured-password" },
-        "development"
-      ),
-      true
-    )
-    assert.equal(
-      canProvisionDevelopmentAdmin(sessionUser, { email: "admin@example.com", password: "configured-password" }, "production"),
-      false
-    )
-    assert.equal(
-      canProvisionDevelopmentAdmin(sessionUser, { email: "other@example.com", password: "configured-password" }, "development"),
-      false
-    )
-    assert.equal(
-      canProvisionDevelopmentAdmin(sessionUser, { email: "admin@example.com" }, "development"),
-      false
-    )
-    assert.equal(
-      canProvisionDevelopmentAdmin({ ...sessionUser, role: Role.STUDENT }, { email: "admin@example.com", password: "configured-password" }, "development"),
-      false
-    )
   })
 
   suite.test("RBAC: Admin login target resolution routes to /admin and rejects student panel callback", () => {

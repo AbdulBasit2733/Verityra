@@ -1,6 +1,6 @@
 import { getCachedLeaderboard } from "@/lib/cache"
-import { Badge } from "@/components/ui/badge"
 import { LeaderboardClient } from "@/components/leaderboard-client"
+import { Trophy } from "lucide-react"
 
 // Enable ISR with 5-minute revalidation (matches cache TTL)
 export const revalidate = 300
@@ -9,26 +9,24 @@ export default async function LeaderboardPage() {
   const rankings = await getCachedLeaderboard()
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50/60 dark:bg-[#0B1120]">
-      <main className="flex-1 py-12 lg:py-16">
-        <div className="mx-auto max-w-7xl space-y-10 px-4 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-2xl space-y-3 text-center">
-            <Badge className="border border-blue-200 bg-blue-50 px-3.5 py-1 text-xs font-bold text-[#2A6AED] dark:border-blue-900 dark:bg-blue-950/60 dark:text-blue-400">
-              Live Official Rankings
-            </Badge>
-            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl dark:text-slate-100">
-              Platform Leaderboard
+    <main className="min-h-screen bg-background">
+      <div className="relative overflow-hidden bg-[radial-gradient(circle_at_88%_0%,rgb(42_106_237/0.14),transparent_34%)]">
+        <div aria-hidden className="pointer-events-none absolute -right-24 top-12 h-72 w-72 rounded-full border border-primary/10 bg-primary/[0.04]" />
+        <div aria-hidden className="pointer-events-none absolute right-16 top-28 h-40 w-40 rounded-full border border-dashed border-primary/15" />
+        <div aria-hidden className="pointer-events-none absolute left-[-8rem] top-[23rem] h-64 w-64 rounded-full border border-primary/10" />
+        <div className="ui-page relative space-y-10 py-8 sm:space-y-12 sm:py-12 lg:py-16">
+          <header className="flex flex-col justify-center items-center space-y-4">
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/[0.07] px-3.5 py-2 text-xs font-bold uppercase tracking-[0.14em] text-primary">
+              <Trophy className="h-4 w-4" aria-hidden />
+              Verityra rankings
+            </div>
+            <h1 className="text-center font-heading text-4xl font-extrabold tracking-[-0.04em] text-foreground sm:text-6xl">
+              Progress worth putting on record.
             </h1>
-            <p className="text-sm text-slate-500 sm:text-base dark:text-slate-400">
-              Rankings computed exclusively from finalized, published
-              handwritten answer sheet evaluations. Ties resolved by earliest
-              submission timestamp.
-            </p>
-          </div>
-
+          </header>
           <LeaderboardClient rankings={rankings} />
         </div>
-      </main>
-    </div>
+      </div>
+    </main>
   )
 }

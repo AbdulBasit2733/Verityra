@@ -48,6 +48,13 @@ Typography uses Plus Jakarta Sans for headings and UI text, with JetBrains Mono 
 - Authentication/recovery/access-state routes use their own shared responsive auth frames and never receive marketing chrome.
 - The root layout owns the sole `ThemeProvider`; auth shells reuse the global `ThemeToggle` and semantic theme tokens.
 
+### Role-based feature ownership
+
+- `components/admin/<feature>` contains governance-only interface modules for overview, payments, profile, students, submissions, and test series.
+- `components/student/<feature>` contains candidate modules for dashboard, profile, purchases, tests, and workspace.
+- `components/portal` owns authenticated shell structure shared by both roles. Desktop and mobile folders are used only because their navigation markup is intentionally different.
+- This organization does not alter server actions, route authorization, client payloads, or UI behavior.
+
 ## Interaction and accessibility
 
 - All interactive elements expose visible focus and non-color state cues.

@@ -48,74 +48,35 @@ export const authOptions: NextAuthOptions = {
         const normalizedEmail = credentials.email.toLowerCase().trim()
         const dbConnected = await isDatabaseConnected()
 
-        if (dbConnected) {
-          const user = await prisma.user.findUnique({
-            where: { email: normalizedEmail },
-          })
-
-          if (!user || !user.passwordHash) {
-            throw new Error("Invalid email or password.")
-          }
-
-          if (user.status === UserStatus.SUSPENDED) {
-            throw new Error("Your account has been suspended. Please contact support.")
-          }
-
-          const isValid = await bcrypt.compare(credentials.password, user.passwordHash)
-          if (!isValid) {
-            throw new Error("Invalid email or password.")
-          }
-
-          return {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            image: user.image,
-            role: user.role,
-            status: user.status,
-          }
+        if (!dbConnected) {
+          throw new Error("Database connection required. Please contact support if this issue persists.")
         }
 
-        // Demo / offline fallback ONLY in development
-        if (process.env.NODE_ENV === "development") {
-          const adminInitialEmail = process.env.ADMIN_INITIAL_EMAIL?.trim().toLowerCase()
-          const adminInitialPassword = process.env.ADMIN_INITIAL_PASSWORD
+        const user = await prisma.user.findUnique({
+          where: { email: normalizedEmail },
+        })
 
-          if (
-            adminInitialEmail &&
-            adminInitialPassword &&
-            normalizedEmail === adminInitialEmail &&
-            credentials.password === adminInitialPassword
-          ) {
-            return {
-              id: "admin-demo-user-id",
-              email: normalizedEmail,
-              name: process.env.ADMIN_INITIAL_NAME || "Verityra Admin (Local Dev)",
-              image: null,
-              role: Role.ADMIN,
-              status: UserStatus.ACTIVE,
-            }
-          }
-
-          if (
-            normalizedEmail === "student@verityra.com" &&
-            credentials.password === "StudentSecurePassword123!"
-          ) {
-            return {
-              id: "student-demo-user-id",
-              email: "student@verityra.com",
-              name: "Demo Student",
-              image: null,
-              role: Role.STUDENT,
-              status: UserStatus.ACTIVE,
-            }
-          }
-
-          throw new Error("Invalid email or password. (Database is currently offline, you can use demo credentials).")
+        if (!user || !user.passwordHash) {
+          throw new Error("Invalid email or password.")
         }
 
-        // In production, database connection is required
-        throw new Error("Database connection required. Please contact support if this issue persists.")
+        if (user.status === UserStatus.SUSPENDED) {
+          throw new Error("Your account has been suspended. Please contact support.")
+        }
+
+        const isValid = await bcrypt.compare(credentials.password, user.passwordHash)
+        if (!isValid) {
+          throw new Error("Invalid email or password.")
+        }
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          image: user.image,
+          role: user.role,
+          status: user.status,
+        }
       },
     }),
   ],

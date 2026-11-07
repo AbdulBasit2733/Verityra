@@ -1,7 +1,7 @@
 import { PaymentStatus } from "@prisma/client"
 import { requireStudent } from "@/lib/auth-guard"
 import { isDatabaseConnected, prisma } from "@/lib/prisma"
-import { StudentPurchaseRow, StudentPurchasesClient } from "@/components/student-purchases-client"
+import { StudentPurchaseRow, StudentPurchasesClient } from "@/components/student/purchases/student-purchases-client"
 
 export const dynamic = "force-dynamic"
 

@@ -4,7 +4,7 @@ import { prisma, isDatabaseConnected } from "@/lib/prisma"
 import {
   StudentWorkspaceClient,
   WorkspaceSubmissionItem,
-} from "@/components/student-workspace-client"
+} from "@/components/student/workspace/student-workspace-client"
 import { normalizePrivateFileUrl } from "@/lib/supabase"
 
 export const dynamic = "force-dynamic"

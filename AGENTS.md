@@ -65,6 +65,26 @@ When working on complex multi-faceted tasks, divide work among specialized subag
 - **`qa-engineer`**: Writes tests upfront following `test-driven-development`, validates edge cases, and executes CI runs.
 - **`reviewer`**: Audits changes for memory leaks, socket leaks, security vulnerabilities, and adherence to `AGENTS.md`.
 
+## 6. Canonical Codebase Map and Agent Workflow
+
+This file is the canonical instruction contract for Codex, Claude Code, Antigravity, and other coding agents. Read `docs/ai/README.md` before a non-trivial task; tool-specific root files only point back here.
+
+### Component ownership
+
+- `components/admin/<feature>/`: administrator-only feature modules. Keep payments, submissions, students, and test-series implementations isolated here.
+- `components/student/<feature>/`: candidate-only feature modules. Never import administrator-only UI or confidential evaluator data into this tree.
+- `components/portal/`: role-neutral portal shell, desktop/mobile layouts, and command palette.
+- `components/ui/`: primitives only. `components/common/`, `components/auth/`, `components/landing/`, and `components/shared/` remain cross-surface modules.
+- Create `desktop/` or `mobile/` folders only when markup or interaction differs materially. Keep ordinary responsive CSS colocated with the feature module.
+
+### Required task workflow
+
+1. Read the relevant files in `docs/ai/` and inspect the current implementation before changing it.
+2. Route skills by task: use Superpowers process skills for planning, debugging, TDD, and verification; GStack for reviews/QA; Ponytail only for intentionally minimal changes; workspace design skills for UI work.
+3. Preserve business invariants and public interfaces unless the user explicitly authorizes a contract change.
+4. Run the required quality gates from `docs/ai/quality-gates.md` and record factual results in `docs/qa/` before claiming completion.
+5. For non-trivial work, update the spec, plan, ADR, QA report, and handoff artifacts required by this file.
+
 ## Verityra UI Architecture Rules
 
 - Use the hybrid editorial brand system: Electric Sapphire `#2A6AED` is the primary accent; deep ink/slate surfaces and paper-white reading surfaces provide structure; crimson is reserved for destructive, error, and exam-warning semantics.

@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { useState } from "react"
+import { usePathname } from "next/navigation"
 import { useSession, signOut } from "next-auth/react"
 import {
   ArrowRight,
@@ -23,10 +24,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { ThemeToggle } from "@/components/theme-toggle"
 
 const navigation = [
   { label: "Test Series", href: "/tests" },
+  { label: "Leaderboard", href: "/leaderboard" },
   { label: "How It Works", href: "/#how-it-works" },
   { label: "Resources", href: "/question-papers" },
 ]
@@ -37,6 +38,7 @@ export function Navbar({
   appearance?: "default" | "light"
 }) {
   const { data: session } = useSession()
+  const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const isAdmin = session?.user?.role === "ADMIN"
   const isLightAppearance = appearance === "light"
@@ -71,7 +73,8 @@ export function Navbar({
             <Link
               key={item.label}
               href={item.href}
-              className={`inline-flex h-11 items-center gap-1 rounded-lg px-4 text-[15px] font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-[#2A6AED] focus-visible:outline-none ${isLightAppearance ? "text-slate-700 hover:bg-blue-50 hover:text-[#1E55C7]" : "text-slate-700 hover:bg-blue-50 hover:text-[#1E55C7] dark:text-slate-200 dark:hover:bg-blue-950/50 dark:hover:text-blue-200"}`}
+              aria-current={pathname === item.href ? "page" : undefined}
+              className={`inline-flex h-11 items-center gap-1 rounded-lg px-4 text-[15px] font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-[#2A6AED] focus-visible:outline-none ${pathname === item.href ? "bg-blue-50 text-[#1E55C7] dark:bg-blue-950/50 dark:text-blue-200" : isLightAppearance ? "text-slate-700 hover:bg-blue-50 hover:text-[#1E55C7]" : "text-slate-700 hover:bg-blue-50 hover:text-[#1E55C7] dark:text-slate-200 dark:hover:bg-blue-950/50 dark:hover:text-blue-200"}`}
             >
               {item.label}
             </Link>
@@ -79,7 +82,6 @@ export function Navbar({
         </nav>
 
         <div className="hidden items-center gap-3 lg:flex">
-          {!isLightAppearance && <ThemeToggle />}
           {session ? (
             <div className="flex items-center gap-3">
               <Link href={isAdmin ? "/admin" : "/student/dashboard"}>
@@ -171,7 +173,6 @@ export function Navbar({
         </div>
 
         <div className="flex items-center gap-2 lg:hidden">
-          {!isLightAppearance && <ThemeToggle />}
           <Button
             variant="ghost"
             size="icon"
@@ -198,7 +199,8 @@ export function Navbar({
                 key={item.label}
                 href={item.href}
                 onClick={closeMobileMenu}
-                className={`flex min-h-11 items-center justify-between rounded-lg px-3 text-base font-semibold ${isLightAppearance ? "text-slate-700 hover:bg-blue-50 hover:text-[#1E55C7]" : "text-slate-700 hover:bg-blue-50 hover:text-[#1E55C7] dark:text-slate-200 dark:hover:bg-blue-950/50"}`}
+                aria-current={pathname === item.href ? "page" : undefined}
+                className={`flex min-h-11 items-center justify-between rounded-lg px-3 text-base font-semibold ${pathname === item.href ? "bg-blue-50 text-[#1E55C7] dark:bg-blue-950/50 dark:text-blue-200" : isLightAppearance ? "text-slate-700 hover:bg-blue-50 hover:text-[#1E55C7]" : "text-slate-700 hover:bg-blue-50 hover:text-[#1E55C7] dark:text-slate-200 dark:hover:bg-blue-950/50"}`}
               >
                 {item.label}
               </Link>

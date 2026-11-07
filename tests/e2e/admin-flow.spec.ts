@@ -15,7 +15,7 @@ import { test, expect } from '@playwright/test'
 
 test.describe('Admin Workflow & Management', () => {
   test.beforeEach(async ({ page }) => {
-    // Sign in as demo admin before each test
+    // Sign in as administrator before each test
     await page.goto('/signin')
     await page.fill('input[name="email"]', 'admin@verityra.com')
     await page.fill('input[name="password"]', 'AdminSecurePassword123!')

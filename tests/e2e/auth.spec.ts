@@ -63,10 +63,9 @@ test.describe('Authentication & Identity', () => {
   })
 
   test.describe('Sign-In Flows', () => {
-    test('should sign in with demo student credentials', async ({ page }) => {
+    test('should sign in with valid student credentials', async ({ page }) => {
       await page.goto('/signin')
 
-      // Use demo student credentials (development mode)
       await page.fill('input[name="email"]', 'student@verityra.com')
       await page.fill('input[name="password"]', 'StudentSecurePassword123!')
 
@@ -76,10 +75,9 @@ test.describe('Authentication & Identity', () => {
       await expect(page).toHaveURL(/\/student\/dashboard/, { timeout: 10000 })
     })
 
-    test('should sign in with demo admin credentials', async ({ page }) => {
+    test('should sign in with administrator credentials', async ({ page }) => {
       await page.goto('/signin')
 
-      // Use demo admin credentials (development mode)
       await page.fill('input[name="email"]', 'admin@verityra.com')
       await page.fill('input[name="password"]', 'AdminSecurePassword123!')
 

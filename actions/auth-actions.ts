@@ -37,7 +37,7 @@ export async function registerStudentAction(formData: {
   email: string
   password: string
   confirmPassword: string
-}): Promise<ActionResult> {
+}): Promise<ActionResult<{ devVerificationUrl?: string }>> {
   const parsed = registerSchema.safeParse(formData)
   if (!parsed.success) {
     const errorMsg = parsed.error.issues[0]?.message || "Invalid input data."
@@ -57,13 +57,7 @@ export async function registerStudentAction(formData: {
 
   const dbConnected = await isDatabaseConnected()
   if (!dbConnected) {
-    if (process.env.NODE_ENV === "production") {
-      return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
-    }
-    return {
-      success: true,
-      message: "Registration received (PostgreSQL offline dev mode). Sign in using demo student or configure DATABASE_URL.",
-    }
+    return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
   }
 
   const existing = await prisma.user.findUnique({
@@ -104,6 +98,7 @@ export async function registerStudentAction(formData: {
   }
 
   // Generate verification token and dispatch welcome/verification email via Resend
+  let devVerificationUrl: string | undefined
   try {
     const rawToken = crypto.randomBytes(32).toString("hex")
     const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex")
@@ -121,12 +116,18 @@ export async function registerStudentAction(formData: {
       },
     })
 
-    await sendVerificationEmail({
+    const dispatch = await sendVerificationEmail({
       to: normalizedEmail,
       name,
       rawToken,
       expiresInHours: 24,
     })
+
+    devVerificationUrl = dispatch.verificationUrl
+
+    if (!dispatch.success) {
+      console.error("[Auth] Verification email dispatch was unsuccessful:", dispatch.error)
+    }
   } catch (emailErr) {
     console.error("[Auth] Failed to dispatch verification email on signup:", emailErr)
   }
@@ -134,6 +135,9 @@ export async function registerStudentAction(formData: {
   return {
     success: true,
     message: "Your account has been created successfully. We have sent a verification link to your email.",
+    ...(process.env.NODE_ENV === "development" && {
+      data: { devVerificationUrl },
+    }),
   }
 }
 
@@ -181,14 +185,18 @@ export async function requestPasswordResetAction(email: string): Promise<ActionR
         },
       })
 
-      await sendPasswordResetEmail({
+      const dispatch = await sendPasswordResetEmail({
         to: normalizedEmail,
         name: user.name,
         rawToken,
         expiresInMinutes: 60,
       })
 
-      const devResetUrl = `/reset-password?token=${rawToken}`
+      if (!dispatch.success) {
+        console.error("[Auth] Password reset email dispatch was unsuccessful:", dispatch.error)
+      }
+
+      const devResetUrl = dispatch.resetUrl || `/reset-password?token=${rawToken}`
 
       return {
         success: true,
@@ -443,6 +451,10 @@ export async function resendVerificationEmailAction(
     expiresInHours: 24,
   })
 
+  if (!dispatch.success) {
+    console.error("[Auth] Resend verification email dispatch was unsuccessful:", dispatch.error)
+  }
+
   return {
     success: true,
     message: "A fresh verification link has been sent to your email address.",
@@ -538,7 +550,7 @@ export async function getStudentProfileAction(): Promise<ActionResult<{
     return {
       success: true,
       data: {
-        name: user.name || "Demo Candidate",
+        name: user.name || "Candidate",
         email: user.email || "student@verityra.com",
         educationLevel: "Graduate / Aspirant",
         institution: "State University",

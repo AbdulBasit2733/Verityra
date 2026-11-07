@@ -7,6 +7,9 @@
 - `components/common/site-chrome.tsx`: one route-aware public navbar/footer owner; public pages do not import chrome individually.
 - `components/layout/auth/*`: shared responsive authentication frame; auth, admin, and student routes do not receive marketing chrome.
 - `components/layout/*` and `portal-shell.tsx`: route shells and portal navigation.
+- `components/portal/*`: role-neutral authenticated shell, command palette, and the intentionally distinct desktop/mobile portal layouts.
+- `components/admin/<feature>/*`: administrator feature modules, colocated by operational domain.
+- `components/student/<feature>/*`: candidate feature modules, colocated by workspace domain.
 - Route pages and feature clients: composition and domain-specific content only.
 
 ## Composition rules
@@ -18,6 +21,8 @@
 5. Loading, empty, error, and disabled states are part of every feature's design.
 6. Candidate-facing UI never receives evaluator-only instructions.
 7. `ThemeProvider` is mounted once from the root layout. Page and shell components may use `ThemeToggle`, but must not mount another provider.
+8. Data-table action columns use icon-only controls. Each control keeps an accessible name and uses the shared Shadcn-style tooltip to expose its action on hover and keyboard focus; visible text belongs in the tooltip, not the cell.
+9. Role feature modules import only their own role tree plus approved shared primitives. Device folders exist only when markup or interaction differs materially; Tailwind responsiveness stays in the feature component.
 
 ## Responsive rules
 

@@ -4,7 +4,7 @@ import {
   StudentDashboardClient,
   StudentRegistrationRow,
   StudentSubmissionRow,
-} from "@/components/student-dashboard-client"
+} from "@/components/student/dashboard/student-dashboard-client"
 
 export const dynamic = "force-dynamic"
 

@@ -1,6 +1,6 @@
 import { requireStudent } from "@/lib/auth-guard"
 import { getStudentProfileAction } from "@/actions/auth-actions"
-import { StudentProfileClient } from "@/components/student-profile-client"
+import { StudentProfileClient } from "@/components/student/profile/student-profile-client"
 
 export const dynamic = "force-dynamic"
 

@@ -22,6 +22,12 @@ The approved landing/auth refresh is implemented in the shared auth shell, auth 
 
 The landing composition was subsequently split into hero, preparation, exam-path, and progress sections. It uses CSS geometry, light-only presentation, and the existing test/signup destinations. Typecheck, focused ESLint, production build, and diff checks passed; evidence is recorded in `docs/qa/landing-page-components-verification.md`.
 
+Table action columns now use accessible icon-only controls with Shadcn-style tooltips across the administrator and student data tables. Dialog-backed payment actions preserve their existing behavior. Verification is recorded in `docs/qa/table-action-controls-verification.md`.
+
+Administrator and student components are now organized by role and feature, with the shared authenticated shell and intentional desktop/mobile portal variants under `components/portal`. Root agent instructions now point Codex, Claude Code, and Antigravity to the shared `docs/ai` handbook. Verification is recorded in `docs/qa/role-based-component-architecture-verification.md`; the unrelated role/portal ESLint baseline remains non-clean.
+
+The public leaderboard now uses an editorial Sapphire hero, ranking-standard panel, highlighted podium, metrics strip, and refreshed responsive result cards. Public navbar and footer platform labels are aligned and include Leaderboard. Verification is recorded in `docs/qa/leaderboard-ui-refresh-verification.md`.
+
 Public navigation/footer are now owned by route-aware `SiteChrome`, so marketing pages no longer duplicate imports and auth/portal routes receive no marketing chrome. Authentication uses one CSS-responsive sign-in/sign-up layout and a shared recovery/access frame with theme controls. `ThemeProvider` remains mounted once at the root. Verification evidence is in `docs/qa/shared-chrome-auth-layout-verification.md`.
 
 ## Verification evidence

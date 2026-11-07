@@ -9,7 +9,6 @@ import {
   UploadCloud,
 } from "lucide-react"
 
-import { ThemeToggle } from "@/components/theme-toggle"
 
 interface AuthPageLayoutProps {
   title: string
@@ -33,7 +32,6 @@ export function AuthPageLayout({
         <div className="relative z-10 flex items-center justify-between">
           <BrandMark />
           <div className="flex items-center gap-2">
-            <ThemeToggle className="h-11 w-11" />
             <Link
               href="/"
               className="inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-white/70 hover:text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none dark:text-slate-300 dark:hover:bg-slate-900/50"
@@ -112,7 +110,6 @@ export function AuthPageLayout({
           <div className="mb-6 flex items-center justify-between lg:hidden">
             <BrandMark compact />
             <div className="flex items-center gap-2">
-              <ThemeToggle className="h-11 w-11" />
               <Link
                 href="/"
                 className="inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold text-slate-700 hover:bg-white/70 hover:text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none dark:text-slate-200"

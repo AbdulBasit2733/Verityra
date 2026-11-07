@@ -200,3 +200,9 @@ The UI is organized into four shells: public discovery, authentication/recovery,
 The responsive contract is 375px, 768px, 1024px, and 1440px. Controls use 36px compact, 44px default, and 48–52px large heights; icon controls retain a 44px hit area. Light and dark themes must maintain readable contrast, visible borders, and equivalent interaction-state feedback. Loading, empty, error, filtered-empty, and permission states are required for every screen group.
 
 This visual work does not change authorization, candidate/admin isolation, evaluator-instruction confidentiality, payment/refund behavior, evaluation behavior, upload safety, immutable audit logging, or the three-attempt ceiling.
+
+## 8. Component Architecture and AI-Agent Navigation
+
+Role-specific UI follows a domain-first ownership model. Administrator components live under `components/admin/<feature>/`, student components live under `components/student/<feature>/`, and shared authenticated navigation lives under `components/portal/`. Device-specific folders are reserved for intentionally different desktop/mobile markup; responsive styling remains colocated with the owned feature.
+
+`AGENTS.md` is the canonical instruction contract for Codex, Claude Code, and Antigravity. The `docs/ai/` handbook supplies the repository map, feature boundaries, debugging runbook, UI/UX playbook, skill routing, and quality gates. Agents must route installed skills by task, preserve domain invariants, and record verification evidence before reporting completion.

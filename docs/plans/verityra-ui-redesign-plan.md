@@ -23,7 +23,8 @@
 
 ## Phase 3–6 — Screens
 
-- [ ] Redesign public catalog, detail, leaderboard, and question-paper screens.
+- [ ] Redesign public catalog, detail, and question-paper screens.
+- [x] Refresh the public leaderboard hierarchy and align navbar/footer destinations.
 - [ ] Redesign authentication and recovery states.
 - [ ] Redesign student dashboard, workspace, purchases, and profile.
 - [ ] Redesign admin overview, submissions, test-series, students, payments, and profile.

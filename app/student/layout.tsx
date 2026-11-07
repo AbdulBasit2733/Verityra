@@ -1,5 +1,5 @@
 import { requireStudent } from "@/lib/auth-guard"
-import { PortalShell } from "@/components/portal-shell"
+import { PortalShell } from "@/components/portal/portal-shell"
 
 export default async function StudentLayout({
   children,

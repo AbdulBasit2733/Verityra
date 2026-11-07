@@ -2,7 +2,7 @@ import { prisma, isDatabaseConnected } from "@/lib/prisma"
 import {
   AdminStudentRegistrationRow,
   AdminStudentsClient,
-} from "@/components/admin-students-client"
+} from "@/components/admin/students/admin-students-client"
 
 export const dynamic = "force-dynamic"
 

@@ -1,6 +1,6 @@
 import { requireStudent } from "@/lib/auth-guard"
 import { isDatabaseConnected, prisma } from "@/lib/prisma"
-import { StudentRegisteredTestsClient, RegisteredTestRow } from "@/components/student-registered-tests-client"
+import { StudentRegisteredTestsClient, RegisteredTestRow } from "@/components/student/tests/student-registered-tests-client"
 
 export const dynamic = "force-dynamic"
 

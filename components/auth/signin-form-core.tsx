@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Eye, EyeOff, Loader2, ArrowRight, ShieldCheck, User } from "lucide-react"
+import { Eye, EyeOff, Loader2, ArrowRight } from "lucide-react"
 import { resolvePostLoginTarget } from "@/lib/auth-guard"
 
 export interface SignInFormCoreProps {
@@ -60,12 +60,7 @@ export function SignInFormCore({ isMobile }: SignInFormCoreProps) {
       const freshSession = await getSession()
       const role = freshSession?.user?.role
       const paramCallback = searchParams.get("callbackUrl")
-      let targetUrl = resolvePostLoginTarget(role, paramCallback)
-
-      // Fallback for offline demo credentials if role was not yet in session
-      if (!role && email.toLowerCase().trim() === "admin@verityra.com") {
-        targetUrl = "/admin"
-      }
+      const targetUrl = resolvePostLoginTarget(role, paramCallback)
 
       router.push(targetUrl)
       router.refresh()
@@ -75,49 +70,8 @@ export function SignInFormCore({ isMobile }: SignInFormCoreProps) {
     }
   }
 
-  function fillDemoAdmin() {
-    setEmail("admin@verityra.com")
-    setPassword("AdminSecurePassword123!")
-    setError(null)
-  }
-
-  function fillDemoStudent() {
-    setEmail("student@verityra.com")
-    setPassword("StudentSecurePassword123!")
-    setError(null)
-  }
-
   return (
     <div className="w-full space-y-5">
-      {/* Demo Credentials Quick Switcher Pills */}
-      <div className="space-y-2 rounded-xl border border-border bg-slate-50/80 p-3.5 dark:bg-slate-900/70">
-        <div className="flex items-center justify-between text-xs font-semibold text-slate-600 dark:text-slate-400">
-          <span>Quick Demo Access:</span>
-          <span className="text-[10px] text-blue-600 dark:text-blue-400 font-mono">1-Click Autofill</span>
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={fillDemoAdmin}
-            className="h-9 rounded-lg border-border bg-white text-[11px] font-bold hover:border-[#2A6AED] hover:text-[#2A6AED] dark:bg-slate-800 dark:hover:text-blue-400"
-          >
-            <ShieldCheck className="mr-1 h-3.5 w-3.5 text-[#2A6AED] dark:text-blue-400 shrink-0" />
-            Demo Admin
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={fillDemoStudent}
-            className="h-9 rounded-lg border-border bg-white text-[11px] font-bold hover:border-[#2A6AED] hover:text-[#2A6AED] dark:bg-slate-800 dark:hover:text-blue-400"
-          >
-            <User className="mr-1 h-3.5 w-3.5 text-[#2A6AED] dark:text-blue-400 shrink-0" />
-            Demo Candidate
-          </Button>
-        </div>
-      </div>
 
       {error && (
         <Alert variant="destructive" role="alert" className="rounded-lg py-3 text-xs sm:text-sm">

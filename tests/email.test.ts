@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import crypto from "node:crypto"
 import { TestSuite } from "./test-utils"
 import {
+  getAppBaseUrl,
   isResendConfigured,
   renderEnrollmentReceiptEmail,
   renderEvaluationReadyEmail,
@@ -129,6 +130,16 @@ export function runEmailTests() {
     assert.equal(r3.allowed, true)
     assert.equal(r4.allowed, false)
     assert.ok(r4.retryAfterSeconds > 0)
+  })
+
+  suite.test("Configuration: getAppBaseUrl trims trailing slashes properly", () => {
+    const origUrl = process.env.NEXT_PUBLIC_APP_URL
+    try {
+      process.env.NEXT_PUBLIC_APP_URL = "https://verityra.com///"
+      assert.equal(getAppBaseUrl(), "https://verityra.com")
+    } finally {
+      process.env.NEXT_PUBLIC_APP_URL = origUrl
+    }
   })
 
   return suite.summary()

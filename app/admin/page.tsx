@@ -4,7 +4,7 @@ import {
   AdminAnalytics,
   AdminOverviewClient,
   DailyPoint,
-} from "@/components/admin-overview-client"
+} from "@/components/admin/overview/admin-overview-client"
 
 export const dynamic = "force-dynamic"
 

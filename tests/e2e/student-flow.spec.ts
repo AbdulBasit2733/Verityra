@@ -16,7 +16,7 @@ import path from 'path'
 
 test.describe('Complete Student Journey', () => {
   test.beforeEach(async ({ page }) => {
-    // Sign in as demo student before each test
+    // Sign in as student before each test
     await page.goto('/signin')
     await page.fill('input[name="email"]', 'student@verityra.com')
     await page.fill('input[name="password"]', 'StudentSecurePassword123!')

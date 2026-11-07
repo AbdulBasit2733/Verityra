@@ -27,6 +27,7 @@ export function SignUpFormCore({ isMobile }: SignUpFormCoreProps) {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
+  const [devVerificationUrl, setDevVerificationUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const redirectTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -76,10 +77,14 @@ export function SignUpFormCore({ isMobile }: SignUpFormCoreProps) {
       setSuccess(result.message || "Registration successful! You may now sign in.")
       setLoading(false)
 
-      if (redirectTimerRef.current) clearTimeout(redirectTimerRef.current)
-      redirectTimerRef.current = setTimeout(() => {
-        router.push("/signin")
-      }, 1500)
+      if (result.data?.devVerificationUrl) {
+        setDevVerificationUrl(result.data.devVerificationUrl)
+      } else {
+        if (redirectTimerRef.current) clearTimeout(redirectTimerRef.current)
+        redirectTimerRef.current = setTimeout(() => {
+          router.push("/signin")
+        }, 1500)
+      }
     } catch {
       setError("An unexpected server error occurred. Please try again.")
       setLoading(false)
@@ -99,6 +104,27 @@ export function SignUpFormCore({ isMobile }: SignUpFormCoreProps) {
           <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
           <AlertDescription>{success}</AlertDescription>
         </Alert>
+      )}
+
+      {devVerificationUrl && (
+        <div className="space-y-2 rounded-xl border border-blue-200 bg-blue-50/90 p-4 text-xs dark:border-blue-900/50 dark:bg-blue-950/40">
+          <p className="font-bold text-[#2A6AED] dark:text-blue-400">
+            Development Verification Link:
+          </p>
+          <a
+            href={devVerificationUrl}
+            className="font-mono text-xs break-all text-[#2A6AED] underline dark:text-blue-300"
+          >
+            {devVerificationUrl}
+          </a>
+          <div className="pt-1">
+            <Link href={devVerificationUrl}>
+              <Button size="sm" type="button" className="h-8 rounded-lg bg-[#2A6AED] text-xs font-semibold text-white hover:bg-[#1E55C7]">
+                Verify Email Now
+              </Button>
+            </Link>
+          </div>
+        </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">

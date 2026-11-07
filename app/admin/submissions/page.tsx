@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma"
 import {
   AdminSubmissionRow,
   AdminSubmissionsClient,
-} from "@/components/admin-submissions-client"
+} from "@/components/admin/submissions/admin-submissions-client"
 import { normalizePrivateFileUrl } from "@/lib/supabase"
 
 export const dynamic = "force-dynamic"

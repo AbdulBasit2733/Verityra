@@ -2,7 +2,7 @@ import { prisma, isDatabaseConnected } from "@/lib/prisma"
 import {
   AdminTestSeriesClient,
   AdminTestSeriesRow,
-} from "@/components/admin-test-series-client"
+} from "@/components/admin/test-series/admin-test-series-client"
 
 export const dynamic = "force-dynamic"
 
