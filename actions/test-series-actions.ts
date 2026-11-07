@@ -328,7 +328,7 @@ export async function uploadTestPaperAction(formData: FormData): Promise<ActionR
       modelAnswerUrl = modelUpload.url
     }
 
-    await prisma.testPaper.create({
+    const createdPaper = await prisma.testPaper.create({
       data: {
         testSeriesId,
         title,
@@ -351,7 +351,18 @@ export async function uploadTestPaperAction(formData: FormData): Promise<ActionR
 
     revalidatePath(`/admin/test-series/${testSeriesId}`)
     revalidatePath(`/tests/${testSeriesId}`)
-    return { success: true, message: "Question paper and rubric uploaded successfully." }
+    return {
+      success: true,
+      message: "Question paper and rubric uploaded successfully.",
+      data: {
+        paper: {
+          id: createdPaper.id,
+          title: createdPaper.title,
+          fileUrl: createdPaper.fileUrl,
+          maxMarks: createdPaper.maxMarks,
+        },
+      },
+    }
   } catch (error) {
     console.error("[TEST PAPER UPLOAD ERROR]", error)
     return { success: false, error: "Question paper upload failed. Verify storage configuration and try again." }
@@ -402,7 +413,7 @@ export async function uploadAnswerSheetTemplateAction(formData: FormData): Promi
       templateFile.type
     )
 
-    await prisma.answerSheetTemplate.create({
+    const createdTemplate = await prisma.answerSheetTemplate.create({
       data: {
         testSeriesId,
         title,
@@ -424,7 +435,19 @@ export async function uploadAnswerSheetTemplateAction(formData: FormData): Promi
 
     revalidatePath(`/admin/test-series/${testSeriesId}`)
     revalidatePath(`/tests/${testSeriesId}`)
-    return { success: true, message: "Answer sheet template uploaded successfully." }
+    return {
+      success: true,
+      message: "Answer sheet template uploaded successfully.",
+      data: {
+        template: {
+          id: createdTemplate.id,
+          title: createdTemplate.title,
+          description: createdTemplate.description,
+          fileUrl: createdTemplate.fileUrl,
+          templateRequired: createdTemplate.templateRequired,
+        },
+      },
+    }
   } catch (error) {
     console.error("[ANSWER SHEET TEMPLATE UPLOAD ERROR]", error)
     return { success: false, error: "Template upload failed. Verify storage configuration and try again." }

@@ -1,0 +1,10 @@
+"use client"
+
+import { RotateCcw, Search } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+
+export function EvaluationFilterBar({ query, status, series, seriesOptions, onQueryChange, onStatusChange, onSeriesChange, onReset }: { query: string; status: string; series: string; seriesOptions: Array<{ id: string; title: string }>; onQueryChange: (value: string) => void; onStatusChange: (value: string) => void; onSeriesChange: (value: string) => void; onReset: () => void }) {
+  return <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-3 shadow-card sm:flex-row sm:items-center"><div className="relative min-w-0 flex-1"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" /><Input value={query} onChange={(event) => onQueryChange(event.target.value)} placeholder="Search test series" aria-label="Search evaluations" className="h-11 pl-9" /></div><Select value={status} onValueChange={(value) => onStatusChange(value ?? "ALL")}><SelectTrigger className="h-11 w-full sm:w-40"><SelectValue placeholder="Status" /></SelectTrigger><SelectContent><SelectItem value="ALL">All statuses</SelectItem><SelectItem value="COMPLETED">Evaluated</SelectItem><SelectItem value="PENDING">In review</SelectItem><SelectItem value="FAILED">Needs attention</SelectItem></SelectContent></Select><Select value={series} onValueChange={(value) => onSeriesChange(value ?? "ALL")}><SelectTrigger className="h-11 w-full sm:w-56"><SelectValue placeholder="Test series" /></SelectTrigger><SelectContent><SelectItem value="ALL">All test series</SelectItem>{seriesOptions.map((option) => <SelectItem key={option.id} value={option.id}>{option.title}</SelectItem>)}</SelectContent></Select><Button type="button" variant="outline" className="h-11 shrink-0 gap-2" onClick={onReset}><RotateCcw className="h-4 w-4" aria-hidden="true" />Reset</Button></div>
+}

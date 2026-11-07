@@ -17,9 +17,13 @@ import {
   togglePublishResultsAction,
 } from "@/actions/test-series-actions"
 
-export function AdminTestDocumentForms({ testSeriesId }: { testSeriesId: string }) {
-  const router = useRouter()
+type PaperDocument = { id: string; title: string; fileUrl: string; maxMarks: number }
+type TemplateDocument = { id: string; title: string; description?: string | null; fileUrl: string; templateRequired: boolean }
+
+export function AdminTestDocumentForms({ testSeriesId, initialPapers = [], initialTemplates = [] }: { testSeriesId: string; initialPapers?: PaperDocument[]; initialTemplates?: TemplateDocument[] }) {
   const { showError } = useGlobalError()
+  const [papers, setPapers] = useState<PaperDocument[]>(initialPapers)
+  const [templates, setTemplates] = useState<TemplateDocument[]>(initialTemplates)
 
   // Paper form states
   const [paperTitle, setPaperTitle] = useState("Main Examination Question Paper")
@@ -35,8 +39,7 @@ export function AdminTestDocumentForms({ testSeriesId }: { testSeriesId: string 
   const [templateFile, setTemplateFile] = useState<File | null>(null)
   const [templateLoading, setTemplateLoading] = useState(false)
 
-  async function handlePaperUpload(e: React.FormEvent) {
-    e.preventDefault()
+  async function handlePaperUpload() {
     if (!paperFile) return
     setPaperLoading(true)
 
@@ -54,7 +57,8 @@ export function AdminTestDocumentForms({ testSeriesId }: { testSeriesId: string 
           description: res.message || `"${paperTitle}" attached to test series.`,
         })
         setPaperFile(null)
-        router.refresh()
+        const uploadData = "data" in res ? res.data as { paper?: PaperDocument } : undefined
+        if (uploadData?.paper) setPapers((current) => [...current, uploadData.paper as PaperDocument])
       } else {
         showError({
           title: "Question Paper Upload Failed",
@@ -73,8 +77,7 @@ export function AdminTestDocumentForms({ testSeriesId }: { testSeriesId: string 
     }
   }
 
-  async function handleTemplateUpload(e: React.FormEvent) {
-    e.preventDefault()
+  async function handleTemplateUpload() {
     if (!templateFile) return
     setTemplateLoading(true)
 
@@ -92,7 +95,8 @@ export function AdminTestDocumentForms({ testSeriesId }: { testSeriesId: string 
           description: res.message || `"${templateTitle}" attached for candidates.`,
         })
         setTemplateFile(null)
-        router.refresh()
+        const uploadData = "data" in res ? res.data as { template?: TemplateDocument } : undefined
+        if (uploadData?.template) setTemplates((current) => [...current, uploadData.template as TemplateDocument])
       } else {
         showError({
           title: "Template Upload Failed",
@@ -125,7 +129,7 @@ export function AdminTestDocumentForms({ testSeriesId }: { testSeriesId: string 
           </p>
         </div>
 
-        <form onSubmit={handlePaperUpload} className="space-y-3.5">
+        <div role="group" aria-label="Upload question paper and rubric" className="space-y-3.5">
           <div>
             <Label className="text-xs font-bold text-[#0F172A]">Paper Title</Label>
             <Input
@@ -158,7 +162,8 @@ export function AdminTestDocumentForms({ testSeriesId }: { testSeriesId: string 
           </div>
 
           <Button
-            type="submit"
+            type="button"
+            onClick={handlePaperUpload}
             disabled={!paperFile || paperLoading}
             className="w-full bg-[#2A6AED] hover:bg-[#1E55C7] text-white text-xs sm:text-sm font-semibold h-10 rounded-lg"
           >
@@ -169,7 +174,7 @@ export function AdminTestDocumentForms({ testSeriesId }: { testSeriesId: string 
             )}
             Upload Paper & Rubric
           </Button>
-        </form>
+        </div>
       </div>
 
       {/* Upload Answer Sheet Template — Flat Section */}
@@ -184,7 +189,7 @@ export function AdminTestDocumentForms({ testSeriesId }: { testSeriesId: string 
           </p>
         </div>
 
-        <form onSubmit={handleTemplateUpload} className="space-y-3.5">
+        <div role="group" aria-label="Upload answer sheet template" className="space-y-3.5">
           <div>
             <Label className="text-xs font-bold text-[#0F172A]">Template Title</Label>
             <Input
@@ -219,7 +224,8 @@ export function AdminTestDocumentForms({ testSeriesId }: { testSeriesId: string 
           </div>
 
           <Button
-            type="submit"
+            type="button"
+            onClick={handleTemplateUpload}
             disabled={!templateFile || templateLoading}
             className="w-full bg-[#2A6AED] hover:bg-[#1E55C7] text-white text-xs sm:text-sm font-semibold h-10 rounded-lg"
           >
@@ -230,10 +236,18 @@ export function AdminTestDocumentForms({ testSeriesId }: { testSeriesId: string 
             )}
             Upload Printable Template
           </Button>
-        </form>
+        </div>
+      </div>
+      <div className="col-span-full grid grid-cols-1 gap-6 border-t border-slate-200 pt-6 md:grid-cols-2">
+        <AttachedDocumentList title={`Attached Question Papers (${papers.length})`} empty="No question papers uploaded yet." items={papers} linkLabel="View PDF" />
+        <AttachedDocumentList title={`Attached Margin Templates (${templates.length})`} empty="No answer templates uploaded yet." items={templates} linkLabel="View Template" template />
       </div>
     </div>
   )
+}
+
+function AttachedDocumentList({ title, empty, items, linkLabel, template = false }: { title: string; empty: string; items: Array<PaperDocument | TemplateDocument>; linkLabel: string; template?: boolean }) {
+  return <section className="space-y-3 border border-slate-200/80 bg-white p-5 dark:border-slate-800 dark:bg-slate-900"><h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">{title}</h3>{items.length ? <div className="divide-y divide-slate-100 border-t border-slate-100 dark:divide-slate-800 dark:border-slate-800">{items.map((item) => <div key={item.id} className="flex items-center justify-between gap-3 py-3 text-xs"><div><span className="block font-bold text-slate-900 dark:text-slate-100">{item.title}</span><span className="text-[11px] text-slate-500">{template ? ((item as TemplateDocument).templateRequired ? "Mandatory for students" : "Optional format") : `Max Marks: ${(item as PaperDocument).maxMarks}`}</span></div><a href={item.fileUrl} target="_blank" rel="noreferrer" className="shrink-0 font-bold text-[#2A6AED] hover:underline">{linkLabel}</a></div>)}</div> : <p className="text-xs text-slate-500">{empty}</p>}</section>
 }
 
 export function AdminPublishToggles({

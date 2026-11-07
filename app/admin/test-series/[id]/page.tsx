@@ -9,14 +9,33 @@ import { AdminTestSeriesEditor } from "@/components/admin/test-series/admin-test
 import { AdminTestDocumentForms } from "@/components/admin/test-series/admin-test-actions"
 import { ArrowLeft, BookOpen } from "lucide-react"
 import { TestSeriesStatus } from "@prisma/client"
-import { normalizePrivateFileUrl } from "@/lib/supabase"
 
 export const dynamic = "force-dynamic"
 
+type AdminPaper = { id: string; title: string; fileUrl: string; maxMarks: number }
+type AdminTemplate = { id: string; title: string; description: string | null; fileUrl: string; templateRequired: boolean }
+type AdminTestSeriesData = {
+  id: string
+  title: string
+  slug: string
+  description: string
+  price: number
+  maxMarks: number
+  durationMinutes: number
+  maxAttempts: number
+  status: TestSeriesStatus
+  isPublished: boolean
+  resultsPublished: boolean
+  studentInstructions: string
+  privateEvaluationInstructions: string
+  papers: AdminPaper[]
+  templates: AdminTemplate[]
+  _count: { registrations: number; submissions: number }
+}
 export default async function AdminTestSeriesDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const dbConnected = await isDatabaseConnected()
-  let testSeries: any = null
+  let testSeries: AdminTestSeriesData | null = null
 
   if (dbConnected) {
     testSeries = await prisma.testSeries.findUnique({
@@ -39,11 +58,22 @@ export default async function AdminTestSeriesDetailPage({ params }: { params: Pr
 
   const documents = (
     <div className="space-y-6">
-      <AdminTestDocumentForms testSeriesId={testSeries.id} />
-      <div className="grid grid-cols-1 gap-6 border-t border-slate-200 pt-6 md:grid-cols-2 dark:border-slate-800">
-        <DocumentList title={`Attached Question Papers (${testSeries.papers?.length || 0})`} empty="No question papers uploaded yet." items={testSeries.papers} linkLabel="View PDF" />
-        <DocumentList title={`Attached Margin Templates (${testSeries.templates?.length || 0})`} empty="No answer templates uploaded yet." items={testSeries.templates} linkLabel="View Template" template />
-      </div>
+      <AdminTestDocumentForms
+        testSeriesId={testSeries.id}
+        initialPapers={testSeries.papers.map((paper) => ({
+          id: paper.id,
+          title: paper.title,
+          fileUrl: paper.fileUrl,
+          maxMarks: paper.maxMarks,
+        }))}
+        initialTemplates={testSeries.templates.map((template) => ({
+          id: template.id,
+          title: template.title,
+          description: template.description,
+          fileUrl: template.fileUrl,
+          templateRequired: template.templateRequired,
+        }))}
+      />
     </div>
   )
 
@@ -76,14 +106,5 @@ export default async function AdminTestSeriesDetailPage({ params }: { params: Pr
         documents={documents}
       />
     </div>
-  )
-}
-
-function DocumentList({ title, empty, items, linkLabel, template = false }: { title: string; empty: string; items: any[]; linkLabel: string; template?: boolean }) {
-  return (
-    <section className="space-y-3 border border-slate-200/80 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
-      <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">{title}</h3>
-      {items?.length ? <div className="divide-y divide-slate-100 border-t border-slate-100 dark:divide-slate-800 dark:border-slate-800">{items.map((item: any) => <div key={item.id} className="flex items-center justify-between gap-3 py-3 text-xs"><div><span className="block font-bold text-slate-900 dark:text-slate-100">{item.title}</span><span className="text-[11px] text-slate-500">{template ? (item.templateRequired ? "Mandatory for students" : "Optional format") : `Max Marks: ${item.maxMarks}`}</span></div><a href={normalizePrivateFileUrl(item.fileUrl) || "#"} target="_blank" rel="noreferrer" className="shrink-0 font-bold text-[#2A6AED] hover:underline">{linkLabel}</a></div>)}</div> : <p className="text-xs text-slate-500">{empty}</p>}
-    </section>
   )
 }
