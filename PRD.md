@@ -10,12 +10,15 @@
 ## 1. Product Vision & Problem Statement
 
 ### 1.1. Problem Statement
+
 In competitive subjective examinations like the **UPSC Civil Services Examination (CSE) Mains, State Public Service Commissions (State PCS), and Judicial Services Examinations**, scoring is determined entirely by physical, handwritten pen-and-paper articulation:
+
 - **Physical Demands**: Candidates must handwrite 3,000–4,000 words across 20 complex analytical questions within a strict 3-hour limit, observing exact margin boundaries (25mm left, 20mm right) and integrating structured diagrams.
 - **Traditional Coaching Bottlenecks**: Offline evaluation institutes take 3 to 5 weeks to return evaluated booklets, offer generic feedback without question-by-question model rubric itemization, and provide no systematic multi-attempt progression.
 - **Existing Digital Limitations**: Generic test platforms rely on typed digital inputs, destroying the authentic muscle memory, pacing, and spatial layout vital for actual exam-hall success.
 
 ### 1.2. Product Vision
+
 **Verityra** provides an authentic, high-integrity subjective test-series ecosystem that preserves physical pen-on-paper handwriting while leveraging automated multimodal rubric evaluation and transparent educator governance to deliver **actionable, question-wise rubric feedback within minutes**.
 
 ---
@@ -26,20 +29,22 @@ In competitive subjective examinations like the **UPSC Civil Services Examinatio
 flowchart LR
     A["User Base"] --> B["Persona 1: Candidate (STUDENT)"]
     A --> C["Persona 2: Controller of Examinations (ADMIN)"]
-    
+
     B --> B1["Aspirants practicing for UPSC CSE / PCS Mains"]
     B --> B2["Demands authentic 3-attempt progression & detailed rubrics"]
-    
+
     C --> C1["Educators & Examination Administrators"]
     C --> C2["Oversees rubrics, flagged evaluations, and audit logs"]
 ```
 
 ### Persona 1: The Mains Aspirant (`Role.STUDENT`)
+
 - **Profile**: Civil Services candidate dedicating 8–12 hours daily to subjective answer writing.
 - **Pain Points**: Lacks rapid turnaround on handwritten answers; cannot identify exactly which rubric dimensions (keywords, flow, constitutional articles) lost partial marks.
 - **Goals**: Download printable margin-aligned A4 booklets; upload single-PDF scans; receive itemized question-by-question rubric scores across three progressive attempts; benchmark rank against competitors.
 
 ### Persona 2: Controller of Examinations / Evaluator (`Role.ADMIN`)
+
 - **Profile**: Senior civil services educator or administrator managing test papers, scoring keys, and evaluation integrity.
 - **Pain Points**: Overwhelmed by reviewing thousands of mundane scripts; needs automated first-pass evaluation with reliable escalation of uncertain or ambiguous handwriting.
 - **Goals**: Create test series with separate public candidate instructions and confidential grading rubrics; review scripts flagged with evaluation uncertainty; adjust scores with mandatory audit logging; grant audited extra attempts when justified.
@@ -76,11 +81,12 @@ journey
 ## 4. Detailed Functional Specifications
 
 ### 4.1. Module 1: Public Marketing & Examination Catalog
+
 - **Landing Page ([`app/page.tsx`](file:///d:/Abdul%20Basit/Freelance/Verityra/verityra4/app/page.tsx))**:
-  - Pixel-perfect SaaS hero section with authentic examination mockup showing authentic UPSC ruled sheet, 25mm red margins, handwritten response simulation, and live rubric scorecard.
-  - 4-Phase Exam Routine explainer (Download $\rightarrow$ Handwrite $\rightarrow$ Scan $\rightarrow$ Rectify).
-  - Three-Attempt Guarantee feature breakdown.
-  - `shadcn/ui` Accordion FAQ answering handwriting, margin sheet, and attempt policy queries.
+  - Componentized light-theme landing flow: hero, handwritten preparation workflow, exam paths, candidate progress/trust, and footer.
+  - Hero communicates handwritten exam practice and directs visitors to `/tests` or `#how-it-works`.
+  - Preparation section explains download, handwriting, and submission/feedback; exam-path cards link to the existing test catalog.
+  - CSS-built decorative geometry uses the existing Sapphire brand palette and semantic light-surface tokens.
   - **Invariant #1**: Absolutely zero mention of "AI", "automated grading", or "machine evaluation" on public marketing surfaces.
 - **Examination Catalog ([`app/tests/page.tsx`](file:///d:/Abdul%20Basit/Freelance/Verityra/verityra4/app/tests/page.tsx))**:
   - Categorized list of published subjective test series (Civil Services, State PCS, Judicial Services).
@@ -91,6 +97,7 @@ journey
   - Displays Candidate Name, Test Module, Awarded Score, Percentage, and Attempt Number used.
 
 ### 4.2. Module 2: Authentication & Account Security
+
 - **Registration ([`app/signup/page.tsx`](file:///d:/Abdul%20Basit/Freelance/Verityra/verityra4/app/signup/page.tsx))**:
   - Self-service candidate signup enforced with `Role.STUDENT`.
   - Password strength verification: $\ge 8$ characters, at least 1 uppercase letter, 1 number, and 1 special character.
@@ -101,6 +108,7 @@ journey
   - Secure token generation with SHA-256 hash storage and 60-minute expiry; zero email enumeration leaks.
 
 ### 4.3. Module 3: Candidate Portal & Test Workspace
+
 - **Dashboard ([`app/student/dashboard/page.tsx`](file:///d:/Abdul%20Basit/Freelance/Verityra/verityra4/app/student/dashboard/page.tsx))**:
   - Divided KPI strip: `Enrolled Test Series`, `Attempts Evaluated`, `Attempts Remaining`.
   - Tabbed `<DataTable />` views for **Enrolled Test Series** and **Submission History** with search, sorting, and pagination.
@@ -115,6 +123,7 @@ journey
   - Tabbed settings for Academic Focus (Target exam, institution, phone, bio), Security (Change password with criteria validation), and Three-Attempt Invariant review.
 
 ### 4.4. Module 4: Administrator Console
+
 - **Overview Dashboard ([`app/admin/page.tsx`](file:///d:/Abdul%20Basit/Freelance/Verityra/verityra4/app/admin/page.tsx))**:
   - Divided 4-metric KPI strip: `Total Candidates`, `Active Enrollments`, `Pending Reviews`, `Verified Revenue`.
   - Tabbed `<DataTable />` for **Recent Submissions** and **Immutable Audit Logs**.
@@ -132,6 +141,7 @@ journey
   - Identity management, escalation phone, security credential update, and platform invariant references.
 
 ### 4.5. Module 5: Payment Processing & Order Verification
+
 - **Razorpay Server Workflow**:
   - Server-created orders in INR currency.
   - Digital HMAC SHA-256 signature verification in `verifyPaymentAndEnrollAction`.
@@ -139,6 +149,7 @@ journey
   - Webhook listener for asynchronous reconciliation.
 
 ### 4.6. Module 6: Revenue Governance, 7-Day Refund Policy & Transaction Audit Trail
+
 - **Payments & Financials Console ([`app/admin/payments/page.tsx`](file:///d:/Abdul%20Basit/Freelance/Verityra/verityra4/app/admin/payments/page.tsx))**:
   - Unified revenue dashboard with 4 KPI metrics: Net Collected Revenue, Successful Orders, 7-Day Refund Claims, and Pending Inquiries.
   - Multi-tier filtering toolbar: date ranges, payment status, 7-day refund eligibility, and candidate name/email/order search.
@@ -158,17 +169,17 @@ journey
 
 ## 5. Non-Functional Requirements (NFRs)
 
-| Dimension | Specification | Verification Mechanism |
-|---|---|---|
-| **Security: Instruction Confidentiality** | `privateEvaluationInstructions` must never appear in student network payloads or client bundles. | Tested via `tests/test-series.test.ts`. |
-| **Security: Quota Atomicity** | Strict 3-attempt limit must withstand concurrent browser submissions. | Schema constraint `@@unique([registrationId, attemptNumber])` + `tests/submissions.test.ts`. |
-| **Financial Integrity: 7-Day Refund Policy** | Refunds blocked beyond 7 days; attempts forfeiture required if attempts used $> 0$. | Tested via `tests/payments.test.ts` (8 dedicated financial invariants). |
-| **Auditability: Immutable Ledger** | All payment and refund lifecycle events logged in append-only `PaymentLedger`. | Verified via schema relations and `tests/payments.test.ts`. |
-| **Performance: Server Rendering** | Server Component TTFB $< 300\text{ms}$ on broadband connections. | Edge-ready Server Actions and Turbopack bundle optimization. |
-| **Evaluation Latency** | Full 20-question multi-page PDF evaluation completed in $< 45\text{s}$. | Streaming multimodal parsing via Google Gemini 2.5 Flash. |
-| **Accessibility (a11y)** | WCAG AA compliance across both Light and Dark themes. | Accessible `@base-ui/react` primitives, visible focus rings, $\ge 4.5:1$ text contrast. |
-| **Reliability: Zero Attempt Burn** | Corrupt files or disconnected uploads must never consume an attempt. | Pre-storage file validation; tested via `tests/submissions.test.ts`. |
-| **Testing Coverage** | 100% pass rate across 42 critical domain invariants in 6 modular test suites. | Verified via `pnpm test` (`tests/run-all.ts`). |
+| Dimension                                    | Specification                                                                                    | Verification Mechanism                                                                       |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- |
+| **Security: Instruction Confidentiality**    | `privateEvaluationInstructions` must never appear in student network payloads or client bundles. | Tested via `tests/test-series.test.ts`.                                                      |
+| **Security: Quota Atomicity**                | Strict 3-attempt limit must withstand concurrent browser submissions.                            | Schema constraint `@@unique([registrationId, attemptNumber])` + `tests/submissions.test.ts`. |
+| **Financial Integrity: 7-Day Refund Policy** | Refunds blocked beyond 7 days; attempts forfeiture required if attempts used $> 0$.              | Tested via `tests/payments.test.ts` (8 dedicated financial invariants).                      |
+| **Auditability: Immutable Ledger**           | All payment and refund lifecycle events logged in append-only `PaymentLedger`.                   | Verified via schema relations and `tests/payments.test.ts`.                                  |
+| **Performance: Server Rendering**            | Server Component TTFB $< 300\text{ms}$ on broadband connections.                                 | Edge-ready Server Actions and Turbopack bundle optimization.                                 |
+| **Evaluation Latency**                       | Full 20-question multi-page PDF evaluation completed in $< 45\text{s}$.                          | Streaming multimodal parsing via Google Gemini 2.5 Flash.                                    |
+| **Accessibility (a11y)**                     | WCAG AA compliance across both Light and Dark themes.                                            | Accessible `@base-ui/react` primitives, visible focus rings, $\ge 4.5:1$ text contrast.      |
+| **Reliability: Zero Attempt Burn**           | Corrupt files or disconnected uploads must never consume an attempt.                             | Pre-storage file validation; tested via `tests/submissions.test.ts`.                         |
+| **Testing Coverage**                         | 100% pass rate across 42 critical domain invariants in 6 modular test suites.                    | Verified via `pnpm test` (`tests/run-all.ts`).                                               |
 
 ---
 
@@ -179,3 +190,13 @@ journey
 3. **Turnaround Velocity**: Automated evaluations delivered in $< 3\text{ minutes}$ from candidate PDF upload.
 4. **Audit Integrity**: $100\%$ of score overrides, attempt adjustments, and refunds logged with administrator ID, timestamp, and justification.
 5. **Refund Resolution Time**: $\le 24\text{ hours}$ for eligible 7-day refund claims processed directly through the admin console.
+
+## 7. UI Architecture & Design System
+
+Verityra uses a hybrid editorial interface. Electric Sapphire (`#2A6AED`) remains the primary brand accent and owns primary actions, selected states, and key progress highlights. Deep ink/slate surfaces, paper-white reading surfaces, ruled-paper textures, and restrained editorial contrast borrow the confidence of the approved red-noir reference without changing product semantics. Crimson is reserved for destructive, error, and exam-warning states.
+
+The UI is organized into four shells: public discovery, authentication/recovery, student workspace, and administrator governance. Shared primitives own buttons, cards, fields, tabs, dialogs, tables, badges, skeletons, page headers, and focus behavior. Pages compose those primitives rather than introducing one-off tokens.
+
+The responsive contract is 375px, 768px, 1024px, and 1440px. Controls use 36px compact, 44px default, and 48–52px large heights; icon controls retain a 44px hit area. Light and dark themes must maintain readable contrast, visible borders, and equivalent interaction-state feedback. Loading, empty, error, filtered-empty, and permission states are required for every screen group.
+
+This visual work does not change authorization, candidate/admin isolation, evaluator-instruction confidentiality, payment/refund behavior, evaluation behavior, upload safety, immutable audit logging, or the three-attempt ceiling.

@@ -6,10 +6,18 @@ import { useSearchParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, ArrowLeft, CheckCircle2, Eye, EyeOff } from "lucide-react"
 import { resetPasswordAction } from "@/actions/auth-actions"
+import { AuthPageFrame } from "@/components/layout/auth/auth-page-frame"
 
 function ResetPasswordForm() {
   const router = useRouter()
@@ -64,79 +72,96 @@ function ResetPasswordForm() {
   }
 
   return (
-    <Card className="border-slate-200/90 bg-white shadow-2xl shadow-blue-900/5 rounded-3xl p-2 sm:p-4">
+    <Card className="auth-form-surface p-2 sm:p-4">
       <CardHeader className="space-y-1.5 pb-6">
-        <CardTitle className="text-2xl font-black text-slate-900">Set New Password</CardTitle>
-        <CardDescription className="text-sm text-slate-500">
+        <CardTitle className="text-2xl font-black text-slate-900 dark:text-white">
+          Set New Password
+        </CardTitle>
+        <CardDescription className="text-sm text-slate-500 dark:text-slate-300">
           Choose a strong password with letters, numbers, and symbols
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {error && (
-          <Alert variant="destructive" className="py-3 text-sm rounded-xl">
+          <Alert variant="destructive" className="rounded-xl py-3 text-sm">
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
 
         {success && (
-          <Alert className="py-3 text-sm border-emerald-500 bg-emerald-50 text-emerald-800 rounded-xl">
-            <CheckCircle2 className="h-4 w-4 text-emerald-600 mr-2" />
+          <Alert className="rounded-xl border-emerald-500 bg-emerald-50 py-3 text-sm text-emerald-800">
+            <CheckCircle2 className="mr-2 h-4 w-4 text-emerald-600" />
             <AlertDescription>{success}</AlertDescription>
           </Alert>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <Label htmlFor="password" className="text-xs font-bold text-slate-900">
+            <Label
+              htmlFor="password"
+              className="text-xs font-bold text-slate-900 dark:text-slate-100"
+            >
               New Password
             </Label>
             <div className="relative mt-1.5">
               <Input
                 id="password"
                 type={showPassword ? "text" : "password"}
+                autoComplete="new-password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="border-slate-200 pr-12 text-sm h-12 rounded-xl focus-visible:ring-[#2A6AED]/20 focus-visible:border-[#2A6AED]"
+                className="auth-control h-11 pr-12 text-sm"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400 hover:text-slate-600"
               >
-                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                {showPassword ? (
+                  <EyeOff className="h-5 w-5" />
+                ) : (
+                  <Eye className="h-5 w-5" />
+                )}
               </button>
             </div>
           </div>
 
           <div>
-            <Label htmlFor="confirmPassword" className="text-xs font-bold text-slate-900">
+            <Label
+              htmlFor="confirmPassword"
+              className="text-xs font-bold text-slate-900 dark:text-slate-100"
+            >
               Confirm New Password
             </Label>
             <Input
               id="confirmPassword"
               type="password"
+              autoComplete="new-password"
               required
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Re-enter new password"
-              className="mt-1.5 border-slate-200 text-sm h-12 rounded-xl focus-visible:ring-[#2A6AED]/20 focus-visible:border-[#2A6AED]"
+              className="auth-control mt-1.5 h-11 text-sm"
             />
           </div>
 
           <Button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#2A6AED] hover:bg-[#1E55C7] text-white font-bold h-12 rounded-xl shadow-md shadow-blue-500/20 text-sm mt-2"
+            className="auth-primary-action mt-2 h-11 w-full text-sm shadow-md shadow-blue-500/20"
           >
-            {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             Reset & Save Password
           </Button>
         </form>
       </CardContent>
-      <CardFooter className="pt-2 justify-center">
-        <Link href="/signin" className="text-xs font-semibold text-slate-500 hover:text-[#2A6AED] flex items-center gap-1.5 transition-colors">
+      <CardFooter className="justify-center pt-2">
+        <Link
+          href="/signin"
+          className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 transition-colors hover:text-[#2A6AED]"
+        >
           <ArrowLeft className="h-3.5 w-3.5" />
           Back to Sign In
         </Link>
@@ -147,26 +172,35 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <div className="flex min-h-screen flex-col justify-center bg-slate-50/70 py-16 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <Link href="/" className="inline-flex items-center justify-center gap-3 mb-6 group">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#2A6AED] to-[#1D4ED8] text-white font-black text-2xl shadow-lg shadow-blue-500/25 transition-transform group-hover:scale-105">
+    <AuthPageFrame className="flex min-h-dvh flex-col justify-center py-10 sm:px-6 lg:px-8">
+      <div className="text-center sm:mx-auto sm:w-full sm:max-w-md">
+        <Link
+          href="/"
+          className="group mb-6 inline-flex items-center justify-center gap-3"
+        >
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#2A6AED] to-[#1D4ED8] text-2xl font-black text-white shadow-lg shadow-blue-500/25 transition-transform group-hover:scale-105">
             V
           </div>
-          <span className="font-heading text-3xl font-black tracking-tight text-slate-900 group-hover:text-[#2A6AED] transition-colors">
+          <span className="font-heading text-3xl font-black tracking-tight text-slate-900 transition-colors group-hover:text-[#2A6AED] dark:text-white">
             Verityra
           </span>
         </Link>
-        <h2 className="text-center text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+        <h2 className="text-center text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl dark:text-white">
           Create a new password
         </h2>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-lg px-4 sm:px-0">
-        <Suspense fallback={<div className="text-center py-12 text-sm text-slate-500">Loading form...</div>}>
+      <div className="mt-8 px-4 sm:mx-auto sm:w-full sm:max-w-lg sm:px-0">
+        <Suspense
+          fallback={
+            <div className="py-12 text-center text-sm text-slate-500">
+              Loading form...
+            </div>
+          }
+        >
           <ResetPasswordForm />
         </Suspense>
       </div>
-    </div>
+    </AuthPageFrame>
   )
 }

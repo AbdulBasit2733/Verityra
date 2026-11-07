@@ -1,8 +1,6 @@
 "use client"
 
-import * as React from "react"
-import { AuthDesktopLayout } from "./desktop/auth-desktop-layout"
-import { AuthMobileLayout } from "./mobile/auth-mobile-layout"
+import { AuthPageLayout } from "./auth-page-layout"
 
 export interface AuthShellProps {
   title: string
@@ -13,16 +11,8 @@ export interface AuthShellProps {
 
 export function AuthShell({ title, subtitle, mode, children }: AuthShellProps) {
   return (
-    <>
-      {/* 1. DEDICATED DESKTOP AUTH LAYOUT (Screen L: >= 1024px) */}
-      <AuthDesktopLayout title={title} subtitle={subtitle} mode={mode}>
-        {children}
-      </AuthDesktopLayout>
-
-      {/* 2. DEDICATED MOBILE & TABLET AUTH LAYOUT (Screens S & M: < 1024px) */}
-      <AuthMobileLayout title={title} subtitle={subtitle} mode={mode}>
-        {children}
-      </AuthMobileLayout>
-    </>
+    <AuthPageLayout title={title} subtitle={subtitle} mode={mode}>
+      {children}
+    </AuthPageLayout>
   )
 }

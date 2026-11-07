@@ -89,13 +89,13 @@ export function SignUpFormCore({ isMobile }: SignUpFormCoreProps) {
   return (
     <div className="w-full space-y-5">
       {error && (
-        <Alert variant="destructive" className="py-3 text-xs sm:text-sm rounded-xl">
+        <Alert variant="destructive" role="alert" className="rounded-lg py-3 text-xs sm:text-sm">
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
       {success && (
-        <Alert className="py-3 text-xs sm:text-sm rounded-xl border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-200">
+        <Alert role="status" className="rounded-lg border-emerald-300 bg-emerald-50 py-3 text-xs text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200 sm:text-sm">
           <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
           <AlertDescription>{success}</AlertDescription>
         </Alert>
@@ -109,12 +109,13 @@ export function SignUpFormCore({ isMobile }: SignUpFormCoreProps) {
           <Input
             id={`name-${isMobile ? "mobile" : "desktop"}`}
             type="text"
+            autoComplete="name"
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Ananya Sharma"
             disabled={loading}
-            className="h-11 sm:h-10 text-sm rounded-xl border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/60 focus:bg-white dark:focus:bg-slate-900"
+            className="auth-control h-11 bg-transparent text-sm"
           />
         </div>
 
@@ -125,12 +126,13 @@ export function SignUpFormCore({ isMobile }: SignUpFormCoreProps) {
           <Input
             id={`email-${isMobile ? "mobile" : "desktop"}`}
             type="email"
+            autoComplete="email"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="candidate@verityra.com"
             disabled={loading}
-            className="h-11 sm:h-10 text-sm rounded-xl border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/60 focus:bg-white dark:focus:bg-slate-900"
+            className="auth-control h-11 bg-transparent text-sm"
           />
         </div>
 
@@ -143,17 +145,18 @@ export function SignUpFormCore({ isMobile }: SignUpFormCoreProps) {
               <Input
                 id={`password-${isMobile ? "mobile" : "desktop"}`}
                 type={showPassword ? "text" : "password"}
+                autoComplete="new-password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••••••"
                 disabled={loading}
-                className="h-11 sm:h-10 text-sm pr-10 rounded-xl border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/60 focus:bg-white dark:focus:bg-slate-900 font-mono"
+                className="auth-control h-11 pr-10 text-sm font-mono"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 hover:bg-blue-50 hover:text-[#1E55C7] dark:hover:bg-blue-950/50 dark:hover:text-blue-200"
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -168,12 +171,13 @@ export function SignUpFormCore({ isMobile }: SignUpFormCoreProps) {
             <Input
               id={`confirm-password-${isMobile ? "mobile" : "desktop"}`}
               type={showPassword ? "text" : "password"}
+              autoComplete="new-password"
               required
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="••••••••••••"
               disabled={loading}
-              className="h-11 sm:h-10 text-sm rounded-xl border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/60 focus:bg-white dark:focus:bg-slate-900 font-mono"
+              className="auth-control h-11 text-sm font-mono"
             />
           </div>
         </div>
@@ -181,7 +185,7 @@ export function SignUpFormCore({ isMobile }: SignUpFormCoreProps) {
         <Button
           type="submit"
           disabled={loading}
-          className="w-full h-11 sm:h-11 rounded-xl bg-[#2A6AED] hover:bg-[#1E55C7] dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-bold text-xs sm:text-sm shadow-md shadow-blue-500/20 active:scale-[0.98] transition-all cursor-pointer mt-2"
+          className="auth-primary-action mt-2 w-full text-xs shadow-md shadow-blue-500/20 sm:text-sm"
         >
           {loading ? (
             <>

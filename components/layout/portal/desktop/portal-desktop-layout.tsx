@@ -102,7 +102,7 @@ export function PortalDesktopLayout({
       ========================================================= */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 bg-card border-r border-border z-40 select-none shadow-none transition-all duration-300 ease-in-out flex flex-col justify-between",
+          "fixed inset-y-0 left-0 bg-card border-r border-border z-40 select-none shadow-sm transition-[width] duration-200 ease-in-out flex flex-col justify-between",
           sidebarCollapsed ? "w-16" : "w-64"
         )}
       >
@@ -159,7 +159,7 @@ export function PortalDesktopLayout({
                         <Link
                           href={item.href}
                           className={cn(
-                            "flex items-center rounded-xl text-xs font-bold transition-all duration-150 group justify-center p-2.5 w-full cursor-pointer",
+                            "flex items-center rounded-lg text-xs font-bold transition-colors duration-150 group justify-center p-2.5 w-full cursor-pointer",
                             active
                               ? "bg-primary text-primary-foreground shadow-sm"
                               : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-slate-100"
@@ -187,7 +187,7 @@ export function PortalDesktopLayout({
                     key={item.href}
                     href={item.href}
                     className={cn(
-                      "flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all duration-150 group cursor-pointer",
+                      "flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-bold transition-colors duration-150 group cursor-pointer",
                       active
                         ? "bg-primary text-primary-foreground shadow-sm"
                         : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-slate-100"
@@ -355,7 +355,7 @@ export function PortalDesktopLayout({
               }
               readOnly
               onClick={() => setCommandPaletteOpen(true)}
-              className="w-full h-10 pl-10 pr-16 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 text-xs sm:text-sm text-slate-800 dark:text-slate-200 placeholder:text-slate-400 cursor-pointer hover:border-[#2A6AED]/30 hover:bg-white dark:hover:bg-slate-900 transition-all focus:outline-none focus:ring-2 focus:ring-[#2A6AED]/20"
+              className="w-full h-11 pl-10 pr-16 rounded-lg border border-border bg-muted/70 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground cursor-pointer hover:border-[#2A6AED]/50 hover:bg-card transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2A6AED]/30"
             />
             <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-0.5 px-1.5 py-0.5 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[10px] font-bold text-slate-400 dark:text-slate-500 shadow-2xs">
               <kbd className="font-mono">Ctrl</kbd>
@@ -371,7 +371,7 @@ export function PortalDesktopLayout({
               <Link href="/admin/test-series/new">
                 <Button
                   size="sm"
-                  className="h-9 px-3.5 rounded-xl bg-[#2A6AED] hover:bg-[#1E55C7] text-white text-xs font-semibold shadow-xs cursor-pointer"
+                  className="h-9 px-3.5 rounded-lg bg-[#2A6AED] hover:bg-[#1E55C7] text-white text-xs font-semibold shadow-xs cursor-pointer"
                 >
                   <Plus className="mr-1.5 h-3.5 w-3.5" />
                   Add New
@@ -381,7 +381,7 @@ export function PortalDesktopLayout({
               <Link href="/tests">
                 <Button
                   size="sm"
-                  className="h-9 px-3.5 rounded-xl bg-[#2A6AED] hover:bg-[#1E55C7] text-white text-xs font-semibold shadow-xs cursor-pointer"
+                  className="h-9 px-3.5 rounded-lg bg-[#2A6AED] hover:bg-[#1E55C7] text-white text-xs font-semibold shadow-xs cursor-pointer"
                 >
                   <Compass className="mr-1.5 h-3.5 w-3.5" />
                   Explore Tests
@@ -406,7 +406,7 @@ export function PortalDesktopLayout({
                   description: "All evaluation queues and security audits are up to date.",
                 })
               }}
-              className="relative h-9 w-9 rounded-xl border border-border bg-card flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors shadow-none cursor-pointer"
+              className="relative h-11 w-11 rounded-lg border border-border bg-card flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors shadow-none cursor-pointer"
               aria-label="View notifications"
             >
               <Bell className="h-4 w-4" />

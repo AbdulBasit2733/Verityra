@@ -64,3 +64,25 @@ When working on complex multi-faceted tasks, divide work among specialized subag
 - **`ui-designer`**: Enforces `.agents/skills/design-system` and produces pixel-perfect, accessible components.
 - **`qa-engineer`**: Writes tests upfront following `test-driven-development`, validates edge cases, and executes CI runs.
 - **`reviewer`**: Audits changes for memory leaks, socket leaks, security vulnerabilities, and adherence to `AGENTS.md`.
+
+## Verityra UI Architecture Rules
+
+- Use the hybrid editorial brand system: Electric Sapphire `#2A6AED` is the primary accent; deep ink/slate surfaces and paper-white reading surfaces provide structure; crimson is reserved for destructive, error, and exam-warning semantics.
+- Use semantic CSS tokens from `app/globals.css`. Do not add per-screen hardcoded colors, arbitrary radii, or one-off shadows when a token or primitive exists.
+- Use Plus Jakarta Sans for headings and UI text and JetBrains Mono for technical identifiers, audit metadata, and payment references.
+- Keep the 4/8px spacing rhythm. Standard controls are 36px compact, 44px default, and 48–52px large; icon controls retain a 44px hit area.
+- Every interactive control needs hover, pressed, disabled, and visible keyboard-focus states. Icon-only controls require accessible names.
+- Every route must account for loading, empty, error, filtered-empty, and permission states. Responsive behavior is verified at 375px, 768px, 1024px, and 1440px.
+- Respect reduced motion, readable contrast, semantic HTML, screen-reader labels, and non-color status cues.
+- UI redesigns must preserve candidate/admin isolation, private evaluator instruction confidentiality, the three-attempt ceiling, payment/refund invariants, upload safety, and immutable audit behavior.
+- Do not restore unrelated pre-existing deleted `.agents` files as part of UI work.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+## This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

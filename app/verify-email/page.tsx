@@ -27,6 +27,7 @@ import {
   resendVerificationEmailAction,
   verifyEmailAction,
 } from "@/actions/auth-actions"
+import { AuthPageFrame } from "@/components/layout/auth/auth-page-frame"
 
 function VerifyEmailContent() {
   const searchParams = useSearchParams()
@@ -34,19 +35,20 @@ function VerifyEmailContent() {
   const initialEmail = searchParams.get("email") || ""
 
   const [email, setEmail] = useState(initialEmail)
-  const [status, setStatus] = useState<"verifying" | "verified" | "error" | "idle">(
-    token && initialEmail ? "verifying" : "idle"
-  )
+  const [status, setStatus] = useState<
+    "verifying" | "verified" | "error" | "idle"
+  >(token && initialEmail ? "verifying" : "idle")
   const [message, setMessage] = useState<string | null>(null)
   const [resendLoading, setResendLoading] = useState(false)
   const [resendFeedback, setResendFeedback] = useState<string | null>(null)
-  const [devVerificationUrl, setDevVerificationUrl] = useState<string | null>(null)
+  const [devVerificationUrl, setDevVerificationUrl] = useState<string | null>(
+    null
+  )
 
   useEffect(() => {
     if (!token || !initialEmail) return
 
     let cancelled = false
-    setStatus("verifying")
     verifyEmailAction({ email: initialEmail, token })
       .then((res) => {
         if (cancelled) return
@@ -61,7 +63,9 @@ function VerifyEmailContent() {
       .catch(() => {
         if (cancelled) return
         setStatus("error")
-        setMessage("Unable to verify email address right now. Please try again.")
+        setMessage(
+          "Unable to verify email address right now. Please try again."
+        )
       })
 
     return () => {
@@ -84,7 +88,8 @@ function VerifyEmailContent() {
         setMessage(result.error || "Could not resend verification email.")
       } else {
         setResendFeedback(
-          result.message || "A new verification link has been sent to your inbox."
+          result.message ||
+            "A new verification link has been sent to your inbox."
         )
         if (result.data?.devVerificationUrl) {
           setDevVerificationUrl(result.data.devVerificationUrl)
@@ -92,31 +97,34 @@ function VerifyEmailContent() {
       }
     } catch {
       setStatus("error")
-      setMessage("An unexpected error occurred while resending the verification link.")
+      setMessage(
+        "An unexpected error occurred while resending the verification link."
+      )
     } finally {
       setResendLoading(false)
     }
   }
 
   return (
-    <Card className="border-slate-200/90 bg-white shadow-2xl shadow-blue-900/5 rounded-3xl p-2 sm:p-4">
+    <Card className="auth-form-surface p-2 sm:p-4">
       <CardHeader className="space-y-1.5 pb-6">
-        <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-[#2A6AED] mb-2">
+        <div className="mb-2 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-[#2A6AED]">
           <MailCheck className="h-5 w-5" />
         </div>
-        <CardTitle className="text-2xl font-black text-slate-900">
+        <CardTitle className="text-2xl font-black text-slate-900 dark:text-white">
           Email Verification
         </CardTitle>
-        <CardDescription className="text-sm text-slate-500">
-          Confirm your candidate email address for account security and evaluation notifications
+        <CardDescription className="text-sm text-slate-500 dark:text-slate-300">
+          Confirm your candidate email address for account security and
+          evaluation notifications
         </CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-6">
         {status === "verifying" && (
-          <div className="flex flex-col items-center justify-center py-8 space-y-3 text-center">
+          <div className="flex flex-col items-center justify-center space-y-3 py-8 text-center">
             <Loader2 className="h-8 w-8 animate-spin text-[#2A6AED]" />
-            <p className="text-sm font-semibold text-slate-700">
+            <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
               Verifying your email address...
             </p>
           </div>
@@ -124,22 +132,23 @@ function VerifyEmailContent() {
 
         {status === "verified" && (
           <div className="space-y-5">
-            <Alert className="py-4 text-sm border-emerald-500 bg-emerald-50 text-emerald-800 rounded-2xl">
-              <CheckCircle2 className="h-4 w-4 text-emerald-600 mr-2" />
+            <Alert className="rounded-2xl border-emerald-500 bg-emerald-50 py-4 text-sm text-emerald-800">
+              <CheckCircle2 className="mr-2 h-4 w-4 text-emerald-600" />
               <AlertDescription className="font-semibold">
-                {message || "Your email address has been verified successfully."}
+                {message ||
+                  "Your email address has been verified successfully."}
               </AlertDescription>
             </Alert>
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row">
               <Link href="/student/dashboard" className="w-full">
-                <Button className="w-full h-11 rounded-xl bg-[#2A6AED] hover:bg-[#1E55C7] text-white font-bold">
+                <Button className="h-11 w-full rounded-xl bg-[#2A6AED] font-bold text-white hover:bg-[#1E55C7]">
                   Continue to Student Dashboard
                 </Button>
               </Link>
               <Link href="/signin" className="w-full">
                 <Button
                   variant="outline"
-                  className="w-full h-11 rounded-xl border-slate-200 font-semibold"
+                  className="h-11 w-full rounded-xl border-slate-200 font-semibold"
                 >
                   Sign In
                 </Button>
@@ -151,25 +160,27 @@ function VerifyEmailContent() {
         {(status === "error" || status === "idle") && (
           <div className="space-y-5">
             {status === "error" && message && (
-              <Alert variant="destructive" className="py-3 text-sm rounded-xl">
-                <ShieldAlert className="h-4 w-4 mr-2" />
+              <Alert variant="destructive" className="rounded-xl py-3 text-sm">
+                <ShieldAlert className="mr-2 h-4 w-4" />
                 <AlertDescription>{message}</AlertDescription>
               </Alert>
             )}
 
             {resendFeedback && (
-              <Alert className="py-3 text-sm border-emerald-500 bg-emerald-50 text-emerald-800 rounded-xl">
-                <CheckCircle2 className="h-4 w-4 text-emerald-600 mr-2" />
+              <Alert className="rounded-xl border-emerald-500 bg-emerald-50 py-3 text-sm text-emerald-800">
+                <CheckCircle2 className="mr-2 h-4 w-4 text-emerald-600" />
                 <AlertDescription>{resendFeedback}</AlertDescription>
               </Alert>
             )}
 
             {devVerificationUrl && (
-              <div className="p-4 rounded-2xl bg-blue-50/80 border border-blue-200 text-xs space-y-1.5">
-                <p className="font-bold text-[#2A6AED]">Development Verification Link:</p>
+              <div className="space-y-1.5 rounded-2xl border border-blue-200 bg-blue-50/80 p-4 text-xs">
+                <p className="font-bold text-[#2A6AED]">
+                  Development Verification Link:
+                </p>
                 <a
                   href={devVerificationUrl}
-                  className="text-[#2A6AED] underline font-mono break-all text-xs"
+                  className="font-mono text-xs break-all text-[#2A6AED] underline"
                 >
                   {devVerificationUrl}
                 </a>
@@ -178,13 +189,17 @@ function VerifyEmailContent() {
 
             <form onSubmit={handleResend} className="space-y-4">
               <div>
-                <Label htmlFor="verify-email" className="text-xs font-bold text-slate-900">
+                <Label
+                  htmlFor="verify-email"
+                  className="text-xs font-bold text-slate-900 dark:text-slate-100"
+                >
                   Registered Email Address
                 </Label>
                 <div className="mt-1.5">
                   <Input
                     id="verify-email"
                     type="email"
+                    autoComplete="email"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -197,7 +212,7 @@ function VerifyEmailContent() {
               <Button
                 type="submit"
                 disabled={resendLoading}
-                className="w-full h-11 rounded-xl bg-[#2A6AED] hover:bg-[#1E55C7] text-white font-bold"
+                className="h-11 w-full rounded-xl bg-[#2A6AED] font-bold text-white hover:bg-[#1E55C7]"
               >
                 {resendLoading ? (
                   <>
@@ -219,7 +234,7 @@ function VerifyEmailContent() {
       <CardFooter className="border-t border-slate-100 pt-4">
         <Link
           href="/signin"
-          className="inline-flex items-center text-xs font-semibold text-slate-500 hover:text-slate-900 transition-colors"
+          className="inline-flex items-center text-xs font-semibold text-slate-500 transition-colors hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
         >
           <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
           Back to Sign In
@@ -231,29 +246,32 @@ function VerifyEmailContent() {
 
 export default function VerifyEmailPage() {
   return (
-    <div className="flex min-h-screen flex-col justify-center bg-slate-50/70 py-16 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <Link href="/" className="inline-flex items-center justify-center gap-3 mb-6 group">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#2A6AED] to-[#1D4ED8] text-white font-black text-2xl shadow-lg shadow-blue-500/25 transition-transform group-hover:scale-105">
+    <AuthPageFrame className="flex min-h-dvh flex-col justify-center py-10 sm:px-6 lg:px-8">
+      <div className="text-center sm:mx-auto sm:w-full sm:max-w-md">
+        <Link
+          href="/"
+          className="group mb-6 inline-flex items-center justify-center gap-3"
+        >
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#2A6AED] to-[#1D4ED8] text-2xl font-black text-white shadow-lg shadow-blue-500/25 transition-transform group-hover:scale-105">
             V
           </div>
-          <span className="font-heading text-3xl font-black tracking-tight text-slate-900 group-hover:text-[#2A6AED] transition-colors">
+          <span className="font-heading text-3xl font-black tracking-tight text-slate-900 transition-colors group-hover:text-[#2A6AED] dark:text-white">
             Verityra
           </span>
         </Link>
       </div>
 
-      <div className="mt-4 sm:mx-auto sm:w-full sm:max-w-lg px-4 sm:px-0">
+      <div className="mt-4 px-4 sm:mx-auto sm:w-full sm:max-w-lg sm:px-0">
         <Suspense
           fallback={
-            <Card className="border-slate-200/90 bg-white shadow-2xl rounded-3xl p-8 text-center">
-              <Loader2 className="h-8 w-8 animate-spin text-[#2A6AED] mx-auto" />
+            <Card className="auth-form-surface p-8 text-center">
+              <Loader2 className="mx-auto h-8 w-8 animate-spin text-[#2A6AED]" />
             </Card>
           }
         >
           <VerifyEmailContent />
         </Suspense>
       </div>
-    </div>
+    </AuthPageFrame>
   )
 }

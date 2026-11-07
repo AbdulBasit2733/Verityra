@@ -7,6 +7,7 @@ import { ErrorDialogProvider } from "@/components/providers/error-dialog-provide
 import { Toaster } from "@/components/ui/sonner"
 import { cn } from "@/lib/utils"
 import Script from "next/script"
+import { SiteChrome } from "@/components/common/site-chrome"
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -23,7 +24,7 @@ const inter = Inter({
 export const metadata = {
   title: "Verityra — Premier Subjective Test Series & Evaluation Cloud",
   description:
-    "Next-generation evaluation cloud for subjective examinations. Authentic pen-and-paper answer booklets, instant AI rubric grading, and 3-attempt diagnostic mastery.",
+    "A high-integrity subjective test series for authentic pen-and-paper practice, rubric feedback, and three-attempt diagnostic mastery.",
 }
 
 export default function RootLayout({
@@ -37,13 +38,16 @@ export default function RootLayout({
       suppressHydrationWarning
       className={cn("antialiased", plusJakartaSans.variable, inter.variable)}
     >
-      <body className="min-h-screen bg-background text-foreground font-sans">
-        <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
+      <body className="min-h-screen bg-background font-sans text-foreground">
+        <Script
+          src="https://checkout.razorpay.com/v1/checkout.js"
+          strategy="lazyOnload"
+        />
         <ThemeProvider>
           <AuthProvider>
             <ConfirmDialogProvider>
               <ErrorDialogProvider>
-                {children}
+                <SiteChrome>{children}</SiteChrome>
                 <Toaster />
               </ErrorDialogProvider>
             </ConfirmDialogProvider>
@@ -53,4 +57,3 @@ export default function RootLayout({
     </html>
   )
 }
-

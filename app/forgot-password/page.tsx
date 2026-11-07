@@ -5,10 +5,18 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, ArrowLeft, CheckCircle2 } from "lucide-react"
 import { requestPasswordResetAction } from "@/actions/auth-actions"
+import { AuthPageFrame } from "@/components/layout/auth/auth-page-frame"
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("")
@@ -31,7 +39,9 @@ export default function ForgotPasswordPage() {
         return
       }
 
-      setMessage(result.message || "Password reset instructions have been generated.")
+      setMessage(
+        result.message || "Password reset instructions have been generated."
+      )
       if (result.data?.devResetUrl) {
         setDevResetUrl(result.data.devResetUrl)
       }
@@ -43,53 +53,67 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col justify-center bg-slate-50/70 py-16 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <Link href="/" className="inline-flex items-center justify-center gap-3 mb-6 group">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#2A6AED] to-[#1D4ED8] text-white font-black text-2xl shadow-lg shadow-blue-500/25 transition-transform group-hover:scale-105">
+    <AuthPageFrame className="flex min-h-dvh flex-col justify-center py-10 sm:px-6 lg:px-8">
+      <div className="text-center sm:mx-auto sm:w-full sm:max-w-md">
+        <Link
+          href="/"
+          className="group mb-6 inline-flex items-center justify-center gap-3"
+        >
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#2A6AED] to-[#1D4ED8] text-2xl font-black text-white shadow-lg shadow-blue-500/25 transition-transform group-hover:scale-105">
             V
           </div>
-          <span className="font-heading text-3xl font-black tracking-tight text-slate-900 group-hover:text-[#2A6AED] transition-colors">
+          <span className="font-heading text-3xl font-black tracking-tight text-slate-900 transition-colors group-hover:text-[#2A6AED] dark:text-white">
             Verityra
           </span>
         </Link>
-        <h2 className="text-center text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+        <h2 className="text-center text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl dark:text-white">
           Reset your password
         </h2>
-        <p className="mt-2 text-center text-sm text-slate-600">
+        <p className="mt-2 text-center text-sm text-slate-600 dark:text-slate-300">
           Remember your password?{" "}
-          <Link href="/signin" className="font-bold text-[#2A6AED] hover:underline">
+          <Link
+            href="/signin"
+            className="font-bold text-[#2A6AED] hover:underline"
+          >
             Sign in here
           </Link>
         </p>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-lg px-4 sm:px-0">
-        <Card className="border-slate-200/90 bg-white shadow-2xl shadow-blue-900/5 rounded-3xl p-2 sm:p-4">
+      <div className="mt-8 px-4 sm:mx-auto sm:w-full sm:max-w-lg sm:px-0">
+        <Card className="auth-form-surface p-2 sm:p-4">
           <CardHeader className="space-y-1.5 pb-6">
-            <CardTitle className="text-2xl font-black text-slate-900">Forgot Password</CardTitle>
-            <CardDescription className="text-sm text-slate-500">
-              Enter your registered email address to receive password reset instructions
+            <CardTitle className="text-2xl font-black text-slate-900 dark:text-white">
+              Forgot Password
+            </CardTitle>
+            <CardDescription className="text-sm text-slate-500 dark:text-slate-300">
+              Enter your registered email address to receive password reset
+              instructions
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             {error && (
-              <Alert variant="destructive" className="py-3 text-sm rounded-xl">
+              <Alert variant="destructive" className="rounded-xl py-3 text-sm">
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
 
             {message && (
-              <Alert className="py-3 text-sm border-emerald-500 bg-emerald-50 text-emerald-800 rounded-xl">
-                <CheckCircle2 className="h-4 w-4 text-emerald-600 mr-2" />
+              <Alert className="rounded-xl border-emerald-500 bg-emerald-50 py-3 text-sm text-emerald-800">
+                <CheckCircle2 className="mr-2 h-4 w-4 text-emerald-600" />
                 <AlertDescription>{message}</AlertDescription>
               </Alert>
             )}
 
             {devResetUrl && (
-              <div className="p-4 rounded-2xl bg-blue-50/80 border border-blue-200 text-xs space-y-1.5">
-                <p className="font-bold text-[#2A6AED]">Development Reset Link:</p>
-                <Link href={devResetUrl} className="text-[#2A6AED] underline font-mono break-all text-xs">
+              <div className="space-y-1.5 rounded-2xl border border-blue-200 bg-blue-50/80 p-4 text-xs">
+                <p className="font-bold text-[#2A6AED]">
+                  Development Reset Link:
+                </p>
+                <Link
+                  href={devResetUrl}
+                  className="font-mono text-xs break-all text-[#2A6AED] underline"
+                >
                   {devResetUrl}
                 </Link>
               </div>
@@ -97,38 +121,47 @@ export default function ForgotPasswordPage() {
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <Label htmlFor="email" className="text-xs font-bold text-slate-900">
+                <Label
+                  htmlFor="email"
+                  className="text-xs font-bold text-slate-900 dark:text-slate-100"
+                >
                   Email Address
                 </Label>
                 <Input
                   id="email"
                   type="email"
+                  autoComplete="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="candidate@example.com"
-                  className="mt-1.5 border-slate-200 text-sm h-12 rounded-xl focus-visible:ring-[#2A6AED]/20 focus-visible:border-[#2A6AED]"
+                  className="auth-control mt-1.5 h-11 text-sm"
                 />
               </div>
 
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-[#2A6AED] hover:bg-[#1E55C7] text-white font-bold h-12 rounded-xl shadow-md shadow-blue-500/20 text-sm"
+                className="auth-primary-action h-11 w-full text-sm shadow-md shadow-blue-500/20"
               >
-                {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                {loading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : null}
                 Send Password Reset Instructions
               </Button>
             </form>
           </CardContent>
-          <CardFooter className="pt-2 justify-center">
-            <Link href="/signin" className="text-xs font-semibold text-slate-500 hover:text-[#2A6AED] flex items-center gap-1.5 transition-colors">
+          <CardFooter className="justify-center pt-2">
+            <Link
+              href="/signin"
+              className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 transition-colors hover:text-[#2A6AED]"
+            >
               <ArrowLeft className="h-3.5 w-3.5" />
               Back to Sign In
             </Link>
           </CardFooter>
         </Card>
       </div>
-    </div>
+    </AuthPageFrame>
   )
 }

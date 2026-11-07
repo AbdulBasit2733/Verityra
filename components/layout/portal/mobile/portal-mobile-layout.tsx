@@ -94,8 +94,8 @@ export function PortalMobileLayout({
           <button
             type="button"
             onClick={() => setDrawerOpen(true)}
-            className="h-10 w-10 rounded-xl border border-border bg-card flex items-center justify-center text-foreground hover:bg-muted shrink-0 shadow-2xs active:scale-95 transition-all cursor-pointer"
-            aria-label="Open navigation drawer"
+            className="h-11 w-11 rounded-lg border border-border bg-card flex items-center justify-center text-foreground hover:bg-muted shrink-0 shadow-2xs transition-colors cursor-pointer"
+            aria-label="Open navigation menu"
           >
             <Menu className="h-5 w-5" />
           </button>
@@ -218,7 +218,7 @@ export function PortalMobileLayout({
                       href={item.href}
                       onClick={() => setDrawerOpen(false)}
                       className={cn(
-                        "flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-colors min-h-[44px]",
+                        "flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-bold transition-colors min-h-[44px]",
                         active
                           ? "bg-primary text-primary-foreground shadow-xs"
                           : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80"
@@ -307,16 +307,16 @@ export function PortalMobileLayout({
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex flex-col items-center justify-center gap-0.5 py-1 px-3 rounded-xl transition-all text-center min-w-[56px] min-h-[48px] active:scale-95 cursor-pointer",
+                  "flex flex-col items-center justify-center gap-0.5 py-1 px-3 rounded-lg transition-colors text-center min-w-[56px] min-h-[48px] cursor-pointer",
                   active
-                    ? "text-[#2A6AED] dark:text-blue-400 font-bold"
+                    ? "bg-[#2A6AED] text-white font-bold shadow-sm"
                     : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 font-medium"
                 )}
               >
                 <div
                   className={cn(
                     "flex h-7 w-7 items-center justify-center rounded-lg transition-colors",
-                    active ? "bg-[#EFF6FF] dark:bg-blue-950/70 text-[#2A6AED] dark:text-blue-400" : ""
+                    active ? "bg-white/15 text-white" : ""
                   )}
                 >
                   <Icon className="h-4 w-4 shrink-0" />
