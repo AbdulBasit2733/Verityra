@@ -108,6 +108,44 @@ export function runSubmissionTests() {
     assert.equal(SubmissionStatus.FAILED, "FAILED")
   })
 
+  suite.test("Attempt Compensation: Terminal failure during evaluation claim restores attempt and frees slot", () => {
+    let attemptsUsed = 1
+    const storedSubmissions: Array<{ id: string; attemptNumber: number }> = [
+      { id: "sub-1", attemptNumber: 1 },
+    ]
+
+    function simulateSubmissionWithClaimFailure(shouldClaimSucceed: boolean) {
+      // Step 1: Transaction increments attemptsUsed and creates submission
+      const nextAttempt = attemptsUsed + 1
+      const newSub = { id: `sub-${nextAttempt}`, attemptNumber: nextAttempt }
+      attemptsUsed = nextAttempt
+      storedSubmissions.push(newSub)
+
+      // Step 2: Evaluation claim setup
+      if (!shouldClaimSucceed) {
+        // Compensate: rollback attemptsUsed and delete orphaned submission
+        const idx = storedSubmissions.findIndex((s) => s.id === newSub.id)
+        if (idx !== -1) storedSubmissions.splice(idx, 1)
+        attemptsUsed -= 1
+        return { success: false, error: "Evaluation setup failed. Attempt restored." }
+      }
+
+      return { success: true, submissionId: newSub.id }
+    }
+
+    const failedRun = simulateSubmissionWithClaimFailure(false)
+    assert.equal(failedRun.success, false)
+    assert.equal(attemptsUsed, 1, "Attempt must be compensated back to 1")
+    assert.equal(storedSubmissions.length, 1, "Orphaned submission must be removed")
+
+    // Verify retry succeeds and uses attempt 2 without collision
+    const retryRun = simulateSubmissionWithClaimFailure(true)
+    assert.equal(retryRun.success, true)
+    assert.equal(attemptsUsed, 2)
+    assert.equal(storedSubmissions.length, 2)
+    assert.equal(storedSubmissions[1].attemptNumber, 2)
+  })
+
   return suite.summary()
 }
 

@@ -140,20 +140,30 @@ export function AdminTestSeriesEditor({
         </TabsContent>
 
         <TabsContent value="instructions" className="space-y-5 pt-1">
-          <div className="space-y-1.5">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <Label htmlFor="studentInstructions" className="text-xs font-bold text-slate-900">Student-Facing Instructions</Label>
-              <span className="text-[11px] text-slate-500">Visible to candidates</span>
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <div className="flex flex-col justify-between space-y-1.5 rounded-xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+              <div className="space-y-1.5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <Label htmlFor="studentInstructions" className="text-xs font-bold text-slate-900 dark:text-slate-100">Student-Facing Instructions</Label>
+                  <span className="rounded bg-blue-50 px-2 py-0.5 text-[10px] font-bold uppercase text-[#2A6AED] dark:bg-blue-950/60 dark:text-blue-300">Visible to candidates</span>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Rules and submission directives shown to enrolled students before and during writing.</p>
+              </div>
+              <Textarea id="studentInstructions" required value={values.studentInstructions} onChange={(e) => set("studentInstructions", e.target.value)} rows={10} className="mt-3 rounded-lg leading-relaxed" />
             </div>
-            <Textarea id="studentInstructions" required value={values.studentInstructions} onChange={(e) => set("studentInstructions", e.target.value)} rows={8} className="rounded-lg leading-relaxed" />
-          </div>
-          <div className="space-y-2 border-l-4 border-amber-500 bg-amber-50/50 py-3 pl-4 pr-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <Label htmlFor="privateEvaluationInstructions" className="flex items-center gap-1.5 text-xs font-bold text-amber-900"><ShieldAlert className="h-4 w-4" /> Private Evaluation Instructions</Label>
-              <span className="rounded bg-amber-200/80 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-900">Admin only</span>
+
+            <div className="flex flex-col justify-between space-y-2 rounded-xl border border-amber-200/80 bg-amber-50/40 p-5 shadow-xs dark:border-amber-900/60 dark:bg-amber-950/20">
+              <div className="space-y-1.5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <Label htmlFor="privateEvaluationInstructions" className="flex items-center gap-1.5 text-xs font-bold text-amber-900 dark:text-amber-200">
+                    <ShieldAlert className="h-4 w-4 text-amber-600" /> Private Evaluation Instructions
+                  </Label>
+                  <span className="rounded bg-amber-200/80 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-900 dark:bg-amber-900/60 dark:text-amber-200">Admin only</span>
+                </div>
+                <p className="text-xs leading-relaxed text-amber-800 dark:text-amber-300">These instructions are kept strictly server-side for AI grading criteria and are never shown to candidates.</p>
+              </div>
+              <Textarea id="privateEvaluationInstructions" required value={values.privateEvaluationInstructions} onChange={(e) => set("privateEvaluationInstructions", e.target.value)} rows={10} className="mt-3 rounded-lg bg-white font-mono text-xs leading-relaxed dark:bg-slate-900" />
             </div>
-            <p className="text-xs leading-relaxed text-amber-800">These instructions are kept server-side and are never shown to students.</p>
-            <Textarea id="privateEvaluationInstructions" required value={values.privateEvaluationInstructions} onChange={(e) => set("privateEvaluationInstructions", e.target.value)} rows={8} className="rounded-lg bg-white font-mono text-xs leading-relaxed" />
           </div>
         </TabsContent>
 

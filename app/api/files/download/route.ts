@@ -119,10 +119,11 @@ export async function GET(req: NextRequest) {
     if (fileType === "submissions") {
       const isOwner = user.id === ownerUserIdCandidate
       const isDemoSubmission =
-        safeFilePath.includes("/demo/") ||
-        testSeriesIdCandidate === "demo" ||
-        ownerUserIdCandidate === "demo" ||
-        filename.includes("sample-attempt")
+        process.env.NODE_ENV === "development" && (
+          safeFilePath.startsWith("submissions/demo/") ||
+          safeFilePath.startsWith("submissions/dev-") ||
+          filename === "sample-attempt.pdf"
+        )
 
       if (user.role !== Role.ADMIN && !isOwner && !isDemoSubmission) {
         if (dbConnected) {
@@ -145,16 +146,22 @@ export async function GET(req: NextRequest) {
       }
     } else if (fileType === "papers" || fileType === "templates") {
       if (user.role !== Role.ADMIN) {
-        const isDemoResource =
-          testSeriesIdCandidate.startsWith("demo-") ||
-          testSeriesIdCandidate.startsWith("upsc-") ||
-          safeFilePath.includes("upsc-") ||
-          safeFilePath.includes("class-10-") ||
-          safeFilePath.includes("class-11-") ||
-          safeFilePath.includes("class-12-") ||
-          !dbConnected
+        // In development only, allow explicit demo/dev fixtures to bypass registration
+        const isDevDemoResource =
+          process.env.NODE_ENV === "development" &&
+          (testSeriesIdCandidate.startsWith("demo-") ||
+           testSeriesIdCandidate.startsWith("dev-") ||
+           safeFilePath.startsWith("papers/demo-") ||
+           safeFilePath.startsWith("templates/demo-"))
 
-        if (!isDemoResource && dbConnected) {
+        if (!isDevDemoResource) {
+          if (!dbConnected) {
+            return NextResponse.json(
+              { error: "Database unavailable to verify test registration." },
+              { status: 503 }
+            )
+          }
+
           // Identify test series that owns this paper or template
           let resolvedTestSeriesId = testSeriesIdCandidate
           if (!resolvedTestSeriesId) {
@@ -235,8 +242,16 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Secondary fallback: check public samples directory
-    if (!fileBuffer) {
+    // Development-only fallbacks for explicit test fixtures
+    const isDevFixture =
+      process.env.NODE_ENV === "development" &&
+      (safeFilePath.includes("/demo/") ||
+       safeFilePath.startsWith("papers/demo-") ||
+       safeFilePath.startsWith("templates/demo-") ||
+       testSeriesIdCandidate.startsWith("demo-") ||
+       testSeriesIdCandidate.startsWith("dev-"))
+
+    if (!fileBuffer && isDevFixture) {
       const samplePath = path.join(SAMPLES_DIR, filename)
       if (fs.existsSync(samplePath)) {
         fileBuffer = await fs.promises.readFile(samplePath)
@@ -246,20 +261,26 @@ export async function GET(req: NextRequest) {
           fileBuffer = await fs.promises.readFile(defaultSample)
         }
       }
+
+      if (!fileBuffer) {
+        const title = filename.replace(/\.pdf$/i, "").replace(/[-_]/g, " ").toUpperCase()
+        const category = fileType.toUpperCase()
+        fileBuffer = generateFallbackPdf(
+          title,
+          `Verityra ${category} Document`,
+          [
+            "Official examination material prepared for authorized candidate usage.",
+            "Ensure answers are numbered clearly and written within designated margins.",
+            `Generated for verified user: ${user.email || user.name || "Candidate"}`
+          ]
+        )
+      }
     }
 
-    // Tertiary dynamic generation fallback: generate clean valid PDF
     if (!fileBuffer) {
-      const title = filename.replace(/\.pdf$/i, "").replace(/[-_]/g, " ").toUpperCase()
-      const category = fileType.toUpperCase()
-      fileBuffer = generateFallbackPdf(
-        title,
-        `Verityra ${category} Document`,
-        [
-          "Official examination material prepared for authorized candidate usage.",
-          "Ensure answers are numbered clearly and written within designated margins.",
-          `Generated for verified user: ${user.email || user.name || "Candidate"}`
-        ]
+      return NextResponse.json(
+        { error: "The requested document could not be found." },
+        { status: 404 }
       )
     }
 

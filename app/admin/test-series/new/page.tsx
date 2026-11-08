@@ -6,7 +6,7 @@ import { AdminTestSeriesEditor } from "@/components/admin/test-series/admin-test
 
 export default function CreateTestSeriesPage() {
   return (
-    <div className="max-w-5xl space-y-6">
+    <div className="w-full space-y-6">
       <PageHeader
         icon={BookOpen}
         title="Create Test Series"

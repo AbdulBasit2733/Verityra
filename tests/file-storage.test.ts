@@ -27,5 +27,15 @@ export function runFileStorageTests() {
     assert.equal(parsePrivateFileReference("/api/files/download"), null)
   })
 
+  suite.test("Normalizes template paths and preserves external URLs", () => {
+    const templateUrl = normalizePrivateFileUrl("verityra-private/templates/upsc/template.pdf")
+    assert.equal(
+      templateUrl,
+      "/api/files/download?bucket=verityra-private&file=templates%2Fupsc%2Ftemplate.pdf"
+    )
+    const external = "https://example.com/sheet.pdf"
+    assert.equal(normalizePrivateFileUrl(external), external)
+  })
+
   return suite.summary()
 }

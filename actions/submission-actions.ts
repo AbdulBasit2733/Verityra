@@ -173,8 +173,22 @@ export async function submitAnswerSheetAction(formData: FormData): Promise<Actio
     evaluationRun = await claimEvaluationRun(submission.id, "AUTOMATIC")
   } catch (runError: any) {
     console.error("[EVALUATION RUN CLAIM ERROR]", runError)
-    await prisma.submission.update({ where: { id: submission.id }, data: { status: SubmissionStatus.FAILED } })
-    return { success: false, error: "Submission saved, but evaluation could not be queued. Please contact an administrator." }
+    // Terminal setup failure: compensate attempt and delete un-claimable submission to restore attempt slot
+    try {
+      await prisma.$transaction([
+        prisma.submission.delete({ where: { id: submission.id } }),
+        prisma.testRegistration.update({
+          where: { id: registration.id },
+          data: { attemptsUsed: { decrement: 1 } },
+        }),
+      ])
+    } catch (compensationError: any) {
+      console.error("[COMPENSATION ERROR]", compensationError)
+    }
+    return {
+      success: false,
+      error: "Evaluation setup encountered a system error. Your attempt has been restored. Please try submitting again.",
+    }
   }
 
   // 7. Trigger AI Evaluation Workflow (Async Queue)

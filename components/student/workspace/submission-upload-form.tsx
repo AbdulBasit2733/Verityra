@@ -13,6 +13,16 @@ import { submitAnswerSheetAction } from "@/actions/submission-actions"
 
 const MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024
 
+type EvaluatingState = {
+  submissionId: string
+  attemptNumber: number
+  status: "QUEUED" | "PROCESSING" | "COMPLETED" | "REVIEW_REQUIRED" | "FAILED"
+  progress: number
+  marksAwarded?: number | null
+  maxMarks?: number | null
+  percentage?: number | null
+}
+
 export function SubmissionUploadForm({
   testSeriesId,
   attemptsUsed,
@@ -29,6 +39,7 @@ export function SubmissionUploadForm({
   const [loading, setLoading] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [previewAcknowledged, setPreviewAcknowledged] = useState(false)
+  const [evaluatingState, setEvaluatingState] = useState<EvaluatingState | null>(null)
 
   const isLimitReached = attemptsUsed >= maxAttempts
   const nextAttempt = attemptsUsed + 1
@@ -60,6 +71,111 @@ export function SubmissionUploadForm({
     const avgPageSize = 150 * 1024 // 150KB
     return Math.max(1, Math.round(fileSize / avgPageSize))
   }
+
+  // Poll submission status until evaluation is completed or failed
+  useEffect(() => {
+    if (!evaluatingState || evaluatingState.status === "COMPLETED" || evaluatingState.status === "FAILED") {
+      return
+    }
+
+    let pollCount = 0
+    const maxPolls = 36 // 36 * 2.5s = 90s
+    let isCancelled = false
+
+    const interval = setInterval(async () => {
+      pollCount++
+      if (pollCount > maxPolls) {
+        clearInterval(interval)
+        if (!isCancelled) {
+          toast.info("Evaluation Still Queued", {
+            description:
+              "Your submission is being processed by the AI evaluation worker. Check back shortly for updated scorecards.",
+          })
+          setEvaluatingState(null)
+          router.refresh()
+        }
+        return
+      }
+
+      try {
+        const res = await fetch(`/api/submissions/${evaluatingState.submissionId}/status`)
+        if (!res.ok) return
+        const data = await res.json()
+
+        if (isCancelled) return
+
+        if (data.submissionStatus === "COMPLETED" || data.evaluationStatus === "COMPLETED") {
+          clearInterval(interval)
+          setEvaluatingState((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  status: "COMPLETED",
+                  progress: 100,
+                  marksAwarded: data.totalMarksAwarded,
+                  maxMarks: data.maxMarks,
+                  percentage: data.percentage,
+                }
+              : null
+          )
+          toast.success(`Attempt #${evaluatingState.attemptNumber} Evaluated Successfully!`, {
+            description:
+              data.totalMarksAwarded != null
+                ? `Score: ${data.totalMarksAwarded} / ${data.maxMarks} marks (${data.percentage}%). Detailed scorecard is now available!`
+                : "Detailed rubric breakdown is now available in your scorecard.",
+          })
+          router.refresh()
+        } else if (data.submissionStatus === "REVIEW_REQUIRED" || data.evaluationStatus === "REVIEW_REQUIRED") {
+          clearInterval(interval)
+          setEvaluatingState((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  status: "REVIEW_REQUIRED",
+                  progress: 100,
+                  marksAwarded: data.totalMarksAwarded,
+                  maxMarks: data.maxMarks,
+                  percentage: data.percentage,
+                }
+              : null
+          )
+          toast.info(`Attempt #${evaluatingState.attemptNumber} Evaluated (Flagged for Review)`, {
+            description: "Evaluation has finished and was flagged for moderation review.",
+          })
+          router.refresh()
+        } else if (data.submissionStatus === "FAILED" || data.jobStatus === "FAILED") {
+          clearInterval(interval)
+          setEvaluatingState((prev) => (prev ? { ...prev, status: "FAILED" } : null))
+          toast.error("Evaluation Encountered an Issue", {
+            description:
+              data.jobError || "The evaluation worker encountered an issue. Your attempt has been saved.",
+          })
+          router.refresh()
+        } else {
+          // Still QUEUED or PROCESSING
+          setEvaluatingState((prev) => {
+            if (!prev) return null
+            const nextProgress = data.progress > 0 ? data.progress : Math.min(90, prev.progress + 15)
+            return {
+              ...prev,
+              status:
+                data.jobStatus === "PROCESSING" || data.submissionStatus === "PROCESSING"
+                  ? "PROCESSING"
+                  : "QUEUED",
+              progress: nextProgress,
+            }
+          })
+        }
+      } catch (err) {
+        console.error("[STATUS POLL ERROR]", err)
+      }
+    }, 2500)
+
+    return () => {
+      isCancelled = true
+      clearInterval(interval)
+    }
+  }, [evaluatingState?.submissionId, evaluatingState?.status, router])
 
   if (isLimitReached) {
     return (
@@ -124,13 +240,31 @@ export function SubmissionUploadForm({
         return
       }
 
-      toast.success(`Attempt #${result.data?.attemptNumber || nextAttempt} Evaluated`, {
-        description:
-          result.message ||
-          "Your handwritten booklet has been encrypted, stored, and evaluated.",
-      })
+      const attemptNum = result.data?.attemptNumber || nextAttempt
+      const subId = result.data?.submissionId
+
       setFile(null)
+      setPreviewUrl(null)
+      setPreviewAcknowledged(false)
       setLoading(false)
+
+      if (subId) {
+        setEvaluatingState({
+          submissionId: subId,
+          attemptNumber: attemptNum,
+          status: "QUEUED",
+          progress: 15,
+        })
+        toast.info(`Attempt #${attemptNum} Submitted — Evaluation Queued`, {
+          description:
+            result.message ||
+            "Your handwritten booklet has been encrypted and stored. Waiting for evaluation results...",
+        })
+      } else {
+        toast.success(`Attempt #${attemptNum} Submitted`, {
+          description: result.message || "Your handwritten booklet has been encrypted and stored.",
+        })
+      }
       router.refresh()
     } catch {
       showError({
@@ -163,6 +297,87 @@ export function SubmissionUploadForm({
           {maxAttempts - attemptsUsed} Attempt{maxAttempts - attemptsUsed === 1 ? "" : "s"} Remaining
         </Badge>
       </div>
+
+      {/* Live AI Evaluation Status Card */}
+      {evaluatingState && (
+        <div className="rounded-xl border border-blue-200 bg-blue-50/70 p-4 shadow-2xs dark:border-blue-900/60 dark:bg-blue-950/40 space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex items-center gap-2.5">
+              {evaluatingState.status === "COMPLETED" ? (
+                <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              ) : evaluatingState.status === "FAILED" ? (
+                <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 shrink-0" />
+              ) : (
+                <Loader2 className="h-5 w-5 animate-spin text-[#2A6AED] shrink-0" />
+              )}
+              <div>
+                <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                  {evaluatingState.status === "COMPLETED"
+                    ? `Attempt #${evaluatingState.attemptNumber} Evaluated Successfully`
+                    : evaluatingState.status === "REVIEW_REQUIRED"
+                    ? `Attempt #${evaluatingState.attemptNumber} Evaluated (Flagged for Review)`
+                    : evaluatingState.status === "FAILED"
+                    ? `Attempt #${evaluatingState.attemptNumber} Evaluation Unsuccessful`
+                    : `Evaluating Attempt #${evaluatingState.attemptNumber}...`}
+                </h4>
+                <p className="text-xs text-slate-600 dark:text-slate-400">
+                  {evaluatingState.status === "COMPLETED"
+                    ? "Detailed question scorecard and rubric breakdown have been published."
+                    : evaluatingState.status === "REVIEW_REQUIRED"
+                    ? "Completed by AI; pending administrative moderator verification."
+                    : evaluatingState.status === "FAILED"
+                    ? "Your booklet was safely saved. An admin can re-run grading from the console."
+                    : "Live polling: verifying handwriting against rubric and model answers."}
+                </p>
+              </div>
+            </div>
+            <Badge
+              variant="outline"
+              className={
+                evaluatingState.status === "COMPLETED"
+                  ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 shrink-0 w-fit"
+                  : evaluatingState.status === "FAILED"
+                  ? "border-red-300 bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300 shrink-0 w-fit"
+                  : "border-blue-300 bg-white text-[#2A6AED] dark:bg-slate-900 dark:text-blue-400 shrink-0 w-fit"
+              }
+            >
+              {evaluatingState.status === "COMPLETED"
+                ? "Evaluated"
+                : evaluatingState.status === "FAILED"
+                ? "Failed"
+                : evaluatingState.status === "PROCESSING"
+                ? "Analyzing Handwriting"
+                : "Queued for Evaluation"}
+            </Badge>
+          </div>
+
+          {evaluatingState.status !== "COMPLETED" && evaluatingState.status !== "FAILED" && (
+            <div className="space-y-1.5 pt-1">
+              <div className="w-full bg-blue-200/70 dark:bg-blue-900/50 rounded-full h-2 overflow-hidden">
+                <div
+                  className="bg-[#2A6AED] h-full transition-all duration-500 rounded-full"
+                  style={{ width: `${evaluatingState.progress}%` }}
+                />
+              </div>
+              <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+                <span>OCR transcription & criteria matching</span>
+                <span>{evaluatingState.progress}% complete</span>
+              </div>
+            </div>
+          )}
+
+          {evaluatingState.status === "COMPLETED" && evaluatingState.marksAwarded != null && (
+            <div className="pt-2 border-t border-blue-200/60 dark:border-blue-900/40 flex items-center justify-between text-xs">
+              <span className="font-semibold text-emerald-800 dark:text-emerald-300">
+                Score: {evaluatingState.marksAwarded} / {evaluatingState.maxMarks} ({evaluatingState.percentage}%)
+              </span>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                Check the Evaluations tab to inspect question-level criteria
+              </span>
+            </div>
+          )}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <label

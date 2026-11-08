@@ -36,7 +36,7 @@ export function AdminSubmissionEvaluationTrigger({
   compact = false,
   iconOnly = false,
   aiEvaluationRuns = 0,
-  maxAiEvaluationRuns = 3,
+  maxAiEvaluationRuns = 20,
 }: {
   submissionId: string
   compact?: boolean
@@ -488,7 +488,7 @@ export function AdminSubmissionsClient({
 
             {/* Actions */}
             <div className="flex items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
-              {(s.status === "COMPLETED" || s.status === "FAILED" || s.status === "REVIEW_REQUIRED") && s.aiEvaluationRuns < 3 && (
+              {(s.status === "COMPLETED" || s.status === "FAILED" || s.status === "REVIEW_REQUIRED") && s.aiEvaluationRuns < 20 && (
                 <AdminSubmissionEvaluationTrigger submissionId={s.id} compact aiEvaluationRuns={s.aiEvaluationRuns} />
               )}
               {s.fileUrl && (

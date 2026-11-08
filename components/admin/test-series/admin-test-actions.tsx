@@ -16,6 +16,7 @@ import {
   togglePublishTestSeriesAction,
   togglePublishResultsAction,
 } from "@/actions/test-series-actions"
+import { normalizePrivateFileUrl } from "@/lib/file-urls"
 
 type PaperDocument = { id: string; title: string; fileUrl: string; maxMarks: number }
 type TemplateDocument = { id: string; title: string; description?: string | null; fileUrl: string; templateRequired: boolean }
@@ -58,7 +59,10 @@ export function AdminTestDocumentForms({ testSeriesId, initialPapers = [], initi
         })
         setPaperFile(null)
         const uploadData = "data" in res ? res.data as { paper?: PaperDocument } : undefined
-        if (uploadData?.paper) setPapers((current) => [...current, uploadData.paper as PaperDocument])
+        if (uploadData?.paper) {
+          const p = uploadData.paper
+          setPapers((current) => [...current, { ...p, fileUrl: normalizePrivateFileUrl(p.fileUrl) || p.fileUrl }])
+        }
       } else {
         showError({
           title: "Question Paper Upload Failed",
@@ -96,7 +100,10 @@ export function AdminTestDocumentForms({ testSeriesId, initialPapers = [], initi
         })
         setTemplateFile(null)
         const uploadData = "data" in res ? res.data as { template?: TemplateDocument } : undefined
-        if (uploadData?.template) setTemplates((current) => [...current, uploadData.template as TemplateDocument])
+        if (uploadData?.template) {
+          const t = uploadData.template
+          setTemplates((current) => [...current, { ...t, fileUrl: normalizePrivateFileUrl(t.fileUrl) || t.fileUrl }])
+        }
       } else {
         showError({
           title: "Template Upload Failed",
@@ -144,7 +151,6 @@ export function AdminTestDocumentForms({ testSeriesId, initialPapers = [], initi
             <Input
               type="file"
               accept=".pdf,image/jpeg,image/png,image/webp"
-              required
               onChange={(e) => setPaperFile(e.target.files?.[0] || null)}
               className="mt-1 border-slate-200 bg-white text-xs sm:text-sm h-10 rounded-lg"
             />
@@ -204,7 +210,6 @@ export function AdminTestDocumentForms({ testSeriesId, initialPapers = [], initi
             <Input
               type="file"
               accept=".pdf,image/png,image/jpeg,image/webp"
-              required
               onChange={(e) => setTemplateFile(e.target.files?.[0] || null)}
               className="mt-1 border-slate-200 bg-white text-xs sm:text-sm h-10 rounded-lg"
             />
@@ -246,8 +251,55 @@ export function AdminTestDocumentForms({ testSeriesId, initialPapers = [], initi
   )
 }
 
-function AttachedDocumentList({ title, empty, items, linkLabel, template = false }: { title: string; empty: string; items: Array<PaperDocument | TemplateDocument>; linkLabel: string; template?: boolean }) {
-  return <section className="space-y-3 border border-slate-200/80 bg-white p-5 dark:border-slate-800 dark:bg-slate-900"><h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">{title}</h3>{items.length ? <div className="divide-y divide-slate-100 border-t border-slate-100 dark:divide-slate-800 dark:border-slate-800">{items.map((item) => <div key={item.id} className="flex items-center justify-between gap-3 py-3 text-xs"><div><span className="block font-bold text-slate-900 dark:text-slate-100">{item.title}</span><span className="text-[11px] text-slate-500">{template ? ((item as TemplateDocument).templateRequired ? "Mandatory for students" : "Optional format") : `Max Marks: ${(item as PaperDocument).maxMarks}`}</span></div><a href={item.fileUrl} target="_blank" rel="noreferrer" className="shrink-0 font-bold text-[#2A6AED] hover:underline">{linkLabel}</a></div>)}</div> : <p className="text-xs text-slate-500">{empty}</p>}</section>
+function AttachedDocumentList({
+  title,
+  empty,
+  items,
+  linkLabel,
+  template = false,
+}: {
+  title: string
+  empty: string
+  items: Array<PaperDocument | TemplateDocument>
+  linkLabel: string
+  template?: boolean
+}) {
+  return (
+    <section className="space-y-3 rounded-xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+      <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">{title}</h3>
+      {items.length ? (
+        <div className="divide-y divide-slate-100 border-t border-slate-100 dark:divide-slate-800 dark:border-slate-800">
+          {items.map((item) => {
+            const resolvedHref = normalizePrivateFileUrl(item.fileUrl) || item.fileUrl
+            return (
+              <div key={item.id} className="flex items-center justify-between gap-3 py-3 text-xs">
+                <div>
+                  <span className="block font-bold text-slate-900 dark:text-slate-100">{item.title}</span>
+                  <span className="text-[11px] text-slate-500">
+                    {template
+                      ? (item as TemplateDocument).templateRequired
+                        ? "Mandatory for students"
+                        : "Optional format"
+                      : `Max Marks: ${(item as PaperDocument).maxMarks}`}
+                  </span>
+                </div>
+                <a
+                  href={resolvedHref}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="shrink-0 font-bold text-[#2A6AED] hover:underline"
+                >
+                  {linkLabel}
+                </a>
+              </div>
+            )
+          })}
+        </div>
+      ) : (
+        <p className="text-xs text-slate-500">{empty}</p>
+      )}
+    </section>
+  )
 }
 
 export function AdminPublishToggles({

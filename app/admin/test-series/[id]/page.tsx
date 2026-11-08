@@ -9,6 +9,7 @@ import { AdminTestSeriesEditor } from "@/components/admin/test-series/admin-test
 import { AdminTestDocumentForms } from "@/components/admin/test-series/admin-test-actions"
 import { ArrowLeft, BookOpen } from "lucide-react"
 import { TestSeriesStatus } from "@prisma/client"
+import { normalizePrivateFileUrl } from "@/lib/supabase"
 
 export const dynamic = "force-dynamic"
 
@@ -63,14 +64,14 @@ export default async function AdminTestSeriesDetailPage({ params }: { params: Pr
         initialPapers={testSeries.papers.map((paper) => ({
           id: paper.id,
           title: paper.title,
-          fileUrl: paper.fileUrl,
+          fileUrl: normalizePrivateFileUrl(paper.fileUrl) || paper.fileUrl,
           maxMarks: paper.maxMarks,
         }))}
         initialTemplates={testSeries.templates.map((template) => ({
           id: template.id,
           title: template.title,
           description: template.description,
-          fileUrl: template.fileUrl,
+          fileUrl: normalizePrivateFileUrl(template.fileUrl) || template.fileUrl,
           templateRequired: template.templateRequired,
         }))}
       />
@@ -78,7 +79,7 @@ export default async function AdminTestSeriesDetailPage({ params }: { params: Pr
   )
 
   return (
-    <div className="max-w-5xl space-y-6">
+    <div className="w-full space-y-6">
       <PageHeader icon={BookOpen} title={testSeries.title} subtitle={`Edit configuration · ${testSeries.slug} · ${testSeries.status}`} showRefresh={false}>
         <Link href="/admin/test-series"><Button variant="outline" size="sm" className="h-10 rounded-xl px-3.5 text-xs font-semibold"><ArrowLeft className="mr-1.5 h-3.5 w-3.5" /> Back to Catalog</Button></Link>
       </PageHeader>
