@@ -267,13 +267,6 @@ export async function queueEvaluation(data: EvaluationJobData): Promise<string |
   }
 
   try {
-    // Local development commonly runs only `next dev`. Start the in-process
-    // worker there so Redis-backed jobs cannot sit in QUEUED forever. Production
-    // still uses the dedicated `pnpm worker` process.
-    if (process.env.NODE_ENV === 'development') {
-      createEvaluationWorker()
-    }
-
     // A re-evaluation is a new logical run. Reusing a completed BullMQ job ID
     // causes BullMQ to return the old job without executing the new run.
     const jobId = `eval-${data.submissionId}-run-${data.runNumber}`
@@ -373,10 +366,6 @@ export async function recoverPendingEvaluationJobs(): Promise<number> {
  */
 export async function getEvaluationStatus(submissionId: string) {
   try {
-    if (process.env.NODE_ENV === 'development') {
-      createEvaluationWorker()
-    }
-
     const jobRecord = await prisma.evaluationJob.findUnique({
       where: { submissionId },
     })

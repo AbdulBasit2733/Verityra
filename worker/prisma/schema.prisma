@@ -1,0 +1,530 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  STUDENT
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum TestSeriesStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum RegistrationStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  AUTHORIZED
+  COMPLETED
+  FAILED
+  REFUND_PENDING
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum RefundReason {
+  STUDENT_REQUEST_7DAY_WINDOW
+  DUPLICATE_ORDER
+  TECHNICAL_SUBMISSION_ISSUE
+  FRAUDULENT_TRANSACTION
+  ADMIN_GOODWILL_OVERRIDE
+}
+
+enum SubmissionStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REVIEW_REQUIRED
+}
+
+enum EvaluationStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  REVIEW_REQUIRED
+  APPROVED
+  ADJUSTED
+  FAILED
+}
+
+enum WebhookStatus {
+  RECEIVED
+  PROCESSED
+  FAILED
+}
+
+enum JobStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+  RETRYING
+}
+
+enum EvaluationTrigger {
+  AUTOMATIC
+  ADMIN_REEVALUATION
+}
+
+model User {
+  id            String         @id @default(cuid())
+  name          String?
+  email         String?        @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?
+  role          Role           @default(STUDENT)
+  status        UserStatus     @default(ACTIVE)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+  profile       StudentProfile?
+  registrations TestRegistration[]
+  payments      Payment[]
+  submissions   Submission[]
+  auditLogs     AuditLog[]     @relation("AdminAuditLogs")
+  processedRefunds PaymentRefund[] @relation("AdminProcessedRefunds")
+
+  @@index([email])
+  @@index([role])
+  @@index([status])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  email     String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([email])
+}
+
+model StudentProfile {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  educationLevel String?
+  institution    String?
+  phoneNumber    String?
+  targetExam     String?
+  bio            String?  @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model TestSeries {
+  id                           String            @id @default(cuid())
+  title                        String
+  slug                         String            @unique
+  description                  String            @db.Text
+  price                        Int               @default(0) // in paise (e.g. 49900 = INR 499.00)
+  status                       TestSeriesStatus  @default(DRAFT)
+  startDate                    DateTime?
+  endDate                      DateTime?
+  maxAttempts                  Int               @default(3)
+  maxMarks                     Float             @default(100)
+  durationMinutes              Int               @default(180)
+  studentInstructions          String            @db.Text
+  privateEvaluationInstructions String           @db.Text // STRICTLY CONFIDENTIAL
+  isPublished                  Boolean           @default(false)
+  resultsPublished             Boolean           @default(false)
+  createdAt                    DateTime          @default(now())
+  updatedAt                    DateTime          @updatedAt
+
+  papers       TestPaper[]
+  templates    AnswerSheetTemplate[]
+  registrations TestRegistration[]
+  submissions  Submission[]
+
+  @@index([status])
+  @@index([isPublished])
+  @@index([slug])
+  @@index([createdAt])
+  @@index([isPublished, createdAt])
+  @@index([resultsPublished]) // NEW - for leaderboard filtering
+  @@index([resultsPublished, id]) // NEW - covering index for leaderboard
+}
+
+model TestPaper {
+  id            String     @id @default(cuid())
+  testSeriesId  String
+  title         String
+  fileUrl       String
+  modelAnswerUrl String?
+  rubricContent String?    @db.Text
+  maxMarks      Float
+  version       Int        @default(1)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  testSeries TestSeries @relation(fields: [testSeriesId], references: [id], onDelete: Cascade)
+
+  @@index([testSeriesId])
+}
+
+model AnswerSheetTemplate {
+  id               String     @id @default(cuid())
+  testSeriesId     String
+  title            String
+  fileUrl          String
+  templateRequired Boolean    @default(true)
+  description      String?    @db.Text
+  version          Int        @default(1)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  testSeries TestSeries @relation(fields: [testSeriesId], references: [id], onDelete: Cascade)
+
+  @@index([testSeriesId])
+}
+
+model TestRegistration {
+  id           String             @id @default(cuid())
+  userId       String
+  testSeriesId String
+  status       RegistrationStatus @default(ACTIVE)
+  attemptsUsed Int                @default(0)
+  maxAttempts  Int                @default(3)
+  registeredAt DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  testSeries  TestSeries   @relation(fields: [testSeriesId], references: [id], onDelete: Cascade)
+  submissions Submission[]
+  payment     Payment?
+
+  @@unique([userId, testSeriesId])
+  @@index([userId])
+  @@index([testSeriesId])
+  @@index([status])
+  @@index([userId, registeredAt])
+  @@index([testSeriesId, status])
+}
+
+model Payment {
+  id                   String        @id @default(cuid())
+  userId               String
+  registrationId       String?       @unique
+  testSeriesId         String
+  razorpayOrderId      String        @unique
+  razorpayPaymentId    String?       @unique
+  razorpaySignature    String?
+  amount               Int           // in paise
+  amountRefunded       Int           @default(0) // in paise
+  currency             String        @default("INR")
+  status               PaymentStatus @default(PENDING)
+  paymentMethod        String?       // "upi", "card", "netbanking", "wallet"
+  bankReference        String?       // Bank RRN / UTR
+  failureReason        String?       @db.Text
+  idempotencyKey       String?       @unique
+  verificationMetadata String?       @db.Text
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  registration TestRegistration? @relation(fields: [registrationId], references: [id], onDelete: SetNull)
+  refunds      PaymentRefund[]
+  logs         PaymentLedger[]
+
+  @@index([userId])
+  @@index([userId, createdAt])
+  @@index([testSeriesId])
+  @@index([registrationId])
+  @@index([razorpayOrderId])
+  @@index([razorpayPaymentId])
+  @@index([status, createdAt])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model PaymentRefund {
+  id                  String       @id @default(cuid())
+  paymentId           String
+  razorpayRefundId    String       @unique
+  adminId             String
+  amount              Int          // in paise
+  currency            String       @default("INR")
+  reason              RefundReason
+  adminNotes          String       @db.Text
+  status              String       @default("PROCESSED") // "PROCESSED", "FAILED"
+  revokedRegistration Boolean      @default(true)
+  idempotencyKey      String       @unique
+  createdAt           DateTime     @default(now())
+
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  admin   User    @relation("AdminProcessedRefunds", fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([paymentId])
+  @@index([adminId])
+  @@index([razorpayRefundId])
+  @@index([createdAt])
+}
+
+model PaymentLedger {
+  id         String   @id @default(cuid())
+  paymentId  String
+  eventType  String   // e.g. "ORDER_CREATED", "PAYMENT_CAPTURED", "WEBHOOK_PROCESSED", "REFUND_EXECUTED"
+  rawPayload String?  @db.Text
+  details    String   @db.Text
+  actorType  String   // "SYSTEM", "GATEWAY_WEBHOOK", "ADMIN_USER", "STUDENT_CLIENT"
+  actorId    String?
+  createdAt  DateTime @default(now())
+
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@index([paymentId])
+  @@index([eventType])
+  @@index([createdAt])
+}
+
+model Submission {
+  id            String           @id @default(cuid())
+  registrationId String
+  testSeriesId  String
+  userId        String
+  attemptNumber Int              // 1, 2, or 3
+  fileUrl       String
+  fileType      String           @default("application/pdf")
+  fileSizeBytes Int
+  pageCount     Int?
+  status        SubmissionStatus @default(PENDING)
+  aiEvaluationRuns Int             @default(0)
+  submittedAt   DateTime         @default(now())
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  registration TestRegistration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  testSeries   TestSeries       @relation(fields: [testSeriesId], references: [id], onDelete: Cascade)
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  evaluation   Evaluation?
+  evaluationRuns EvaluationRun[]
+  evaluationJob EvaluationJob?
+
+  @@unique([registrationId, attemptNumber]) // Strict attempt atomicity constraint
+  @@index([registrationId])
+  @@index([userId])
+  @@index([testSeriesId])
+  @@index([status])
+  @@index([submittedAt]) // NEW - for sorting by submission time
+  @@index([testSeriesId, status, submittedAt]) // NEW - composite for admin filtering
+  @@index([userId, status]) // NEW - for student dashboard queries
+  @@index([userId, submittedAt]) // NEW - for student timeline queries
+}
+
+model Evaluation {
+  id                 String           @id @default(cuid())
+  submissionId       String           @unique
+  totalMarksAwarded  Float            @default(0)
+  maxMarks           Float            @default(100)
+  percentage         Float            @default(0)
+  generalFeedback    String           @db.Text
+  legibilityWarning  Boolean          @default(false)
+  uncertaintyFlag    Boolean          @default(false)
+  status             EvaluationStatus @default(PENDING)
+  evaluatorModel     String           @default("gemini-3.8-flash")
+  evaluatorVersion   String           @default("v1")
+  adminNotes         String?          @db.Text
+  evaluatedAt        DateTime?
+  reviewedAt         DateTime?
+  reviewedBy         String?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  submission Submission           @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  questions  QuestionEvaluation[]
+
+  @@index([submissionId])
+  @@index([status])
+  @@index([totalMarksAwarded]) // NEW - for leaderboard sorting
+  @@index([status, totalMarksAwarded]) // NEW - composite for filtered leaderboard
+  @@index([status, evaluatedAt]) // NEW - for pending review queue
+}
+
+model QuestionEvaluation {
+  id                 String     @id @default(cuid())
+  evaluationId       String
+  questionNumber     String     // e.g. "Q1", "Q2(a)"
+  maxMarks           Float
+  marksAwarded       Float
+  feedback           String     @db.Text
+  missingConcepts    String?    @db.Text
+  scoreBand          String     @default("PARTIAL")
+  scoreExplanation   String     @default("Score based on correctness, completeness, reasoning, and presentation.") @db.Text
+  strengths          String     @default("No specific strengths recorded.") @db.Text
+  examinerExpectation String    @default("Address the core concepts, reasoning, and evidence required by the question.") @db.Text
+  improvementAdvice  String     @default("Review the missing concepts and strengthen the explanation.") @db.Text
+  isLegible          Boolean    @default(true)
+  isUncertain        Boolean    @default(false)
+  adminOverrideMarks Float?
+  adminNotes         String?    @db.Text
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  evaluation Evaluation @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+
+  @@index([evaluationId])
+  @@index([questionNumber])
+  @@index([evaluationId, questionNumber]) // NEW - composite for ordered question queries
+}
+
+model EvaluationRun {
+  id                 String            @id @default(cuid())
+  submissionId       String
+  runNumber          Int
+  trigger            EvaluationTrigger
+  status             EvaluationStatus  @default(PENDING)
+  totalMarksAwarded  Float             @default(0)
+  maxMarks           Float             @default(100)
+  percentage         Float             @default(0)
+  generalFeedback    String            @db.Text
+  legibilityWarning  Boolean           @default(false)
+  uncertaintyFlag    Boolean           @default(false)
+  evaluatorModel     String
+  failureReason      String?           @db.Text
+  startedAt          DateTime?
+  completedAt        DateTime?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  submission Submission            @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  questions  EvaluationRunQuestion[]
+
+  @@unique([submissionId, runNumber])
+  @@index([submissionId, createdAt])
+  @@index([status, createdAt])
+}
+
+model EvaluationRunQuestion {
+  id                  String   @id @default(cuid())
+  evaluationRunId     String
+  questionNumber      String
+  maxMarks             Float
+  marksAwarded         Float
+  scoreBand            String
+  scoreExplanation     String   @db.Text
+  strengths            String   @db.Text
+  missingConcepts      String?  @db.Text
+  examinerExpectation String   @db.Text
+  improvementAdvice   String   @db.Text
+  isLegible            Boolean  @default(true)
+  isUncertain          Boolean  @default(false)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  evaluationRun EvaluationRun @relation(fields: [evaluationRunId], references: [id], onDelete: Cascade)
+
+  @@index([evaluationRunId, questionNumber])
+}
+
+model WebhookEvent {
+  id          String        @id @default(cuid())
+  provider    String        @default("razorpay")
+  eventId     String        @unique
+  eventType   String
+  payload     String        @db.Text
+  status      WebhookStatus @default(RECEIVED)
+  processedAt DateTime?
+  createdAt   DateTime      @default(now())
+
+  @@index([eventId])
+  @@index([status, createdAt])
+  @@index([status])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  adminId    String
+  action     String   // e.g. "SCORE_OVERRIDE", "EXTRA_ATTEMPT_GRANTED", "TEST_PUBLISHED"
+  targetType String   // e.g. "Submission", "Evaluation", "TestSeries", "TestRegistration"
+  targetId   String
+  details    String   @db.Text
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  admin User @relation("AdminAuditLogs", fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+}
+
+model EvaluationJob {
+  id            String   @id @default(cuid())
+  submissionId  String   @unique
+  status        JobStatus @default(QUEUED)
+  attempts      Int      @default(0)
+  maxAttempts   Int      @default(3)
+  lastError     String?  @db.Text
+  queuedAt      DateTime @default(now())
+  startedAt     DateTime?
+  completedAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  submission Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  @@index([status, queuedAt]) // For finding queued/processing jobs in order
+  @@index([submissionId]) // For querying job status by submission
+}
