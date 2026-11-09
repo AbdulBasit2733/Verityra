@@ -528,3 +528,26 @@ model EvaluationJob {
   @@index([status, queuedAt]) // For finding queued/processing jobs in order
   @@index([submissionId]) // For querying job status by submission
 }
+
+
+model QuestionPaper {
+  id              String   @id @default(cuid())
+  title           String
+  description     String?  @db.Text
+  category        String   // e.g. "School Education", "Competitive", "Civil Services", "State PSC", "General"
+  subject         String?  // e.g. "Mathematics", "Physics", "General Studies"
+  year            Int?     // e.g. 2024, 2025, 2026
+  maxMarks        Float    @default(100)
+  durationMinutes Int?     @default(180)
+  fileUrl         String
+  fileSizeBytes   Int?
+  isPublished     Boolean  @default(true)
+  downloadsCount  Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([category])
+  @@index([subject])
+  @@index([isPublished])
+  @@index([createdAt])
+}

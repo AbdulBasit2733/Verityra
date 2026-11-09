@@ -40,6 +40,11 @@ const adminNavItems: NavItem[] = [
     icon: BookOpen,
   },
   {
+    label: "Question Papers",
+    href: "/admin/question-papers",
+    icon: FileText,
+  },
+  {
     label: "Submissions & Reviews",
     href: "/admin/submissions",
     icon: FileCheck2,

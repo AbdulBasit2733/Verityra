@@ -6,6 +6,7 @@ import { runEvaluationTests } from "./evaluation.test"
 import { runPaymentTests } from "./payments.test"
 import { runFileStorageTests } from "./file-storage.test"
 import { runEmailTests } from "./email.test"
+import { runQuestionPaperTests } from "./question-papers.test"
 import { TestResult } from "./test-utils"
 
 console.log("================================================================================")
@@ -24,6 +25,7 @@ try {
   results.push(runPaymentTests())
   results.push(runFileStorageTests())
   results.push(runEmailTests())
+  results.push(runQuestionPaperTests())
 } catch (err: any) {
   console.error("FATAL ERROR IN TEST SUITE RUNNER:", err)
   process.exit(1)
@@ -50,7 +52,15 @@ console.log(`TOTAL TESTS: ${totalPassed + totalFailed} | PASSED: ${totalPassed} 
 console.log("================================================================================")
 
 if (totalFailed > 0) {
-  console.error(`\nTest run failed with ${totalFailed} failing assertions. See above output for details.`)
+  console.error(`\nFAILED SUITES REPORT (${totalFailed} failures):`)
+  for (const res of results) {
+    if (res.failed > 0) {
+      console.error(`\nSuite: ${res.suiteName}`)
+      for (const err of res.errors) {
+        console.error(`  - [${err.testName}]: ${err.error}`)
+      }
+    }
+  }
   process.exit(1)
 } else {
   console.log("\nAll modular test suites passed successfully!")

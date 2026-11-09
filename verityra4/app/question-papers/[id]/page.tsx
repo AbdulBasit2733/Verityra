@@ -1,11 +1,12 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { ArrowLeft, Download, FileText } from "lucide-react"
+import { ArrowLeft, Download, FileText, Award, Clock, Calendar, ExternalLink } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { buttonVariants } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { prisma, isDatabaseConnected } from "@/lib/prisma"
+import { DEMO_QUESTION_PAPERS, QuestionPaperItem } from "@/lib/mock-question-papers"
 
 export const revalidate = 300
 
@@ -15,87 +16,154 @@ export default async function QuestionPaperDetailPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  if (!(await isDatabaseConnected())) notFound()
 
-  const paper = await prisma.testPaper.findFirst({
-    where: { id, testSeries: { isPublished: true } },
-    select: {
-      title: true,
-      fileUrl: true,
-      maxMarks: true,
-      rubricContent: true,
-      testSeries: {
-        select: { title: true, description: true, durationMinutes: true },
-      },
-    },
-  })
+  let paper: QuestionPaperItem | null = null
 
-  if (!paper) notFound()
+  if (await isDatabaseConnected()) {
+    try {
+      const record = await (prisma as any).questionPaper.findFirst({
+        where: { id, isPublished: true },
+      })
+
+      if (record) {
+        paper = {
+          id: record.id,
+          title: record.title,
+          description: record.description,
+          category: record.category,
+          subject: record.subject,
+          year: record.year,
+          maxMarks: record.maxMarks,
+          durationMinutes: record.durationMinutes,
+          fileUrl: record.fileUrl,
+          fileSizeBytes: record.fileSizeBytes,
+          isPublished: record.isPublished,
+          downloadsCount: record.downloadsCount || 0,
+          createdAt: record.createdAt ? new Date(record.createdAt).toISOString() : new Date().toISOString(),
+        }
+      }
+    } catch (err) {
+      console.error("[QUESTION PAPER DETAIL QUERY ERROR]", err)
+    }
+  }
+
+  // Fallback to demo fixture
+  if (!paper) {
+    const demo = DEMO_QUESTION_PAPERS.find((p) => p.id === id)
+    if (demo) {
+      paper = demo
+    }
+  }
+
+  if (!paper) {
+    notFound()
+  }
+
+  const downloadUrl = `${paper.fileUrl}${paper.fileUrl.includes("?") ? "&" : "?"}download=1`
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#F1F6FF]">
-      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-10 sm:px-6 lg:py-16">
+    <div className="flex min-h-screen flex-col bg-[#F1F6FF]/60">
+      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-8 sm:px-6 lg:py-12">
         <Link
           href="/question-papers"
           className={cn(
             buttonVariants({ variant: "ghost" }),
-            "w-fit text-[#145DEB]"
+            "w-fit text-[#145DEB] hover:bg-white text-xs font-semibold gap-1.5"
           )}
         >
-          <ArrowLeft data-icon="inline-start" /> Back to question papers
+          <ArrowLeft className="h-4 w-4" /> Back to question papers
         </Link>
-        <Card className="border-[#DCE7FA] bg-white shadow-sm">
-          <CardHeader className="gap-4 border-b border-[#DCE7FA]">
-            <div className="flex size-12 items-center justify-center rounded-2xl bg-[#F1F6FF] text-[#145DEB]">
-              <FileText aria-hidden="true" />
+
+        <Card className="border-[#DCE7FA] bg-white shadow-sm overflow-hidden">
+          <CardHeader className="gap-4 border-b border-[#DCE7FA] p-6 sm:p-8 bg-gradient-to-br from-white via-white to-[#F1F6FF]/40">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Badge className="rounded-full bg-[#F1F6FF] text-[#145DEB] border border-[#BFD5FA]/60 text-xs font-bold uppercase tracking-wide">
+                  {paper.category}
+                </Badge>
+                {paper.year && (
+                  <Badge variant="outline" className="border-slate-300 text-slate-600 text-xs font-semibold">
+                    <Calendar className="mr-1 h-3 w-3 text-slate-400" /> {paper.year} Examination
+                  </Badge>
+                )}
+              </div>
+              <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold">
+                Free Download
+              </Badge>
             </div>
-            <Badge className="w-fit rounded-full bg-[#F1F6FF] text-[#145DEB]">
-              Public question paper
-            </Badge>
-            <CardTitle className="font-heading text-3xl text-[#071B3A]">
+
+            <CardTitle className="font-heading text-2xl sm:text-3xl font-extrabold text-[#071B3A] leading-tight">
               {paper.title}
             </CardTitle>
-            <p className="text-[#64748B]">
-              {paper.testSeries.title} · {paper.maxMarks} marks ·{" "}
-              {paper.testSeries.durationMinutes} minutes
-            </p>
+
+            <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm text-[#64748B]">
+              <span className="flex items-center gap-1.5 font-semibold text-[#071B3A]">
+                <Award className="h-4 w-4 text-[#145DEB]" /> {paper.maxMarks} Marks
+              </span>
+              {paper.durationMinutes && (
+                <span className="flex items-center gap-1.5">
+                  <Clock className="h-4 w-4 text-slate-400" /> {paper.durationMinutes} Minutes
+                </span>
+              )}
+              {paper.subject && (
+                <span className="flex items-center gap-1.5">
+                  <FileText className="h-4 w-4 text-slate-400" /> {paper.subject}
+                </span>
+              )}
+            </div>
           </CardHeader>
+
           <CardContent className="flex flex-col gap-6 p-6 sm:p-8">
-            <p className="leading-7 text-[#64748B]">
-              {paper.testSeries.description}
-            </p>
-            {paper.rubricContent && (
-              <div className="rounded-2xl bg-[#F1F6FF] p-5">
-                <h2 className="font-semibold text-[#071B3A]">
-                  Document information
-                </h2>
-                <p className="mt-2 text-sm leading-6 text-[#64748B]">
-                  {paper.rubricContent}
+            {paper.description && (
+              <div className="space-y-2 rounded-2xl bg-[#F1F6FF]/60 p-5 border border-[#DCE7FA]">
+                <h3 className="font-bold text-sm text-[#071B3A] font-heading">
+                  Examination Information &amp; Syllabus Coverage
+                </h3>
+                <p className="text-xs sm:text-sm leading-relaxed text-[#64748B]">
+                  {paper.description}
                 </p>
               </div>
             )}
-            <div className="flex flex-wrap gap-3">
+
+            {/* Action Buttons */}
+            <div className="flex flex-wrap items-center gap-3">
               <a
-                href={paper.fileUrl}
+                href={downloadUrl}
                 download
                 className={cn(
                   buttonVariants(),
-                  "rounded-xl bg-[#145DEB] hover:bg-[#0F4DC7]"
+                  "rounded-xl bg-[#145DEB] hover:bg-[#0F4DC7] text-white px-5 py-2.5 font-semibold text-xs sm:text-sm shadow-xs"
                 )}
               >
-                <Download data-icon="inline-start" /> Download PDF
+                <Download className="mr-2 h-4 w-4" /> Download PDF Document
               </a>
+
               <a
                 href={paper.fileUrl}
                 target="_blank"
                 rel="noreferrer"
                 className={cn(
                   buttonVariants({ variant: "outline" }),
-                  "rounded-xl border-[#BFD5FA] text-[#145DEB]"
+                  "rounded-xl border-[#BFD5FA] text-[#145DEB] hover:bg-[#F1F6FF] px-4 py-2.5 font-semibold text-xs sm:text-sm"
                 )}
               >
-                Open document preview
+                <ExternalLink className="mr-2 h-4 w-4" /> Open in New Tab
               </a>
+            </div>
+
+            {/* Embedded PDF Viewer */}
+            <div className="mt-4 overflow-hidden rounded-2xl border border-[#DCE7FA] bg-slate-100 shadow-inner">
+              <div className="flex items-center justify-between border-b border-[#DCE7FA] bg-slate-50 px-4 py-2.5 text-xs text-slate-500">
+                <span className="font-semibold text-slate-700 flex items-center gap-1.5">
+                  <FileText className="h-3.5 w-3.5 text-[#145DEB]" /> Live Document Preview
+                </span>
+                <span>PDF Format</span>
+              </div>
+              <iframe
+                src={`${paper.fileUrl}#toolbar=0`}
+                title={paper.title}
+                className="w-full h-[650px] border-0"
+              />
             </div>
           </CardContent>
         </Card>

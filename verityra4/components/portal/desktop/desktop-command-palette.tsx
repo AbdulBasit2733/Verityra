@@ -24,23 +24,16 @@ import {
   Settings,
   Search,
   ArrowRight,
+  FileText,
+  Download,
 } from "lucide-react"
 
 /**
  * Desktop Command Palette (Ctrl+K / Cmd+K)
  *
  * Fast jump navigation across the Verityra platform:
- * - Student: Dashboard, Tests, Leaderboard, Profile
- * - Admin: Overview, Test Series, Submissions, Students, Payments, Profile
- *
- * Usage:
- * ```tsx
- * <DesktopCommandPalette
- *   open={commandPaletteOpen}
- *   onOpenChange={setCommandPaletteOpen}
- *   role="ADMIN" | "STUDENT"
- * />
- * ```
+ * - Student: Dashboard, Tests, Leaderboard, Profile, Question Papers, Downloads
+ * - Admin: Overview, Test Series, Question Papers, Submissions, Students, Payments, Profile
  */
 
 interface CommandPaletteProps {
@@ -70,6 +63,13 @@ const adminCommands: NavCommand[] = [
     href: "/admin/test-series",
     icon: BookOpen,
     keywords: ["tests", "papers", "exams", "create", "manage"],
+    category: "Navigation",
+  },
+  {
+    label: "Question Papers Library",
+    href: "/admin/question-papers",
+    icon: FileText,
+    keywords: ["papers", "question papers", "upload", "download", "library", "curriculum"],
     category: "Navigation",
   },
   {
@@ -122,6 +122,20 @@ const studentCommands: NavCommand[] = [
     href: "/student/tests",
     icon: BookOpen,
     keywords: ["registered", "free", "attempts", "take test"],
+    category: "Navigation",
+  },
+  {
+    label: "Question Papers",
+    href: "/question-papers",
+    icon: FileText,
+    keywords: ["question papers", "papers", "practice", "download", "browse"],
+    category: "Navigation",
+  },
+  {
+    label: "Downloads",
+    href: "/student/downloads",
+    icon: Download,
+    keywords: ["downloads", "templates", "answer sheet", "offline"],
     category: "Navigation",
   },
   {

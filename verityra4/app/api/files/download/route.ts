@@ -88,11 +88,6 @@ startxref
 
 export async function GET(req: NextRequest) {
   try {
-    const user = await getCurrentUser()
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
     const searchParams = req.nextUrl.searchParams
     const bucket = searchParams.get("bucket") || "verityra-private"
     const file = searchParams.get("file")
@@ -113,10 +108,48 @@ export async function GET(req: NextRequest) {
     const ownerUserIdCandidate = segments.length > 2 ? segments[2] : ""
     const filename = segments[segments.length - 1]
 
+    const user = await getCurrentUser()
+    if (!user && fileType !== "question-papers") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const dbConnected = await isDatabaseConnected()
 
     // Authorization evaluation
-    if (fileType === "submissions") {
+    if (fileType === "question-papers") {
+      // Standalone question papers are openly accessible if published
+      if (user?.role !== Role.ADMIN) {
+        if (dbConnected) {
+          const paper = await (prisma as any).questionPaper.findFirst({
+            where: {
+              OR: [
+                { fileUrl: { contains: safeFilePath } },
+                { fileUrl: { contains: filename } },
+                ...(testSeriesIdCandidate ? [{ id: testSeriesIdCandidate }] : []),
+              ],
+            },
+            select: { id: true, isPublished: true },
+          })
+
+          if (paper && !paper.isPublished) {
+            return NextResponse.json({ error: "This question paper is currently unpublished." }, { status: 403 })
+          }
+
+          if (paper) {
+            // Asynchronously increment download counter
+            ;(prisma as any).questionPaper
+              .update({
+                where: { id: paper.id },
+                data: { downloadsCount: { increment: 1 } },
+              })
+              .catch(() => {})
+          }
+        }
+      }
+    } else if (fileType === "submissions") {
+      if (!user) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      }
       const isOwner = user.id === ownerUserIdCandidate
       const isDemoSubmission =
         process.env.NODE_ENV === "development" && (
@@ -145,6 +178,9 @@ export async function GET(req: NextRequest) {
         }
       }
     } else if (fileType === "papers" || fileType === "templates") {
+      if (!user) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      }
       if (user.role !== Role.ADMIN) {
         // In development only, allow explicit demo/dev fixtures to bypass registration
         const isDevDemoResource =
@@ -204,15 +240,26 @@ export async function GET(req: NextRequest) {
           })
 
           if (!registration) {
-            return NextResponse.json(
-              { error: "Enroll in this test series to access its official papers and margin templates." },
-              { status: 403 }
-            )
+            // Also check if test series is published
+            const testSeries = await prisma.testSeries.findFirst({
+              where: {
+                id: resolvedTestSeriesId,
+                isPublished: true,
+              },
+              select: { id: true },
+            })
+
+            if (!testSeries) {
+              return NextResponse.json(
+                { error: "Enroll in this test series to access its official papers and margin templates." },
+                { status: 403 }
+              )
+            }
           }
         }
       }
     } else if (fileType === "model-answers") {
-      if (user.role !== Role.ADMIN) {
+      if (!user || user.role !== Role.ADMIN) {
         return NextResponse.json({ error: "Admin access required for model answer keys." }, { status: 403 })
       }
     } else {
@@ -248,6 +295,7 @@ export async function GET(req: NextRequest) {
       (safeFilePath.includes("/demo/") ||
        safeFilePath.startsWith("papers/demo-") ||
        safeFilePath.startsWith("templates/demo-") ||
+       safeFilePath.startsWith("question-papers/") ||
        testSeriesIdCandidate.startsWith("demo-") ||
        testSeriesIdCandidate.startsWith("dev-"))
 
@@ -271,7 +319,7 @@ export async function GET(req: NextRequest) {
           [
             "Official examination material prepared for authorized candidate usage.",
             "Ensure answers are numbered clearly and written within designated margins.",
-            `Generated for verified user: ${user.email || user.name || "Candidate"}`
+            `Generated for verified user: ${user?.email || user?.name || "Student"}`
           ]
         )
       }
