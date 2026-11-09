@@ -113,7 +113,14 @@ export function TestRegistrationButton({
         return
       }
 
-      const { orderId, amount, currency, keyId, testTitle } = orderResult.data
+      const { orderId, amount, currency, keyId, testTitle, userName, userEmail, alreadyCompleted } = orderResult.data
+
+      if (alreadyCompleted) {
+        setSuccess(orderResult.message || "Payment verified! Access granted.")
+        setLoading(false)
+        scheduleRedirect()
+        return
+      }
 
       // If Razorpay SDK is loaded in browser
       if (typeof window !== "undefined" && window.Razorpay && keyId && !keyId.includes("placeholder")) {
@@ -124,7 +131,17 @@ export function TestRegistrationButton({
           name: "Verityra",
           description: testTitle,
           order_id: orderId,
+          prefill: {
+            name: userName || "",
+            email: userEmail || "",
+          },
+          modal: {
+            ondismiss: () => {
+              setLoading(false)
+            },
+          },
           handler: async function (response: any) {
+            setLoading(true)
             const verifyResult = await verifyPaymentAndRegisterAction({
               razorpayOrderId: response.razorpay_order_id,
               razorpayPaymentId: response.razorpay_payment_id,
@@ -134,9 +151,11 @@ export function TestRegistrationButton({
 
             if (verifyResult.success) {
               setSuccess("Payment successful! Access granted.")
+              setLoading(false)
               scheduleRedirect()
             } else {
               setError(verifyResult.error || "Payment verification failed.")
+              setLoading(false)
             }
           },
           theme: {
@@ -145,8 +164,16 @@ export function TestRegistrationButton({
         }
 
         const rzp = new window.Razorpay(options)
+        if (typeof rzp.on === "function") {
+          rzp.on("payment.failed", (response: any) => {
+            setError(
+              response?.error?.description ||
+                "Payment was declined or interrupted. Please try again or use another payment method."
+            )
+            setLoading(false)
+          })
+        }
         rzp.open()
-        setLoading(false)
       } else if (orderId.startsWith("order_dev_mock_") || keyId.includes("placeholder")) {
         // Development-only simulation for explicitly marked mock orders.
         const verifyResult = await verifyPaymentAndRegisterAction({

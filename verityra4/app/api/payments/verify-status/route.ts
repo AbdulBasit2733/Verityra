@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma, isDatabaseConnected } from "@/lib/prisma"
 import { getCurrentUser } from "@/lib/auth-guard"
+import { sendEnrollmentReceiptEmail } from "@/lib/email"
 import { PaymentStatus, RegistrationStatus } from "@prisma/client"
 import Razorpay from "razorpay"
 
@@ -75,7 +76,7 @@ export async function POST(req: NextRequest) {
       if (capturedPayment) {
         const testSeries = await prisma.testSeries.findUnique({
           where: { id: payment.testSeriesId },
-          select: { maxAttempts: true, price: true, isPublished: true },
+          select: { title: true, maxAttempts: true, price: true, isPublished: true },
         })
         if (!testSeries || capturedPayment.amount !== payment.amount || capturedPayment.currency !== payment.currency) {
           return NextResponse.json({ error: "Captured payment does not match the stored order" }, { status: 409 })
@@ -96,15 +97,32 @@ export async function POST(req: NextRequest) {
               attemptsUsed: 0,
               maxAttempts: testSeries.maxAttempts,
             },
-            update: { status: RegistrationStatus.ACTIVE },
+            update: {
+              status: RegistrationStatus.ACTIVE,
+              attemptsUsed: 0,
+              maxAttempts: testSeries.maxAttempts,
+            },
           })
           registrationId = registration.id
+
+          await tx.payment.updateMany({
+            where: {
+              registrationId: registration.id,
+              id: { not: payment.id },
+            },
+            data: { registrationId: null },
+          })
+
           await tx.payment.update({
             where: { id: payment.id },
             data: {
               status: PaymentStatus.COMPLETED,
               razorpayPaymentId: capturedPayment.id,
               paymentMethod: capturedPayment.method,
+              bankReference:
+                capturedPayment.acquirer_data?.rrn ||
+                capturedPayment.acquirer_data?.bank_transaction_id ||
+                null,
               registrationId: registration.id,
             },
           })
@@ -119,6 +137,22 @@ export async function POST(req: NextRequest) {
             },
           })
         })
+
+        const paymentUser = await prisma.user.findUnique({
+          where: { id: payment.userId },
+          select: { name: true, email: true },
+        })
+        if (paymentUser?.email) {
+          await sendEnrollmentReceiptEmail({
+            to: paymentUser.email,
+            name: paymentUser.name,
+            testSeriesId: payment.testSeriesId,
+            testTitle: testSeries.title,
+            amountPaise: payment.amount,
+            maxAttempts: testSeries.maxAttempts,
+            orderId,
+          }).catch((err) => console.error("[verify-status] Failed to send enrollment receipt:", err))
+        }
 
         return NextResponse.json({
           completed: true,

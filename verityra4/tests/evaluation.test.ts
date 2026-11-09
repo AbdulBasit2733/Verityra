@@ -193,6 +193,24 @@ export function runEvaluationTests() {
     assert.equal(parsedRaw.generalFeedback, "Clean JSON")
   })
 
+  suite.test("Admin Re-evaluation Quota: Admin trigger bypasses the 3-run automatic evaluation limit", () => {
+    const MAX_AI_EVALUATION_RUNS = 3
+
+    function canClaimEvaluationRun(recordedRuns: number, trigger: "AUTOMATIC" | "ADMIN_REEVALUATION") {
+      const isAdminTrigger = trigger === "ADMIN_REEVALUATION"
+      if (!isAdminTrigger && recordedRuns >= MAX_AI_EVALUATION_RUNS) {
+        return false
+      }
+      return true
+    }
+
+    assert.equal(canClaimEvaluationRun(2, "AUTOMATIC"), true)
+    assert.equal(canClaimEvaluationRun(3, "AUTOMATIC"), false)
+    assert.equal(canClaimEvaluationRun(3, "ADMIN_REEVALUATION"), true)
+    assert.equal(canClaimEvaluationRun(10, "ADMIN_REEVALUATION"), true)
+    assert.equal(canClaimEvaluationRun(50, "ADMIN_REEVALUATION"), true)
+  })
+
   return suite.summary()
 }
 

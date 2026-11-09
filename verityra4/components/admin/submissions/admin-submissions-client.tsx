@@ -36,13 +36,11 @@ export function AdminSubmissionEvaluationTrigger({
   compact = false,
   iconOnly = false,
   aiEvaluationRuns = 0,
-  maxAiEvaluationRuns = 20,
 }: {
   submissionId: string
   compact?: boolean
   iconOnly?: boolean
   aiEvaluationRuns?: number
-  maxAiEvaluationRuns?: number
 }) {
   const router = useRouter()
   const { showError } = useGlobalError()
@@ -52,7 +50,7 @@ export function AdminSubmissionEvaluationTrigger({
   async function handleEvaluate() {
     const confirmed = await confirm({
       title: "Queue AI re-evaluation?",
-      description: `This will use AI evaluation run ${aiEvaluationRuns + 1} of ${maxAiEvaluationRuns}.`,
+      description: `This will trigger administrative AI evaluation run #${aiEvaluationRuns + 1}.`,
       confirmText: "Re-evaluate",
       cancelText: "Cancel",
       variant: "default",
@@ -86,7 +84,7 @@ export function AdminSubmissionEvaluationTrigger({
   if (iconOnly) {
     const label = loading
       ? "Queueing re-evaluation"
-      : `Re-evaluate submission (${aiEvaluationRuns} of ${maxAiEvaluationRuns} runs used)`
+      : `Re-evaluate submission (Run #${aiEvaluationRuns + 1})`
 
     return (
       <IconActionButton
@@ -113,7 +111,7 @@ export function AdminSubmissionEvaluationTrigger({
       onClick={handleEvaluate}
     >
       {loading ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="mr-1.5 h-3.5 w-3.5" />}
-      {loading ? "Queueing..." : `Re-evaluate (${aiEvaluationRuns}/${maxAiEvaluationRuns})`}
+      {loading ? "Queueing..." : `Re-evaluate (Run #${aiEvaluationRuns + 1})`}
     </Button>
   )
 }
@@ -255,7 +253,7 @@ export function AdminSubmissionsClient({
       className: "text-right",
       cell: (s) => (
         <div className="flex items-center justify-end gap-1">
-          {(s.status === "COMPLETED" || s.status === "FAILED" || s.status === "REVIEW_REQUIRED") && s.aiEvaluationRuns < 3 && (
+          {(s.status === "COMPLETED" || s.status === "FAILED" || s.status === "REVIEW_REQUIRED") && (
             <AdminSubmissionEvaluationTrigger submissionId={s.id} compact iconOnly aiEvaluationRuns={s.aiEvaluationRuns} />
           )}
           {s.fileUrl && (
@@ -337,8 +335,8 @@ export function AdminSubmissionsClient({
         return "LOW"
       },
       options: [
-        { label: "High Marks (≥ 70%)", value: "HIGH" },
-        { label: "Average Marks (50–69%)", value: "AVERAGE" },
+        { label: "High Marks (â‰¥ 70%)", value: "HIGH" },
+        { label: "Average Marks (50â€“69%)", value: "AVERAGE" },
         { label: "Low Marks (< 50%)", value: "LOW" },
         { label: "Unscored / Processing", value: "UNSCORED" },
       ],
@@ -488,7 +486,7 @@ export function AdminSubmissionsClient({
 
             {/* Actions */}
             <div className="flex items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
-              {(s.status === "COMPLETED" || s.status === "FAILED" || s.status === "REVIEW_REQUIRED") && s.aiEvaluationRuns < 20 && (
+              {(s.status === "COMPLETED" || s.status === "FAILED" || s.status === "REVIEW_REQUIRED") && (
                 <AdminSubmissionEvaluationTrigger submissionId={s.id} compact aiEvaluationRuns={s.aiEvaluationRuns} />
               )}
               {s.fileUrl && (

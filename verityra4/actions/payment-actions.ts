@@ -2,6 +2,7 @@
 
 import { requireAdmin, resolvePersistedAdminActor } from "@/lib/auth-guard"
 import { prisma, isDatabaseConnected } from "@/lib/prisma"
+import { sendEnrollmentReceiptEmail } from "@/lib/email"
 import { PaymentStatus, RegistrationStatus, RefundReason } from "@prisma/client"
 import { revalidatePath } from "next/cache"
 import Razorpay from "razorpay"
@@ -224,6 +225,16 @@ export async function getAdminPaymentsAction(): Promise<ActionResult<{ payments:
       },
     })
 
+    const testSeriesIds = Array.from(new Set(payments.map((p) => p.testSeriesId).filter(Boolean)))
+    const testSeriesRecords =
+      testSeriesIds.length > 0
+        ? await prisma.testSeries.findMany({
+            where: { id: { in: testSeriesIds } },
+            select: { id: true, title: true },
+          })
+        : []
+    const testSeriesTitleMap = new Map(testSeriesRecords.map((ts) => [ts.id, ts.title]))
+
     const now = Date.now()
 
     const rows: AdminPaymentRow[] = payments.map((p) => {
@@ -239,7 +250,10 @@ export async function getAdminPaymentsAction(): Promise<ActionResult<{ payments:
         candidateName: p.user?.name || "Candidate",
         candidateEmail: p.user?.email || "candidate@example.com",
         testSeriesId: p.testSeriesId,
-        testSeriesTitle: p.registration?.testSeries?.title || "Test Series",
+        testSeriesTitle:
+          p.registration?.testSeries?.title ||
+          testSeriesTitleMap.get(p.testSeriesId) ||
+          "Test Series",
         razorpayOrderId: p.razorpayOrderId,
         razorpayPaymentId: p.razorpayPaymentId,
         amount: p.amount,
@@ -363,7 +377,9 @@ export async function adminTriggerRefundAction(params: {
         })
         const refundsResponse = await razorpay.payments.fetchMultipleRefund(payment.razorpayPaymentId)
         const matchingRefund = refundsResponse.items?.find(
-          (refund: any) => refund.amount === payment.amount && refund.status === "processed"
+          (refund: any) =>
+            refund.amount === payment.amount &&
+            ["processed", "pending", "created"].includes(refund.status)
         )
         if (matchingRefund?.id) {
           recoveredRefundId = matchingRefund.id
@@ -385,16 +401,27 @@ export async function adminTriggerRefundAction(params: {
       }
     }
 
-    if (payment.status !== PaymentStatus.COMPLETED && !recoveredRefundId) {
+    if (
+      payment.status !== PaymentStatus.COMPLETED &&
+      payment.status !== PaymentStatus.PARTIALLY_REFUNDED &&
+      !recoveredRefundId
+    ) {
       return {
         success: false,
-        error: `Cannot refund payment in '${payment.status}' status. Only COMPLETED payments can be refunded.`,
+        error: `Cannot refund payment in '${payment.status}' status. Only COMPLETED or PARTIALLY_REFUNDED payments can be refunded.`,
       }
     }
 
-    const existingRefund = payment.refunds.find((refund) => refund.status === "PROCESSED")
+    const refundableAmount = Math.max(0, payment.amount - payment.amountRefunded)
+    if (refundableAmount <= 0 && !recoveredRefundId) {
+      return { success: false, error: "This payment has already been fully refunded." }
+    }
+
+    const existingRefund = payment.refunds.find(
+      (refund) => refund.status === "PROCESSED" && refund.amount >= payment.amount
+    )
     if (existingRefund) {
-      return { success: false, error: "A refund has already been recorded for this payment." }
+      return { success: false, error: "A full refund has already been recorded for this payment." }
     }
 
     // 2. 7-Day Return Policy Check
@@ -419,15 +446,20 @@ export async function adminTriggerRefundAction(params: {
     }
 
     // 4. Trigger Razorpay Refund API
-    const idempotencyKey = `idemp_ref_${payment.id}`
+    const idempotencyKey = `idemp_ref_${payment.id}_${Date.now()}`
+    const previousStatus = payment.status
     const claim = await prisma.payment.updateMany({
-      where: { id: payment.id, status: PaymentStatus.COMPLETED },
+      where: {
+        id: payment.id,
+        status: { in: [PaymentStatus.COMPLETED, PaymentStatus.PARTIALLY_REFUNDED] },
+      },
       data: { status: PaymentStatus.REFUND_PENDING },
     })
     if (claim.count !== 1) {
       return { success: false, error: "This payment is already being refunded or has changed state. Refresh and try again." }
     }
 
+    const refundAmountToProcess = recoveredRefundId ? payment.amount : refundableAmount
     let razorpayRefundId = recoveredRefundId || `rfnd_${Date.now()}`
 
     if (!recoveredRefundId && razorpayConfigured && payment.razorpayPaymentId) {
@@ -438,7 +470,7 @@ export async function adminTriggerRefundAction(params: {
         })
 
         const rzpRefund: any = await razorpay.payments.refund(payment.razorpayPaymentId, {
-          amount: payment.amount,
+          amount: refundAmountToProcess,
           speed: "normal",
           notes: {
             adminId: admin.id,
@@ -452,7 +484,7 @@ export async function adminTriggerRefundAction(params: {
         console.error("[adminTriggerRefundAction] Razorpay API Error:", rzpErr)
         await prisma.payment.update({
           where: { id: payment.id },
-          data: { status: PaymentStatus.COMPLETED },
+          data: { status: previousStatus },
         }).catch((resetError) => console.error("[adminTriggerRefundAction] Failed to reset refund claim:", resetError))
         return {
           success: false,
@@ -460,7 +492,7 @@ export async function adminTriggerRefundAction(params: {
         }
       }
     } else if (!recoveredRefundId && process.env.NODE_ENV === "production") {
-      await prisma.payment.update({ where: { id: payment.id }, data: { status: PaymentStatus.COMPLETED } })
+      await prisma.payment.update({ where: { id: payment.id }, data: { status: previousStatus } })
       return { success: false, error: "Razorpay refund configuration is missing. No refund was submitted." }
     }
 
@@ -475,7 +507,7 @@ export async function adminTriggerRefundAction(params: {
         },
       })
 
-      // B. Revoke Registration & Attempts
+      // B. Revoke Registration & Attempts (by registrationId or fallback composite key)
       if (payment.registrationId) {
         await tx.testRegistration.update({
           where: { id: payment.registrationId },
@@ -484,21 +516,40 @@ export async function adminTriggerRefundAction(params: {
             maxAttempts: 0, // Immediately locks upload portal
           },
         })
+      } else {
+        await tx.testRegistration.updateMany({
+          where: {
+            userId: payment.userId,
+            testSeriesId: payment.testSeriesId,
+          },
+          data: {
+            status: RegistrationStatus.CANCELLED,
+            maxAttempts: 0,
+          },
+        })
       }
 
-      // C. Insert PaymentRefund Record
-      await tx.paymentRefund.create({
-        data: {
+      // C. Upsert PaymentRefund Record (idempotent if webhook arrived first)
+      await tx.paymentRefund.upsert({
+        where: { razorpayRefundId },
+        create: {
           paymentId: payment.id,
           razorpayRefundId,
           adminId: admin.id,
-          amount: payment.amount,
+          amount: refundAmountToProcess,
           currency: payment.currency,
           reason: params.reason,
           adminNotes: params.adminNotes,
           status: "PROCESSED",
           revokedRegistration: true,
           idempotencyKey,
+        },
+        update: {
+          adminId: admin.id,
+          reason: params.reason,
+          adminNotes: params.adminNotes,
+          status: "PROCESSED",
+          revokedRegistration: true,
         },
       })
 
@@ -509,10 +560,10 @@ export async function adminTriggerRefundAction(params: {
           eventType: "REFUND_EXECUTED",
           actorType: "ADMIN_USER",
           actorId: admin.id,
-          details: `Admin ${admin.name || "Administrator"} approved 100% refund (₹${payment.amount / 100}) via Razorpay. Reason: ${params.reason}. Notes: ${params.adminNotes}`,
+          details: `Admin ${admin.name || "Administrator"} approved refund (₹${refundAmountToProcess / 100}) via Razorpay. Reason: ${params.reason}. Notes: ${params.adminNotes}`,
           rawPayload: JSON.stringify({
             refundId: razorpayRefundId,
-            amountPaise: payment.amount,
+            amountPaise: refundAmountToProcess,
             isWithin7Days,
             attemptsUsed,
           }),
@@ -526,7 +577,7 @@ export async function adminTriggerRefundAction(params: {
           action: "PAYMENT_REFUND_PROCESSED",
           targetType: "Payment",
           targetId: payment.id,
-          details: `Refunded ₹${payment.amount / 100} for candidate ${payment.user?.email || payment.userId}. Razorpay Refund ID: ${razorpayRefundId}`,
+          details: `Refunded ₹${refundAmountToProcess / 100} for candidate ${payment.user?.email || payment.userId}. Razorpay Refund ID: ${razorpayRefundId}`,
         },
       })
     })
@@ -672,18 +723,14 @@ export async function reconcilePendingPaymentsAction(): Promise<
           const capturedPayment = paymentsForOrder.items?.find((item: any) => item.status === "captured")
 
           if (capturedPayment) {
-            await prisma.$transaction(async (tx) => {
-              await tx.payment.update({
-                where: { id: p.id },
-                data: {
-                  status: PaymentStatus.COMPLETED,
-                  razorpayPaymentId: capturedPayment.id,
-                  paymentMethod: capturedPayment.method,
-                  bankReference: capturedPayment.acquirer_data?.rrn || capturedPayment.acquirer_data?.bank_transaction_id,
-                },
-              })
+            const testSeries = await prisma.testSeries.findUnique({
+              where: { id: p.testSeriesId },
+              select: { title: true, maxAttempts: true },
+            })
+            const maxAttempts = testSeries?.maxAttempts ?? 3
 
-              await tx.testRegistration.upsert({
+            await prisma.$transaction(async (tx) => {
+              const registration = await tx.testRegistration.upsert({
                 where: {
                   userId_testSeriesId: {
                     userId: p.userId,
@@ -695,10 +742,31 @@ export async function reconcilePendingPaymentsAction(): Promise<
                   testSeriesId: p.testSeriesId,
                   status: RegistrationStatus.ACTIVE,
                   attemptsUsed: 0,
-                  maxAttempts: 3,
+                  maxAttempts,
                 },
                 update: {
                   status: RegistrationStatus.ACTIVE,
+                  attemptsUsed: 0,
+                  maxAttempts,
+                },
+              })
+
+              await tx.payment.updateMany({
+                where: {
+                  registrationId: registration.id,
+                  id: { not: p.id },
+                },
+                data: { registrationId: null },
+              })
+
+              await tx.payment.update({
+                where: { id: p.id },
+                data: {
+                  status: PaymentStatus.COMPLETED,
+                  razorpayPaymentId: capturedPayment.id,
+                  paymentMethod: capturedPayment.method,
+                  bankReference: capturedPayment.acquirer_data?.rrn || capturedPayment.acquirer_data?.bank_transaction_id,
+                  registrationId: registration.id,
                 },
               })
 
@@ -712,6 +780,19 @@ export async function reconcilePendingPaymentsAction(): Promise<
                 },
               })
             })
+
+            if (p.user?.email && testSeries) {
+              await sendEnrollmentReceiptEmail({
+                to: p.user.email,
+                name: p.user.name,
+                testSeriesId: p.testSeriesId,
+                testTitle: testSeries.title,
+                amountPaise: p.amount,
+                maxAttempts,
+                orderId: p.razorpayOrderId,
+              }).catch((err) => console.error("[reconcilePendingPaymentsAction] Failed to send receipt:", err))
+            }
+
             reconciledCount++
           } else {
             // Check if order is expired or older than 1 hour without payment

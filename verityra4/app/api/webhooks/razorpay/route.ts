@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma, isDatabaseConnected } from "@/lib/prisma"
 import { sendEnrollmentReceiptEmail } from "@/lib/email"
-import { PaymentStatus, RegistrationStatus, WebhookStatus } from "@prisma/client"
+import { PaymentStatus, RefundReason, RegistrationStatus, Role, WebhookStatus } from "@prisma/client"
 import crypto from "crypto"
 
 export async function POST(req: NextRequest) {
@@ -62,6 +62,8 @@ export async function POST(req: NextRequest) {
       update: {},
     })
 
+    let eventMarkedProcessed = false
+
     // 2. Handle payment.captured or order.paid
     if (eventType === "order.paid" || eventType === "payment.captured") {
       const paymentEntity = payload.payload?.payment?.entity
@@ -88,6 +90,7 @@ export async function POST(req: NextRequest) {
           const testSeries = await prisma.testSeries.findUnique({
             where: { id: paymentRecord.testSeriesId },
           })
+          const maxAttempts = testSeries?.maxAttempts || 3
 
           await prisma.$transaction(async (tx) => {
             const registration = await tx.testRegistration.upsert({
@@ -102,11 +105,21 @@ export async function POST(req: NextRequest) {
                 testSeriesId: paymentRecord.testSeriesId,
                 status: RegistrationStatus.ACTIVE,
                 attemptsUsed: 0,
-                maxAttempts: testSeries?.maxAttempts || 3,
+                maxAttempts,
               },
               update: {
                 status: RegistrationStatus.ACTIVE,
+                attemptsUsed: 0,
+                maxAttempts,
               },
+            })
+
+            await tx.payment.updateMany({
+              where: {
+                registrationId: registration.id,
+                id: { not: paymentRecord.id },
+              },
+              data: { registrationId: null },
             })
 
             await tx.payment.update({
@@ -139,6 +152,7 @@ export async function POST(req: NextRequest) {
               },
             })
           })
+          eventMarkedProcessed = true
 
           // Send enrollment receipt email asynchronously after webhook fulfillment
           const fulfilledUser = await prisma.user.findUnique({
@@ -152,7 +166,7 @@ export async function POST(req: NextRequest) {
               testSeriesId: paymentRecord.testSeriesId,
               testTitle: testSeries.title,
               amountPaise: paymentRecord.amount,
-              maxAttempts: testSeries.maxAttempts || 3,
+              maxAttempts,
               orderId: razorpayOrderId,
             }).catch((err) =>
               console.error("[RAZORPAY WEBHOOK] Failed to send enrollment receipt:", err)
@@ -205,6 +219,7 @@ export async function POST(req: NextRequest) {
               },
             })
           })
+          eventMarkedProcessed = true
         }
       }
     }
@@ -213,24 +228,49 @@ export async function POST(req: NextRequest) {
     if (eventType === "refund.processed" || eventType === "refund.created") {
       const refundEntity = payload.payload?.refund?.entity
       const razorpayPaymentId = refundEntity?.payment_id
+      const razorpayRefundId = refundEntity?.id
 
       if (razorpayPaymentId) {
         const paymentRecord = await prisma.payment.findUnique({
           where: { razorpayPaymentId },
+          include: { refunds: true },
         })
 
         if (paymentRecord) {
           const refundAmount = Number(refundEntity?.amount || 0)
+          const refundCompleted = eventType === "refund.processed"
+
+          // Determine if this specific refund ID was already counted in PaymentRefund
+          const existingRefundRecord = razorpayRefundId
+            ? paymentRecord.refunds.find((r) => r.razorpayRefundId === razorpayRefundId)
+            : null
+
+          const otherRefundsSum = paymentRecord.refunds
+            .filter((r) => !razorpayRefundId || r.razorpayRefundId !== razorpayRefundId)
+            .reduce((sum, r) => sum + r.amount, 0)
+
           const totalRefunded = Math.min(
             paymentRecord.amount,
-            paymentRecord.amountRefunded + refundAmount
+            existingRefundRecord
+              ? otherRefundsSum + refundAmount
+              : Math.max(paymentRecord.amountRefunded, otherRefundsSum + refundAmount)
           )
-          const refundCompleted = eventType === "refund.processed"
+
           const nextStatus = refundCompleted
             ? totalRefunded >= paymentRecord.amount
               ? PaymentStatus.REFUNDED
               : PaymentStatus.PARTIALLY_REFUNDED
             : PaymentStatus.REFUND_PENDING
+
+          // Resolve admin actor for PaymentRefund foreign key
+          let refundAdminId = refundEntity?.notes?.adminId
+          if (!refundAdminId) {
+            const anyAdmin = await prisma.user.findFirst({
+              where: { role: Role.ADMIN },
+              select: { id: true },
+            })
+            refundAdminId = anyAdmin?.id || paymentRecord.userId
+          }
 
           await prisma.$transaction(async (tx) => {
             await tx.payment.update({
@@ -241,14 +281,51 @@ export async function POST(req: NextRequest) {
               },
             })
 
-            if (nextStatus === PaymentStatus.REFUNDED && paymentRecord.registrationId) {
-              await tx.testRegistration.update({
-                where: { id: paymentRecord.registrationId },
-                data: {
-                  status: RegistrationStatus.CANCELLED,
-                  maxAttempts: 0,
+            if (razorpayRefundId) {
+              await tx.paymentRefund.upsert({
+                where: { razorpayRefundId },
+                create: {
+                  paymentId: paymentRecord.id,
+                  razorpayRefundId,
+                  adminId: refundAdminId,
+                  amount: refundAmount || paymentRecord.amount,
+                  currency: refundEntity?.currency || paymentRecord.currency,
+                  reason: RefundReason.ADMIN_GOODWILL_OVERRIDE,
+                  adminNotes:
+                    refundEntity?.notes?.reason ||
+                    "Refund processed via Razorpay Gateway / Dashboard webhook.",
+                  status: refundCompleted ? "PROCESSED" : "PENDING",
+                  revokedRegistration: nextStatus === PaymentStatus.REFUNDED,
+                  idempotencyKey: `idemp_wh_ref_${razorpayRefundId}`,
+                },
+                update: {
+                  status: refundCompleted ? "PROCESSED" : "PENDING",
+                  revokedRegistration: nextStatus === PaymentStatus.REFUNDED,
                 },
               })
+            }
+
+            if (nextStatus === PaymentStatus.REFUNDED) {
+              if (paymentRecord.registrationId) {
+                await tx.testRegistration.update({
+                  where: { id: paymentRecord.registrationId },
+                  data: {
+                    status: RegistrationStatus.CANCELLED,
+                    maxAttempts: 0,
+                  },
+                })
+              } else {
+                await tx.testRegistration.updateMany({
+                  where: {
+                    userId: paymentRecord.userId,
+                    testSeriesId: paymentRecord.testSeriesId,
+                  },
+                  data: {
+                    status: RegistrationStatus.CANCELLED,
+                    maxAttempts: 0,
+                  },
+                })
+              }
             }
 
             await tx.paymentLedger.create({
@@ -257,7 +334,7 @@ export async function POST(req: NextRequest) {
                 eventType: refundCompleted ? "WEBHOOK_REFUND_PROCESSED" : "WEBHOOK_REFUND_PENDING",
                 actorType: "GATEWAY_WEBHOOK",
                 actorId: "razorpay",
-                details: `Razorpay webhook confirmed refund of ₹${(refundEntity?.amount || paymentRecord.amount) / 100}. Access cancelled.`,
+                details: `Razorpay webhook (${eventType}) recorded refund of ₹${(refundAmount || paymentRecord.amount) / 100}.`,
                 rawPayload: JSON.stringify(refundEntity),
               },
             })
@@ -270,16 +347,19 @@ export async function POST(req: NextRequest) {
               },
             })
           })
+          eventMarkedProcessed = true
         }
       }
     }
 
     // Events that are valid but unrelated to a local order are still marked
     // processed so Razorpay does not retry them forever.
-    await prisma.webhookEvent.update({
-      where: { eventId },
-      data: { status: WebhookStatus.PROCESSED, processedAt: new Date() },
-    })
+    if (!eventMarkedProcessed) {
+      await prisma.webhookEvent.update({
+        where: { eventId },
+        data: { status: WebhookStatus.PROCESSED, processedAt: new Date() },
+      })
+    }
     return NextResponse.json({ received: true })
   } catch (err) {
     console.error("[RAZORPAY WEBHOOK ERROR]", err)

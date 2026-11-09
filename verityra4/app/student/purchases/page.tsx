@@ -30,10 +30,23 @@ export default async function StudentPurchasesPage() {
       orderBy: { createdAt: "desc" },
     })
 
+    const testSeriesIds = Array.from(new Set(payments.map((p) => p.testSeriesId).filter(Boolean)))
+    const testSeriesRecords =
+      testSeriesIds.length > 0
+        ? await prisma.testSeries.findMany({
+            where: { id: { in: testSeriesIds } },
+            select: { id: true, title: true },
+          })
+        : []
+    const testSeriesTitleMap = new Map(testSeriesRecords.map((ts) => [ts.id, ts.title]))
+
     purchases = payments.map((payment) => ({
       id: payment.id,
       testSeriesId: payment.testSeriesId,
-      testTitle: payment.registration?.testSeries.title || "Paid test series",
+      testTitle:
+        payment.registration?.testSeries.title ||
+        testSeriesTitleMap.get(payment.testSeriesId) ||
+        "Paid test series",
       amount: payment.amount,
       amountRefunded: payment.amountRefunded,
       currency: payment.currency,

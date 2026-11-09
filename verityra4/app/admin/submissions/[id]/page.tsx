@@ -64,7 +64,7 @@ export default async function AdminSubmissionReviewPage({ params }: { params: Pr
           </div>
           <div className="flex flex-wrap items-center gap-2 lg:justify-end">
             <a href={fileUrl} target="_blank" rel="noreferrer" className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-semibold text-foreground hover:bg-muted"><FileText className="h-3.5 w-3.5" /> Open answer sheet <ExternalLink className="h-3 w-3" /></a>
-            {submission.evaluation && (submission.status === "COMPLETED" || submission.status === "REVIEW_REQUIRED" || submission.status === "FAILED") && submission.aiEvaluationRuns < 3 ? <AdminSubmissionEvaluationTrigger submissionId={submission.id} aiEvaluationRuns={submission.aiEvaluationRuns || 0} compact /> : null}
+            {submission.evaluation && (submission.status === "COMPLETED" || submission.status === "REVIEW_REQUIRED" || submission.status === "FAILED") ? <AdminSubmissionEvaluationTrigger submissionId={submission.id} aiEvaluationRuns={submission.aiEvaluationRuns || 0} compact /> : null}
           </div>
         </div>
       </section>
@@ -76,7 +76,7 @@ export default async function AdminSubmissionReviewPage({ params }: { params: Pr
             <section className="space-y-3 border border-border bg-card p-4">
               <div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-primary" /><h2 className="text-sm font-bold text-foreground">Review checklist</h2></div>
               <ChecklistRow label="Candidate identity" value={submission.user?.name || "Available"} />
-              <ChecklistRow label="Evaluation runs" value={`${submission.aiEvaluationRuns || 0} / 3 used`} />
+              <ChecklistRow label="Evaluation runs" value={`${submission.aiEvaluationRuns || 0} run(s) recorded`} />
               <ChecklistRow label="Score status" value={submission.evaluation.status} />
               {submission.evaluation.uncertaintyFlag || submission.evaluation.legibilityWarning ? <p className="border-l-2 border-amber-500 bg-amber-50/60 px-3 py-2 text-xs leading-relaxed text-amber-900">Scan or evaluation uncertainty requires human verification.</p> : <p className="border-l-2 border-emerald-500 bg-emerald-50/60 px-3 py-2 text-xs leading-relaxed text-emerald-800">No uncertainty flags were reported.</p>}
             </section>

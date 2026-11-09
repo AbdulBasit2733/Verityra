@@ -40,7 +40,8 @@ export async function claimEvaluationRun(
       current.evaluation ? 1 : 0,
       persistedRuns._max.runNumber || 0
     )
-    if (recordedRuns >= MAX_AI_EVALUATION_RUNS) {
+    const isAdminTrigger = trigger === "ADMIN_REEVALUATION"
+    if (!isAdminTrigger && recordedRuns >= MAX_AI_EVALUATION_RUNS) {
       throw new EvaluationRunError("This submission has used all 3 AI evaluation runs.", "LIMIT_REACHED")
     }
 
@@ -66,7 +67,7 @@ export async function claimEvaluationRun(
         select: { id: true, aiEvaluationRuns: true, status: true },
       })
       if (!submission) throw new EvaluationRunError("Submission not found.", "NOT_FOUND")
-      if (submission.aiEvaluationRuns >= MAX_AI_EVALUATION_RUNS) {
+      if (!isAdminTrigger && submission.aiEvaluationRuns >= MAX_AI_EVALUATION_RUNS) {
         throw new EvaluationRunError("This submission has used all 3 AI evaluation runs.", "LIMIT_REACHED")
       }
       throw new EvaluationRunError("This submission is already being evaluated.", "ALREADY_PROCESSING")

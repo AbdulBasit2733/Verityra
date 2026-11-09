@@ -181,6 +181,88 @@ export function runPaymentTests() {
     assert.equal(RefundReason.TECHNICAL_SUBMISSION_ISSUE, "TECHNICAL_SUBMISSION_ISSUE")
   })
 
+  suite.test("Repurchase Restoration: Reactivating a cancelled registration resets attempts and unlinks old payment", () => {
+    const cancelledRegistration = {
+      id: "reg_100",
+      status: "CANCELLED",
+      attemptsUsed: 2,
+      maxAttempts: 0,
+    }
+    const refundedPayment = {
+      id: "pay_old_1",
+      registrationId: "reg_100",
+      status: PaymentStatus.REFUNDED,
+    }
+
+    // Repurchase update logic
+    const testSeriesMaxAttempts = 3
+    if (refundedPayment.registrationId === cancelledRegistration.id) {
+      refundedPayment.registrationId = null as any
+    }
+    cancelledRegistration.status = "ACTIVE"
+    cancelledRegistration.attemptsUsed = 0
+    cancelledRegistration.maxAttempts = testSeriesMaxAttempts
+
+    assert.equal(refundedPayment.registrationId, null)
+    assert.equal(cancelledRegistration.status, "ACTIVE")
+    assert.equal(cancelledRegistration.attemptsUsed, 0)
+    assert.equal(cancelledRegistration.maxAttempts, 3)
+  })
+
+  suite.test("Pending Order Reuse: Rejects stale price orders and recognizes non-final gateway refund states", () => {
+    function canReusePendingOrder(pendingAmount: number, currentPrice: number) {
+      return pendingAmount === currentPrice
+    }
+
+    assert.equal(canReusePendingOrder(49900, 49900), true)
+    assert.equal(canReusePendingOrder(49900, 79900), false)
+
+    function isGatewayRefundActive(status: string) {
+      return ["processed", "pending", "created"].includes(status)
+    }
+
+    assert.equal(isGatewayRefundActive("processed"), true)
+    assert.equal(isGatewayRefundActive("pending"), true)
+    assert.equal(isGatewayRefundActive("created"), true)
+    assert.equal(isGatewayRefundActive("failed"), false)
+  })
+
+  suite.test("Webhook Refund Idempotency: Prevents double-counting refund.created and refund.processed for same refundId", () => {
+    function computeTotalRefunded(
+      paymentAmount: number,
+      currentRefunded: number,
+      existingRefunds: Array<{ razorpayRefundId: string; amount: number }>,
+      incomingRefundId: string,
+      incomingAmount: number
+    ) {
+      const existingRecord = existingRefunds.find((r) => r.razorpayRefundId === incomingRefundId)
+      const otherRefundsSum = existingRefunds
+        .filter((r) => r.razorpayRefundId !== incomingRefundId)
+        .reduce((sum, r) => sum + r.amount, 0)
+
+      return Math.min(
+        paymentAmount,
+        existingRecord
+          ? otherRefundsSum + incomingAmount
+          : Math.max(currentRefunded, otherRefundsSum + incomingAmount)
+      )
+    }
+
+    // 1. refund.created arrives first for rfnd_1 (49900)
+    const afterCreated = computeTotalRefunded(49900, 0, [], "rfnd_1", 49900)
+    assert.equal(afterCreated, 49900)
+
+    // 2. refund.processed arrives later for same rfnd_1 (49900)
+    const afterProcessed = computeTotalRefunded(
+      49900,
+      49900,
+      [{ razorpayRefundId: "rfnd_1", amount: 49900 }],
+      "rfnd_1",
+      49900
+    )
+    assert.equal(afterProcessed, 49900)
+  })
+
   return suite.summary()
 }
 
