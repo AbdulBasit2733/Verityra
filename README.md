@@ -55,9 +55,13 @@ npm run dev:worker   # Background AI evaluation worker
 - **Output Directory**: `.next`
 
 ### B. AI Evaluation Worker (`worker/`)
-- **Platform**: Railway, Render, Fly.io, or AWS ECS
+- **Platform**: Render, Railway, Fly.io, or AWS ECS
 - **Root Directory**: `worker`
-- **Start Command**: `npm start` (or use the provided `worker/Dockerfile`)
+- **Build Command**: `npm install && npx prisma generate`
+- **Start Command**: `npx tsx scripts/evaluation-worker.ts` (or `npm start`)
+- **Health Check Path**: `/health` (Worker exposes an HTTP server on `$PORT` / `8080` for hosting platforms)
+- **Render Free Tier**: Deploy as a **Web Service** (using the port health check).
+- **Render Paid Tier / Railway**: Can deploy as a **Background Worker** or **Web Service**.
 - **Health Check Path**: `GET http://localhost:8080/health`
 - **Required Environment Variables**:
   - `REDIS_URL` (Upstash Redis or self-hosted Redis)

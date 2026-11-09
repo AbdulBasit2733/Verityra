@@ -1,0 +1,15 @@
+services:
+  # Verityra AI Evaluation Worker Service
+  # Free tier compatible: runs worker daemon + exposes /health HTTP check on $PORT
+  - type: web
+    name: verityra-worker
+    runtime: node
+    plan: free
+    rootDir: worker
+    buildCommand: npm install && npx prisma generate
+    startCommand: npx tsx scripts/evaluation-worker.ts
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
