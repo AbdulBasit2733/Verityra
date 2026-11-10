@@ -1,6 +1,10 @@
 "use server"
 
-import { getCurrentUser } from "@/lib/auth-guard"
+import {
+  getCurrentUser,
+  getPersistedCurrentUser,
+  PersistedUserLookupError,
+} from "@/lib/auth-guard"
 import { prisma, isDatabaseConnected } from "@/lib/prisma"
 import { uploadPrivateFile } from "@/lib/supabase"
 import { evaluateAnswerSheetWithGemini, getGeminiModelName } from "@/lib/ai/gemini-evaluator"
@@ -23,9 +27,18 @@ const MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024 // Keep scanned answer sheets under 
  * Strict atomic three-attempt enforcement with database concurrency safety.
  */
 export async function submitAnswerSheetAction(formData: FormData): Promise<ActionResult<{ submissionId: string; attemptNumber: number }>> {
-  const user = await getCurrentUser()
+  let user
+  try {
+    user = await getPersistedCurrentUser()
+  } catch (err) {
+    if (err instanceof PersistedUserLookupError) {
+      return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+    }
+    throw err
+  }
+
   if (!user) {
-    return { success: false, error: "Authentication required to submit answers." }
+    return { success: false, error: "Authentication required to submit answers. Please sign in again." }
   }
 
   const testSeriesIdValue = formData.get("testSeriesId")

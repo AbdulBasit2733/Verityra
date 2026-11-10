@@ -1,7 +1,11 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { prisma, isDatabaseConnected } from "@/lib/prisma"
-import { getCurrentUser } from "@/lib/auth-guard"
+import {
+  getCurrentUser,
+  getPersistedCurrentUser,
+  PersistedUserLookupError,
+} from "@/lib/auth-guard"
 import { Badge } from "@/components/ui/badge"
 import { TestRegistrationButton } from "@/components/test-registration-button"
 import {
@@ -25,7 +29,16 @@ export default async function TestDetailsPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const user = await getCurrentUser()
+  let user = null
+  try {
+    user = await getPersistedCurrentUser()
+  } catch (err) {
+    if (err instanceof PersistedUserLookupError) {
+      user = await getCurrentUser()
+    } else {
+      throw err
+    }
+  }
   const dbConnected = await isDatabaseConnected()
   let testSeries: any = null
   let isRegistered = false

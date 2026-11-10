@@ -1,7 +1,7 @@
 import { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import GoogleProvider from "next-auth/providers/google"
-import { prisma, isDatabaseConnected } from "@/lib/prisma"
+import { prisma, isDatabaseConnected, resetDatabaseConnectionCache } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
 import { Role, UserStatus } from "@prisma/client"
 
@@ -83,9 +83,24 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async signIn({ user, account }) {
       if (account?.provider === "google") {
-        const dbConnected = await isDatabaseConnected()
-        if (dbConnected && user.email) {
-          const normalizedEmail = user.email.toLowerCase().trim()
+        if (!user.email) {
+          console.error("[NextAuth] Google sign-in rejected: missing email")
+          return false
+        }
+
+        const normalizedEmail = user.email.toLowerCase().trim()
+        let dbConnected = await isDatabaseConnected()
+        if (!dbConnected) {
+          resetDatabaseConnectionCache()
+          dbConnected = await isDatabaseConnected()
+        }
+
+        if (!dbConnected) {
+          console.error("[NextAuth] Google sign-in rejected: database connection unavailable")
+          return false
+        }
+
+        try {
           let existingUser = await prisma.user.findUnique({
             where: { email: normalizedEmail },
           })
@@ -111,18 +126,70 @@ export const authOptions: NextAuthOptions = {
             return false
           }
 
+          if (account.providerAccountId) {
+            await prisma.account.upsert({
+              where: {
+                provider_providerAccountId: {
+                  provider: account.provider,
+                  providerAccountId: account.providerAccountId,
+                },
+              },
+              update: {},
+              create: {
+                userId: existingUser.id,
+                type: account.type,
+                provider: account.provider,
+                providerAccountId: account.providerAccountId,
+                refresh_token: account.refresh_token,
+                access_token: account.access_token,
+                expires_at: account.expires_at,
+                token_type: account.token_type,
+                scope: account.scope,
+                id_token: account.id_token,
+                session_state: account.session_state ? String(account.session_state) : null,
+              },
+            }).catch((err) => console.warn("[NextAuth] Account linking notice:", err?.message))
+          }
+
           user.id = existingUser.id
           user.role = existingUser.role
           user.status = existingUser.status
+        } catch (dbErr) {
+          console.error("[NextAuth] Google sign-in database error:", dbErr)
+          return false
         }
       }
       return true
     },
-    async jwt({ token, user, trigger, session }) {
+    async jwt({ token, user, account, trigger, session }) {
       if (user) {
         token.id = user.id
         token.role = user.role
         token.status = user.status
+      }
+
+      // If signing in via OAuth (e.g. Google) or if token.id is missing or contains provider sub:
+      // Resolve the true persisted database cuid from email to ensure foreign key integrity
+      if (
+        account?.provider === "google" ||
+        (token.email && (!token.id || token.id.length > 30 || /^\d+$/.test(String(token.id))))
+      ) {
+        if (token.email) {
+          const normalizedEmail = token.email.toLowerCase().trim()
+          try {
+            const dbUser = await prisma.user.findUnique({
+              where: { email: normalizedEmail },
+              select: { id: true, role: true, status: true },
+            })
+            if (dbUser) {
+              token.id = dbUser.id
+              token.role = dbUser.role
+              token.status = dbUser.status
+            }
+          } catch (jwtErr) {
+            console.warn("[NextAuth] JWT database resolution error:", jwtErr)
+          }
+        }
       }
 
       if (trigger === "update" && session?.name) {
@@ -138,6 +205,32 @@ export const authOptions: NextAuthOptions = {
         session.user.status = token.status as UserStatus
       }
       return session
+    },
+    async redirect({ url, baseUrl }) {
+      // 1. If relative URL, ensure it is strictly a single-slash path (prevent protocol-relative // or /\ open redirect)
+      if (url.startsWith("/") && !url.startsWith("//") && !url.startsWith("/\\")) {
+        return url
+      }
+
+      // 2. Parse absolute URL
+      try {
+        const parsedUrl = new URL(url)
+        // If the URL points to localhost but in production or if baseUrl is not localhost, rewrite to safe relative path
+        if (
+          process.env.NODE_ENV === "production" &&
+          (parsedUrl.hostname === "localhost" || parsedUrl.hostname === "127.0.0.1")
+        ) {
+          const rel = `${parsedUrl.pathname}${parsedUrl.search}`
+          return rel.startsWith("//") || rel.startsWith("/\\") ? "/" : rel
+        }
+
+        // Allow same origin
+        if (parsedUrl.origin === baseUrl) {
+          return url
+        }
+      } catch {}
+
+      return "/"
     },
   },
   secret: process.env.NEXTAUTH_SECRET,

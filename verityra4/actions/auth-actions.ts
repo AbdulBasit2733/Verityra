@@ -9,7 +9,12 @@ import {
   changePasswordSchema,
 } from "@/lib/validations/auth"
 import { prisma, isDatabaseConnected } from "@/lib/prisma"
-import { getCurrentUser, resolvePersistedAdminActor } from "@/lib/auth-guard"
+import {
+  getCurrentUser,
+  getPersistedCurrentUser,
+  PersistedUserLookupError,
+  resolvePersistedAdminActor,
+} from "@/lib/auth-guard"
 import { checkRateLimit } from "@/lib/rate-limit"
 import {
   sendPasswordChangedEmail,
@@ -475,7 +480,16 @@ export async function updateStudentProfileAction(profileData: {
   targetExam?: string
   bio?: string
 }): Promise<ActionResult> {
-  const user = await getCurrentUser()
+  let user
+  try {
+    user = await getPersistedCurrentUser()
+  } catch (err) {
+    if (err instanceof PersistedUserLookupError) {
+      return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+    }
+    throw err
+  }
+
   if (!user || user.role !== Role.STUDENT) {
     return { success: false, error: "Candidate authorization required." }
   }
@@ -537,7 +551,16 @@ export async function getStudentProfileAction(): Promise<ActionResult<{
   bio: string
   createdAt: string
 }>> {
-  const user = await getCurrentUser()
+  let user
+  try {
+    user = await getPersistedCurrentUser()
+  } catch (err) {
+    if (err instanceof PersistedUserLookupError) {
+      return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+    }
+    throw err
+  }
+
   if (!user || user.role !== Role.STUDENT) {
     return { success: false, error: "Candidate authorization required." }
   }
@@ -727,7 +750,16 @@ export async function changePasswordAction(data: {
   newPassword: string
   confirmPassword: string
 }): Promise<ActionResult> {
-  const user = await getCurrentUser()
+  let user
+  try {
+    user = await getPersistedCurrentUser()
+  } catch (err) {
+    if (err instanceof PersistedUserLookupError) {
+      return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+    }
+    throw err
+  }
+
   if (!user) {
     return { success: false, error: "Authentication required to update password." }
   }

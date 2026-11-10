@@ -80,7 +80,7 @@ export function ProgressSection() {
             <div className="relative mx-auto w-full max-w-xl lg:max-w-none">
               <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-white/10 bg-[#162032] shadow-2xl shadow-black/40">
                 <Image
-                  src="/images/landing/progress-dashboard.png"
+                  src="/images/section-4.png"
                   alt="Question-wise feedback and progress dashboard preview"
                   width={1200}
                   height={900}

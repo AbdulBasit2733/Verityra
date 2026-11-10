@@ -45,6 +45,12 @@ export function Navbar({
 
   const closeMobileMenu = () => setMobileMenuOpen(false)
 
+  async function handleSignOut() {
+    closeMobileMenu()
+    await signOut({ redirect: false })
+    window.location.href = "/"
+  }
+
   return (
     <header
       className={`sticky top-0 z-50 w-full border-b backdrop-blur-xl ${isLightAppearance ? "border-slate-200 bg-white/95" : "border-border/80 bg-background/90"}`}
@@ -143,7 +149,7 @@ export function Navbar({
                     Profile Settings
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={() => signOut({ callbackUrl: "/" })}
+                    onClick={handleSignOut}
                     className="text-red-600 focus:text-red-600"
                   >
                     <LogOut className="mr-2 h-4 w-4" />
@@ -230,7 +236,7 @@ export function Navbar({
                 </Link>
                 <Button
                   variant="outline"
-                  onClick={() => signOut({ callbackUrl: "/" })}
+                  onClick={handleSignOut}
                   className="h-11 rounded-xl border-red-200 font-bold text-red-600 hover:bg-red-50"
                 >
                   Sign Out

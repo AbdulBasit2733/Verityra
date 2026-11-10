@@ -4,9 +4,9 @@ import { ArrowUpRight, BookOpenCheck, Landmark, Scale } from "lucide-react"
 
 /*
   IMAGES (place in /public/images/landing/)
-  - upsc-path.png      → 960 × 1120 px (large tile, portrait)
-  - state-pcs-path.png → 480 × 480 px  (square thumbnail)
-  - judicial-path.png  → 480 × 480 px  (square thumbnail)
+  - section-3-1.png      → 960 × 1120 px (large tile, portrait)
+  - section-3-2.png → 480 × 480 px  (square thumbnail)
+  - section-3-3.png  → 480 × 480 px  (square thumbnail)
 */
 const featured = {
   icon: Landmark,
@@ -14,7 +14,7 @@ const featured = {
   title: "UPSC preparation",
   detail:
     "Build confidence with structured answer-writing practice for the papers that decide your rank.",
-  image: "/images/landing/upsc-path.png",
+  image: "/images/section-3-1.jpeg",
   alt: "Aspirant revising notes with the Indian Parliament in the background",
 }
 
@@ -24,7 +24,7 @@ const compact = [
     label: "State examinations",
     title: "State PCS",
     detail: "Practice written responses for your state-level exam path.",
-    image: "/images/landing/state-pcs-path.png",
+    image: "/images/section-3-2.png",
     alt: "Students discussing answers in a study room",
   },
   {
@@ -32,7 +32,7 @@ const compact = [
     label: "Legal services",
     title: "Judicial services",
     detail: "Strengthen clarity and structure in your written answers.",
-    image: "/images/landing/judicial-path.png",
+    image: "/images/section-3-3.jpeg",
     alt: "Law books and a gavel on a desk",
   },
 ]

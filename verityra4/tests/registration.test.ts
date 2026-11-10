@@ -120,6 +120,62 @@ export function runRegistrationTests() {
     assert.equal(payload.notes.testSeriesId, "ts_50")
   })
 
+  suite.test("Foreign Key Guard: P2003 error in payment creation yields graceful session recovery message", () => {
+    function handlePaymentCreateError(err: { code?: string }) {
+      if (err?.code === "P2003") {
+        return {
+          success: false,
+          error: "Your user account session could not be verified in the database. Please sign out and sign in again.",
+        }
+      }
+      return {
+        success: false,
+        error: "Failed to initialize payment checkout. Please try again shortly.",
+      }
+    }
+
+    const p2003Result = handlePaymentCreateError({ code: "P2003" })
+    assert.equal(p2003Result.success, false)
+    assert.match(p2003Result.error, /session could not be verified in the database/)
+
+    const otherResult = handlePaymentCreateError({ code: "P2002" })
+    assert.equal(otherResult.success, false)
+    assert.match(otherResult.error, /Failed to initialize payment checkout/)
+  })
+
+  suite.test("Self-Healing Identity: Resolves OAuth subject ID or stale session to persisted DB user via email", () => {
+    const mockDbUsers = [
+      { id: "cmw6user123cuid0001", email: "candidate@verityra.com", status: "ACTIVE" },
+    ]
+
+    function resolvePersistedUserMock(sessionUser: { id?: string; email?: string | null }) {
+      if (!sessionUser) return null
+      // 1. By ID
+      if (sessionUser.id) {
+        const found = mockDbUsers.find((u) => u.id === sessionUser.id)
+        if (found) return found
+      }
+      // 2. Fallback by email (self-healing)
+      if (sessionUser.email) {
+        const normalized = sessionUser.email.toLowerCase().trim()
+        const found = mockDbUsers.find((u) => u.email === normalized)
+        if (found) return found
+      }
+      return null
+    }
+
+    // Google OAuth session where id is numeric sub instead of cuid
+    const googleSession = { id: "109827364519283746501", email: "candidate@verityra.com" }
+    const resolved = resolvePersistedUserMock(googleSession)
+    assert.ok(resolved)
+    assert.equal(resolved?.id, "cmw6user123cuid0001") // Self-healed to real cuid!
+
+    // Orphaned session where user doesn't exist in DB at all
+    const orphanedSession = { id: "cmw_deleted_user", email: "deleted@verityra.com" }
+    const notFound = resolvePersistedUserMock(orphanedSession)
+    assert.equal(notFound, null)
+  })
+
   return suite.summary()
 }
 

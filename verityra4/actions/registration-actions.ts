@@ -1,6 +1,6 @@
 "use server"
 
-import { getCurrentUser } from "@/lib/auth-guard"
+import { getCurrentUser, getPersistedCurrentUser, PersistedUserLookupError } from "@/lib/auth-guard"
 import { prisma, isDatabaseConnected } from "@/lib/prisma"
 import { sendEnrollmentReceiptEmail } from "@/lib/email"
 import { PaymentStatus, RegistrationStatus } from "@prisma/client"
@@ -13,9 +13,18 @@ import { ActionResult } from "./auth-actions"
  * Server Action: Register for Free Test Series
  */
 export async function registerFreeTestAction(testSeriesId: string): Promise<ActionResult<{ registrationId: string }>> {
-  const user = await getCurrentUser()
+  let user
+  try {
+    user = await getPersistedCurrentUser()
+  } catch (err) {
+    if (err instanceof PersistedUserLookupError) {
+      return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+    }
+    throw err
+  }
+
   if (!user) {
-    return { success: false, error: "Please sign in to register for this test series." }
+    return { success: false, error: "Please sign in to register for this test series. If you were already signed in, your session may have expired." }
   }
 
   const dbConnected = await isDatabaseConnected()
@@ -83,6 +92,9 @@ export async function registerFreeTestAction(testSeriesId: string): Promise<Acti
     if (createErr?.code === "P2002") {
       return { success: false, error: "You are already registered for this test series." }
     }
+    if (createErr?.code === "P2003") {
+      return { success: false, error: "User account session could not be verified in the database. Please sign out and sign in again." }
+    }
     throw createErr
   }
 
@@ -122,9 +134,18 @@ export async function createRazorpayOrderAction(testSeriesId: string): Promise<
     alreadyCompleted?: boolean
   }>
 > {
-  const user = await getCurrentUser()
+  let user
+  try {
+    user = await getPersistedCurrentUser()
+  } catch (err) {
+    if (err instanceof PersistedUserLookupError) {
+      return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+    }
+    throw err
+  }
+
   if (!user) {
-    return { success: false, error: "Please sign in to purchase this test series." }
+    return { success: false, error: "Please sign in to purchase this test series. If you were already signed in, your session may have expired." }
   }
 
   const dbConnected = await isDatabaseConnected()
@@ -342,29 +363,43 @@ export async function createRazorpayOrderAction(testSeriesId: string): Promise<
   }
 
   // Record payment order and initial ledger entry in DB
-  await prisma.$transaction(async (tx) => {
-    const createdPayment = await tx.payment.create({
-      data: {
-        userId: user.id,
-        testSeriesId: testSeries.id,
-        razorpayOrderId,
-        amount: testSeries.price,
-        currency: "INR",
-        status: PaymentStatus.PENDING,
-      },
-    })
+  try {
+    await prisma.$transaction(async (tx) => {
+      const createdPayment = await tx.payment.create({
+        data: {
+          userId: user.id,
+          testSeriesId: testSeries.id,
+          razorpayOrderId,
+          amount: testSeries.price,
+          currency: "INR",
+          status: PaymentStatus.PENDING,
+        },
+      })
 
-    await tx.paymentLedger.create({
-      data: {
-        paymentId: createdPayment.id,
-        eventType: "ORDER_CREATED",
-        actorType: "STUDENT_CLIENT",
-        actorId: user.id,
-        details: `Generated checkout order ${razorpayOrderId} for ₹${testSeries.price / 100}.`,
-        rawPayload: JSON.stringify({ orderId: razorpayOrderId, amount: testSeries.price, currency: "INR" }),
-      },
+      await tx.paymentLedger.create({
+        data: {
+          paymentId: createdPayment.id,
+          eventType: "ORDER_CREATED",
+          actorType: "STUDENT_CLIENT",
+          actorId: user.id,
+          details: `Generated checkout order ${razorpayOrderId} for ₹${testSeries.price / 100}.`,
+          rawPayload: JSON.stringify({ orderId: razorpayOrderId, amount: testSeries.price, currency: "INR" }),
+        },
+      })
     })
-  })
+  } catch (paymentCreateErr: any) {
+    console.error("[createRazorpayOrderAction] Failed to record payment order:", paymentCreateErr)
+    if (paymentCreateErr?.code === "P2003") {
+      return {
+        success: false,
+        error: "Your user account session could not be verified in the database. Please sign out and sign in again.",
+      }
+    }
+    return {
+      success: false,
+      error: "Failed to initialize payment checkout. Please try again shortly.",
+    }
+  }
 
   return {
     success: true,
@@ -389,9 +424,18 @@ export async function verifyPaymentAndRegisterAction(input: {
   razorpaySignature: string
   testSeriesId: string
 }): Promise<ActionResult> {
-  const user = await getCurrentUser()
+  let user
+  try {
+    user = await getPersistedCurrentUser()
+  } catch (err) {
+    if (err instanceof PersistedUserLookupError) {
+      return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+    }
+    throw err
+  }
+
   if (!user) {
-    return { success: false, error: "Authentication required." }
+    return { success: false, error: "Please sign in to verify your payment. If you were signed in, your session may have expired." }
   }
 
   const key_id = process.env.RAZORPAY_KEY_ID

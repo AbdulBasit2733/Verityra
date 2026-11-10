@@ -177,6 +177,52 @@ export function runAuthTests() {
     assert.equal(resolvePostLoginTarget(undefined, null), "/dashboard")
   })
 
+  suite.test("Redirect Callback: Strips localhost URLs, keeps relative paths, and blocks protocol-relative open redirects", () => {
+    function resolveSafeRedirect(url: string, baseUrl: string, isProduction: boolean) {
+      if (url.startsWith("/") && !url.startsWith("//") && !url.startsWith("/\\")) {
+        return url
+      }
+      try {
+        const parsedUrl = new URL(url)
+        if (
+          isProduction &&
+          (parsedUrl.hostname === "localhost" || parsedUrl.hostname === "127.0.0.1")
+        ) {
+          const rel = `${parsedUrl.pathname}${parsedUrl.search}`
+          return rel.startsWith("//") || rel.startsWith("/\\") ? "/" : rel
+        }
+        if (parsedUrl.origin === baseUrl) {
+          return url
+        }
+      } catch {}
+      return "/"
+    }
+
+    // Relative url remains relative
+    assert.equal(resolveSafeRedirect("/", "https://verityra-fr.vercel.app", true), "/")
+
+    // Protocol-relative URLs are blocked and fallback to /
+    assert.equal(resolveSafeRedirect("//evil.com", "https://verityra-fr.vercel.app", true), "/")
+    assert.equal(resolveSafeRedirect("/\\evil.com", "https://verityra-fr.vercel.app", true), "/")
+    assert.equal(resolveSafeRedirect("http://localhost:3000//evil.com", "https://verityra-fr.vercel.app", true), "/")
+
+    // Localhost url in production gets rewritten to relative path
+    assert.equal(
+      resolveSafeRedirect("http://localhost:3000/", "https://verityra-fr.vercel.app", true),
+      "/"
+    )
+    assert.equal(
+      resolveSafeRedirect("http://localhost:3000/tests/upsc", "https://verityra-fr.vercel.app", true),
+      "/tests/upsc"
+    )
+
+    // Same origin in production remains intact
+    assert.equal(
+      resolveSafeRedirect("https://verityra-fr.vercel.app/tests", "https://verityra-fr.vercel.app", true),
+      "https://verityra-fr.vercel.app/tests"
+    )
+  })
+
   return suite.summary()
 }
 

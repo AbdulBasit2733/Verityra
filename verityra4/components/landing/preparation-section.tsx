@@ -48,7 +48,7 @@ export function PreparationSection() {
             />
             <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[2rem] bg-blue-100 shadow-2xl shadow-blue-900/10">
               <Image
-                src="/images/landing/answer-sheet-writing.png"
+                src="/images/section-2.png"
                 alt="A student writing an answer on a ruled exam booklet"
                 width={1000}
                 height={1250}

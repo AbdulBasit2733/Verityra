@@ -13,7 +13,16 @@ const adminSelect = {
   status: true,
 } as const
 
+const studentSelect = {
+  id: true,
+  email: true,
+  name: true,
+  role: true,
+  status: true,
+} as const
+
 export type PersistedAdminActor = Pick<User, "id" | "email" | "name" | "role" | "status">
+export type PersistedStudentActor = Pick<User, "id" | "email" | "name" | "role" | "status">
 
 export type PersistedAdminResult =
   | { success: true; user: PersistedAdminActor }
@@ -22,6 +31,64 @@ export type PersistedAdminResult =
 export const getCurrentUser = cache(async () => {
   const session = await getServerSession(authOptions)
   return session?.user ?? null
+})
+
+export class PersistedUserLookupError extends Error {
+  constructor(message = "Database connection unavailable during user resolution.") {
+    super(message)
+    this.name = "PersistedUserLookupError"
+  }
+}
+
+/**
+ * Resolves the authenticated user from the database with self-healing fallback to email.
+ * This guarantees foreign-key integrity for database inserts (payments, registrations, submissions).
+ * Throws PersistedUserLookupError if the database is unreachable, distinguishing outages from unknown users.
+ */
+export const getPersistedCurrentUser = cache(async (): Promise<PersistedStudentActor | null> => {
+  const sessionUser = await getCurrentUser()
+  if (!sessionUser) return null
+
+  let dbErrorOccurred = false
+
+  // 1. Primary lookup by session user ID
+  if (sessionUser.id) {
+    try {
+      const userById = await prisma.user.findUnique({
+        where: { id: sessionUser.id },
+        select: studentSelect,
+      })
+      if (userById) {
+        return userById.status !== UserStatus.SUSPENDED ? userById : null
+      }
+    } catch (err) {
+      dbErrorOccurred = true
+      console.warn("[getPersistedCurrentUser] Lookup by ID error:", err)
+    }
+  }
+
+  // 2. Self-healing fallback lookup by email (resolves OAuth provider ID mismatch or stale session)
+  if (sessionUser.email) {
+    const normalizedEmail = sessionUser.email.toLowerCase().trim()
+    try {
+      const userByEmail = await prisma.user.findUnique({
+        where: { email: normalizedEmail },
+        select: studentSelect,
+      })
+      if (userByEmail) {
+        return userByEmail.status !== UserStatus.SUSPENDED ? userByEmail : null
+      }
+    } catch (err) {
+      dbErrorOccurred = true
+      console.warn("[getPersistedCurrentUser] Lookup by email error:", err)
+    }
+  }
+
+  if (dbErrorOccurred) {
+    throw new PersistedUserLookupError()
+  }
+
+  return null
 })
 
 export async function resolvePersistedAdminActor(

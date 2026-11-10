@@ -157,7 +157,8 @@ export function PortalShell({
     toast.info("Signing out...", {
       description: "Ending your encrypted workspace session.",
     })
-    await signOut({ callbackUrl: "/" })
+    await signOut({ redirect: false })
+    window.location.href = "/"
   }
 
   const navItems = role === "ADMIN" ? adminNavItems : studentNavItems

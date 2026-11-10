@@ -44,7 +44,10 @@ export default function SuspendedPage() {
 
         <div className="flex flex-col gap-3 pt-2">
           <Button
-            onClick={() => signOut({ callbackUrl: "/" })}
+            onClick={async () => {
+              await signOut({ redirect: false })
+              window.location.href = "/"
+            }}
             variant="outline"
             className="h-11 w-full rounded-xl border-red-200 text-sm font-semibold text-red-600 hover:bg-red-50 dark:border-red-900/60 dark:hover:bg-red-950/40"
           >
