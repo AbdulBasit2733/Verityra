@@ -13,6 +13,34 @@ declare global {
   }
 }
 
+function loadRazorpayScript(): Promise<boolean> {
+  if (typeof window !== "undefined" && (window as any).Razorpay) {
+    return Promise.resolve(true)
+  }
+  return new Promise((resolve) => {
+    if (typeof document === "undefined") {
+      resolve(false)
+      return
+    }
+    const existing = document.querySelector('script[src*="checkout.razorpay.com"]')
+    if (existing) {
+      if ((window as any).Razorpay) {
+        resolve(true)
+        return
+      }
+      existing.addEventListener("load", () => resolve(true), { once: true })
+      existing.addEventListener("error", () => resolve(false), { once: true })
+      return
+    }
+    const script = document.createElement("script")
+    script.src = "https://checkout.razorpay.com/v1/checkout.js"
+    script.async = true
+    script.onload = () => resolve(true)
+    script.onerror = () => resolve(false)
+    document.body.appendChild(script)
+  })
+}
+
 export function TestRegistrationButton({
   testSeriesId,
   isFree,
@@ -122,8 +150,13 @@ export function TestRegistrationButton({
         return
       }
 
-      // If Razorpay SDK is loaded in browser
-      if (typeof window !== "undefined" && window.Razorpay && keyId && !keyId.includes("placeholder")) {
+      // Ensure Razorpay SDK is loaded in browser
+      let hasRazorpay = typeof window !== "undefined" && Boolean(window.Razorpay)
+      if (!hasRazorpay && typeof window !== "undefined") {
+        hasRazorpay = await loadRazorpayScript()
+      }
+
+      if (hasRazorpay && window.Razorpay && keyId && !keyId.includes("placeholder")) {
         const options = {
           key: keyId,
           amount,

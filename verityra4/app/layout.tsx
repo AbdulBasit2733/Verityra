@@ -38,11 +38,10 @@ export default function RootLayout({
       suppressHydrationWarning
       className={cn("antialiased", plusJakartaSans.variable, inter.variable)}
     >
-      <body className="min-h-screen bg-background font-sans text-foreground">
-        <Script
-          src="https://checkout.razorpay.com/v1/checkout.js"
-          strategy="lazyOnload"
-        />
+      <body
+        suppressHydrationWarning
+        className="min-h-screen bg-background font-sans text-foreground"
+      >
         <ThemeProvider>
           <AuthProvider>
             <ConfirmDialogProvider>
@@ -53,6 +52,10 @@ export default function RootLayout({
             </ConfirmDialogProvider>
           </AuthProvider>
         </ThemeProvider>
+        <Script
+          src="https://checkout.razorpay.com/v1/checkout.js"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   )

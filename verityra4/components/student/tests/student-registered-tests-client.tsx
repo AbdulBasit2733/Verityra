@@ -23,6 +23,8 @@ export interface RegisteredTestRow {
   registeredAt: string
   submissionCount: number
   latestStatus: string | null
+  price?: number
+  isPaid?: boolean
 }
 
 export function StudentRegisteredTestsClient({
@@ -47,9 +49,20 @@ export function StudentRegisteredTestsClient({
         sortAccessor: (row) => row.testTitle,
         cell: (row) => (
           <div className="space-y-1 whitespace-normal">
-            <Link href={`/student/tests/${row.testSeriesId}`} className="font-semibold text-foreground hover:text-primary">
-              {row.testTitle}
-            </Link>
+            <div className="flex flex-wrap items-center gap-2">
+              <Link href={`/student/tests/${row.testSeriesId}`} className="font-semibold text-foreground hover:text-primary">
+                {row.testTitle}
+              </Link>
+              {row.isPaid ? (
+                <Badge variant="default" className="text-[10px] h-4.5 px-1.5 font-medium bg-[#2A6AED] hover:bg-[#1E55C7]">
+                  Paid {typeof row.price === "number" && row.price > 0 ? `(₹${Math.round(row.price / 100)})` : ""}
+                </Badge>
+              ) : (
+                <Badge variant="secondary" className="text-[10px] h-4.5 px-1.5 font-medium text-slate-600 bg-slate-100 dark:bg-slate-800 dark:text-slate-300">
+                  Free
+                </Badge>
+              )}
+            </div>
             <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
               <span className="inline-flex items-center gap-1">
                 <Clock className="h-3.5 w-3.5" />
@@ -123,6 +136,15 @@ export function StudentRegisteredTestsClient({
 
   const filters: DataTableFilter<RegisteredTestRow>[] = React.useMemo(
     () => [
+      {
+        id: "type",
+        label: "Test Type",
+        accessor: (row) => (row.isPaid ? "PAID" : "FREE"),
+        options: [
+          { label: "Free Tests", value: "FREE" },
+          { label: "Paid Tests", value: "PAID" },
+        ],
+      },
       {
         id: "status",
         label: "Test Status",

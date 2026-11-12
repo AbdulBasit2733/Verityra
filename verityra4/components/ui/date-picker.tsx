@@ -274,13 +274,14 @@ export function FormattedDate({
 
   return (
     <span
+      suppressHydrationWarning
       title={fullDateTime}
       className={cn("inline-flex items-center gap-1.5 text-xs text-slate-600 font-medium", className)}
     >
       <CalendarIcon className="h-3 w-3 text-slate-400 shrink-0" />
-      <span>{formattedDate}</span>
+      <span suppressHydrationWarning>{formattedDate}</span>
       {(showTime || includeTime) && (
-        <span className="text-[11px] text-slate-400">{formattedTime}</span>
+        <span suppressHydrationWarning className="text-[11px] text-slate-400">{formattedTime}</span>
       )}
     </span>
   )

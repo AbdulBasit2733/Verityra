@@ -15,6 +15,24 @@ const googleProviderFn =
     ? GoogleProvider
     : (GoogleProvider as unknown as { default: typeof GoogleProvider }).default
 
+const PRODUCTION_FALLBACK_URL = "https://verityra-fr.vercel.app"
+
+if (
+  (process.env.NODE_ENV === "production" || process.env.VERCEL) &&
+  (!process.env.NEXTAUTH_URL ||
+    process.env.NEXTAUTH_URL.includes("localhost") ||
+    process.env.NEXTAUTH_URL.includes("127.0.0.1"))
+) {
+  process.env.NEXTAUTH_URL =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    (process.env.VERCEL_PROJECT_PRODUCTION_URL
+      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+      : process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : PRODUCTION_FALLBACK_URL)
+  process.env.AUTH_TRUST_HOST = "true"
+}
+
 export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
@@ -217,7 +235,7 @@ export const authOptions: NextAuthOptions = {
         const parsedUrl = new URL(url)
         // If the URL points to localhost but in production or if baseUrl is not localhost, rewrite to safe relative path
         if (
-          process.env.NODE_ENV === "production" &&
+          (process.env.NODE_ENV === "production" || process.env.VERCEL) &&
           (parsedUrl.hostname === "localhost" || parsedUrl.hostname === "127.0.0.1")
         ) {
           const rel = `${parsedUrl.pathname}${parsedUrl.search}`
@@ -225,7 +243,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         // Allow same origin
-        if (parsedUrl.origin === baseUrl) {
+        if (parsedUrl.origin === baseUrl || parsedUrl.origin === PRODUCTION_FALLBACK_URL) {
           return url
         }
       } catch {}
