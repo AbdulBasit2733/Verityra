@@ -8,6 +8,7 @@ import { runFileStorageTests } from "./file-storage.test"
 import { runEmailTests } from "./email.test"
 import { runQuestionPaperTests } from "./question-papers.test"
 import { runStudentTests } from "./student-tests.test"
+import { runExamTimerTests } from "./exam-timer.test"
 import { TestResult } from "./test-utils"
 
 console.log("================================================================================")
@@ -28,6 +29,7 @@ try {
   results.push(runEmailTests())
   results.push(runQuestionPaperTests())
   results.push(runStudentTests())
+  results.push(runExamTimerTests())
 } catch (err: any) {
   console.error("FATAL ERROR IN TEST SUITE RUNNER:", err)
   process.exit(1)

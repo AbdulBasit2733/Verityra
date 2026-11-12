@@ -6,15 +6,12 @@ import dynamic from "next/dynamic"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DataTable, DataTableColumn, DataTableFilter } from "@/components/ui/data-table"
 import { FormattedDate } from "@/components/ui/date-picker"
-import { PageHeader } from "@/components/ui/page-header"
-import { KpiStatCard } from "@/components/ui/kpi-stat-card"
 import { cn } from "@/lib/utils"
-import { AttemptProgressTracker } from "@/components/shared/attempt-progress-tracker"
+import { ExamWorkspaceTimer } from "@/components/student/workspace/exam-workspace-timer"
 import {
   AlertTriangle,
   ArrowLeft,
@@ -28,7 +25,9 @@ import {
   FileCheck2,
   FileText,
   Info,
+  Lock,
   Printer,
+  Sparkles,
   UploadCloud,
   Timer,
 } from "lucide-react"
@@ -92,72 +91,6 @@ export interface WorkspaceResourceItem {
   fileUrl: string
 }
 
-function WorkspaceWritingTimer({
-  testSeriesId,
-  durationMinutes,
-}: {
-  testSeriesId: string
-  durationMinutes: number
-}) {
-  const timerStorageKey = `verityra-writing-timer:${testSeriesId}`
-  const [writingStartedAt, setWritingStartedAt] = React.useState<number | null>(null)
-  const [clockNow, setClockNow] = React.useState(0)
-
-  React.useEffect(() => {
-    const stored = window.localStorage.getItem(timerStorageKey)
-    if (stored) setWritingStartedAt(Number(stored))
-  }, [timerStorageKey])
-
-  React.useEffect(() => {
-    if (!writingStartedAt) return
-    setClockNow(Date.now())
-    const interval = window.setInterval(() => setClockNow(Date.now()), 1000)
-    return () => window.clearInterval(interval)
-  }, [writingStartedAt])
-
-  const elapsedWritingMinutes = writingStartedAt && clockNow
-    ? Math.floor((clockNow - writingStartedAt) / 60000)
-    : 0
-
-  const startWritingTimer = () => {
-    const startedAt = Date.now()
-    window.localStorage.setItem(timerStorageKey, String(startedAt))
-    setWritingStartedAt(startedAt)
-    setClockNow(startedAt)
-  }
-
-  return (
-    <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 sm:p-5">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-start gap-3">
-          <Timer className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-          <div>
-            <p className="text-sm font-semibold text-foreground">Writing and upload time planner</p>
-            <p className="mt-1 text-xs leading-5 text-muted-foreground">
-              Plan {durationMinutes} minutes for writing, then keep approximately 15–30 minutes for photographing/scanning pages and converting them into one clear PDF under 1–2 MB.
-            </p>
-          </div>
-        </div>
-        <Button
-          type="button"
-          size="sm"
-          onClick={startWritingTimer}
-          disabled={Boolean(writingStartedAt)}
-          className="shrink-0 gap-2"
-        >
-          <Timer className="h-4 w-4" />
-          {writingStartedAt ? `Writing time: ${elapsedWritingMinutes} min` : "Start writing timer"}
-        </Button>
-      </div>
-      {writingStartedAt && (
-        <p className="mt-3 border-t border-primary/15 pt-3 text-xs text-muted-foreground">
-          Timer started locally for this test. Upload your scanned answer sheet from the Submit Handwritten Booklet section when ready.
-        </p>
-      )}
-    </div>
-  )
-}
-
 export function StudentWorkspaceClient({
   testSeriesId,
   title,
@@ -215,6 +148,9 @@ export function StudentWorkspaceClient({
 
   const activeSubmission =
     submissions.find((s) => s.attemptNumber === selectedAttemptNumber) || submissions[0]
+  const [activeTab, setActiveTab] = React.useState<string>(
+    submissions.length > 0 ? "evaluations" : "upload"
+  )
   const [selectedRunNumber, setSelectedRunNumber] = React.useState<number | null>(null)
   const selectedRun = activeSubmission?.evaluationRuns?.find((run) => run.runNumber === selectedRunNumber)
   const reportQuestions = selectedRun?.questions || activeSubmission?.evaluation?.questions || []
@@ -351,90 +287,200 @@ export function StudentWorkspaceClient({
   )
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <PageHeader
-        icon={BookOpen}
-        title={title}
-        subtitle={`Examination Workspace: ${durationMinutes} mins · ${maxMarks} Max Marks`}
-        showRefresh={false}
-      >
-        <Link href="/student/dashboard">
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-10 px-3.5 rounded-xl border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-2xs"
-          >
-            <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
-            Back to Dashboard
-          </Button>
-        </Link>
-      </PageHeader>
+    <div className="space-y-5">
+      {/* 1. UNIFIED EXECUTIVE HEADER & SUMMARY BADGES */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pb-1">
+        <div className="flex items-start sm:items-center gap-3.5 min-w-0">
+          <div className="flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-xs shrink-0 mt-0.5 sm:mt-0">
+            <BookOpen className="h-6 w-6 sm:h-7 sm:w-7" />
+          </div>
+          <div className="min-w-0 space-y-1.5">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-foreground tracking-tight truncate">
+              {title}
+            </h1>
 
-      {/* KPI Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiStatCard
-          label="Examination Duration"
-          value={`${durationMinutes} Mins`}
-          subtext="Standard UPSC test time"
-          icon={Clock}
-          variant="blue"
-        />
-        <KpiStatCard
-          label="Maximum Marks"
-          value={`${maxMarks} Marks`}
-          subtext="Total syllabus weightage"
-          icon={Award}
-          variant="indigo"
-        />
-        <KpiStatCard
-          label="3-Attempt Quota"
-          value={`${attemptsUsed} / ${maxAttempts}`}
-          subtext={`${attemptsRemaining} attempts remaining`}
-          icon={FileCheck2}
-          variant={attemptsRemaining === 0 ? "rose" : "amber"}
-        />
-        <KpiStatCard
-          label="Evaluated Attempts"
-          value={submissions.length}
-          subtext="Detailed scorecards available"
-          icon={CheckCircle2}
-          variant="emerald"
-        />
-      </div>
+            {/* High-Priority Summary Badges: Replaces repetitive stat cards with high-density badges */}
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge
+                variant="outline"
+                className="gap-1.5 py-0.5 px-2.5 text-xs font-semibold border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/80 text-slate-700 dark:text-slate-300"
+              >
+                <Clock className="h-3.5 w-3.5 text-[#2A6AED] dark:text-blue-400" />
+                <span>{durationMinutes} Mins</span>
+              </Badge>
 
-      {/* Attempt Progress Tracker */}
-      <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs space-y-4">
-        <div className="flex items-center justify-between text-xs">
-          <span className="font-bold text-slate-900 dark:text-slate-100">
-            {maxAttempts > 3 ? "Extended Attempt Progression" : "3-Attempt Guarantee Progression"} ({attemptsUsed} of {maxAttempts} consumed)
-          </span>
-          <span className="font-bold text-[#2A6AED] dark:text-blue-400">
-            {attemptsRemaining} remaining
-          </span>
+              <Badge
+                variant="outline"
+                className="gap-1.5 py-0.5 px-2.5 text-xs font-semibold border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/80 text-slate-700 dark:text-slate-300"
+              >
+                <Award className="h-3.5 w-3.5 text-indigo-500" />
+                <span>{maxMarks} Max Marks</span>
+              </Badge>
+
+              <Badge
+                variant={attemptsRemaining === 0 ? "destructive" : "secondary"}
+                className={cn(
+                  "gap-1.5 py-0.5 px-2.5 text-xs font-semibold",
+                  attemptsRemaining > 0 &&
+                    "bg-blue-50 dark:bg-blue-950/60 text-[#2A6AED] dark:text-blue-300 border border-blue-200/80 dark:border-blue-900"
+                )}
+              >
+                <FileCheck2 className="h-3.5 w-3.5" />
+                <span>
+                  Attempt {attemptsUsed} of {maxAttempts} ({attemptsRemaining} remaining)
+                </span>
+              </Badge>
+
+              <Badge
+                variant="outline"
+                className="gap-1.5 py-0.5 px-2.5 text-xs font-semibold border-emerald-200 dark:border-emerald-900/60 text-emerald-700 dark:text-emerald-400 bg-emerald-50/80 dark:bg-emerald-950/40"
+              >
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                <span>{submissions.length} Evaluated</span>
+              </Badge>
+
+              {activeSubmission?.evaluation && (
+                <Badge className="gap-1.5 py-0.5 px-2.5 text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Score:{" "}
+                  {selectedRun?.totalMarksAwarded ?? activeSubmission.evaluation.totalMarksAwarded}/
+                  {selectedRun?.maxMarks ?? activeSubmission.evaluation.maxMarks} (
+                  {activeSubmission.evaluation.percentage}%)
+                </Badge>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* Dynamic Attempt Progress Nodes */}
-        <AttemptProgressTracker
-          attemptsUsed={attemptsUsed}
-          maxAttempts={maxAttempts}
-          submissions={submissions}
-          className="py-2"
-        />
-
-        {/* Progress Bar (Fallback Visual) */}
-        <Progress
-          value={attemptsUsed}
-          max={maxAttempts}
-          indicatorClassName={attemptsRemaining === 0 ? "bg-amber-500" : "bg-[#2A6AED]"}
-        />
+        {/* Right Header Navigation */}
+        <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
+          {resolvedPapers[0]?.fileUrl && (
+            <a
+              href={
+                resolvedPapers[0].fileUrl.includes("?")
+                  ? `${resolvedPapers[0].fileUrl}&download=1`
+                  : `${resolvedPapers[0].fileUrl}?download=1`
+              }
+              download
+              className="inline-flex"
+            >
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 px-3 rounded-xl border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-2xs gap-1.5"
+              >
+                <Download className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Download</span> Paper
+              </Button>
+            </a>
+          )}
+          <Link href="/student/dashboard">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 px-3 rounded-xl border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-2xs gap-1.5"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Back to</span> Dashboard
+            </Button>
+          </Link>
+        </div>
       </div>
 
-      {/* Writing & Upload Time Planner (Isolated Timer Component) */}
-      <WorkspaceWritingTimer testSeriesId={testSeriesId} durationMinutes={durationMinutes} />
+      {/* 2. PRIORITY ACTION & ATTEMPT HUB: Combines attempt navigation & timer sheet trigger */}
+      <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 sm:p-4 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          {/* Attempt Selector Pills */}
+          <div className="flex overflow-x-auto no-scrollbar scroll-smooth flex-nowrap items-center gap-2 py-0.5 max-w-full">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mr-1 shrink-0">
+              Attempt:
+            </span>
+            {Array.from({ length: maxAttempts }, (_, i) => i + 1).map((attemptNumber) => {
+              const sub = submissions.find((s) => s.attemptNumber === attemptNumber)
+              const isSelected = attemptNumber === selectedAttemptNumber
+              const isAvailable = attemptNumber <= attemptsUsed + 1
+              const isEvaluated = Boolean(sub?.evaluation)
+
+              return (
+                <Button
+                  key={attemptNumber}
+                  type="button"
+                  size="sm"
+                  variant={isSelected ? "default" : "outline"}
+                  disabled={!isAvailable && !sub}
+                  onClick={() => setSelectedAttemptNumber(attemptNumber)}
+                  className={cn(
+                    "h-8 px-3 rounded-lg text-xs font-bold transition-all gap-1.5 shrink-0",
+                    isSelected
+                      ? "bg-[#2A6AED] hover:bg-[#1E55C7] text-white shadow-2xs"
+                      : isEvaluated
+                        ? "border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-950/40"
+                        : isAvailable
+                          ? "border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                          : "opacity-40 cursor-not-allowed border-dashed text-slate-400"
+                  )}
+                >
+                  {isEvaluated ? (
+                    <CheckCircle2 className="h-3 w-3 text-emerald-500 shrink-0" />
+                  ) : !isAvailable ? (
+                    <Lock className="h-3 w-3 shrink-0" />
+                  ) : null}
+                  <span>Attempt #{attemptNumber}</span>
+                  {sub?.evaluation && (
+                    <span className="opacity-90 font-mono text-[11px]">
+                      ({sub.evaluation.totalMarksAwarded}/{sub.evaluation.maxMarks})
+                    </span>
+                  )}
+                  {!sub && isAvailable && (
+                    <span className="text-[10px] opacity-75 font-normal">(Ready)</span>
+                  )}
+                </Button>
+              )
+            })}
+          </div>
+
+          {/* Right: Exam Timer Trigger (opens shadcn Sheet) & Upload Quick Nav */}
+          <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+            <ExamWorkspaceTimer
+              variant="compact"
+              testSeriesId={testSeriesId}
+              durationMinutes={durationMinutes}
+              currentAttemptNumber={selectedAttemptNumber}
+              onNavigateToUpload={() => {
+                setActiveTab("upload")
+                setTimeout(() => {
+                  const uploadEl = document.getElementById("submission-upload-box")
+                  if (uploadEl) {
+                    const prefersReducedMotion =
+                      typeof window !== "undefined" &&
+                      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+                    uploadEl.scrollIntoView({
+                      behavior: prefersReducedMotion ? "auto" : "smooth",
+                      block: "center",
+                    })
+                  }
+                }, 50)
+              }}
+            />
+
+            {attemptsRemaining > 0 && activeTab !== "upload" && (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => setActiveTab("upload")}
+                className="h-9 rounded-xl border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-2xs gap-1.5"
+              >
+                <UploadCloud className="h-3.5 w-3.5 text-[#2A6AED]" />
+                <span className="hidden sm:inline">Submit</span> Booklet
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* Workspace Tabs */}
-      <Tabs defaultValue={submissions.length > 0 ? "evaluations" : "upload"} className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList variant="line" className="border-b border-slate-200 dark:border-slate-800 w-full justify-start overflow-x-auto no-scrollbar">
           <TabsTrigger value="evaluations" className="text-xs sm:text-sm font-semibold px-3 sm:px-4 py-2">
             <FileCheck2 className="h-3.5 w-3.5 mr-1.5" />
@@ -466,73 +512,49 @@ export function StudentWorkspaceClient({
             </div>
           ) : (
             <div className="space-y-5">
-              {/* Attempt Selector Strip */}
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
-                <div className="flex overflow-x-auto no-scrollbar scroll-smooth flex-nowrap items-center gap-2 py-1 max-w-full">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mr-1 shrink-0">
-                    Attempt:
-                  </span>
-                  {submissions.map((sub) => {
-                    const isSelected = sub.attemptNumber === activeSubmission?.attemptNumber
-                    return (
-                      <Button
-                        key={sub.id}
-                        type="button"
-                        size="sm"
-                        variant={isSelected ? "default" : "outline"}
-                        onClick={() => setSelectedAttemptNumber(sub.attemptNumber)}
-                        className={cn(
-                          "shrink-0",
-                          isSelected
-                            ? "h-9 px-4 rounded-xl bg-[#2A6AED] hover:bg-[#1E55C7] text-white text-xs font-bold shadow-2xs"
-                            : "h-9 px-4 rounded-xl border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold"
-                        )}
-                      >
-                        Attempt #{sub.attemptNumber}
-                        {sub.evaluation && (
-                          <span className="ml-1.5 opacity-90">
-                            ({sub.evaluation.totalMarksAwarded}/{sub.evaluation.maxMarks})
-                          </span>
-                        )}
-                      </Button>
-                    )
-                  })}
-                </div>
-
-                {activeSubmission && (
-                  <div className="flex flex-wrap items-center gap-3 text-xs">
+              {/* Submission Metadata & File Actions */}
+              {activeSubmission && (
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3 text-xs">
+                  <div className="flex items-center gap-2">
+                    <Badge
+                      variant="outline"
+                      className="text-xs font-semibold border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60"
+                    >
+                      Viewing Attempt #{activeSubmission.attemptNumber}
+                    </Badge>
                     <span className="text-slate-500 dark:text-slate-400">
                       Submitted <FormattedDate date={activeSubmission.submittedAt} includeTime />
                     </span>
-                    {activeSubmission.fileUrl && (
-                      <div className="inline-flex items-center gap-2">
-                        <a
-                          href={activeSubmission.fileUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="font-bold text-[#2A6AED] dark:text-blue-400 hover:underline inline-flex items-center gap-1"
-                        >
-                          <Eye className="h-3.5 w-3.5" />
-                          View Booklet
-                        </a>
-                        <span className="text-slate-300 dark:text-slate-700">·</span>
-                        <a
-                          href={
-                            activeSubmission.fileUrl.includes("?")
-                              ? `${activeSubmission.fileUrl}&download=1`
-                              : `${activeSubmission.fileUrl}?download=1`
-                          }
-                          download
-                          className="font-semibold text-slate-600 dark:text-slate-300 hover:text-[#2A6AED] dark:hover:text-blue-400 inline-flex items-center gap-1"
-                        >
-                          <Download className="h-3.5 w-3.5" />
-                          Download
-                        </a>
-                      </div>
-                    )}
                   </div>
-                )}
-              </div>
+
+                  {activeSubmission.fileUrl && (
+                    <div className="inline-flex items-center gap-2">
+                      <a
+                        href={activeSubmission.fileUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="font-bold text-[#2A6AED] dark:text-blue-400 hover:underline inline-flex items-center gap-1"
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                        View Booklet
+                      </a>
+                      <span className="text-slate-300 dark:text-slate-700">·</span>
+                      <a
+                        href={
+                          activeSubmission.fileUrl.includes("?")
+                            ? `${activeSubmission.fileUrl}&download=1`
+                            : `${activeSubmission.fileUrl}?download=1`
+                        }
+                        download
+                        className="font-semibold text-slate-600 dark:text-slate-300 hover:text-[#2A6AED] dark:hover:text-blue-400 inline-flex items-center gap-1"
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                        Download
+                      </a>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {activeSubmission?.evaluation ? (
                 <div className="space-y-5">
@@ -674,11 +696,13 @@ export function StudentWorkspaceClient({
 
         {/* TAB 2: UPLOAD HANDWRITTEN BOOKLET */}
         <TabsContent value="upload" className="pt-1">
-          <SubmissionUploadForm
-            testSeriesId={testSeriesId}
-            attemptsUsed={attemptsUsed}
-            maxAttempts={maxAttempts}
-          />
+          <div id="submission-upload-box">
+            <SubmissionUploadForm
+              testSeriesId={testSeriesId}
+              attemptsUsed={attemptsUsed}
+              maxAttempts={maxAttempts}
+            />
+          </div>
         </TabsContent>
 
         {/* TAB 3: DOWNLOADABLE RESOURCES & CANDIDATE INSTRUCTIONS */}
