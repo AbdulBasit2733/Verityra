@@ -20,7 +20,8 @@ export function renderEnrollmentReceiptEmail({
 }: EnrollmentReceiptTemplateProps): RenderedEmailTemplate {
   const safeName = name ? escapeHtml(name) : "Candidate"
   const safeTitle = escapeHtml(testTitle)
-  const formattedAmount = amountPaise > 0 ? `₹${(amountPaise / 100).toFixed(2)}` : "Free Enrollment"
+  const formattedAmount =
+    amountPaise > 0 ? `₹${(amountPaise / 100).toFixed(2)}` : "Free Enrollment"
   const subject = `Enrollment Confirmed: ${testTitle}`
 
   const orderRow = orderId

@@ -12,7 +12,10 @@ function Progress({
   max?: number
   indicatorClassName?: string
 }) {
-  const percentage = Math.min(100, Math.max(0, (value / Math.max(1, max)) * 100))
+  const percentage = Math.min(
+    100,
+    Math.max(0, (value / Math.max(1, max)) * 100)
+  )
 
   return (
     <div

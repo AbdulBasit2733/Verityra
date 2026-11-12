@@ -1,12 +1,23 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { ArrowLeft, Download, FileText, Award, Clock, Calendar, ExternalLink } from "lucide-react"
+import {
+  ArrowLeft,
+  Download,
+  FileText,
+  Award,
+  Clock,
+  Calendar,
+  ExternalLink,
+} from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { buttonVariants } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { prisma, isDatabaseConnected } from "@/lib/prisma"
-import { DEMO_QUESTION_PAPERS, QuestionPaperItem } from "@/lib/mock-question-papers"
+import {
+  DEMO_QUESTION_PAPERS,
+  QuestionPaperItem,
+} from "@/lib/mock-question-papers"
 
 export const revalidate = 300
 
@@ -39,7 +50,9 @@ export default async function QuestionPaperDetailPage({
           fileSizeBytes: record.fileSizeBytes,
           isPublished: record.isPublished,
           downloadsCount: record.downloadsCount || 0,
-          createdAt: record.createdAt ? new Date(record.createdAt).toISOString() : new Date().toISOString(),
+          createdAt: record.createdAt
+            ? new Date(record.createdAt).toISOString()
+            : new Date().toISOString(),
         }
       }
     } catch (err) {
@@ -68,46 +81,56 @@ export default async function QuestionPaperDetailPage({
           href="/question-papers"
           className={cn(
             buttonVariants({ variant: "ghost" }),
-            "w-fit text-[#145DEB] hover:bg-white text-xs font-semibold gap-1.5"
+            "w-fit gap-1.5 text-xs font-semibold text-[#145DEB] hover:bg-white"
           )}
         >
           <ArrowLeft className="h-4 w-4" /> Back to question papers
         </Link>
 
-        <Card className="border-[#DCE7FA] bg-white shadow-sm overflow-hidden">
-          <CardHeader className="gap-4 border-b border-[#DCE7FA] p-6 sm:p-8 bg-gradient-to-br from-white via-white to-[#F1F6FF]/40">
+        <Card className="overflow-hidden border-[#DCE7FA] bg-white shadow-sm">
+          <CardHeader className="gap-4 border-b border-[#DCE7FA] bg-gradient-to-br from-white via-white to-[#F1F6FF]/40 p-6 sm:p-8">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                <Badge className="rounded-full bg-[#F1F6FF] text-[#145DEB] border border-[#BFD5FA]/60 text-xs font-bold uppercase tracking-wide">
+                <Badge className="rounded-full border border-[#BFD5FA]/60 bg-[#F1F6FF] text-xs font-bold tracking-wide text-[#145DEB] uppercase">
                   {paper.category}
                 </Badge>
                 {paper.year && (
-                  <Badge variant="outline" className="border-slate-300 text-slate-600 text-xs font-semibold">
-                    <Calendar className="mr-1 h-3 w-3 text-slate-400" /> {paper.year} Examination
+                  <Badge
+                    variant="outline"
+                    className="border-slate-300 text-xs font-semibold text-slate-600"
+                  >
+                    <Calendar className="mr-1 h-3 w-3 text-slate-400" />{" "}
+                    {paper.year} Examination
                   </Badge>
                 )}
               </div>
-              <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold">
+              <Badge
+                variant="secondary"
+                className="border border-emerald-200 bg-emerald-50 text-xs font-semibold text-emerald-700"
+              >
                 Free Download
               </Badge>
             </div>
 
-            <CardTitle className="font-heading text-2xl sm:text-3xl font-extrabold text-[#071B3A] leading-tight">
+            <CardTitle className="font-heading text-2xl leading-tight font-extrabold text-[#071B3A] sm:text-3xl">
               {paper.title}
             </CardTitle>
 
-            <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm text-[#64748B]">
+            <div className="flex flex-wrap items-center gap-4 text-xs text-[#64748B] sm:text-sm">
               <span className="flex items-center gap-1.5 font-semibold text-[#071B3A]">
-                <Award className="h-4 w-4 text-[#145DEB]" /> {paper.maxMarks} Marks
+                <Award className="h-4 w-4 text-[#145DEB]" /> {paper.maxMarks}{" "}
+                Marks
               </span>
               {paper.durationMinutes && (
                 <span className="flex items-center gap-1.5">
-                  <Clock className="h-4 w-4 text-slate-400" /> {paper.durationMinutes} Minutes
+                  <Clock className="h-4 w-4 text-slate-400" />{" "}
+                  {paper.durationMinutes} Minutes
                 </span>
               )}
               {paper.subject && (
                 <span className="flex items-center gap-1.5">
-                  <FileText className="h-4 w-4 text-slate-400" /> {paper.subject}
+                  <FileText className="h-4 w-4 text-slate-400" />{" "}
+                  {paper.subject}
                 </span>
               )}
             </div>
@@ -115,11 +138,11 @@ export default async function QuestionPaperDetailPage({
 
           <CardContent className="flex flex-col gap-6 p-6 sm:p-8">
             {paper.description && (
-              <div className="space-y-2 rounded-2xl bg-[#F1F6FF]/60 p-5 border border-[#DCE7FA]">
-                <h3 className="font-bold text-sm text-[#071B3A] font-heading">
+              <div className="space-y-2 rounded-2xl border border-[#DCE7FA] bg-[#F1F6FF]/60 p-5">
+                <h3 className="font-heading text-sm font-bold text-[#071B3A]">
                   Examination Information &amp; Syllabus Coverage
                 </h3>
-                <p className="text-xs sm:text-sm leading-relaxed text-[#64748B]">
+                <p className="text-xs leading-relaxed text-[#64748B] sm:text-sm">
                   {paper.description}
                 </p>
               </div>
@@ -132,7 +155,7 @@ export default async function QuestionPaperDetailPage({
                 download
                 className={cn(
                   buttonVariants(),
-                  "rounded-xl bg-[#145DEB] hover:bg-[#0F4DC7] text-white px-5 py-2.5 font-semibold text-xs sm:text-sm shadow-xs"
+                  "rounded-xl bg-[#145DEB] px-5 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-[#0F4DC7] sm:text-sm"
                 )}
               >
                 <Download className="mr-2 h-4 w-4" /> Download PDF Document
@@ -144,7 +167,7 @@ export default async function QuestionPaperDetailPage({
                 rel="noreferrer"
                 className={cn(
                   buttonVariants({ variant: "outline" }),
-                  "rounded-xl border-[#BFD5FA] text-[#145DEB] hover:bg-[#F1F6FF] px-4 py-2.5 font-semibold text-xs sm:text-sm"
+                  "rounded-xl border-[#BFD5FA] px-4 py-2.5 text-xs font-semibold text-[#145DEB] hover:bg-[#F1F6FF] sm:text-sm"
                 )}
               >
                 <ExternalLink className="mr-2 h-4 w-4" /> Open in New Tab
@@ -154,15 +177,16 @@ export default async function QuestionPaperDetailPage({
             {/* Embedded PDF Viewer */}
             <div className="mt-4 overflow-hidden rounded-2xl border border-[#DCE7FA] bg-slate-100 shadow-inner">
               <div className="flex items-center justify-between border-b border-[#DCE7FA] bg-slate-50 px-4 py-2.5 text-xs text-slate-500">
-                <span className="font-semibold text-slate-700 flex items-center gap-1.5">
-                  <FileText className="h-3.5 w-3.5 text-[#145DEB]" /> Live Document Preview
+                <span className="flex items-center gap-1.5 font-semibold text-slate-700">
+                  <FileText className="h-3.5 w-3.5 text-[#145DEB]" /> Live
+                  Document Preview
                 </span>
                 <span>PDF Format</span>
               </div>
               <iframe
                 src={`${paper.fileUrl}#toolbar=0`}
                 title={paper.title}
-                className="w-full h-[650px] border-0"
+                className="h-[650px] w-full border-0"
               />
             </div>
           </CardContent>

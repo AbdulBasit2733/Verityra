@@ -5,12 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { useIsMobile } from "@/hooks/use-media-query"
-import {
-  LayoutDashboard,
-  BookOpen,
-  Trophy,
-  User,
-} from "lucide-react"
+import { LayoutDashboard, BookOpen, Trophy, User } from "lucide-react"
 
 /**
  * Mobile Bottom Navigation Bar (Student Portal Only)
@@ -75,9 +70,10 @@ export function MobileBottomNav() {
   }
 
   // Only show on student pages
-  const isStudentPage = pathname.startsWith("/student") ||
-                        pathname.startsWith("/tests") ||
-                        pathname.startsWith("/leaderboard")
+  const isStudentPage =
+    pathname.startsWith("/student") ||
+    pathname.startsWith("/tests") ||
+    pathname.startsWith("/leaderboard")
 
   if (!isStudentPage) {
     return null
@@ -97,7 +93,7 @@ export function MobileBottomNav() {
 
       {/* Fixed Bottom Navigation */}
       <nav
-        className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md"
+        className="fixed right-0 bottom-0 left-0 z-50 border-t border-slate-200 bg-white/95 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/95"
         style={{
           paddingBottom: "env(safe-area-inset-bottom, 0px)",
         }}
@@ -112,27 +108,23 @@ export function MobileBottomNav() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex flex-col items-center justify-center gap-1 rounded-xl px-4 py-2 transition-all duration-200 min-w-[64px] min-h-[56px]",
+                  "flex min-h-[56px] min-w-[64px] flex-col items-center justify-center gap-1 rounded-xl px-4 py-2 transition-all duration-200",
                   active
                     ? "bg-[#2A6AED] text-white shadow-sm"
-                    : "text-slate-600 dark:text-slate-400 active:bg-slate-100 dark:active:bg-slate-800"
+                    : "text-slate-600 active:bg-slate-100 dark:text-slate-400 dark:active:bg-slate-800"
                 )}
                 aria-current={active ? "page" : undefined}
               >
                 <Icon
                   className={cn(
                     "h-5 w-5 transition-colors",
-                    active
-                      ? "text-white"
-                      : "text-slate-500 dark:text-slate-400"
+                    active ? "text-white" : "text-slate-500 dark:text-slate-400"
                   )}
                 />
                 <span
                   className={cn(
-                    "text-[10px] font-bold uppercase tracking-wider transition-colors",
-                    active
-                      ? "text-white"
-                      : "text-slate-600 dark:text-slate-400"
+                    "text-[10px] font-bold tracking-wider uppercase transition-colors",
+                    active ? "text-white" : "text-slate-600 dark:text-slate-400"
                   )}
                 >
                   {item.label}

@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma, isDatabaseConnected } from "@/lib/prisma"
 import { sendEnrollmentReceiptEmail } from "@/lib/email"
-import { PaymentStatus, RefundReason, RegistrationStatus, Role, WebhookStatus } from "@prisma/client"
+import {
+  PaymentStatus,
+  RefundReason,
+  RegistrationStatus,
+  Role,
+  WebhookStatus,
+} from "@prisma/client"
 import crypto from "crypto"
 
 export async function POST(req: NextRequest) {
@@ -14,24 +20,46 @@ export async function POST(req: NextRequest) {
 
     // Signature verification with HMAC SHA-256
     if (!webhookSecret || webhookSecret === "placeholder_webhook_secret") {
-      console.error("[RAZORPAY WEBHOOK] RAZORPAY_WEBHOOK_SECRET is not configured")
-      return NextResponse.json({ error: "Webhook is not configured" }, { status: 503 })
+      console.error(
+        "[RAZORPAY WEBHOOK] RAZORPAY_WEBHOOK_SECRET is not configured"
+      )
+      return NextResponse.json(
+        { error: "Webhook is not configured" },
+        { status: 503 }
+      )
     }
     if (!signature) {
-      return NextResponse.json({ error: "Missing x-razorpay-signature header" }, { status: 400 })
+      return NextResponse.json(
+        { error: "Missing x-razorpay-signature header" },
+        { status: 400 }
+      )
     }
-    const expectedSignature = crypto.createHmac("sha256", webhookSecret).update(rawBody).digest("hex")
+    const expectedSignature = crypto
+      .createHmac("sha256", webhookSecret)
+      .update(rawBody)
+      .digest("hex")
     const expected = Buffer.from(expectedSignature, "hex")
-    const supplied = /^[a-f0-9]{64}$/i.test(signature) ? Buffer.from(signature, "hex") : Buffer.alloc(0)
-    if (supplied.length !== expected.length || !crypto.timingSafeEqual(supplied, expected)) {
-      return NextResponse.json({ error: "Invalid webhook signature" }, { status: 400 })
+    const supplied = /^[a-f0-9]{64}$/i.test(signature)
+      ? Buffer.from(signature, "hex")
+      : Buffer.alloc(0)
+    if (
+      supplied.length !== expected.length ||
+      !crypto.timingSafeEqual(supplied, expected)
+    ) {
+      return NextResponse.json(
+        { error: "Invalid webhook signature" },
+        { status: 400 }
+      )
     }
 
     const payload = JSON.parse(rawBody)
     const eventType = payload?.event || "unknown"
     const eventId = headerEventId || payload?.event_id || payload?.id
     if (!eventId || eventType === "unknown") {
-      return NextResponse.json({ error: "Missing Razorpay event identity" }, { status: 400 })
+      return NextResponse.json(
+        { error: "Missing Razorpay event identity" },
+        { status: 400 }
+      )
     }
     receivedEventId = eventId
 
@@ -46,7 +74,10 @@ export async function POST(req: NextRequest) {
     })
 
     if (existingEvent && existingEvent.status === WebhookStatus.PROCESSED) {
-      return NextResponse.json({ received: true, note: "Idempotent skip: Event already processed" })
+      return NextResponse.json({
+        received: true,
+        note: "Idempotent skip: Event already processed",
+      })
     }
 
     // Record webhook event as RECEIVED
@@ -126,7 +157,8 @@ export async function POST(req: NextRequest) {
               where: { id: paymentRecord.id },
               data: {
                 status: PaymentStatus.COMPLETED,
-                razorpayPaymentId: razorpayPaymentId || paymentRecord.razorpayPaymentId,
+                razorpayPaymentId:
+                  razorpayPaymentId || paymentRecord.razorpayPaymentId,
                 registrationId: registration.id,
                 paymentMethod,
                 bankReference,
@@ -140,7 +172,11 @@ export async function POST(req: NextRequest) {
                 actorType: "GATEWAY_WEBHOOK",
                 actorId: "razorpay",
                 details: `Gateway event '${eventType}' verified payment capture of ₹${paymentRecord.amount / 100} via ${paymentMethod || "standard gateway"}.`,
-                rawPayload: JSON.stringify({ eventId, razorpayPaymentId, bankReference }),
+                rawPayload: JSON.stringify({
+                  eventId,
+                  razorpayPaymentId,
+                  bankReference,
+                }),
               },
             })
 
@@ -169,7 +205,10 @@ export async function POST(req: NextRequest) {
               maxAttempts,
               orderId: razorpayOrderId,
             }).catch((err) =>
-              console.error("[RAZORPAY WEBHOOK] Failed to send enrollment receipt:", err)
+              console.error(
+                "[RAZORPAY WEBHOOK] Failed to send enrollment receipt:",
+                err
+              )
             )
           }
         }
@@ -190,7 +229,11 @@ export async function POST(req: NextRequest) {
           where: { razorpayOrderId },
         })
 
-        if (paymentRecord && (paymentRecord.status === PaymentStatus.PENDING || paymentRecord.status === PaymentStatus.AUTHORIZED)) {
+        if (
+          paymentRecord &&
+          (paymentRecord.status === PaymentStatus.PENDING ||
+            paymentRecord.status === PaymentStatus.AUTHORIZED)
+        ) {
           await prisma.$transaction(async (tx) => {
             await tx.payment.update({
               where: { id: paymentRecord.id },
@@ -242,18 +285,26 @@ export async function POST(req: NextRequest) {
 
           // Determine if this specific refund ID was already counted in PaymentRefund
           const existingRefundRecord = razorpayRefundId
-            ? paymentRecord.refunds.find((r) => r.razorpayRefundId === razorpayRefundId)
+            ? paymentRecord.refunds.find(
+                (r) => r.razorpayRefundId === razorpayRefundId
+              )
             : null
 
           const otherRefundsSum = paymentRecord.refunds
-            .filter((r) => !razorpayRefundId || r.razorpayRefundId !== razorpayRefundId)
+            .filter(
+              (r) =>
+                !razorpayRefundId || r.razorpayRefundId !== razorpayRefundId
+            )
             .reduce((sum, r) => sum + r.amount, 0)
 
           const totalRefunded = Math.min(
             paymentRecord.amount,
             existingRefundRecord
               ? otherRefundsSum + refundAmount
-              : Math.max(paymentRecord.amountRefunded, otherRefundsSum + refundAmount)
+              : Math.max(
+                  paymentRecord.amountRefunded,
+                  otherRefundsSum + refundAmount
+                )
           )
 
           const nextStatus = refundCompleted
@@ -331,7 +382,9 @@ export async function POST(req: NextRequest) {
             await tx.paymentLedger.create({
               data: {
                 paymentId: paymentRecord.id,
-                eventType: refundCompleted ? "WEBHOOK_REFUND_PROCESSED" : "WEBHOOK_REFUND_PENDING",
+                eventType: refundCompleted
+                  ? "WEBHOOK_REFUND_PROCESSED"
+                  : "WEBHOOK_REFUND_PENDING",
                 actorType: "GATEWAY_WEBHOOK",
                 actorId: "razorpay",
                 details: `Razorpay webhook (${eventType}) recorded refund of ₹${(refundAmount || paymentRecord.amount) / 100}.`,
@@ -364,11 +417,18 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error("[RAZORPAY WEBHOOK ERROR]", err)
     if (receivedEventId) {
-      await prisma.webhookEvent.updateMany({
-        where: { eventId: receivedEventId, status: WebhookStatus.RECEIVED },
-        data: { status: WebhookStatus.FAILED },
-      }).catch((markError) => console.error("[RAZORPAY WEBHOOK] Failed to mark event:", markError))
+      await prisma.webhookEvent
+        .updateMany({
+          where: { eventId: receivedEventId, status: WebhookStatus.RECEIVED },
+          data: { status: WebhookStatus.FAILED },
+        })
+        .catch((markError) =>
+          console.error("[RAZORPAY WEBHOOK] Failed to mark event:", markError)
+        )
     }
-    return NextResponse.json({ error: "Webhook processing failed" }, { status: 500 })
+    return NextResponse.json(
+      { error: "Webhook processing failed" },
+      { status: 500 }
+    )
   }
 }

@@ -8,7 +8,8 @@ export default async function AdminPaymentsPage() {
   await requireAdmin("/admin/payments")
   const result = await getAdminPaymentsAction()
 
-  const initialPayments = result.success && result.data ? result.data.payments : []
+  const initialPayments =
+    result.success && result.data ? result.data.payments : []
 
   return <AdminPaymentsClient initialPayments={initialPayments} />
 }

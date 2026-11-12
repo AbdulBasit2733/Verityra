@@ -38,8 +38,12 @@ export function AttemptProgressTracker({
 }: AttemptProgressTrackerProps) {
   const attempts = Array.from({ length: maxAttempts }, (_, i) => i + 1)
 
-  const getAttemptState = (attemptNumber: number): "completed" | "available" | "locked" => {
-    const submission = submissions.find((s) => s.attemptNumber === attemptNumber)
+  const getAttemptState = (
+    attemptNumber: number
+  ): "completed" | "available" | "locked" => {
+    const submission = submissions.find(
+      (s) => s.attemptNumber === attemptNumber
+    )
 
     if (submission) {
       return "completed"
@@ -86,11 +90,11 @@ export function AttemptProgressTracker({
                 className={cn(
                   "flex items-center justify-center rounded-full transition-all",
                   state === "completed" &&
-                    "h-8 w-8 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300",
+                    "h-8 w-8 bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300",
                   state === "available" &&
-                    "h-8 w-8 bg-blue-100 dark:bg-blue-950/60 text-[#2A6AED] dark:text-blue-300",
+                    "h-8 w-8 bg-blue-100 text-[#2A6AED] dark:bg-blue-950/60 dark:text-blue-300",
                   state === "locked" &&
-                    "h-8 w-8 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                    "h-8 w-8 bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
                 )}
                 title={getAttemptLabel(attemptNumber)}
               >
@@ -100,8 +104,9 @@ export function AttemptProgressTracker({
               {/* Attempt Number Label */}
               <span
                 className={cn(
-                  "text-[10px] font-bold uppercase tracking-wide",
-                  state === "completed" && "text-emerald-800 dark:text-emerald-300",
+                  "text-[10px] font-bold tracking-wide uppercase",
+                  state === "completed" &&
+                    "text-emerald-800 dark:text-emerald-300",
                   state === "available" && "text-[#2A6AED] dark:text-blue-300",
                   state === "locked" && "text-slate-600 dark:text-slate-400"
                 )}
@@ -114,7 +119,7 @@ export function AttemptProgressTracker({
             {!isLast && (
               <div
                 className={cn(
-                  "h-0.5 flex-1 min-w-[16px] mx-1",
+                  "mx-1 h-0.5 min-w-[16px] flex-1",
                   state === "completed"
                     ? "bg-emerald-400 dark:bg-emerald-800"
                     : "bg-slate-300 dark:bg-slate-700"

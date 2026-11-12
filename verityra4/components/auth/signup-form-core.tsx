@@ -27,9 +27,13 @@ export function SignUpFormCore({ isMobile }: SignUpFormCoreProps) {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
-  const [devVerificationUrl, setDevVerificationUrl] = useState<string | null>(null)
+  const [devVerificationUrl, setDevVerificationUrl] = useState<string | null>(
+    null
+  )
   const [loading, setLoading] = useState(false)
-  const redirectTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
+  const redirectTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  )
 
   useEffect(() => {
     return () => {
@@ -74,7 +78,9 @@ export function SignUpFormCore({ isMobile }: SignUpFormCoreProps) {
         return
       }
 
-      setSuccess(result.message || "Registration successful! You may now sign in.")
+      setSuccess(
+        result.message || "Registration successful! You may now sign in."
+      )
       setLoading(false)
 
       if (result.data?.devVerificationUrl) {
@@ -94,13 +100,20 @@ export function SignUpFormCore({ isMobile }: SignUpFormCoreProps) {
   return (
     <div className="w-full space-y-5">
       {error && (
-        <Alert variant="destructive" role="alert" className="rounded-lg py-3 text-xs sm:text-sm">
+        <Alert
+          variant="destructive"
+          role="alert"
+          className="rounded-lg py-3 text-xs sm:text-sm"
+        >
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
       {success && (
-        <Alert role="status" className="rounded-lg border-emerald-300 bg-emerald-50 py-3 text-xs text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200 sm:text-sm">
+        <Alert
+          role="status"
+          className="rounded-lg border-emerald-300 bg-emerald-50 py-3 text-xs text-emerald-800 sm:text-sm dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200"
+        >
           <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
           <AlertDescription>{success}</AlertDescription>
         </Alert>
@@ -119,7 +132,11 @@ export function SignUpFormCore({ isMobile }: SignUpFormCoreProps) {
           </a>
           <div className="pt-1">
             <Link href={devVerificationUrl}>
-              <Button size="sm" type="button" className="h-8 rounded-lg bg-[#2A6AED] text-xs font-semibold text-white hover:bg-[#1E55C7]">
+              <Button
+                size="sm"
+                type="button"
+                className="h-8 rounded-lg bg-[#2A6AED] text-xs font-semibold text-white hover:bg-[#1E55C7]"
+              >
                 Verify Email Now
               </Button>
             </Link>
@@ -129,7 +146,10 @@ export function SignUpFormCore({ isMobile }: SignUpFormCoreProps) {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-1.5">
-          <Label htmlFor={`name-${isMobile ? "mobile" : "desktop"}`} className="text-xs font-bold text-slate-700 dark:text-slate-300">
+          <Label
+            htmlFor={`name-${isMobile ? "mobile" : "desktop"}`}
+            className="text-xs font-bold text-slate-700 dark:text-slate-300"
+          >
             Full Candidate Name
           </Label>
           <Input
@@ -146,7 +166,10 @@ export function SignUpFormCore({ isMobile }: SignUpFormCoreProps) {
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor={`email-${isMobile ? "mobile" : "desktop"}`} className="text-xs font-bold text-slate-700 dark:text-slate-300">
+          <Label
+            htmlFor={`email-${isMobile ? "mobile" : "desktop"}`}
+            className="text-xs font-bold text-slate-700 dark:text-slate-300"
+          >
             Official Email Address
           </Label>
           <Input
@@ -162,9 +185,12 @@ export function SignUpFormCore({ isMobile }: SignUpFormCoreProps) {
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="space-y-1.5">
-            <Label htmlFor={`password-${isMobile ? "mobile" : "desktop"}`} className="text-xs font-bold text-slate-700 dark:text-slate-300">
+            <Label
+              htmlFor={`password-${isMobile ? "mobile" : "desktop"}`}
+              className="text-xs font-bold text-slate-700 dark:text-slate-300"
+            >
               Password
             </Label>
             <div className="relative">
@@ -177,21 +203,28 @@ export function SignUpFormCore({ isMobile }: SignUpFormCoreProps) {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••••••"
                 disabled={loading}
-                className="auth-control h-11 pr-10 text-sm font-mono"
+                className="auth-control h-11 pr-10 font-mono text-sm"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 hover:bg-blue-50 hover:text-[#1E55C7] dark:hover:bg-blue-950/50 dark:hover:text-blue-200"
+                className="absolute top-1/2 right-2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 hover:bg-blue-50 hover:text-[#1E55C7] dark:hover:bg-blue-950/50 dark:hover:text-blue-200"
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
               </button>
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor={`confirm-password-${isMobile ? "mobile" : "desktop"}`} className="text-xs font-bold text-slate-700 dark:text-slate-300">
+            <Label
+              htmlFor={`confirm-password-${isMobile ? "mobile" : "desktop"}`}
+              className="text-xs font-bold text-slate-700 dark:text-slate-300"
+            >
               Confirm Password
             </Label>
             <Input
@@ -203,7 +236,7 @@ export function SignUpFormCore({ isMobile }: SignUpFormCoreProps) {
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="••••••••••••"
               disabled={loading}
-              className="auth-control h-11 text-sm font-mono"
+              className="auth-control h-11 font-mono text-sm"
             />
           </div>
         </div>
@@ -229,7 +262,10 @@ export function SignUpFormCore({ isMobile }: SignUpFormCoreProps) {
 
       <div className="pt-2 text-center text-xs text-slate-600 dark:text-slate-400">
         Already registered?{" "}
-        <Link href="/signin" className="font-bold text-[#2A6AED] dark:text-blue-400 hover:underline">
+        <Link
+          href="/signin"
+          className="font-bold text-[#2A6AED] hover:underline dark:text-blue-400"
+        >
           Sign in here
         </Link>
       </div>

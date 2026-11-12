@@ -25,7 +25,11 @@ interface KpiMetricStripProps {
   columns?: 2 | 3 | 4 | 6
 }
 
-export function KpiMetricStrip({ children, className, columns = 4 }: KpiMetricStripProps) {
+export function KpiMetricStrip({
+  children,
+  className,
+  columns = 4,
+}: KpiMetricStripProps) {
   const gridCols = {
     2: "grid-cols-1 sm:grid-cols-2",
     3: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3",
@@ -48,7 +52,8 @@ export function KpiMetricStrip({ children, className, columns = 4 }: KpiMetricSt
   )
 }
 
-export type KpiColorVariant = "blue" | "indigo" | "emerald" | "amber" | "rose" | "slate"
+export type KpiColorVariant =
+  "blue" | "indigo" | "emerald" | "amber" | "rose" | "slate"
 
 interface KpiMetricProps {
   label: string
@@ -111,15 +116,15 @@ export function KpiMetric({
   return (
     <div
       className={cn(
-        "flex items-center gap-3 sm:gap-4 px-4 sm:px-6 py-4 sm:py-5",
-        "hover:bg-muted/50 transition-colors",
+        "flex items-center gap-3 px-4 py-4 sm:gap-4 sm:px-6 sm:py-5",
+        "transition-colors hover:bg-muted/50",
         className
       )}
     >
       {/* Icon Container */}
       <div
         className={cn(
-          "w-11 h-11 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center shrink-0",
+          "flex h-11 w-11 shrink-0 items-center justify-center rounded-lg sm:h-12 sm:w-12",
           styles.iconBg
         )}
       >
@@ -131,7 +136,7 @@ export function KpiMetric({
         <div className="flex items-baseline gap-2">
           <p
             className={cn(
-              "text-xl sm:text-2xl lg:text-3xl font-extrabold text-foreground tracking-tight truncate",
+              "truncate text-xl font-extrabold tracking-tight text-foreground sm:text-2xl lg:text-3xl",
               styles.valueColor
             )}
           >
@@ -150,11 +155,11 @@ export function KpiMetric({
             </span>
           )}
         </div>
-        <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground block truncate mt-0.5">
+        <span className="mt-0.5 block truncate text-[11px] font-bold tracking-wider text-muted-foreground uppercase sm:text-xs">
           {label}
         </span>
         {subtext && (
-          <span className="text-[11px] text-muted-foreground block truncate mt-0.5">
+          <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">
             {subtext}
           </span>
         )}

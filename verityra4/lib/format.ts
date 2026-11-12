@@ -42,7 +42,9 @@ export function formatTime(date: Date | string | null | undefined): string {
  * Format full datetime for tooltips as "25/10/2026, 18:51:24" (24-hour format)
  * CRITICAL: hour12: false prevents hydration mismatch between server and client
  */
-export function formatDateTimeFull(date: Date | string | null | undefined): string {
+export function formatDateTimeFull(
+  date: Date | string | null | undefined
+): string {
   if (!date) return "—"
   const parsed = new Date(date)
   if (isNaN(parsed.getTime())) return "—"

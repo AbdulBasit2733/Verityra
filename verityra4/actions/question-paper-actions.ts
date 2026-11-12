@@ -21,7 +21,10 @@ function documentValidationError(file: File): string | null {
 }
 
 function safeDocumentName(fileName: string): string {
-  return (fileName.split(/[\\/]/).pop() || "document.pdf").replace(/[^\w.-]/g, "_")
+  return (fileName.split(/[\\/]/).pop() || "document.pdf").replace(
+    /[^\w.-]/g,
+    "_"
+  )
 }
 
 export type QuestionPaperData = {
@@ -44,7 +47,9 @@ export type QuestionPaperData = {
 /**
  * Server Action: Upload Standalone Question Paper (ADMIN ONLY)
  */
-export async function uploadQuestionPaperAction(formData: FormData): Promise<ActionResult<{ paper: QuestionPaperData }>> {
+export async function uploadQuestionPaperAction(
+  formData: FormData
+): Promise<ActionResult<{ paper: QuestionPaperData }>> {
   const sessionUser = await getCurrentUser()
   if (!sessionUser || sessionUser.role !== Role.ADMIN) {
     return { success: false, error: "Unauthorized. Admin privileges required." }
@@ -59,7 +64,9 @@ export async function uploadQuestionPaperAction(formData: FormData): Promise<Act
   const maxMarksValue = formData.get("maxMarks")
   const maxMarks = maxMarksValue ? parseFloat(String(maxMarksValue)) : 100
   const durationValue = formData.get("durationMinutes")
-  const durationMinutes = durationValue ? parseInt(String(durationValue), 10) : 180
+  const durationMinutes = durationValue
+    ? parseInt(String(durationValue), 10)
+    : 180
   const isPublished = formData.get("isPublished") !== "false"
 
   const paperFileValue = formData.get("paperFile")
@@ -70,7 +77,10 @@ export async function uploadQuestionPaperAction(formData: FormData): Promise<Act
   }
 
   if (!paperFile || paperFile.size === 0) {
-    return { success: false, error: "A valid PDF question paper file is required." }
+    return {
+      success: false,
+      error: "A valid PDF question paper file is required.",
+    }
   }
 
   const fileError = documentValidationError(paperFile)
@@ -80,7 +90,10 @@ export async function uploadQuestionPaperAction(formData: FormData): Promise<Act
 
   const dbConnected = await isDatabaseConnected()
   if (!dbConnected && process.env.NODE_ENV === "production") {
-    return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+    return {
+      success: false,
+      error: "Database temporarily unavailable. Please try again shortly.",
+    }
   }
 
   try {
@@ -113,15 +126,17 @@ export async function uploadQuestionPaperAction(formData: FormData): Promise<Act
       })
 
       if (actor.success) {
-        await prisma.auditLog.create({
-          data: {
-            adminId: actor.user.id,
-            action: "QUESTION_PAPER_UPLOADED",
-            targetType: "QuestionPaper",
-            targetId: createdPaper.id,
-            details: `Uploaded standalone question paper "${title}" (${category}, ${subject || "General"})`,
-          },
-        }).catch(() => {})
+        await prisma.auditLog
+          .create({
+            data: {
+              adminId: actor.user.id,
+              action: "QUESTION_PAPER_UPLOADED",
+              targetType: "QuestionPaper",
+              targetId: createdPaper.id,
+              details: `Uploaded standalone question paper "${title}" (${category}, ${subject || "General"})`,
+            },
+          })
+          .catch(() => {})
       }
     } else {
       createdPaper = {
@@ -163,8 +178,12 @@ export async function uploadQuestionPaperAction(formData: FormData): Promise<Act
           fileSizeBytes: createdPaper.fileSizeBytes,
           isPublished: createdPaper.isPublished,
           downloadsCount: createdPaper.downloadsCount,
-          createdAt: createdPaper.createdAt.toISOString ? createdPaper.createdAt.toISOString() : new Date().toISOString(),
-          updatedAt: createdPaper.updatedAt.toISOString ? createdPaper.updatedAt.toISOString() : new Date().toISOString(),
+          createdAt: createdPaper.createdAt.toISOString
+            ? createdPaper.createdAt.toISOString()
+            : new Date().toISOString(),
+          updatedAt: createdPaper.updatedAt.toISOString
+            ? createdPaper.updatedAt.toISOString()
+            : new Date().toISOString(),
         },
       },
     }
@@ -172,7 +191,9 @@ export async function uploadQuestionPaperAction(formData: FormData): Promise<Act
     console.error("[UPLOAD QUESTION PAPER ERROR]", error)
     return {
       success: false,
-      error: error?.message || "Failed to upload question paper. Please verify file and try again.",
+      error:
+        error?.message ||
+        "Failed to upload question paper. Please verify file and try again.",
     }
   }
 }
@@ -180,7 +201,9 @@ export async function uploadQuestionPaperAction(formData: FormData): Promise<Act
 /**
  * Server Action: Delete Standalone Question Paper (ADMIN ONLY)
  */
-export async function deleteQuestionPaperAction(id: string): Promise<ActionResult> {
+export async function deleteQuestionPaperAction(
+  id: string
+): Promise<ActionResult> {
   const sessionUser = await getCurrentUser()
   if (!sessionUser || sessionUser.role !== Role.ADMIN) {
     return { success: false, error: "Unauthorized. Admin privileges required." }
@@ -194,7 +217,9 @@ export async function deleteQuestionPaperAction(id: string): Promise<ActionResul
   try {
     if (dbConnected) {
       const actor = await resolvePersistedAdminActor(sessionUser)
-      const existing = await (prisma as any).questionPaper.findUnique({ where: { id } })
+      const existing = await (prisma as any).questionPaper.findUnique({
+        where: { id },
+      })
       if (!existing) {
         return { success: false, error: "Question paper not found." }
       }
@@ -202,15 +227,17 @@ export async function deleteQuestionPaperAction(id: string): Promise<ActionResul
       await (prisma as any).questionPaper.delete({ where: { id } })
 
       if (actor.success) {
-        await prisma.auditLog.create({
-          data: {
-            adminId: actor.user.id,
-            action: "QUESTION_PAPER_DELETED",
-            targetType: "QuestionPaper",
-            targetId: id,
-            details: `Deleted question paper "${existing.title}"`,
-          },
-        }).catch(() => {})
+        await prisma.auditLog
+          .create({
+            data: {
+              adminId: actor.user.id,
+              action: "QUESTION_PAPER_DELETED",
+              targetType: "QuestionPaper",
+              targetId: id,
+              details: `Deleted question paper "${existing.title}"`,
+            },
+          })
+          .catch(() => {})
       }
     }
 
@@ -221,14 +248,20 @@ export async function deleteQuestionPaperAction(id: string): Promise<ActionResul
     return { success: true, message: "Question paper deleted successfully." }
   } catch (error: any) {
     console.error("[DELETE QUESTION PAPER ERROR]", error)
-    return { success: false, error: error?.message || "Failed to delete question paper." }
+    return {
+      success: false,
+      error: error?.message || "Failed to delete question paper.",
+    }
   }
 }
 
 /**
  * Server Action: Toggle Publish Status of Question Paper (ADMIN ONLY)
  */
-export async function togglePublishQuestionPaperAction(id: string, isPublished: boolean): Promise<ActionResult> {
+export async function togglePublishQuestionPaperAction(
+  id: string,
+  isPublished: boolean
+): Promise<ActionResult> {
   const sessionUser = await getCurrentUser()
   if (!sessionUser || sessionUser.role !== Role.ADMIN) {
     return { success: false, error: "Unauthorized. Admin privileges required." }
@@ -248,15 +281,19 @@ export async function togglePublishQuestionPaperAction(id: string, isPublished: 
       })
 
       if (actor.success) {
-        await prisma.auditLog.create({
-          data: {
-            adminId: actor.user.id,
-            action: isPublished ? "QUESTION_PAPER_PUBLISHED" : "QUESTION_PAPER_UNPUBLISHED",
-            targetType: "QuestionPaper",
-            targetId: id,
-            details: `${isPublished ? "Published" : "Unpublished"} question paper "${updated.title}"`,
-          },
-        }).catch(() => {})
+        await prisma.auditLog
+          .create({
+            data: {
+              adminId: actor.user.id,
+              action: isPublished
+                ? "QUESTION_PAPER_PUBLISHED"
+                : "QUESTION_PAPER_UNPUBLISHED",
+              targetType: "QuestionPaper",
+              targetId: id,
+              details: `${isPublished ? "Published" : "Unpublished"} question paper "${updated.title}"`,
+            },
+          })
+          .catch(() => {})
       }
     }
 
@@ -270,6 +307,9 @@ export async function togglePublishQuestionPaperAction(id: string, isPublished: 
     }
   } catch (error: any) {
     console.error("[TOGGLE PUBLISH QUESTION PAPER ERROR]", error)
-    return { success: false, error: error?.message || "Failed to update publish state." }
+    return {
+      success: false,
+      error: error?.message || "Failed to update publish state.",
+    }
   }
 }

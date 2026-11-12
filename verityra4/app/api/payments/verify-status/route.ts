@@ -35,12 +35,18 @@ export async function POST(req: NextRequest) {
     })
 
     if (!payment) {
-      return NextResponse.json({ error: "Payment order not found" }, { status: 404 })
+      return NextResponse.json(
+        { error: "Payment order not found" },
+        { status: 404 }
+      )
     }
 
     // Security: Verify user owns this payment or is admin
     if (payment.userId !== user.id && user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden: You can only check your own payments" }, { status: 403 })
+      return NextResponse.json(
+        { error: "Forbidden: You can only check your own payments" },
+        { status: 403 }
+      )
     }
 
     if (payment.status === PaymentStatus.COMPLETED) {
@@ -51,12 +57,18 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    if (payment.status === PaymentStatus.REFUNDED || payment.status === PaymentStatus.REFUND_PENDING) {
-      return NextResponse.json({
-        completed: false,
-        status: payment.status,
-        error: "This payment is not eligible for recovery.",
-      }, { status: 409 })
+    if (
+      payment.status === PaymentStatus.REFUNDED ||
+      payment.status === PaymentStatus.REFUND_PENDING
+    ) {
+      return NextResponse.json(
+        {
+          completed: false,
+          status: payment.status,
+          error: "This payment is not eligible for recovery.",
+        },
+        { status: 409 }
+      )
     }
 
     // If still pending, check directly with Razorpay gateway
@@ -71,15 +83,29 @@ export async function POST(req: NextRequest) {
       })
 
       const rzpPayments: any = await razorpay.orders.fetchPayments(orderId)
-      const capturedPayment = rzpPayments.items?.find((item: any) => item.status === "captured")
+      const capturedPayment = rzpPayments.items?.find(
+        (item: any) => item.status === "captured"
+      )
 
       if (capturedPayment) {
         const testSeries = await prisma.testSeries.findUnique({
           where: { id: payment.testSeriesId },
-          select: { title: true, maxAttempts: true, price: true, isPublished: true },
+          select: {
+            title: true,
+            maxAttempts: true,
+            price: true,
+            isPublished: true,
+          },
         })
-        if (!testSeries || capturedPayment.amount !== payment.amount || capturedPayment.currency !== payment.currency) {
-          return NextResponse.json({ error: "Captured payment does not match the stored order" }, { status: 409 })
+        if (
+          !testSeries ||
+          capturedPayment.amount !== payment.amount ||
+          capturedPayment.currency !== payment.currency
+        ) {
+          return NextResponse.json(
+            { error: "Captured payment does not match the stored order" },
+            { status: 409 }
+          )
         }
         let registrationId: string | null = payment.registrationId
         await prisma.$transaction(async (tx) => {
@@ -151,7 +177,12 @@ export async function POST(req: NextRequest) {
             amountPaise: payment.amount,
             maxAttempts: testSeries.maxAttempts,
             orderId,
-          }).catch((err) => console.error("[verify-status] Failed to send enrollment receipt:", err))
+          }).catch((err) =>
+            console.error(
+              "[verify-status] Failed to send enrollment receipt:",
+              err
+            )
+          )
         }
 
         return NextResponse.json({
@@ -168,6 +199,9 @@ export async function POST(req: NextRequest) {
     })
   } catch (err: any) {
     console.error("[verify-status API Error]:", err)
-    return NextResponse.json({ error: "Failed to verify payment status" }, { status: 500 })
+    return NextResponse.json(
+      { error: "Failed to verify payment status" },
+      { status: 500 }
+    )
   }
 }

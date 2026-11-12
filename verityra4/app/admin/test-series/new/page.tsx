@@ -14,7 +14,11 @@ export default function CreateTestSeriesPage() {
         showRefresh={false}
       >
         <Link href="/admin/test-series">
-          <Button variant="outline" size="sm" className="h-10 rounded-xl px-3.5 text-xs font-semibold">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-10 rounded-xl px-3.5 text-xs font-semibold"
+          >
             <ArrowLeft className="mr-1.5 h-3.5 w-3.5" /> Back to Catalog
           </Button>
         </Link>

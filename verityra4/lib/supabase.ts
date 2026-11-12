@@ -6,7 +6,8 @@ let supabaseClient: SupabaseClient | null = null
 
 export function getSupabase(): SupabaseClient | null {
   const url = process.env.SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY
+  const key =
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY
 
   if (!url || !key) {
     return null
@@ -57,7 +58,11 @@ export async function uploadPrivateFile(
   }
 
   // Fallback to local file storage when Supabase Storage is not yet configured
-  const fullDirPath = path.join(LOCAL_STORAGE_DIR, bucketName, path.dirname(filePath))
+  const fullDirPath = path.join(
+    LOCAL_STORAGE_DIR,
+    bucketName,
+    path.dirname(filePath)
+  )
   if (!fs.existsSync(fullDirPath)) {
     fs.mkdirSync(fullDirPath, { recursive: true })
   }
@@ -79,13 +84,20 @@ export {
 
 import { privateFileDownloadUrl } from "./file-urls"
 
-export async function downloadPrivateFile(bucketName: string, filePath: string): Promise<Buffer> {
+export async function downloadPrivateFile(
+  bucketName: string,
+  filePath: string
+): Promise<Buffer> {
   const supabase = getSupabase()
 
   if (supabase) {
-    const { data, error } = await supabase.storage.from(bucketName).download(filePath)
+    const { data, error } = await supabase.storage
+      .from(bucketName)
+      .download(filePath)
     if (error || !data) {
-      throw new Error(`Failed to download from Supabase storage: ${error?.message || "File not found"}`)
+      throw new Error(
+        `Failed to download from Supabase storage: ${error?.message || "File not found"}`
+      )
     }
     return Buffer.from(await data.arrayBuffer())
   }
@@ -114,7 +126,9 @@ export async function getSignedFileUrl(
       .createSignedUrl(filePath, expiresInSeconds)
 
     if (error || !data?.signedUrl) {
-      throw new Error(`Failed to generate signed URL: ${error?.message || "Unknown error"}`)
+      throw new Error(
+        `Failed to generate signed URL: ${error?.message || "Unknown error"}`
+      )
     }
 
     return data.signedUrl

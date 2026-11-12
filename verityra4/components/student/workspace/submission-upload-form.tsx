@@ -8,7 +8,16 @@ import { Badge } from "@/components/ui/badge"
 import { useConfirm } from "@/components/providers/confirm-dialog-provider"
 import { useGlobalError } from "@/components/providers/error-dialog-provider"
 import { toast } from "@/components/ui/sonner"
-import { UploadCloud, Loader2, Lock, FileText, CheckCircle2, AlertCircle, Image as ImageIcon, FileCheck } from "lucide-react"
+import {
+  UploadCloud,
+  Loader2,
+  Lock,
+  FileText,
+  CheckCircle2,
+  AlertCircle,
+  Image as ImageIcon,
+  FileCheck,
+} from "lucide-react"
 import { submitAnswerSheetAction } from "@/actions/submission-actions"
 
 const MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024
@@ -39,7 +48,8 @@ export function SubmissionUploadForm({
   const [loading, setLoading] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [previewAcknowledged, setPreviewAcknowledged] = useState(false)
-  const [evaluatingState, setEvaluatingState] = useState<EvaluatingState | null>(null)
+  const [evaluatingState, setEvaluatingState] =
+    useState<EvaluatingState | null>(null)
 
   const isLimitReached = attemptsUsed >= maxAttempts
   const nextAttempt = attemptsUsed + 1
@@ -74,7 +84,11 @@ export function SubmissionUploadForm({
 
   // Poll submission status until evaluation is completed or failed
   useEffect(() => {
-    if (!evaluatingState || evaluatingState.status === "COMPLETED" || evaluatingState.status === "FAILED") {
+    if (
+      !evaluatingState ||
+      evaluatingState.status === "COMPLETED" ||
+      evaluatingState.status === "FAILED"
+    ) {
       return
     }
 
@@ -98,13 +112,18 @@ export function SubmissionUploadForm({
       }
 
       try {
-        const res = await fetch(`/api/submissions/${evaluatingState.submissionId}/status`)
+        const res = await fetch(
+          `/api/submissions/${evaluatingState.submissionId}/status`
+        )
         if (!res.ok) return
         const data = await res.json()
 
         if (isCancelled) return
 
-        if (data.submissionStatus === "COMPLETED" || data.evaluationStatus === "COMPLETED") {
+        if (
+          data.submissionStatus === "COMPLETED" ||
+          data.evaluationStatus === "COMPLETED"
+        ) {
           clearInterval(interval)
           setEvaluatingState((prev) =>
             prev
@@ -118,14 +137,20 @@ export function SubmissionUploadForm({
                 }
               : null
           )
-          toast.success(`Attempt #${evaluatingState.attemptNumber} Evaluated Successfully!`, {
-            description:
-              data.totalMarksAwarded != null
-                ? `Score: ${data.totalMarksAwarded} / ${data.maxMarks} marks (${data.percentage}%). Detailed scorecard is now available!`
-                : "Detailed rubric breakdown is now available in your scorecard.",
-          })
+          toast.success(
+            `Attempt #${evaluatingState.attemptNumber} Evaluated Successfully!`,
+            {
+              description:
+                data.totalMarksAwarded != null
+                  ? `Score: ${data.totalMarksAwarded} / ${data.maxMarks} marks (${data.percentage}%). Detailed scorecard is now available!`
+                  : "Detailed rubric breakdown is now available in your scorecard.",
+            }
+          )
           router.refresh()
-        } else if (data.submissionStatus === "REVIEW_REQUIRED" || data.evaluationStatus === "REVIEW_REQUIRED") {
+        } else if (
+          data.submissionStatus === "REVIEW_REQUIRED" ||
+          data.evaluationStatus === "REVIEW_REQUIRED"
+        ) {
           clearInterval(interval)
           setEvaluatingState((prev) =>
             prev
@@ -139,27 +164,41 @@ export function SubmissionUploadForm({
                 }
               : null
           )
-          toast.info(`Attempt #${evaluatingState.attemptNumber} Evaluated (Flagged for Review)`, {
-            description: "Evaluation has finished and was flagged for moderation review.",
-          })
+          toast.info(
+            `Attempt #${evaluatingState.attemptNumber} Evaluated (Flagged for Review)`,
+            {
+              description:
+                "Evaluation has finished and was flagged for moderation review.",
+            }
+          )
           router.refresh()
-        } else if (data.submissionStatus === "FAILED" || data.jobStatus === "FAILED") {
+        } else if (
+          data.submissionStatus === "FAILED" ||
+          data.jobStatus === "FAILED"
+        ) {
           clearInterval(interval)
-          setEvaluatingState((prev) => (prev ? { ...prev, status: "FAILED" } : null))
+          setEvaluatingState((prev) =>
+            prev ? { ...prev, status: "FAILED" } : null
+          )
           toast.error("Evaluation Encountered an Issue", {
             description:
-              data.jobError || "The evaluation worker encountered an issue. Your attempt has been saved.",
+              data.jobError ||
+              "The evaluation worker encountered an issue. Your attempt has been saved.",
           })
           router.refresh()
         } else {
           // Still QUEUED or PROCESSING
           setEvaluatingState((prev) => {
             if (!prev) return null
-            const nextProgress = data.progress > 0 ? data.progress : Math.min(90, prev.progress + 15)
+            const nextProgress =
+              data.progress > 0
+                ? data.progress
+                : Math.min(90, prev.progress + 15)
             return {
               ...prev,
               status:
-                data.jobStatus === "PROCESSING" || data.submissionStatus === "PROCESSING"
+                data.jobStatus === "PROCESSING" ||
+                data.submissionStatus === "PROCESSING"
                   ? "PROCESSING"
                   : "QUEUED",
               progress: nextProgress,
@@ -179,21 +218,25 @@ export function SubmissionUploadForm({
 
   if (isLimitReached) {
     return (
-      <div className="border-y border-red-200 bg-red-50/40 py-6 px-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col justify-between gap-4 border-y border-red-200 bg-red-50/40 px-5 py-6 sm:flex-row sm:items-center">
         <div className="flex items-start gap-3.5">
-          <div className="h-10 w-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-100 text-red-600">
             <Lock className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="font-bold text-sm sm:text-base text-red-900">
+            <h3 className="text-sm font-bold text-red-900 sm:text-base">
               3-Attempt Quota Exhausted ({attemptsUsed} / {maxAttempts} Used)
             </h3>
-            <p className="text-xs sm:text-sm text-red-700 mt-0.5 leading-relaxed">
-              You have completed all {maxAttempts} allowable handwritten submissions for this test series. Further uploads are locked.
+            <p className="mt-0.5 text-xs leading-relaxed text-red-700 sm:text-sm">
+              You have completed all {maxAttempts} allowable handwritten
+              submissions for this test series. Further uploads are locked.
             </p>
           </div>
         </div>
-        <Badge variant="outline" className="border-red-300 text-red-700 bg-white shrink-0 w-fit">
+        <Badge
+          variant="outline"
+          className="w-fit shrink-0 border-red-300 bg-white text-red-700"
+        >
           Locked by 3-Attempt Invariant
         </Badge>
       </div>
@@ -204,7 +247,8 @@ export function SubmissionUploadForm({
     e.preventDefault()
     if (!file) {
       toast.warning("No answer booklet selected", {
-        description: "Please select your scanned PDF or image booklet before submitting.",
+        description:
+          "Please select your scanned PDF or image booklet before submitting.",
       })
       return
     }
@@ -233,7 +277,8 @@ export function SubmissionUploadForm({
       if (!result.success) {
         showError({
           title: "Answer Sheet Submission Rejected",
-          message: result.error || "Unable to process your handwritten submission.",
+          message:
+            result.error || "Unable to process your handwritten submission.",
           code: "SUBMISSION_REJECTED",
         })
         setLoading(false)
@@ -262,14 +307,17 @@ export function SubmissionUploadForm({
         })
       } else {
         toast.success(`Attempt #${attemptNum} Submitted`, {
-          description: result.message || "Your handwritten booklet has been encrypted and stored.",
+          description:
+            result.message ||
+            "Your handwritten booklet has been encrypted and stored.",
         })
       }
       router.refresh()
     } catch {
       showError({
         title: "Unexpected Upload Error",
-        message: "An unexpected network or server error occurred during submission.",
+        message:
+          "An unexpected network or server error occurred during submission.",
         code: "UPLOAD_EXCEPTION",
       })
       setLoading(false)
@@ -278,56 +326,58 @@ export function SubmissionUploadForm({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+      <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
         <div className="flex items-center gap-2.5">
-          <UploadCloud className="h-4.5 w-4.5 text-[#2A6AED] shrink-0" />
+          <UploadCloud className="h-4.5 w-4.5 shrink-0 text-[#2A6AED]" />
           <div>
-            <h3 className="text-sm sm:text-base font-bold text-[#0F172A]">
+            <h3 className="text-sm font-bold text-[#0F172A] sm:text-base">
               Submit Attempt #{nextAttempt} of {maxAttempts}
             </h3>
             <p className="text-xs text-[#64748B]">
-              Upload your scanned handwritten response booklet (PDF or clear image pages, max 2MB).
+              Upload your scanned handwritten response booklet (PDF or clear
+              image pages, max 2MB).
             </p>
           </div>
         </div>
         <Badge
           variant="outline"
-          className="text-[11px] font-semibold text-[#2A6AED] bg-[#EFF6FF] border-blue-200 w-fit"
+          className="w-fit border-blue-200 bg-[#EFF6FF] text-[11px] font-semibold text-[#2A6AED]"
         >
-          {maxAttempts - attemptsUsed} Attempt{maxAttempts - attemptsUsed === 1 ? "" : "s"} Remaining
+          {maxAttempts - attemptsUsed} Attempt
+          {maxAttempts - attemptsUsed === 1 ? "" : "s"} Remaining
         </Badge>
       </div>
 
       {/* Live AI Evaluation Status Card */}
       {evaluatingState && (
-        <div className="rounded-xl border border-blue-200 bg-blue-50/70 p-4 shadow-2xs dark:border-blue-900/60 dark:bg-blue-950/40 space-y-3">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="space-y-3 rounded-xl border border-blue-200 bg-blue-50/70 p-4 shadow-2xs dark:border-blue-900/60 dark:bg-blue-950/40">
+          <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
             <div className="flex items-center gap-2.5">
               {evaluatingState.status === "COMPLETED" ? (
-                <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
               ) : evaluatingState.status === "FAILED" ? (
-                <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 shrink-0" />
+                <AlertCircle className="h-5 w-5 shrink-0 text-red-600 dark:text-red-400" />
               ) : (
-                <Loader2 className="h-5 w-5 animate-spin text-[#2A6AED] shrink-0" />
+                <Loader2 className="h-5 w-5 shrink-0 animate-spin text-[#2A6AED]" />
               )}
               <div>
                 <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
                   {evaluatingState.status === "COMPLETED"
                     ? `Attempt #${evaluatingState.attemptNumber} Evaluated Successfully`
                     : evaluatingState.status === "REVIEW_REQUIRED"
-                    ? `Attempt #${evaluatingState.attemptNumber} Evaluated (Flagged for Review)`
-                    : evaluatingState.status === "FAILED"
-                    ? `Attempt #${evaluatingState.attemptNumber} Evaluation Unsuccessful`
-                    : `Evaluating Attempt #${evaluatingState.attemptNumber}...`}
+                      ? `Attempt #${evaluatingState.attemptNumber} Evaluated (Flagged for Review)`
+                      : evaluatingState.status === "FAILED"
+                        ? `Attempt #${evaluatingState.attemptNumber} Evaluation Unsuccessful`
+                        : `Evaluating Attempt #${evaluatingState.attemptNumber}...`}
                 </h4>
                 <p className="text-xs text-slate-600 dark:text-slate-400">
                   {evaluatingState.status === "COMPLETED"
                     ? "Detailed question scorecard and rubric breakdown have been published."
                     : evaluatingState.status === "REVIEW_REQUIRED"
-                    ? "Completed by AI; pending administrative moderator verification."
-                    : evaluatingState.status === "FAILED"
-                    ? "Your booklet was safely saved. An admin can re-run grading from the console."
-                    : "Live polling: verifying handwriting against rubric and model answers."}
+                      ? "Completed by AI; pending administrative moderator verification."
+                      : evaluatingState.status === "FAILED"
+                        ? "Your booklet was safely saved. An admin can re-run grading from the console."
+                        : "Live polling: verifying handwriting against rubric and model answers."}
                 </p>
               </div>
             </div>
@@ -335,61 +385,66 @@ export function SubmissionUploadForm({
               variant="outline"
               className={
                 evaluatingState.status === "COMPLETED"
-                  ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 shrink-0 w-fit"
+                  ? "w-fit shrink-0 border-emerald-300 bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
                   : evaluatingState.status === "FAILED"
-                  ? "border-red-300 bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300 shrink-0 w-fit"
-                  : "border-blue-300 bg-white text-[#2A6AED] dark:bg-slate-900 dark:text-blue-400 shrink-0 w-fit"
+                    ? "w-fit shrink-0 border-red-300 bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300"
+                    : "w-fit shrink-0 border-blue-300 bg-white text-[#2A6AED] dark:bg-slate-900 dark:text-blue-400"
               }
             >
               {evaluatingState.status === "COMPLETED"
                 ? "Evaluated"
                 : evaluatingState.status === "FAILED"
-                ? "Failed"
-                : evaluatingState.status === "PROCESSING"
-                ? "Analyzing Handwriting"
-                : "Queued for Evaluation"}
+                  ? "Failed"
+                  : evaluatingState.status === "PROCESSING"
+                    ? "Analyzing Handwriting"
+                    : "Queued for Evaluation"}
             </Badge>
           </div>
 
-          {evaluatingState.status !== "COMPLETED" && evaluatingState.status !== "FAILED" && (
-            <div className="space-y-1.5 pt-1">
-              <div className="w-full bg-blue-200/70 dark:bg-blue-900/50 rounded-full h-2 overflow-hidden">
-                <div
-                  className="bg-[#2A6AED] h-full transition-all duration-500 rounded-full"
-                  style={{ width: `${evaluatingState.progress}%` }}
-                />
+          {evaluatingState.status !== "COMPLETED" &&
+            evaluatingState.status !== "FAILED" && (
+              <div className="space-y-1.5 pt-1">
+                <div className="h-2 w-full overflow-hidden rounded-full bg-blue-200/70 dark:bg-blue-900/50">
+                  <div
+                    className="h-full rounded-full bg-[#2A6AED] transition-all duration-500"
+                    style={{ width: `${evaluatingState.progress}%` }}
+                  />
+                </div>
+                <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+                  <span>OCR transcription & criteria matching</span>
+                  <span>{evaluatingState.progress}% complete</span>
+                </div>
               </div>
-              <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
-                <span>OCR transcription & criteria matching</span>
-                <span>{evaluatingState.progress}% complete</span>
-              </div>
-            </div>
-          )}
+            )}
 
-          {evaluatingState.status === "COMPLETED" && evaluatingState.marksAwarded != null && (
-            <div className="pt-2 border-t border-blue-200/60 dark:border-blue-900/40 flex items-center justify-between text-xs">
-              <span className="font-semibold text-emerald-800 dark:text-emerald-300">
-                Score: {evaluatingState.marksAwarded} / {evaluatingState.maxMarks} ({evaluatingState.percentage}%)
-              </span>
-              <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                Check the Evaluations tab to inspect question-level criteria
-              </span>
-            </div>
-          )}
+          {evaluatingState.status === "COMPLETED" &&
+            evaluatingState.marksAwarded != null && (
+              <div className="flex items-center justify-between border-t border-blue-200/60 pt-2 text-xs dark:border-blue-900/40">
+                <span className="font-semibold text-emerald-800 dark:text-emerald-300">
+                  Score: {evaluatingState.marksAwarded} /{" "}
+                  {evaluatingState.maxMarks} ({evaluatingState.percentage}%)
+                </span>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Check the Evaluations tab to inspect question-level criteria
+                </span>
+              </div>
+            )}
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <label
           htmlFor="answerSheetFile"
-          className="flex flex-col items-center justify-center border-2 border-dashed border-slate-300 hover:border-[#2A6AED] bg-slate-50/50 hover:bg-[#EFF6FF]/30 rounded-xl p-6 sm:p-8 text-center transition-colors cursor-pointer group"
+          className="group flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50/50 p-6 text-center transition-colors hover:border-[#2A6AED] hover:bg-[#EFF6FF]/30 sm:p-8"
         >
-          <div className="h-11 w-11 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-[#2A6AED] mb-2.5">
+          <div className="mb-2.5 flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-[#2A6AED]">
             <FileText className="h-5 w-5" />
           </div>
           <div className="space-y-1">
-            <p className="text-xs sm:text-sm font-bold text-[#0F172A] group-hover:text-[#2A6AED] transition-colors">
-              {file ? file.name : "Click to select scanned handwritten answer sheet"}
+            <p className="text-xs font-bold text-[#0F172A] transition-colors group-hover:text-[#2A6AED] sm:text-sm">
+              {file
+                ? file.name
+                : "Click to select scanned handwritten answer sheet"}
             </p>
             <Input
               id="answerSheetFile"
@@ -398,7 +453,10 @@ export function SubmissionUploadForm({
               onChange={(e) => {
                 const selectedFile = e.target.files?.[0] || null
                 if (selectedFile && selectedFile.size > MAX_FILE_SIZE_BYTES) {
-                  toast.warning("File is too large", { description: "Please compress the scanned booklet to 2 MB or less before uploading." })
+                  toast.warning("File is too large", {
+                    description:
+                      "Please compress the scanned booklet to 2 MB or less before uploading.",
+                  })
                   e.currentTarget.value = ""
                   setFile(null)
                   return
@@ -407,7 +465,7 @@ export function SubmissionUploadForm({
               }}
               className="hidden"
             />
-            <p className="text-[11px] sm:text-xs text-[#64748B]">
+            <p className="text-[11px] text-[#64748B] sm:text-xs">
               {file
                 ? `File size: ${(file.size / (1024 * 1024)).toFixed(2)} MB • Ready for encrypted submission`
                 : "PDF, JPG, PNG or WEBP up to 2MB • Upright orientation recommended"}
@@ -417,27 +475,33 @@ export function SubmissionUploadForm({
 
         {/* File Preview Section */}
         {file && (
-          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-4 space-y-3">
+          <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">
             <div className="flex items-start gap-3">
-              <div className="h-10 w-10 rounded-lg bg-blue-100 dark:bg-blue-950 flex items-center justify-center shrink-0">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-950">
                 {file.type === "application/pdf" ? (
                   <FileCheck className="h-5 w-5 text-[#2A6AED]" />
                 ) : (
                   <ImageIcon className="h-5 w-5 text-[#2A6AED]" />
                 )}
               </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
+              <div className="min-w-0 flex-1">
+                <h4 className="truncate text-sm font-bold text-slate-900 dark:text-slate-100">
                   {file.name}
                 </h4>
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-slate-600 dark:text-slate-400">
+                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-600 dark:text-slate-400">
                   <span>{(file.size / (1024 * 1024)).toFixed(2)} MB</span>
                   <span>•</span>
-                  <span>{file.type === "application/pdf" ? "PDF Document" : "Image File"}</span>
+                  <span>
+                    {file.type === "application/pdf"
+                      ? "PDF Document"
+                      : "Image File"}
+                  </span>
                   {file.type === "application/pdf" && (
                     <>
                       <span>•</span>
-                      <span>~{estimatePageCount(file.size)} pages (estimated)</span>
+                      <span>
+                        ~{estimatePageCount(file.size)} pages (estimated)
+                      </span>
                     </>
                   )}
                 </div>
@@ -446,48 +510,57 @@ export function SubmissionUploadForm({
 
             {/* Image Preview Thumbnail */}
             {previewUrl && file.type.startsWith("image/") && (
-              <div className="rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden bg-white dark:bg-slate-800">
+              <div className="overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800">
                 <img
                   src={previewUrl}
                   alt="Preview of uploaded file"
-                  className="w-full h-auto max-h-64 object-contain"
+                  className="h-auto max-h-64 w-full object-contain"
                 />
               </div>
             )}
 
             {/* Legibility Checklist */}
-            <div className="space-y-2 pt-2 border-t border-slate-200 dark:border-slate-700">
+            <div className="space-y-2 border-t border-slate-200 pt-2 dark:border-slate-700">
               <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                 Before submitting, verify:
               </p>
               <ul className="space-y-1.5 text-xs text-slate-600 dark:text-slate-400">
                 <li className="flex items-start gap-2">
-                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-                  <span>All pages are upright (not rotated or upside-down)</span>
+                  <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                  <span>
+                    All pages are upright (not rotated or upside-down)
+                  </span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-                  <span>Handwriting is clear and legible (no blur, sufficient lighting)</span>
+                  <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                  <span>
+                    Handwriting is clear and legible (no blur, sufficient
+                    lighting)
+                  </span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-                  <span>All answer sheet pages are included (no missing pages)</span>
+                  <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                  <span>
+                    All answer sheet pages are included (no missing pages)
+                  </span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <AlertCircle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-                  <span className="font-medium">Illegible submissions may receive reduced scores</span>
+                  <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+                  <span className="font-medium">
+                    Illegible submissions may receive reduced scores
+                  </span>
                 </li>
               </ul>
 
               {/* Acknowledgment Checkbox */}
-              <label className="flex items-start gap-2.5 pt-2 cursor-pointer group">
+              <label className="group flex cursor-pointer items-start gap-2.5 pt-2">
                 <input
                   type="checkbox"
                   checked={previewAcknowledged}
                   onChange={(e) => setPreviewAcknowledged(e.target.checked)}
-                  className="h-4 w-4 mt-0.5 rounded border-slate-300 text-[#2A6AED] focus:ring-[#2A6AED] cursor-pointer"
+                  className="mt-0.5 h-4 w-4 cursor-pointer rounded border-slate-300 text-[#2A6AED] focus:ring-[#2A6AED]"
                 />
-                <span className="text-xs font-medium text-slate-700 dark:text-slate-300 group-hover:text-[#2A6AED] transition-colors">
+                <span className="text-xs font-medium text-slate-700 transition-colors group-hover:text-[#2A6AED] dark:text-slate-300">
                   I confirm all pages are legible, upright, and complete
                 </span>
               </label>
@@ -495,18 +568,19 @@ export function SubmissionUploadForm({
           </div>
         )}
 
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-[11px] text-[#64748B]">
-            * Submitting consumes 1 attempt allowance. Invalid file formats rejected prior to storage do not consume an attempt.
+            * Submitting consumes 1 attempt allowance. Invalid file formats
+            rejected prior to storage do not consume an attempt.
           </p>
           <Button
             type="submit"
             disabled={!file || loading || !previewAcknowledged}
-            className="w-full sm:w-auto bg-[#2A6AED] hover:bg-[#1E55C7] text-white font-semibold text-xs sm:text-sm h-10 px-6 rounded-lg shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="h-10 w-full shrink-0 rounded-lg bg-[#2A6AED] px-6 text-xs font-semibold text-white hover:bg-[#1E55C7] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:text-sm"
           >
             {loading ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Encrypting & Evaluating...
               </>
             ) : (

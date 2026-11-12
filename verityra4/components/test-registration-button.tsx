@@ -4,8 +4,18 @@ import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, CheckCircle2, Lock, ArrowRight, CreditCard } from "lucide-react"
-import { registerFreeTestAction, createRazorpayOrderAction, verifyPaymentAndRegisterAction } from "@/actions/registration-actions"
+import {
+  Loader2,
+  CheckCircle2,
+  Lock,
+  ArrowRight,
+  CreditCard,
+} from "lucide-react"
+import {
+  registerFreeTestAction,
+  createRazorpayOrderAction,
+  verifyPaymentAndRegisterAction,
+} from "@/actions/registration-actions"
 
 declare global {
   interface Window {
@@ -53,7 +63,9 @@ function loadRazorpayScript(): Promise<boolean> {
       finish(Boolean((window as any).Razorpay))
     }, SCRIPT_LOAD_TIMEOUT_MS)
 
-    const existing = document.querySelector('script[src*="checkout.razorpay.com"]')
+    const existing = document.querySelector(
+      'script[src*="checkout.razorpay.com"]'
+    )
     if (existing) {
       if ((window as any).Razorpay) {
         finish(true)
@@ -118,8 +130,10 @@ export function TestRegistrationButton({
   if (!isSignedIn) {
     return (
       <Button
-        onClick={() => router.push(`/signin?callbackUrl=/tests/${testSeriesId}`)}
-        className="w-full bg-primary hover:bg-hover-accent text-primary-foreground font-semibold text-sm h-12 rounded-xl"
+        onClick={() =>
+          router.push(`/signin?callbackUrl=/tests/${testSeriesId}`)
+        }
+        className="h-12 w-full rounded-xl bg-primary text-sm font-semibold text-primary-foreground hover:bg-hover-accent"
       >
         Sign In to Register
         <ArrowRight className="ml-2 h-4 w-4" />
@@ -136,7 +150,7 @@ export function TestRegistrationButton({
         </div>
         <Button
           onClick={() => router.push(`/student/tests/${testSeriesId}`)}
-          className="w-full bg-primary hover:bg-hover-accent text-primary-foreground font-semibold text-sm h-12 rounded-xl"
+          className="h-12 w-full rounded-xl bg-primary text-sm font-semibold text-primary-foreground hover:bg-hover-accent"
         >
           Go To Test
           <ArrowRight className="ml-2 h-4 w-4" />
@@ -180,7 +194,16 @@ export function TestRegistrationButton({
         return
       }
 
-      const { orderId, amount, currency, keyId, testTitle, userName, userEmail, alreadyCompleted } = orderResult.data
+      const {
+        orderId,
+        amount,
+        currency,
+        keyId,
+        testTitle,
+        userName,
+        userEmail,
+        alreadyCompleted,
+      } = orderResult.data
 
       if (alreadyCompleted) {
         setSuccess(orderResult.message || "Payment verified! Access granted.")
@@ -190,12 +213,18 @@ export function TestRegistrationButton({
       }
 
       // Ensure Razorpay SDK is loaded in browser
-      let hasRazorpay = typeof window !== "undefined" && Boolean(window.Razorpay)
+      let hasRazorpay =
+        typeof window !== "undefined" && Boolean(window.Razorpay)
       if (!hasRazorpay && typeof window !== "undefined") {
         hasRazorpay = await loadRazorpayScript()
       }
 
-      if (hasRazorpay && window.Razorpay && keyId && !keyId.includes("placeholder")) {
+      if (
+        hasRazorpay &&
+        window.Razorpay &&
+        keyId &&
+        !keyId.includes("placeholder")
+      ) {
         const options = {
           key: keyId,
           amount,
@@ -246,7 +275,10 @@ export function TestRegistrationButton({
           })
         }
         rzp.open()
-      } else if (orderId.startsWith("order_dev_mock_") || keyId.includes("placeholder")) {
+      } else if (
+        orderId.startsWith("order_dev_mock_") ||
+        keyId.includes("placeholder")
+      ) {
         // Development-only simulation for explicitly marked mock orders.
         const verifyResult = await verifyPaymentAndRegisterAction({
           razorpayOrderId: orderId,
@@ -263,7 +295,9 @@ export function TestRegistrationButton({
         }
         setLoading(false)
       } else {
-        setError("Razorpay Checkout could not load. Please refresh the page and try again.")
+        setError(
+          "Razorpay Checkout could not load. Please refresh the page and try again."
+        )
         setLoading(false)
       }
     } catch {
@@ -275,7 +309,7 @@ export function TestRegistrationButton({
   return (
     <div className="space-y-4">
       {error && (
-        <Alert variant="destructive" className="py-3 text-sm rounded-xl">
+        <Alert variant="destructive" className="rounded-xl py-3 text-sm">
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
@@ -291,21 +325,21 @@ export function TestRegistrationButton({
         <Button
           onClick={handleFreeRegistration}
           disabled={loading}
-          className="w-full bg-primary hover:bg-hover-accent text-primary-foreground font-semibold text-sm h-12 rounded-xl"
+          className="h-12 w-full rounded-xl bg-primary text-sm font-semibold text-primary-foreground hover:bg-hover-accent"
         >
-          {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+          {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
           Register for Free Test
         </Button>
       ) : (
         <Button
           onClick={handlePaidCheckout}
           disabled={loading}
-          className="w-full bg-primary hover:bg-hover-accent text-primary-foreground font-semibold text-sm h-12 rounded-xl flex items-center justify-center gap-2"
+          className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-primary-foreground hover:bg-hover-accent"
         >
           {loading ? (
-            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           ) : (
-            <CreditCard className="h-4 w-4 mr-1" />
+            <CreditCard className="mr-1 h-4 w-4" />
           )}
           Unlock Test Series — ₹{priceInRupees}
         </Button>

@@ -94,7 +94,8 @@ export function useIsSmallMobile(): boolean {
  * Returns the current breakpoint as a string
  * Useful for conditional rendering based on viewport size
  */
-export function useBreakpoint(): "mobile-s" | "mobile" | "tablet" | "desktop" | "wide" {
+export function useBreakpoint():
+  "mobile-s" | "mobile" | "tablet" | "desktop" | "wide" {
   const isSmallMobile = useIsSmallMobile()
   const isMobile = useIsMobile()
   const isTablet = useIsTablet()

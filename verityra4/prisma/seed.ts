@@ -1,4 +1,10 @@
-import { PrismaClient, Role, UserStatus, TestSeriesStatus, RegistrationStatus } from "@prisma/client"
+import {
+  PrismaClient,
+  Role,
+  UserStatus,
+  TestSeriesStatus,
+  RegistrationStatus,
+} from "@prisma/client"
 import bcrypt from "bcryptjs"
 
 const prisma = new PrismaClient()
@@ -104,7 +110,8 @@ const academicTestSeries: TestSeriesSeedData[] = [
     },
     template: {
       title: "Class 10 Science Margin-Aligned Examination Template",
-      fileUrl: "/api/files/download?file=templates/class-10-science-template.pdf",
+      fileUrl:
+        "/api/files/download?file=templates/class-10-science-template.pdf",
       templateRequired: true,
       description:
         "28-page examination booklet with dedicated grid space for ray diagrams and scientific tables.",
@@ -143,7 +150,8 @@ const academicTestSeries: TestSeriesSeedData[] = [
       title: "Senior Secondary Mathematics Ruled Answer Booklet Template",
       fileUrl: "/api/files/download?file=templates/class-11-maths-template.pdf",
       templateRequired: true,
-      description: "32-page standard senior secondary format booklet with left margins.",
+      description:
+        "32-page standard senior secondary format booklet with left margins.",
     },
   },
 
@@ -217,9 +225,11 @@ const academicTestSeries: TestSeriesSeedData[] = [
     },
     template: {
       title: "Class 12 Science Standard Answer Booklet Template (32 Pages)",
-      fileUrl: "/api/files/download?file=templates/class-12-physics-template.pdf",
+      fileUrl:
+        "/api/files/download?file=templates/class-12-physics-template.pdf",
       templateRequired: true,
-      description: "32-page board examination booklet with millimeter graphing inserts.",
+      description:
+        "32-page board examination booklet with millimeter graphing inserts.",
     },
   },
 ]
@@ -228,8 +238,11 @@ async function main() {
   console.log("Seeding Verityra database...")
 
   // 1. Provision Administrator
-  const adminEmail = (process.env.ADMIN_INITIAL_EMAIL || "admin@verityra.com").toLowerCase().trim()
-  const adminPassword = process.env.ADMIN_INITIAL_PASSWORD || "AdminSecurePassword123!"
+  const adminEmail = (process.env.ADMIN_INITIAL_EMAIL || "admin@verityra.com")
+    .toLowerCase()
+    .trim()
+  const adminPassword =
+    process.env.ADMIN_INITIAL_PASSWORD || "AdminSecurePassword123!"
   const adminPasswordHash = await bcrypt.hash(adminPassword, 12)
 
   const admin = await prisma.user.upsert({
@@ -273,7 +286,8 @@ async function main() {
         title: "Standard Margin Answer Sheet Template (24 Pages)",
         fileUrl: "/api/files/download?file=templates/upsc-template.pdf",
         templateRequired: true,
-        description: "24-page margin-ruled booklet designed for standard UPSC Mains format.",
+        description:
+          "24-page margin-ruled booklet designed for standard UPSC Mains format.",
       },
     },
     {

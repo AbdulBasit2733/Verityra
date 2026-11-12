@@ -9,7 +9,14 @@ import { Textarea } from "@/components/ui/textarea"
 import { useConfirm } from "@/components/providers/confirm-dialog-provider"
 import { useGlobalError } from "@/components/providers/error-dialog-provider"
 import { toast } from "@/components/ui/sonner"
-import { Loader2, UploadCloud, Globe, EyeOff, FileText, Download } from "lucide-react"
+import {
+  Loader2,
+  UploadCloud,
+  Globe,
+  EyeOff,
+  FileText,
+  Download,
+} from "lucide-react"
 import {
   uploadTestPaperAction,
   uploadAnswerSheetTemplateAction,
@@ -18,24 +25,50 @@ import {
 } from "@/actions/test-series-actions"
 import { normalizePrivateFileUrl } from "@/lib/file-urls"
 
-type PaperDocument = { id: string; title: string; fileUrl: string; maxMarks: number }
-type TemplateDocument = { id: string; title: string; description?: string | null; fileUrl: string; templateRequired: boolean }
+type PaperDocument = {
+  id: string
+  title: string
+  fileUrl: string
+  maxMarks: number
+}
+type TemplateDocument = {
+  id: string
+  title: string
+  description?: string | null
+  fileUrl: string
+  templateRequired: boolean
+}
 
-export function AdminTestDocumentForms({ testSeriesId, initialPapers = [], initialTemplates = [] }: { testSeriesId: string; initialPapers?: PaperDocument[]; initialTemplates?: TemplateDocument[] }) {
+export function AdminTestDocumentForms({
+  testSeriesId,
+  initialPapers = [],
+  initialTemplates = [],
+}: {
+  testSeriesId: string
+  initialPapers?: PaperDocument[]
+  initialTemplates?: TemplateDocument[]
+}) {
   const { showError } = useGlobalError()
   const [papers, setPapers] = useState<PaperDocument[]>(initialPapers)
-  const [templates, setTemplates] = useState<TemplateDocument[]>(initialTemplates)
+  const [templates, setTemplates] =
+    useState<TemplateDocument[]>(initialTemplates)
 
   // Paper form states
-  const [paperTitle, setPaperTitle] = useState("Main Examination Question Paper")
+  const [paperTitle, setPaperTitle] = useState(
+    "Main Examination Question Paper"
+  )
   const [maxMarks] = useState("100")
   const [rubricContent, setRubricContent] = useState("")
   const [paperFile, setPaperFile] = useState<File | null>(null)
   const [paperLoading, setPaperLoading] = useState(false)
 
   // Template form states
-  const [templateTitle, setTemplateTitle] = useState("Standard Printable Margin Answer Sheet")
-  const [templateDescription] = useState("Margin-aligned ruled answer booklet format.")
+  const [templateTitle, setTemplateTitle] = useState(
+    "Standard Printable Margin Answer Sheet"
+  )
+  const [templateDescription] = useState(
+    "Margin-aligned ruled answer booklet format."
+  )
   const [templateRequired, setTemplateRequired] = useState(true)
   const [templateFile, setTemplateFile] = useState<File | null>(null)
   const [templateLoading, setTemplateLoading] = useState(false)
@@ -55,13 +88,18 @@ export function AdminTestDocumentForms({ testSeriesId, initialPapers = [], initi
       const res = await uploadTestPaperAction(formData)
       if (res.success) {
         toast.success("Question Paper & Rubric Uploaded", {
-          description: res.message || `"${paperTitle}" attached to test series.`,
+          description:
+            res.message || `"${paperTitle}" attached to test series.`,
         })
         setPaperFile(null)
-        const uploadData = "data" in res ? res.data as { paper?: PaperDocument } : undefined
+        const uploadData =
+          "data" in res ? (res.data as { paper?: PaperDocument }) : undefined
         if (uploadData?.paper) {
           const p = uploadData.paper
-          setPapers((current) => [...current, { ...p, fileUrl: normalizePrivateFileUrl(p.fileUrl) || p.fileUrl }])
+          setPapers((current) => [
+            ...current,
+            { ...p, fileUrl: normalizePrivateFileUrl(p.fileUrl) || p.fileUrl },
+          ])
         }
       } else {
         showError({
@@ -74,7 +112,8 @@ export function AdminTestDocumentForms({ testSeriesId, initialPapers = [], initi
     } catch {
       showError({
         title: "Upload Error",
-        message: "An unexpected error occurred while uploading the question paper.",
+        message:
+          "An unexpected error occurred while uploading the question paper.",
         code: "PAPER_UPLOAD_ERR",
       })
       setPaperLoading(false)
@@ -96,13 +135,20 @@ export function AdminTestDocumentForms({ testSeriesId, initialPapers = [], initi
       const res = await uploadAnswerSheetTemplateAction(formData)
       if (res.success) {
         toast.success("Margin Answer Sheet Template Uploaded", {
-          description: res.message || `"${templateTitle}" attached for candidates.`,
+          description:
+            res.message || `"${templateTitle}" attached for candidates.`,
         })
         setTemplateFile(null)
-        const uploadData = "data" in res ? res.data as { template?: TemplateDocument } : undefined
+        const uploadData =
+          "data" in res
+            ? (res.data as { template?: TemplateDocument })
+            : undefined
         if (uploadData?.template) {
           const t = uploadData.template
-          setTemplates((current) => [...current, { ...t, fileUrl: normalizePrivateFileUrl(t.fileUrl) || t.fileUrl }])
+          setTemplates((current) => [
+            ...current,
+            { ...t, fileUrl: normalizePrivateFileUrl(t.fileUrl) || t.fileUrl },
+          ])
         }
       } else {
         showError({
@@ -123,47 +169,57 @@ export function AdminTestDocumentForms({ testSeriesId, initialPapers = [], initi
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 divide-y md:divide-y-0 md:divide-x divide-slate-200">
+    <div className="grid grid-cols-1 gap-8 divide-y divide-slate-200 md:grid-cols-2 md:divide-x md:divide-y-0">
       {/* Upload Question Paper — Flat Section */}
       <div className="space-y-4 md:pr-6">
         <div>
-          <h3 className="text-sm sm:text-base font-bold text-[#0F172A] flex items-center gap-2">
-            <FileText className="h-4 w-4 text-[#2A6AED] shrink-0" />
+          <h3 className="flex items-center gap-2 text-sm font-bold text-[#0F172A] sm:text-base">
+            <FileText className="h-4 w-4 shrink-0 text-[#2A6AED]" />
             Upload Question Paper & Rubric
           </h3>
-          <p className="text-xs text-[#64748B] mt-0.5">
+          <p className="mt-0.5 text-xs text-[#64748B]">
             PDF paper and model answer rubric used for grading.
           </p>
         </div>
 
-        <div role="group" aria-label="Upload question paper and rubric" className="space-y-3.5">
+        <div
+          role="group"
+          aria-label="Upload question paper and rubric"
+          className="space-y-3.5"
+        >
           <div>
-            <Label className="text-xs font-bold text-[#0F172A]">Paper Title</Label>
+            <Label className="text-xs font-bold text-[#0F172A]">
+              Paper Title
+            </Label>
             <Input
               value={paperTitle}
               onChange={(e) => setPaperTitle(e.target.value)}
-              className="mt-1 border-slate-200 bg-white text-xs sm:text-sm h-10 rounded-lg"
+              className="mt-1 h-10 rounded-lg border-slate-200 bg-white text-xs sm:text-sm"
             />
           </div>
 
           <div>
-            <Label className="text-xs font-bold text-[#0F172A]">Paper PDF File</Label>
+            <Label className="text-xs font-bold text-[#0F172A]">
+              Paper PDF File
+            </Label>
             <Input
               type="file"
               accept=".pdf,image/jpeg,image/png,image/webp"
               onChange={(e) => setPaperFile(e.target.files?.[0] || null)}
-              className="mt-1 border-slate-200 bg-white text-xs sm:text-sm h-10 rounded-lg"
+              className="mt-1 h-10 rounded-lg border-slate-200 bg-white text-xs sm:text-sm"
             />
           </div>
 
           <div>
-            <Label className="text-xs font-bold text-[#0F172A]">Rubric & Model Answer Summary</Label>
+            <Label className="text-xs font-bold text-[#0F172A]">
+              Rubric & Model Answer Summary
+            </Label>
             <Textarea
               value={rubricContent}
               onChange={(e) => setRubricContent(e.target.value)}
               placeholder="Question 1 (10 marks): key points... Question 2 (15 marks): concepts..."
               rows={3}
-              className="mt-1 border-slate-200 bg-white text-xs sm:text-sm rounded-lg"
+              className="mt-1 rounded-lg border-slate-200 bg-white text-xs sm:text-sm"
             />
           </div>
 
@@ -171,12 +227,12 @@ export function AdminTestDocumentForms({ testSeriesId, initialPapers = [], initi
             type="button"
             onClick={handlePaperUpload}
             disabled={!paperFile || paperLoading}
-            className="w-full bg-[#2A6AED] hover:bg-[#1E55C7] text-white text-xs sm:text-sm font-semibold h-10 rounded-lg"
+            className="h-10 w-full rounded-lg bg-[#2A6AED] text-xs font-semibold text-white hover:bg-[#1E55C7] sm:text-sm"
           >
             {paperLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+              <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
             ) : (
-              <UploadCloud className="h-4 w-4 mr-1.5" />
+              <UploadCloud className="mr-1.5 h-4 w-4" />
             )}
             Upload Paper & Rubric
           </Button>
@@ -184,34 +240,42 @@ export function AdminTestDocumentForms({ testSeriesId, initialPapers = [], initi
       </div>
 
       {/* Upload Answer Sheet Template — Flat Section */}
-      <div className="space-y-4 pt-6 md:pt-0 md:pl-6 flex flex-col justify-between">
+      <div className="flex flex-col justify-between space-y-4 pt-6 md:pt-0 md:pl-6">
         <div>
-          <h3 className="text-sm sm:text-base font-bold text-[#0F172A] flex items-center gap-2">
-            <Download className="h-4 w-4 text-[#2A6AED] shrink-0" />
+          <h3 className="flex items-center gap-2 text-sm font-bold text-[#0F172A] sm:text-base">
+            <Download className="h-4 w-4 shrink-0 text-[#2A6AED]" />
             Upload Answer Sheet Template
           </h3>
-          <p className="text-xs text-[#64748B] mt-0.5">
+          <p className="mt-0.5 text-xs text-[#64748B]">
             Printable PDF template provided to students for handwriting.
           </p>
         </div>
 
-        <div role="group" aria-label="Upload answer sheet template" className="space-y-3.5">
+        <div
+          role="group"
+          aria-label="Upload answer sheet template"
+          className="space-y-3.5"
+        >
           <div>
-            <Label className="text-xs font-bold text-[#0F172A]">Template Title</Label>
+            <Label className="text-xs font-bold text-[#0F172A]">
+              Template Title
+            </Label>
             <Input
               value={templateTitle}
               onChange={(e) => setTemplateTitle(e.target.value)}
-              className="mt-1 border-slate-200 bg-white text-xs sm:text-sm h-10 rounded-lg"
+              className="mt-1 h-10 rounded-lg border-slate-200 bg-white text-xs sm:text-sm"
             />
           </div>
 
           <div>
-            <Label className="text-xs font-bold text-[#0F172A]">Template PDF / Image File</Label>
+            <Label className="text-xs font-bold text-[#0F172A]">
+              Template PDF / Image File
+            </Label>
             <Input
               type="file"
               accept=".pdf,image/png,image/jpeg,image/webp"
               onChange={(e) => setTemplateFile(e.target.files?.[0] || null)}
-              className="mt-1 border-slate-200 bg-white text-xs sm:text-sm h-10 rounded-lg"
+              className="mt-1 h-10 rounded-lg border-slate-200 bg-white text-xs sm:text-sm"
             />
           </div>
 
@@ -223,7 +287,10 @@ export function AdminTestDocumentForms({ testSeriesId, initialPapers = [], initi
               onChange={(e) => setTemplateRequired(e.target.checked)}
               className="rounded border-slate-300 text-[#2A6AED] focus:ring-[#2A6AED]"
             />
-            <Label htmlFor="templateRequired" className="text-xs text-slate-700 cursor-pointer font-medium">
+            <Label
+              htmlFor="templateRequired"
+              className="cursor-pointer text-xs font-medium text-slate-700"
+            >
               Strict Template Required for this examination
             </Label>
           </div>
@@ -232,20 +299,31 @@ export function AdminTestDocumentForms({ testSeriesId, initialPapers = [], initi
             type="button"
             onClick={handleTemplateUpload}
             disabled={!templateFile || templateLoading}
-            className="w-full bg-[#2A6AED] hover:bg-[#1E55C7] text-white text-xs sm:text-sm font-semibold h-10 rounded-lg"
+            className="h-10 w-full rounded-lg bg-[#2A6AED] text-xs font-semibold text-white hover:bg-[#1E55C7] sm:text-sm"
           >
             {templateLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+              <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
             ) : (
-              <UploadCloud className="h-4 w-4 mr-1.5" />
+              <UploadCloud className="mr-1.5 h-4 w-4" />
             )}
             Upload Printable Template
           </Button>
         </div>
       </div>
       <div className="col-span-full grid grid-cols-1 gap-6 border-t border-slate-200 pt-6 md:grid-cols-2">
-        <AttachedDocumentList title={`Attached Question Papers (${papers.length})`} empty="No question papers uploaded yet." items={papers} linkLabel="View PDF" />
-        <AttachedDocumentList title={`Attached Margin Templates (${templates.length})`} empty="No answer templates uploaded yet." items={templates} linkLabel="View Template" template />
+        <AttachedDocumentList
+          title={`Attached Question Papers (${papers.length})`}
+          empty="No question papers uploaded yet."
+          items={papers}
+          linkLabel="View PDF"
+        />
+        <AttachedDocumentList
+          title={`Attached Margin Templates (${templates.length})`}
+          empty="No answer templates uploaded yet."
+          items={templates}
+          linkLabel="View Template"
+          template
+        />
       </div>
     </div>
   )
@@ -266,15 +344,23 @@ function AttachedDocumentList({
 }) {
   return (
     <section className="space-y-3 rounded-xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
-      <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">{title}</h3>
+      <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+        {title}
+      </h3>
       {items.length ? (
         <div className="divide-y divide-slate-100 border-t border-slate-100 dark:divide-slate-800 dark:border-slate-800">
           {items.map((item) => {
-            const resolvedHref = normalizePrivateFileUrl(item.fileUrl) || item.fileUrl
+            const resolvedHref =
+              normalizePrivateFileUrl(item.fileUrl) || item.fileUrl
             return (
-              <div key={item.id} className="flex items-center justify-between gap-3 py-3 text-xs">
+              <div
+                key={item.id}
+                className="flex items-center justify-between gap-3 py-3 text-xs"
+              >
                 <div>
-                  <span className="block font-bold text-slate-900 dark:text-slate-100">{item.title}</span>
+                  <span className="block font-bold text-slate-900 dark:text-slate-100">
+                    {item.title}
+                  </span>
                   <span className="text-[11px] text-slate-500">
                     {template
                       ? (item as TemplateDocument).templateRequired
@@ -338,9 +424,12 @@ export function AdminPublishToggles({
     setPubLoading(false)
 
     if (res.success) {
-      toast.success(nextState ? "Test Series Published" : "Test Series Unpublished", {
-        description: res.message,
-      })
+      toast.success(
+        nextState ? "Test Series Published" : "Test Series Unpublished",
+        {
+          description: res.message,
+        }
+      )
       router.refresh()
     } else {
       showError({
@@ -373,7 +462,9 @@ export function AdminPublishToggles({
 
     if (res.success) {
       toast.success(
-        nextState ? "Leaderboard Results Published" : "Leaderboard Results Hidden",
+        nextState
+          ? "Leaderboard Results Published"
+          : "Leaderboard Results Hidden",
         {
           description: res.message,
         }
@@ -394,16 +485,16 @@ export function AdminPublishToggles({
         onClick={handleTogglePublish}
         disabled={pubLoading}
         variant={isPublished ? "outline" : "default"}
-        className={`text-xs font-semibold h-9 px-3.5 rounded-lg ${
+        className={`h-9 rounded-lg px-3.5 text-xs font-semibold ${
           isPublished
             ? "border-amber-300 text-amber-800 hover:bg-amber-50"
-            : "bg-emerald-600 hover:bg-emerald-700 text-white"
+            : "bg-emerald-600 text-white hover:bg-emerald-700"
         }`}
       >
         {pubLoading ? (
-          <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
+          <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
         ) : (
-          <Globe className="h-3.5 w-3.5 mr-1.5" />
+          <Globe className="mr-1.5 h-3.5 w-3.5" />
         )}
         {isPublished ? "Unpublish Series" : "Publish to Catalog"}
       </Button>
@@ -412,16 +503,16 @@ export function AdminPublishToggles({
         onClick={handleToggleResults}
         disabled={resLoading}
         variant="outline"
-        className={`text-xs font-semibold h-9 px-3.5 rounded-lg ${
+        className={`h-9 rounded-lg px-3.5 text-xs font-semibold ${
           resultsPublished
             ? "border-purple-300 text-purple-700 hover:bg-purple-50"
             : "border-[#2A6AED] text-[#2A6AED] hover:bg-blue-50/50"
         }`}
       >
         {resLoading ? (
-          <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
+          <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
         ) : (
-          <EyeOff className="h-3.5 w-3.5 mr-1.5" />
+          <EyeOff className="mr-1.5 h-3.5 w-3.5" />
         )}
         {resultsPublished ? "Hide Leaderboard" : "Publish Leaderboard"}
       </Button>

@@ -40,7 +40,9 @@ export function AdminTestSeriesMaxMarksEditor({
     }
 
     setLoading(true)
-    const result = await updateTestSeriesAction(testSeriesId, { maxMarks: parsed })
+    const result = await updateTestSeriesAction(testSeriesId, {
+      maxMarks: parsed,
+    })
     setLoading(false)
     if (!result.success) {
       showError({
@@ -51,7 +53,9 @@ export function AdminTestSeriesMaxMarksEditor({
       return
     }
 
-    toast.success("Maximum marks updated", { description: `New total: ${parsed} marks.` })
+    toast.success("Maximum marks updated", {
+      description: `New total: ${parsed} marks.`,
+    })
     setEditing(false)
     router.refresh()
   }
@@ -75,7 +79,11 @@ export function AdminTestSeriesMaxMarksEditor({
         type="button"
         size="sm"
         variant="outline"
-        className={compact ? "h-8 rounded-lg px-2.5 text-xs" : "h-9 rounded-lg px-3 text-xs"}
+        className={
+          compact
+            ? "h-8 rounded-lg px-2.5 text-xs"
+            : "h-9 rounded-lg px-3 text-xs"
+        }
         onClick={() => setEditing(true)}
       >
         <FileText className="mr-1.5 h-3.5 w-3.5" />
@@ -86,7 +94,9 @@ export function AdminTestSeriesMaxMarksEditor({
 
   return (
     <div className="flex items-center gap-1.5">
-      <Label htmlFor={`max-marks-${testSeriesId}`} className="sr-only">Maximum marks</Label>
+      <Label htmlFor={`max-marks-${testSeriesId}`} className="sr-only">
+        Maximum marks
+      </Label>
       <Input
         id={`max-marks-${testSeriesId}`}
         type="number"
@@ -97,10 +107,23 @@ export function AdminTestSeriesMaxMarksEditor({
         className="h-8 w-24 rounded-lg text-xs"
         disabled={loading}
       />
-      <IconActionButton label="Save maximum marks" onClick={save} disabled={loading}>
-        {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+      <IconActionButton
+        label="Save maximum marks"
+        onClick={save}
+        disabled={loading}
+      >
+        {loading ? (
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        ) : (
+          <Check className="h-3.5 w-3.5" />
+        )}
       </IconActionButton>
-      <IconActionButton label="Cancel editing maximum marks" variant="ghost" onClick={() => setEditing(false)} disabled={loading}>
+      <IconActionButton
+        label="Cancel editing maximum marks"
+        variant="ghost"
+        onClick={() => setEditing(false)}
+        disabled={loading}
+      >
         <X className="h-3.5 w-3.5" />
       </IconActionButton>
     </div>

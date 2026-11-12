@@ -10,7 +10,10 @@ export async function POST(req: Request) {
     const parsed = forgotPasswordSchema.safeParse(body)
 
     if (!parsed.success) {
-      return NextResponse.json({ error: "Invalid email address" }, { status: 400 })
+      return NextResponse.json(
+        { error: "Invalid email address" },
+        { status: 400 }
+      )
     }
 
     const { email } = parsed.data
@@ -57,12 +60,16 @@ export async function POST(req: Request) {
     })
 
     if (!dispatch.success) {
-      console.error("[Forgot Password API] sendPasswordResetEmail unsuccessful:", dispatch.error)
+      console.error(
+        "[Forgot Password API] sendPasswordResetEmail unsuccessful:",
+        dispatch.error
+      )
     }
 
     return NextResponse.json({
       ...genericResponse,
-      devResetUrl: process.env.NODE_ENV === "development" ? dispatch.resetUrl : undefined,
+      devResetUrl:
+        process.env.NODE_ENV === "development" ? dispatch.resetUrl : undefined,
     })
   } catch (err: unknown) {
     console.error("Forgot password error:", err)

@@ -10,8 +10,6 @@ export function AuthPageFrame({
   className?: string
 }) {
   return (
-    <div className={cn("auth-page-shell relative", className)}>
-      {children}
-    </div>
+    <div className={cn("auth-page-shell relative", className)}>{children}</div>
   )
 }

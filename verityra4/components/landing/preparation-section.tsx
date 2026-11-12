@@ -112,10 +112,7 @@ export function PreparationSection() {
                   key={label}
                   className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3.5 py-2 text-xs font-semibold text-slate-700"
                 >
-                  <Icon
-                    aria-hidden="true"
-                    className="h-4 w-4 text-[#2A6AED]"
-                  />
+                  <Icon aria-hidden="true" className="h-4 w-4 text-[#2A6AED]" />
                   {label}
                 </li>
               ))}

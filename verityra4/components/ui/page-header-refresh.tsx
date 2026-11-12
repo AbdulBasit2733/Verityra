@@ -25,11 +25,11 @@ export function PageHeaderRefreshButton() {
       size="sm"
       onClick={handleRefresh}
       disabled={isRefreshing}
-      className="h-10 px-3.5 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-2xs"
+      className="h-10 rounded-xl border-slate-200 bg-white px-3.5 text-xs font-semibold text-slate-700 shadow-2xs transition-colors hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
     >
       <RotateCcw
         className={cn(
-          "h-3.5 w-3.5 mr-1.5 transition-transform",
+          "mr-1.5 h-3.5 w-3.5 transition-transform",
           isRefreshing && "animate-spin"
         )}
       />

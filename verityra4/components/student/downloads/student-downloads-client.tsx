@@ -10,9 +10,15 @@ import { DownloadFilterBar } from "./download-filter-bar"
 import { DownloadResourceGroup } from "./download-resource-group"
 import type { StudentDownloadGroup } from "./types"
 
-export function StudentDownloadsClient({ groups }: { groups: StudentDownloadGroup[] }) {
+export function StudentDownloadsClient({
+  groups,
+}: {
+  groups: StudentDownloadGroup[]
+}) {
   const [query, setQuery] = React.useState("")
-  const [activeTab, setActiveTab] = React.useState<"ALL" | "REGISTERED" | "LIBRARY">("ALL")
+  const [activeTab, setActiveTab] = React.useState<
+    "ALL" | "REGISTERED" | "LIBRARY"
+  >("ALL")
 
   const filtered = React.useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -66,7 +72,8 @@ export function StudentDownloadsClient({ groups }: { groups: StudentDownloadGrou
               : "border-[#DCE7FA] text-slate-700 hover:bg-[#F1F6FF]"
           }`}
         >
-          <Layers className="mr-1.5 h-3.5 w-3.5" /> All Resources ({totalRegisteredFiles + totalLibraryFiles})
+          <Layers className="mr-1.5 h-3.5 w-3.5" /> All Resources (
+          {totalRegisteredFiles + totalLibraryFiles})
         </Button>
 
         <Button
@@ -80,7 +87,8 @@ export function StudentDownloadsClient({ groups }: { groups: StudentDownloadGrou
               : "border-[#DCE7FA] text-slate-700 hover:bg-[#F1F6FF]"
           }`}
         >
-          <BookOpen className="mr-1.5 h-3.5 w-3.5" /> Enrolled Tests ({totalRegisteredFiles})
+          <BookOpen className="mr-1.5 h-3.5 w-3.5" /> Enrolled Tests (
+          {totalRegisteredFiles})
         </Button>
 
         <Button
@@ -94,7 +102,8 @@ export function StudentDownloadsClient({ groups }: { groups: StudentDownloadGrou
               : "border-[#DCE7FA] text-slate-700 hover:bg-[#F1F6FF]"
           }`}
         >
-          <FileText className="mr-1.5 h-3.5 w-3.5" /> Question Papers Library ({totalLibraryFiles})
+          <FileText className="mr-1.5 h-3.5 w-3.5" /> Question Papers Library (
+          {totalLibraryFiles})
         </Button>
       </div>
 
@@ -110,7 +119,11 @@ export function StudentDownloadsClient({ groups }: { groups: StudentDownloadGrou
           <div className="md:hidden">
             <Accordion className="gap-2" multiple>
               {filtered.map((group) => (
-                <DownloadResourceGroup key={group.testSeriesId} group={group} accordion />
+                <DownloadResourceGroup
+                  key={group.testSeriesId}
+                  group={group}
+                  accordion
+                />
               ))}
             </Accordion>
           </div>
@@ -120,7 +133,9 @@ export function StudentDownloadsClient({ groups }: { groups: StudentDownloadGrou
       )}
 
       <p className="text-xs leading-5 text-muted-foreground">
-        All official materials and practice question papers are available for authenticated offline preparation. Model answers and private evaluator criteria are strictly confidential.
+        All official materials and practice question papers are available for
+        authenticated offline preparation. Model answers and private evaluator
+        criteria are strictly confidential.
       </p>
     </div>
   )

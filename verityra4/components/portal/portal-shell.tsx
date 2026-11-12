@@ -19,11 +19,17 @@ import {
   ClipboardList,
 } from "lucide-react"
 import dynamic from "next/dynamic"
-import { PortalDesktopLayout, NavItem } from "@/components/portal/desktop/portal-desktop-layout"
+import {
+  PortalDesktopLayout,
+  NavItem,
+} from "@/components/portal/desktop/portal-desktop-layout"
 import { PortalMobileLayout } from "@/components/portal/mobile/portal-mobile-layout"
 
 const DesktopCommandPalette = dynamic(
-  () => import("@/components/portal/desktop/desktop-command-palette").then((mod) => mod.DesktopCommandPalette),
+  () =>
+    import("@/components/portal/desktop/desktop-command-palette").then(
+      (mod) => mod.DesktopCommandPalette
+    ),
   { ssr: false }
 )
 
@@ -163,9 +169,13 @@ export function PortalShell({
 
   const navItems = role === "ADMIN" ? adminNavItems : studentNavItems
   const displayName =
-    userName || session?.user?.name || (role === "ADMIN" ? "Administrator" : "Candidate")
+    userName ||
+    session?.user?.name ||
+    (role === "ADMIN" ? "Administrator" : "Candidate")
   const displayEmail =
-    userEmail || session?.user?.email || (role === "ADMIN" ? "admin@verityra.com" : "candidate@verityra.com")
+    userEmail ||
+    session?.user?.email ||
+    (role === "ADMIN" ? "admin@verityra.com" : "candidate@verityra.com")
 
   function isItemActive(item: NavItem) {
     if (item.exact) {

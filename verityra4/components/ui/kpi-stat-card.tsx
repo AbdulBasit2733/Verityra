@@ -1,7 +1,8 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 
-export type KpiColorVariant = "blue" | "indigo" | "emerald" | "amber" | "rose" | "slate"
+export type KpiColorVariant =
+  "blue" | "indigo" | "emerald" | "amber" | "rose" | "slate"
 
 export interface KpiStatCardProps {
   label: string
@@ -59,14 +60,14 @@ export function KpiStatCard({
   return (
     <div
       className={cn(
-        "rounded-xl border border-border bg-card p-4 sm:p-5 shadow-card flex items-center gap-4 transition-colors hover:border-primary/40",
+        "flex items-center gap-4 rounded-xl border border-border bg-card p-4 shadow-card transition-colors hover:border-primary/40 sm:p-5",
         className
       )}
     >
       {/* Left Icon Container */}
       <div
         className={cn(
-          "w-12 h-12 rounded-xl flex items-center justify-center shrink-0",
+          "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl",
           styles.iconBox
         )}
       >
@@ -75,14 +76,14 @@ export function KpiStatCard({
 
       {/* Right Content Stack */}
       <div className="min-w-0 flex-1">
-        <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block truncate">
+        <span className="block truncate text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
           {label}
         </span>
-        <p className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-foreground tracking-tight mt-0.5 truncate">
+        <p className="mt-0.5 truncate text-xl font-extrabold tracking-tight text-foreground sm:text-2xl lg:text-3xl">
           {value}
         </p>
         {subtext && (
-          <span className="text-xs text-muted-foreground block truncate mt-0.5 font-medium">
+          <span className="mt-0.5 block truncate text-xs font-medium text-muted-foreground">
             {subtext}
           </span>
         )}

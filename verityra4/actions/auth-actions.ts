@@ -62,7 +62,10 @@ export async function registerStudentAction(formData: {
 
   const dbConnected = await isDatabaseConnected()
   if (!dbConnected) {
-    return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+    return {
+      success: false,
+      error: "Database temporarily unavailable. Please try again shortly.",
+    }
   }
 
   const existing = await prisma.user.findUnique({
@@ -72,7 +75,8 @@ export async function registerStudentAction(formData: {
   if (existing) {
     return {
       success: false,
-      error: "An account with this email address already exists. Please sign in instead.",
+      error:
+        "An account with this email address already exists. Please sign in instead.",
     }
   }
 
@@ -96,7 +100,8 @@ export async function registerStudentAction(formData: {
     if (createError?.code === "P2002") {
       return {
         success: false,
-        error: "An account with this email address already exists. Please sign in instead.",
+        error:
+          "An account with this email address already exists. Please sign in instead.",
       }
     }
     throw createError
@@ -131,15 +136,22 @@ export async function registerStudentAction(formData: {
     devVerificationUrl = dispatch.verificationUrl
 
     if (!dispatch.success) {
-      console.error("[Auth] Verification email dispatch was unsuccessful:", dispatch.error)
+      console.error(
+        "[Auth] Verification email dispatch was unsuccessful:",
+        dispatch.error
+      )
     }
   } catch (emailErr) {
-    console.error("[Auth] Failed to dispatch verification email on signup:", emailErr)
+    console.error(
+      "[Auth] Failed to dispatch verification email on signup:",
+      emailErr
+    )
   }
 
   return {
     success: true,
-    message: "Your account has been created successfully. We have sent a verification link to your email.",
+    message:
+      "Your account has been created successfully. We have sent a verification link to your email.",
     ...(process.env.NODE_ENV === "development" && {
       data: { devVerificationUrl },
     }),
@@ -150,7 +162,9 @@ export async function registerStudentAction(formData: {
  * Server Action: Request Password Reset
  * Generates secure token, avoids email enumeration.
  */
-export async function requestPasswordResetAction(email: string): Promise<ActionResult<{ devResetUrl?: string }>> {
+export async function requestPasswordResetAction(
+  email: string
+): Promise<ActionResult<{ devResetUrl?: string }>> {
   const parsed = forgotPasswordSchema.safeParse({ email })
   if (!parsed.success) {
     return { success: false, error: "Please provide a valid email address." }
@@ -168,7 +182,10 @@ export async function requestPasswordResetAction(email: string): Promise<ActionR
 
   const dbConnected = await isDatabaseConnected()
   if (!dbConnected && process.env.NODE_ENV === "production") {
-    return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+    return {
+      success: false,
+      error: "Database temporarily unavailable. Please try again shortly.",
+    }
   }
 
   if (dbConnected) {
@@ -179,7 +196,10 @@ export async function requestPasswordResetAction(email: string): Promise<ActionR
 
     if (user) {
       const rawToken = crypto.randomBytes(32).toString("hex")
-      const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex")
+      const tokenHash = crypto
+        .createHash("sha256")
+        .update(rawToken)
+        .digest("hex")
       const expiresAt = new Date(Date.now() + 60 * 60 * 1000) // 1 hour expiry
 
       await prisma.passwordResetToken.create({
@@ -198,14 +218,19 @@ export async function requestPasswordResetAction(email: string): Promise<ActionR
       })
 
       if (!dispatch.success) {
-        console.error("[Auth] Password reset email dispatch was unsuccessful:", dispatch.error)
+        console.error(
+          "[Auth] Password reset email dispatch was unsuccessful:",
+          dispatch.error
+        )
       }
 
-      const devResetUrl = dispatch.resetUrl || `/reset-password?token=${rawToken}`
+      const devResetUrl =
+        dispatch.resetUrl || `/reset-password?token=${rawToken}`
 
       return {
         success: true,
-        message: "If an account exists with this email, password reset instructions have been sent.",
+        message:
+          "If an account exists with this email, password reset instructions have been sent.",
         // Only include devResetUrl in development mode for security
         ...(process.env.NODE_ENV === "development" && {
           data: { devResetUrl },
@@ -216,7 +241,8 @@ export async function requestPasswordResetAction(email: string): Promise<ActionR
 
   return {
     success: true,
-    message: "If an account exists with this email, password reset instructions have been sent.",
+    message:
+      "If an account exists with this email, password reset instructions have been sent.",
   }
 }
 
@@ -231,7 +257,10 @@ export async function resetPasswordAction(data: {
 }): Promise<ActionResult> {
   const parsed = resetPasswordSchema.safeParse(data)
   if (!parsed.success) {
-    return { success: false, error: parsed.error.issues[0]?.message || "Invalid input." }
+    return {
+      success: false,
+      error: parsed.error.issues[0]?.message || "Invalid input.",
+    }
   }
 
   const { token, password } = parsed.data
@@ -240,11 +269,15 @@ export async function resetPasswordAction(data: {
   const dbConnected = await isDatabaseConnected()
   if (!dbConnected) {
     if (process.env.NODE_ENV === "production") {
-      return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+      return {
+        success: false,
+        error: "Database temporarily unavailable. Please try again shortly.",
+      }
     }
     return {
       success: true,
-      message: "Password reset successful (development mode). You can now sign in.",
+      message:
+        "Password reset successful (development mode). You can now sign in.",
     }
   }
 
@@ -252,10 +285,15 @@ export async function resetPasswordAction(data: {
     where: { tokenHash },
   })
 
-  if (!resetRecord || resetRecord.usedAt || resetRecord.expiresAt < new Date()) {
+  if (
+    !resetRecord ||
+    resetRecord.usedAt ||
+    resetRecord.expiresAt < new Date()
+  ) {
     return {
       success: false,
-      error: "This password reset link is invalid or has expired. Please request a new one.",
+      error:
+        "This password reset link is invalid or has expired. Please request a new one.",
     }
   }
 
@@ -278,12 +316,15 @@ export async function resetPasswordAction(data: {
     await sendPasswordChangedEmail({
       to: updatedUser.email,
       name: updatedUser.name,
-    }).catch((err) => console.error("[Auth] Failed to send password changed alert:", err))
+    }).catch((err) =>
+      console.error("[Auth] Failed to send password changed alert:", err)
+    )
   }
 
   return {
     success: true,
-    message: "Your password has been reset successfully. You can now sign in with your new password.",
+    message:
+      "Your password has been reset successfully. You can now sign in with your new password.",
   }
 }
 
@@ -308,7 +349,10 @@ export async function verifyEmailAction(params: {
   const dbConnected = await isDatabaseConnected()
   if (!dbConnected) {
     if (process.env.NODE_ENV === "production") {
-      return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+      return {
+        success: false,
+        error: "Database temporarily unavailable. Please try again shortly.",
+      }
     }
     return {
       success: true,
@@ -335,7 +379,8 @@ export async function verifyEmailAction(params: {
     if (existingUser?.emailVerified) {
       return {
         success: true,
-        message: "Your email address is already verified. You can continue to your dashboard.",
+        message:
+          "Your email address is already verified. You can continue to your dashboard.",
       }
     }
     return {
@@ -358,7 +403,8 @@ export async function verifyEmailAction(params: {
 
     return {
       success: false,
-      error: "This verification link has expired. Please request a new verification email.",
+      error:
+        "This verification link has expired. Please request a new verification email.",
     }
   }
 
@@ -388,7 +434,9 @@ export async function resendVerificationEmailAction(
   emailInput?: string
 ): Promise<ActionResult<{ devVerificationUrl?: string }>> {
   const sessionUser = await getCurrentUser()
-  const targetEmail = (emailInput || sessionUser?.email || "").toLowerCase().trim()
+  const targetEmail = (emailInput || sessionUser?.email || "")
+    .toLowerCase()
+    .trim()
 
   if (!targetEmail) {
     return { success: false, error: "Please provide a valid email address." }
@@ -405,7 +453,10 @@ export async function resendVerificationEmailAction(
   const dbConnected = await isDatabaseConnected()
   if (!dbConnected) {
     if (process.env.NODE_ENV === "production") {
-      return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+      return {
+        success: false,
+        error: "Database temporarily unavailable. Please try again shortly.",
+      }
     }
     return {
       success: true,
@@ -422,7 +473,8 @@ export async function resendVerificationEmailAction(
     // Generic message to prevent email enumeration
     return {
       success: true,
-      message: "If an unverified account exists for this email, a new verification link has been sent.",
+      message:
+        "If an unverified account exists for this email, a new verification link has been sent.",
     }
   }
 
@@ -457,7 +509,10 @@ export async function resendVerificationEmailAction(
   })
 
   if (!dispatch.success) {
-    console.error("[Auth] Resend verification email dispatch was unsuccessful:", dispatch.error)
+    console.error(
+      "[Auth] Resend verification email dispatch was unsuccessful:",
+      dispatch.error
+    )
   }
 
   return {
@@ -485,7 +540,10 @@ export async function updateStudentProfileAction(profileData: {
     user = await getPersistedCurrentUser()
   } catch (err) {
     if (err instanceof PersistedUserLookupError) {
-      return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+      return {
+        success: false,
+        error: "Database temporarily unavailable. Please try again shortly.",
+      }
     }
     throw err
   }
@@ -496,15 +554,24 @@ export async function updateStudentProfileAction(profileData: {
 
   const parsed = studentProfileSchema.safeParse(profileData)
   if (!parsed.success) {
-    return { success: false, error: parsed.error.issues[0]?.message || "Invalid profile data." }
+    return {
+      success: false,
+      error: parsed.error.issues[0]?.message || "Invalid profile data.",
+    }
   }
 
   const dbConnected = await isDatabaseConnected()
   if (!dbConnected) {
     if (process.env.NODE_ENV === "production") {
-      return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+      return {
+        success: false,
+        error: "Database temporarily unavailable. Please try again shortly.",
+      }
     }
-    return { success: true, message: "Profile updated successfully (dev mode)." }
+    return {
+      success: true,
+      message: "Profile updated successfully (dev mode).",
+    }
   }
 
   await prisma.$transaction([
@@ -541,22 +608,27 @@ export async function updateStudentProfileAction(profileData: {
 /**
  * Server Action: Get Student Profile Data
  */
-export async function getStudentProfileAction(): Promise<ActionResult<{
-  name: string
-  email: string
-  educationLevel: string
-  institution: string
-  phoneNumber: string
-  targetExam: string
-  bio: string
-  createdAt: string
-}>> {
+export async function getStudentProfileAction(): Promise<
+  ActionResult<{
+    name: string
+    email: string
+    educationLevel: string
+    institution: string
+    phoneNumber: string
+    targetExam: string
+    bio: string
+    createdAt: string
+  }>
+> {
   let user
   try {
     user = await getPersistedCurrentUser()
   } catch (err) {
     if (err instanceof PersistedUserLookupError) {
-      return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+      return {
+        success: false,
+        error: "Database temporarily unavailable. Please try again shortly.",
+      }
     }
     throw err
   }
@@ -568,7 +640,10 @@ export async function getStudentProfileAction(): Promise<ActionResult<{
   const dbConnected = await isDatabaseConnected()
   if (!dbConnected) {
     if (process.env.NODE_ENV === "production") {
-      return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+      return {
+        success: false,
+        error: "Database temporarily unavailable. Please try again shortly.",
+      }
     }
     return {
       success: true,
@@ -612,15 +687,17 @@ export async function getStudentProfileAction(): Promise<ActionResult<{
 /**
  * Server Action: Get Admin Profile Data
  */
-export async function getAdminProfileAction(): Promise<ActionResult<{
-  name: string
-  email: string
-  role: string
-  phoneNumber: string
-  bio: string
-  createdAt: string
-  totalReviewsPerformed: number
-}>> {
+export async function getAdminProfileAction(): Promise<
+  ActionResult<{
+    name: string
+    email: string
+    role: string
+    phoneNumber: string
+    bio: string
+    createdAt: string
+    totalReviewsPerformed: number
+  }>
+> {
   const user = await getCurrentUser()
   if (!user || user.role !== Role.ADMIN) {
     return { success: false, error: "Administrator authorization required." }
@@ -629,7 +706,10 @@ export async function getAdminProfileAction(): Promise<ActionResult<{
   const dbConnected = await isDatabaseConnected()
   if (!dbConnected) {
     if (process.env.NODE_ENV === "production") {
-      return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+      return {
+        success: false,
+        error: "Database temporarily unavailable. Please try again shortly.",
+      }
     }
     return {
       success: true,
@@ -691,15 +771,24 @@ export async function updateAdminProfileAction(data: {
 
   const parsed = adminProfileSchema.safeParse(data)
   if (!parsed.success) {
-    return { success: false, error: parsed.error.issues[0]?.message || "Invalid input data." }
+    return {
+      success: false,
+      error: parsed.error.issues[0]?.message || "Invalid input data.",
+    }
   }
 
   const dbConnected = await isDatabaseConnected()
   if (!dbConnected) {
     if (process.env.NODE_ENV === "production") {
-      return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+      return {
+        success: false,
+        error: "Database temporarily unavailable. Please try again shortly.",
+      }
     }
-    return { success: true, message: "Admin profile updated (development mode)." }
+    return {
+      success: true,
+      message: "Admin profile updated (development mode).",
+    }
   }
 
   const actor = await resolvePersistedAdminActor(user)
@@ -739,7 +828,10 @@ export async function updateAdminProfileAction(data: {
   revalidatePath("/admin/profile")
   revalidatePath("/admin")
 
-  return { success: true, message: "Admin profile and credentials updated successfully." }
+  return {
+    success: true,
+    message: "Admin profile and credentials updated successfully.",
+  }
 }
 
 /**
@@ -755,18 +847,27 @@ export async function changePasswordAction(data: {
     user = await getPersistedCurrentUser()
   } catch (err) {
     if (err instanceof PersistedUserLookupError) {
-      return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+      return {
+        success: false,
+        error: "Database temporarily unavailable. Please try again shortly.",
+      }
     }
     throw err
   }
 
   if (!user) {
-    return { success: false, error: "Authentication required to update password." }
+    return {
+      success: false,
+      error: "Authentication required to update password.",
+    }
   }
 
   const parsed = changePasswordSchema.safeParse(data)
   if (!parsed.success) {
-    return { success: false, error: parsed.error.issues[0]?.message || "Invalid password data." }
+    return {
+      success: false,
+      error: parsed.error.issues[0]?.message || "Invalid password data.",
+    }
   }
 
   const { currentPassword, newPassword } = parsed.data
@@ -782,9 +883,15 @@ export async function changePasswordAction(data: {
   const dbConnected = await isDatabaseConnected()
   if (!dbConnected) {
     if (process.env.NODE_ENV === "production") {
-      return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+      return {
+        success: false,
+        error: "Database temporarily unavailable. Please try again shortly.",
+      }
     }
-    return { success: true, message: "Password updated successfully (development mode)." }
+    return {
+      success: true,
+      message: "Password updated successfully (development mode).",
+    }
   }
 
   let userId = user.id
@@ -801,13 +908,17 @@ export async function changePasswordAction(data: {
   if (!dbUser || !dbUser.passwordHash) {
     return {
       success: false,
-      error: "Account password could not be verified. If you signed in via OAuth, you do not have a local password.",
+      error:
+        "Account password could not be verified. If you signed in via OAuth, you do not have a local password.",
     }
   }
 
   const isValid = await bcrypt.compare(currentPassword, dbUser.passwordHash)
   if (!isValid) {
-    return { success: false, error: "The current password you entered is incorrect." }
+    return {
+      success: false,
+      error: "The current password you entered is incorrect.",
+    }
   }
 
   const newHash = await bcrypt.hash(newPassword, 12)
@@ -832,6 +943,7 @@ export async function changePasswordAction(data: {
 
   return {
     success: true,
-    message: "Your password has been changed successfully. Use your new password on your next sign in.",
+    message:
+      "Your password has been changed successfully. Use your new password on your next sign in.",
   }
 }

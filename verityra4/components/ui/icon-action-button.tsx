@@ -2,9 +2,17 @@
 
 import * as React from "react"
 import { Button } from "@/components/ui/button"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
-type IconActionButtonProps = Omit<React.ComponentProps<typeof Button>, "children" | "size"> & {
+type IconActionButtonProps = Omit<
+  React.ComponentProps<typeof Button>,
+  "children" | "size"
+> & {
   label: string
   children: React.ReactNode
   tooltipSide?: "top" | "right" | "bottom" | "left"
@@ -24,7 +32,13 @@ function IconActionButton({
         <TooltipTrigger
           disabled={disabled}
           render={
-            <Button type="button" size="icon" aria-label={label} disabled={disabled} {...buttonProps}>
+            <Button
+              type="button"
+              size="icon"
+              aria-label={label}
+              disabled={disabled}
+              {...buttonProps}
+            >
               {children}
             </Button>
           }

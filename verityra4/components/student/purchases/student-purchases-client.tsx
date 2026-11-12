@@ -2,11 +2,22 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { ArrowRight, CreditCard, ExternalLink, IndianRupee, RotateCcw, WalletCards } from "lucide-react"
+import {
+  ArrowRight,
+  CreditCard,
+  ExternalLink,
+  IndianRupee,
+  RotateCcw,
+  WalletCards,
+} from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { IconActionButton } from "@/components/ui/icon-action-button"
-import { DataTable, DataTableColumn, DataTableFilter } from "@/components/ui/data-table"
+import {
+  DataTable,
+  DataTableColumn,
+  DataTableFilter,
+} from "@/components/ui/data-table"
 import { FormattedDate } from "@/components/ui/date-picker"
 import { PageHeader } from "@/components/ui/page-header"
 import { KpiStatCard } from "@/components/ui/kpi-stat-card"
@@ -27,12 +38,18 @@ export interface StudentPurchaseRow {
 }
 
 function statusClass(status: string) {
-  if (status === "COMPLETED") return "border-chart-3/30 bg-chart-3/10 text-chart-3"
-  if (status === "REFUNDED" || status === "FAILED") return "border-destructive/30 bg-destructive/10 text-destructive"
+  if (status === "COMPLETED")
+    return "border-chart-3/30 bg-chart-3/10 text-chart-3"
+  if (status === "REFUNDED" || status === "FAILED")
+    return "border-destructive/30 bg-destructive/10 text-destructive"
   return "border-score-accent/30 bg-score-accent/10 text-score-accent"
 }
 
-export function StudentPurchasesClient({ purchases }: { purchases: StudentPurchaseRow[] }) {
+export function StudentPurchasesClient({
+  purchases,
+}: {
+  purchases: StudentPurchaseRow[]
+}) {
   const columns: DataTableColumn<StudentPurchaseRow>[] = React.useMemo(
     () => [
       {
@@ -40,11 +57,14 @@ export function StudentPurchasesClient({ purchases }: { purchases: StudentPurcha
         header: "Purchase",
         sortable: true,
         sortAccessor: (row) => row.testTitle,
-        searchAccessor: (row) => `${row.testTitle} ${row.razorpayOrderId} ${row.razorpayPaymentId || ""}`,
+        searchAccessor: (row) =>
+          `${row.testTitle} ${row.razorpayOrderId} ${row.razorpayPaymentId || ""}`,
         cell: (row) => (
           <div className="space-y-1 whitespace-normal">
             <p className="font-semibold text-foreground">{row.testTitle}</p>
-            <p className="text-xs text-muted-foreground">Order {row.razorpayOrderId}</p>
+            <p className="text-xs text-muted-foreground">
+              Order {row.razorpayOrderId}
+            </p>
           </div>
         ),
       },
@@ -59,7 +79,9 @@ export function StudentPurchasesClient({ purchases }: { purchases: StudentPurcha
               {row.currency} {(row.amount / 100).toFixed(2)}
             </span>
             {row.amountRefunded > 0 && (
-              <span className="block text-xs text-muted-foreground">Refunded {(row.amountRefunded / 100).toFixed(2)}</span>
+              <span className="block text-xs text-muted-foreground">
+                Refunded {(row.amountRefunded / 100).toFixed(2)}
+              </span>
             )}
           </div>
         ),
@@ -80,7 +102,11 @@ export function StudentPurchasesClient({ purchases }: { purchases: StudentPurcha
         header: "Method",
         sortable: true,
         sortAccessor: (row) => row.paymentMethod || "—",
-        cell: (row) => <span className="text-sm capitalize text-muted-foreground">{row.paymentMethod || "—"}</span>,
+        cell: (row) => (
+          <span className="text-sm text-muted-foreground capitalize">
+            {row.paymentMethod || "—"}
+          </span>
+        ),
       },
       {
         id: "createdAt",
@@ -96,12 +122,21 @@ export function StudentPurchasesClient({ purchases }: { purchases: StudentPurcha
         headerClassName: "text-right",
         cell: (row) =>
           row.hasAccess ? (
-            <IconActionButton label="Open test access" render={<Link href={`/student/tests/${row.testSeriesId}`} />} nativeButton={false}>
-                <ExternalLink className="h-3.5 w-3.5" />
+            <IconActionButton
+              label="Open test access"
+              render={<Link href={`/student/tests/${row.testSeriesId}`} />}
+              nativeButton={false}
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
             </IconActionButton>
           ) : (
-            <IconActionButton label="View payment" render={<Link href={`/tests/${row.testSeriesId}`} />} nativeButton={false} variant="outline">
-                <ArrowRight className="h-3.5 w-3.5" />
+            <IconActionButton
+              label="View payment"
+              render={<Link href={`/tests/${row.testSeriesId}`} />}
+              nativeButton={false}
+              variant="outline"
+            >
+              <ArrowRight className="h-3.5 w-3.5" />
             </IconActionButton>
           ),
       },
@@ -110,13 +145,21 @@ export function StudentPurchasesClient({ purchases }: { purchases: StudentPurcha
   )
 
   const filters: DataTableFilter<StudentPurchaseRow>[] = React.useMemo(() => {
-    const paymentMethods = Array.from(new Set(purchases.map((row) => row.paymentMethod || "UNKNOWN"))).sort()
+    const paymentMethods = Array.from(
+      new Set(purchases.map((row) => row.paymentMethod || "UNKNOWN"))
+    ).sort()
     return [
       {
         id: "status",
         label: "Payment Status",
         accessor: (row) => row.status,
-        options: ["COMPLETED", "PENDING", "FAILED", "REFUND_PENDING", "REFUNDED"].map((status) => ({
+        options: [
+          "COMPLETED",
+          "PENDING",
+          "FAILED",
+          "REFUND_PENDING",
+          "REFUNDED",
+        ].map((status) => ({
           label: status.replaceAll("_", " "),
           value: status,
         })),
@@ -193,7 +236,8 @@ export function StudentPurchasesClient({ purchases }: { purchases: StudentPurcha
               <div>
                 <p className="font-semibold">{row.testTitle}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {row.currency} {(row.amount / 100).toFixed(2)} · {row.paymentMethod || "Payment gateway"}
+                  {row.currency} {(row.amount / 100).toFixed(2)} ·{" "}
+                  {row.paymentMethod || "Payment gateway"}
                 </p>
               </div>
               <Badge variant="outline" className={statusClass(row.status)}>
@@ -202,11 +246,16 @@ export function StudentPurchasesClient({ purchases }: { purchases: StudentPurcha
             </div>
             <div className="grid grid-cols-1 gap-1 text-xs text-muted-foreground">
               <span>Order: {row.razorpayOrderId}</span>
-              {row.razorpayPaymentId && <span>Payment: {row.razorpayPaymentId}</span>}
+              {row.razorpayPaymentId && (
+                <span>Payment: {row.razorpayPaymentId}</span>
+              )}
               <FormattedDate date={row.createdAt} includeTime />
             </div>
             {row.hasAccess ? (
-              <Link href={`/student/tests/${row.testSeriesId}`} className="block">
+              <Link
+                href={`/student/tests/${row.testSeriesId}`}
+                className="block"
+              >
                 <Button className="w-full gap-2">
                   Open access <ExternalLink className="h-4 w-4" />
                 </Button>

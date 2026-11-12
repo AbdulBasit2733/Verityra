@@ -78,7 +78,8 @@ export function AdminExtraAttemptDialog({
     } catch {
       showError({
         title: "Unexpected Server Error",
-        message: "An unexpected server error occurred while granting the attempt override.",
+        message:
+          "An unexpected server error occurred while granting the attempt override.",
         code: "SYS_ERR",
       })
       setLoading(false)
@@ -87,29 +88,31 @@ export function AdminExtraAttemptDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger
-        className="inline-flex items-center justify-center h-8 px-3 rounded-lg border border-amber-300 bg-white text-amber-800 hover:bg-amber-50 text-xs font-semibold transition-colors cursor-pointer outline-none"
-      >
-        <PlusCircle className="h-3.5 w-3.5 mr-1" />
+      <DialogTrigger className="inline-flex h-8 cursor-pointer items-center justify-center rounded-lg border border-amber-300 bg-white px-3 text-xs font-semibold text-amber-800 transition-colors outline-none hover:bg-amber-50">
+        <PlusCircle className="mr-1 h-3.5 w-3.5" />
         Override Limit
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md bg-white border-slate-200 p-6 rounded-2xl shadow-2xl">
+      <DialogContent className="rounded-2xl border-slate-200 bg-white p-6 shadow-2xl sm:max-w-md">
         <form onSubmit={handleGrant}>
           <DialogHeader className="space-y-2">
-            <DialogTitle className="text-base font-bold text-[#0F172A] flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 text-base font-bold text-[#0F172A]">
               <ShieldAlert className="h-5 w-5 text-amber-600" />
               Audited Attempt Limit Override
             </DialogTitle>
-            <DialogDescription className="text-xs sm:text-sm text-[#64748B] leading-relaxed">
-              Granting an additional attempt increases the maximum allowable submissions for{" "}
+            <DialogDescription className="text-xs leading-relaxed text-[#64748B] sm:text-sm">
+              Granting an additional attempt increases the maximum allowable
+              submissions for{" "}
               <strong className="text-[#0F172A]">{studentName}</strong> on{" "}
-              <strong className="text-[#0F172A]">{testTitle}</strong> from {currentMax} to{" "}
-              {currentMax + 1}.
+              <strong className="text-[#0F172A]">{testTitle}</strong> from{" "}
+              {currentMax} to {currentMax + 1}.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="py-5 space-y-2">
-            <Label htmlFor="auditReason" className="text-xs font-bold text-[#0F172A]">
+          <div className="space-y-2 py-5">
+            <Label
+              htmlFor="auditReason"
+              className="text-xs font-bold text-[#0F172A]"
+            >
               Mandatory Audit Justification
             </Label>
             <Input
@@ -118,7 +121,7 @@ export function AdminExtraAttemptDialog({
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="e.g. Approved re-submission due to verified scanner blur on attempt 2"
-              className="border-slate-200 bg-white text-xs sm:text-sm h-10 rounded-lg"
+              className="h-10 rounded-lg border-slate-200 bg-white text-xs sm:text-sm"
             />
           </div>
 
@@ -128,7 +131,7 @@ export function AdminExtraAttemptDialog({
               variant="outline"
               size="sm"
               onClick={() => setOpen(false)}
-              className="h-9 px-4 border-slate-200 text-slate-700 rounded-lg"
+              className="h-9 rounded-lg border-slate-200 px-4 text-slate-700"
             >
               Cancel
             </Button>
@@ -136,9 +139,11 @@ export function AdminExtraAttemptDialog({
               type="submit"
               size="sm"
               disabled={loading || !reason.trim()}
-              className="h-9 px-4 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-lg"
+              className="h-9 rounded-lg bg-amber-600 px-4 font-semibold text-white hover:bg-amber-700"
             >
-              {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              {loading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
               Confirm & Grant Override
             </Button>
           </DialogFooter>

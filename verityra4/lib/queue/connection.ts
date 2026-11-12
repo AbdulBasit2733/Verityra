@@ -1,4 +1,4 @@
-import Redis from 'ioredis'
+import Redis from "ioredis"
 
 /**
  * Redis connection for BullMQ queue system
@@ -25,7 +25,10 @@ const globalForRedis = globalThis as unknown as {
 }
 
 function createRedisInstance(label: string): Redis | null {
-  if (!process.env.REDIS_URL || process.env.NEXT_PHASE === 'phase-production-build') {
+  if (
+    !process.env.REDIS_URL ||
+    process.env.NEXT_PHASE === "phase-production-build"
+  ) {
     return null
   }
 
@@ -42,11 +45,11 @@ function createRedisInstance(label: string): Redis | null {
       },
     })
 
-    client.on('error', (err) => {
+    client.on("error", (err) => {
       console.error(`[Queue:${label}] Redis connection error:`, err.message)
     })
 
-    client.on('connect', () => {
+    client.on("connect", () => {
       console.log(`[Queue:${label}] Redis connected successfully`)
     })
 
@@ -66,7 +69,7 @@ export function getRedisConnection(): Redis | null {
     return globalForRedis.redisConnection
   }
 
-  const client = createRedisInstance('Producer')
+  const client = createRedisInstance("Producer")
   globalForRedis.redisConnection = client
   return client
 }
@@ -80,7 +83,7 @@ export function getWorkerRedisConnection(): Redis | null {
     return globalForRedis.workerRedisConnection
   }
 
-  const client = createRedisInstance('Worker')
+  const client = createRedisInstance("Worker")
   globalForRedis.workerRedisConnection = client
   return client
 }

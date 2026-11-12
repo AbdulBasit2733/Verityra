@@ -1,8 +1,8 @@
-import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { getEvaluationStatus } from '@/lib/queue/evaluation-queue'
-import { getCurrentUser } from '@/lib/auth-guard'
-import { Role } from '@prisma/client'
+import { NextResponse } from "next/server"
+import { prisma } from "@/lib/prisma"
+import { getEvaluationStatus } from "@/lib/queue/evaluation-queue"
+import { getCurrentUser } from "@/lib/auth-guard"
+import { Role } from "@prisma/client"
 
 /**
  * Submission Status Polling Endpoint
@@ -37,20 +37,27 @@ export async function GET(
     const { id: submissionId } = await params
 
     if (!submissionId) {
-      return NextResponse.json({ error: 'Submission ID required' }, { status: 400 })
+      return NextResponse.json(
+        { error: "Submission ID required" },
+        { status: 400 }
+      )
     }
 
     const sessionUser = await getCurrentUser()
-    if (!sessionUser) return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    if (!sessionUser)
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 }
+      )
 
     // Fetch submission with evaluation data
     const submission = await prisma.submission.findUnique({
       where: { id: submissionId },
       select: {
         id: true,
-         userId: true,
+        userId: true,
         status: true,
-         aiEvaluationRuns: true,
+        aiEvaluationRuns: true,
         submittedAt: true,
         evaluation: {
           select: {
@@ -67,10 +74,16 @@ export async function GET(
     })
 
     if (!submission) {
-      return NextResponse.json({ error: 'Submission not found' }, { status: 404 })
+      return NextResponse.json(
+        { error: "Submission not found" },
+        { status: 404 }
+      )
     }
-    if (sessionUser.role !== Role.ADMIN && submission.userId !== sessionUser.id) {
-      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+    if (
+      sessionUser.role !== Role.ADMIN &&
+      submission.userId !== sessionUser.id
+    ) {
+      return NextResponse.json({ error: "Access denied" }, { status: 403 })
     }
 
     // Fetch job status from queue (if available)
@@ -103,22 +116,24 @@ export async function GET(
 
       // Computed status for frontend
       isProcessing:
-        submission.status === 'PROCESSING' ||
-        jobStatus?.status === 'QUEUED' ||
-        jobStatus?.status === 'PROCESSING',
+        submission.status === "PROCESSING" ||
+        jobStatus?.status === "QUEUED" ||
+        jobStatus?.status === "PROCESSING",
       isComplete:
-        submission.status === 'COMPLETED' || submission.status === 'REVIEW_REQUIRED',
-      isFailed: submission.status === 'FAILED' || jobStatus?.status === 'FAILED',
+        submission.status === "COMPLETED" ||
+        submission.status === "REVIEW_REQUIRED",
+      isFailed:
+        submission.status === "FAILED" || jobStatus?.status === "FAILED",
     }
 
     return NextResponse.json(response)
   } catch (error: any) {
-    console.error('[Status API] Error fetching submission status:', error)
+    console.error("[Status API] Error fetching submission status:", error)
 
     return NextResponse.json(
       {
-        error: 'Failed to fetch submission status',
-        message: error.message || 'Unknown error',
+        error: "Failed to fetch submission status",
+        message: error.message || "Unknown error",
       },
       { status: 500 }
     )

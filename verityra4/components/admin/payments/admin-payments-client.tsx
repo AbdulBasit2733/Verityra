@@ -3,7 +3,11 @@
 import * as React from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { DataTable, DataTableColumn, DataTableFilter } from "@/components/ui/data-table"
+import {
+  DataTable,
+  DataTableColumn,
+  DataTableFilter,
+} from "@/components/ui/data-table"
 import { FormattedDate } from "@/components/ui/date-picker"
 import { PageHeader } from "@/components/ui/page-header"
 import { KpiStatCard } from "@/components/ui/kpi-stat-card"
@@ -11,11 +15,17 @@ import dynamic from "next/dynamic"
 import { useGlobalError } from "@/components/providers/error-dialog-provider"
 
 const AdminRefundDialog = dynamic(
-  () => import("@/components/admin/payments/admin-refund-dialog").then((mod) => mod.AdminRefundDialog),
+  () =>
+    import("@/components/admin/payments/admin-refund-dialog").then(
+      (mod) => mod.AdminRefundDialog
+    ),
   { ssr: false }
 )
 const AdminPaymentLedgerSheet = dynamic(
-  () => import("@/components/admin/payments/admin-payment-ledger-sheet").then((mod) => mod.AdminPaymentLedgerSheet),
+  () =>
+    import("@/components/admin/payments/admin-payment-ledger-sheet").then(
+      (mod) => mod.AdminPaymentLedgerSheet
+    ),
   { ssr: false }
 )
 import { toast } from "@/components/ui/sonner"
@@ -44,7 +54,8 @@ export function AdminPaymentsClient({
   initialPayments: AdminPaymentRow[]
 }) {
   const { showError } = useGlobalError()
-  const [payments, setPayments] = React.useState<AdminPaymentRow[]>(initialPayments)
+  const [payments, setPayments] =
+    React.useState<AdminPaymentRow[]>(initialPayments)
   const [reconciling, setReconciling] = React.useState(false)
 
   // Compute KPI Metrics
@@ -107,10 +118,10 @@ export function AdminPaymentsClient({
         `${p.candidateName} ${p.candidateEmail} ${p.razorpayOrderId} ${p.razorpayPaymentId || ""} ${p.testSeriesTitle}`,
       cell: (p) => (
         <div className="space-y-0.5">
-          <span className="font-bold text-slate-900 dark:text-slate-100 block">
+          <span className="block font-bold text-slate-900 dark:text-slate-100">
             {p.candidateName}
           </span>
-          <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
+          <span className="block text-[11px] text-slate-500 dark:text-slate-400">
             {p.candidateEmail}
           </span>
         </div>
@@ -122,7 +133,7 @@ export function AdminPaymentsClient({
       sortable: true,
       sortAccessor: (p) => p.testSeriesTitle,
       cell: (p) => (
-        <span className="font-semibold text-slate-900 dark:text-slate-100 max-w-xs truncate block">
+        <span className="block max-w-xs truncate font-semibold text-slate-900 dark:text-slate-100">
           {p.testSeriesTitle}
         </span>
       ),
@@ -134,11 +145,11 @@ export function AdminPaymentsClient({
       sortAccessor: (p) => p.amount,
       cell: (p) => (
         <div className="space-y-0.5">
-          <span className="font-extrabold text-[#2A6AED] dark:text-blue-400 text-sm">
+          <span className="text-sm font-extrabold text-[#2A6AED] dark:text-blue-400">
             ₹{p.amountInRupees}.00
           </span>
           {p.status === "REFUNDED" && (
-            <span className="text-[10px] text-rose-600 dark:text-rose-400 font-bold block">
+            <span className="block text-[10px] font-bold text-rose-600 dark:text-rose-400">
               -₹{p.amountRefundedInRupees}.00 refunded
             </span>
           )}
@@ -153,10 +164,14 @@ export function AdminPaymentsClient({
         <div className="space-y-1 font-mono text-[11px]">
           {p.razorpayPaymentId ? (
             <div className="flex items-center gap-1.5 text-slate-800 dark:text-slate-200">
-              <span className="font-semibold truncate max-w-[120px]">{p.razorpayPaymentId}</span>
+              <span className="max-w-[120px] truncate font-semibold">
+                {p.razorpayPaymentId}
+              </span>
               <button
                 type="button"
-                onClick={() => copyToClipboard(p.razorpayPaymentId!, "Payment ID")}
+                onClick={() =>
+                  copyToClipboard(p.razorpayPaymentId!, "Payment ID")
+                }
                 className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
                 title="Copy Payment ID"
               >
@@ -166,8 +181,10 @@ export function AdminPaymentsClient({
           ) : (
             <span className="text-slate-400 italic">No Payment ID</span>
           )}
-          <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-[10px]">
-            <span className="truncate max-w-[120px]">Ord: {p.razorpayOrderId}</span>
+          <div className="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400">
+            <span className="max-w-[120px] truncate">
+              Ord: {p.razorpayOrderId}
+            </span>
             <button
               type="button"
               onClick={() => copyToClipboard(p.razorpayOrderId, "Order ID")}
@@ -188,7 +205,7 @@ export function AdminPaymentsClient({
       cell: (p) => (
         <Badge
           variant="outline"
-          className="uppercase text-[10px] font-mono font-bold border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300"
+          className="border-slate-200 bg-slate-50 font-mono text-[10px] font-bold text-slate-700 uppercase dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
         >
           {p.paymentMethod || "GATEWAY"}
         </Badge>
@@ -204,7 +221,7 @@ export function AdminPaymentsClient({
           return (
             <Badge
               variant="outline"
-              className="border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 text-[11px] font-semibold rounded-full"
+              className="rounded-full border-emerald-200 bg-emerald-50 text-[11px] font-semibold text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-400"
             >
               Captured
             </Badge>
@@ -214,7 +231,7 @@ export function AdminPaymentsClient({
           return (
             <Badge
               variant="outline"
-              className="border-purple-200 dark:border-purple-900 text-purple-700 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/50 text-[11px] font-semibold rounded-full"
+              className="rounded-full border-purple-200 bg-purple-50 text-[11px] font-semibold text-purple-700 dark:border-purple-900 dark:bg-purple-950/50 dark:text-purple-400"
             >
               Refunded
             </Badge>
@@ -224,7 +241,7 @@ export function AdminPaymentsClient({
           return (
             <Badge
               variant="outline"
-              className="border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/50 text-[11px] font-semibold rounded-full"
+              className="rounded-full border-rose-200 bg-rose-50 text-[11px] font-semibold text-rose-700 dark:border-rose-900 dark:bg-rose-950/50 dark:text-rose-400"
             >
               Failed
             </Badge>
@@ -233,7 +250,7 @@ export function AdminPaymentsClient({
         return (
           <Badge
             variant="outline"
-            className="border-blue-200 dark:border-blue-900 text-[#2A6AED] dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 text-[11px] font-semibold rounded-full"
+            className="rounded-full border-blue-200 bg-blue-50 text-[11px] font-semibold text-[#2A6AED] dark:border-blue-900 dark:bg-blue-950/50 dark:text-blue-400"
           >
             Pending
           </Badge>
@@ -336,17 +353,17 @@ export function AdminPaymentsClient({
           size="sm"
           onClick={handleReconcile}
           disabled={reconciling}
-          className="h-10 px-3.5 rounded-xl border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-2xs"
+          className="h-10 rounded-xl border-slate-200 px-3.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800"
         >
           <RefreshCw
-            className={`h-3.5 w-3.5 mr-1.5 ${reconciling ? "animate-spin text-[#2A6AED]" : ""}`}
+            className={`mr-1.5 h-3.5 w-3.5 ${reconciling ? "animate-spin text-[#2A6AED]" : ""}`}
           />
           {reconciling ? "Reconciling Orders..." : "Reconcile Stale Orders"}
         </Button>
       </PageHeader>
 
       {/* KPI Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KpiStatCard
           label="Total Captured Revenue"
           value={`₹${totalRevenue.toLocaleString()}`}
@@ -391,18 +408,18 @@ export function AdminPaymentsClient({
         defaultPageSize={10}
         showSerialNumber={true}
         renderCard={(p, idx, serialNumber) => (
-          <div className="rounded-xl border border-border bg-card p-4 sm:p-5 shadow-none space-y-3 flex flex-col justify-between">
+          <div className="flex flex-col justify-between space-y-3 rounded-xl border border-border bg-card p-4 shadow-none sm:p-5">
             <div className="space-y-2.5">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-[11px] font-bold text-slate-500 shrink-0">
+                  <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-[11px] font-bold text-slate-500 dark:bg-slate-800">
                     #{serialNumber}
                   </span>
                   <div>
-                    <span className="font-bold text-slate-900 dark:text-slate-100 block text-sm">
+                    <span className="block text-sm font-bold text-slate-900 dark:text-slate-100">
                       {p.candidateName}
                     </span>
-                    <span className="text-[11px] text-slate-400 block truncate max-w-[200px]">
+                    <span className="block max-w-[200px] truncate text-[11px] text-slate-400">
                       {p.candidateEmail}
                     </span>
                   </div>
@@ -411,12 +428,12 @@ export function AdminPaymentsClient({
                   variant="outline"
                   className={
                     p.status === "COMPLETED"
-                      ? "border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 text-[10px] font-semibold shrink-0"
+                      ? "shrink-0 border-emerald-200 bg-emerald-50 text-[10px] font-semibold text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-400"
                       : p.status === "REFUNDED"
-                        ? "border-purple-200 dark:border-purple-900 text-purple-700 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/50 text-[10px] font-semibold shrink-0"
+                        ? "shrink-0 border-purple-200 bg-purple-50 text-[10px] font-semibold text-purple-700 dark:border-purple-900 dark:bg-purple-950/50 dark:text-purple-400"
                         : p.status === "FAILED"
-                          ? "border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/50 text-[10px] font-semibold shrink-0"
-                          : "border-blue-200 dark:border-blue-900 text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 text-[10px] font-semibold shrink-0"
+                          ? "shrink-0 border-rose-200 bg-rose-50 text-[10px] font-semibold text-rose-700 dark:border-rose-900 dark:bg-rose-950/50 dark:text-rose-400"
+                          : "shrink-0 border-blue-200 bg-blue-50 text-[10px] font-semibold text-blue-700 dark:border-blue-900 dark:bg-blue-950/50 dark:text-blue-400"
                   }
                 >
                   {p.status === "COMPLETED" ? "Captured" : p.status}
@@ -424,47 +441,60 @@ export function AdminPaymentsClient({
               </div>
 
               <div className="pt-1">
-                <span className="font-semibold text-slate-800 dark:text-slate-200 text-xs block line-clamp-1">
+                <span className="line-clamp-1 block text-xs font-semibold text-slate-800 dark:text-slate-200">
                   {p.testSeriesTitle}
                 </span>
               </div>
 
-              <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 text-xs">
+              <div className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 p-2.5 text-xs dark:border-slate-800 dark:bg-slate-800/60">
                 <div>
-                  <span className="text-slate-400 text-[11px] block">Captured Amount</span>
-                  <span className="font-extrabold text-[#2A6AED] dark:text-blue-400 text-sm">
+                  <span className="block text-[11px] text-slate-400">
+                    Captured Amount
+                  </span>
+                  <span className="text-sm font-extrabold text-[#2A6AED] dark:text-blue-400">
                     ₹{p.amountInRupees}.00
                   </span>
                   {p.status === "REFUNDED" && (
-                    <span className="text-[10px] text-rose-600 dark:text-rose-400 font-bold block">
+                    <span className="block text-[10px] font-bold text-rose-600 dark:text-rose-400">
                       -₹{p.amountRefundedInRupees}.00 refunded
                     </span>
                   )}
                 </div>
-                <div className="text-right space-y-0.5">
-                  <Badge variant="outline" className="text-[10px] uppercase font-mono font-bold">
+                <div className="space-y-0.5 text-right">
+                  <Badge
+                    variant="outline"
+                    className="font-mono text-[10px] font-bold uppercase"
+                  >
                     {p.paymentMethod || "GATEWAY"}
                   </Badge>
                   <span className="block text-[11px] text-slate-500">
                     {p.within7Days ? (
-                      <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{7 - p.daysElapsed}d return eligible</span>
+                      <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                        {7 - p.daysElapsed}d return eligible
+                      </span>
                     ) : (
-                      <span className="text-slate-400">Return window expired</span>
+                      <span className="text-slate-400">
+                        Return window expired
+                      </span>
                     )}
                   </span>
                 </div>
               </div>
 
               {/* Identifiers & Date */}
-              <div className="space-y-1 text-[11px] font-mono text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-950/50 p-2.5 rounded-xl">
+              <div className="space-y-1 rounded-xl bg-slate-50/50 p-2.5 font-mono text-[11px] text-slate-500 dark:bg-slate-950/50 dark:text-slate-400">
                 <div className="flex items-center justify-between">
                   <span className="text-slate-400">Order:</span>
                   <div className="flex items-center gap-1.5 font-semibold text-slate-700 dark:text-slate-300">
-                    <span className="truncate max-w-[150px]">{p.razorpayOrderId}</span>
+                    <span className="max-w-[150px] truncate">
+                      {p.razorpayOrderId}
+                    </span>
                     <button
                       type="button"
-                      onClick={() => copyToClipboard(p.razorpayOrderId, "Order ID")}
-                      className="text-slate-400 hover:text-slate-700 cursor-pointer"
+                      onClick={() =>
+                        copyToClipboard(p.razorpayOrderId, "Order ID")
+                      }
+                      className="cursor-pointer text-slate-400 hover:text-slate-700"
                     >
                       <Copy className="h-3 w-3" />
                     </button>
@@ -474,26 +504,32 @@ export function AdminPaymentsClient({
                   <div className="flex items-center justify-between">
                     <span className="text-slate-400">Payment:</span>
                     <div className="flex items-center gap-1.5 font-semibold text-slate-700 dark:text-slate-300">
-                      <span className="truncate max-w-[150px]">{p.razorpayPaymentId}</span>
+                      <span className="max-w-[150px] truncate">
+                        {p.razorpayPaymentId}
+                      </span>
                       <button
                         type="button"
-                        onClick={() => copyToClipboard(p.razorpayPaymentId!, "Payment ID")}
-                        className="text-slate-400 hover:text-slate-700 cursor-pointer"
+                        onClick={() =>
+                          copyToClipboard(p.razorpayPaymentId!, "Payment ID")
+                        }
+                        className="cursor-pointer text-slate-400 hover:text-slate-700"
                       >
                         <Copy className="h-3 w-3" />
                       </button>
                     </div>
                   </div>
                 )}
-                <div className="flex items-center justify-between pt-1 border-t border-slate-200/50 dark:border-slate-800/50 text-[10px] font-sans">
+                <div className="flex items-center justify-between border-t border-slate-200/50 pt-1 font-sans text-[10px] dark:border-slate-800/50">
                   <span className="text-slate-400">Date:</span>
-                  <span><FormattedDate date={p.createdAt} includeTime /></span>
+                  <span>
+                    <FormattedDate date={p.createdAt} includeTime />
+                  </span>
                 </div>
               </div>
             </div>
 
             {/* Actions */}
-            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2">
+            <div className="flex items-center justify-end gap-2 border-t border-slate-100 pt-2 dark:border-slate-800">
               <AdminPaymentLedgerSheet payment={p} />
               <AdminRefundDialog payment={p} />
             </div>

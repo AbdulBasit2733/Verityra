@@ -1,5 +1,5 @@
-import { unstable_cache, revalidatePath, revalidateTag } from 'next/cache'
-import { getLeaderboardAction } from '@/actions/leaderboard-actions'
+import { unstable_cache, revalidatePath, revalidateTag } from "next/cache"
+import { getLeaderboardAction } from "@/actions/leaderboard-actions"
 
 /**
  * Caching Layer for Performance Optimization
@@ -15,10 +15,10 @@ export const getCachedLeaderboard = unstable_cache(
   async (testSeriesId?: string) => {
     return getLeaderboardAction(testSeriesId)
   },
-  ['leaderboard'],
+  ["leaderboard"],
   {
     revalidate: 300, // 5 minutes TTL
-    tags: ['leaderboard'],
+    tags: ["leaderboard"],
   }
 )
 
@@ -28,11 +28,11 @@ export const getCachedLeaderboard = unstable_cache(
  */
 export function invalidateLeaderboardCache() {
   try {
-    revalidateTag('leaderboard', 'default')
-    revalidatePath('/leaderboard', 'page')
-    revalidatePath('/', 'page')
+    revalidateTag("leaderboard", "default")
+    revalidatePath("/leaderboard", "page")
+    revalidatePath("/", "page")
   } catch (error) {
-    console.warn('[Cache] revalidate called from invalid context:', error)
+    console.warn("[Cache] revalidate called from invalid context:", error)
   }
 }
 
@@ -42,12 +42,12 @@ export function invalidateLeaderboardCache() {
  */
 export function invalidateTestCatalogCache() {
   try {
-    revalidateTag('test-series', 'default')
-    revalidatePath('/tests', 'page')
-    revalidatePath('/', 'page')
-    revalidatePath('/admin/test-series', 'page')
+    revalidateTag("test-series", "default")
+    revalidatePath("/tests", "page")
+    revalidatePath("/", "page")
+    revalidatePath("/admin/test-series", "page")
   } catch (error) {
-    console.warn('[Cache] revalidate called from invalid context:', error)
+    console.warn("[Cache] revalidate called from invalid context:", error)
   }
 }
 
@@ -56,14 +56,14 @@ export function invalidateTestCatalogCache() {
  */
 export function invalidateAllCaches() {
   try {
-    revalidateTag('leaderboard', 'default')
-    revalidateTag('test-series', 'default')
-    revalidatePath('/leaderboard', 'page')
-    revalidatePath('/tests', 'page')
-    revalidatePath('/', 'page')
-    revalidatePath('/admin', 'layout')
-    revalidatePath('/student', 'layout')
+    revalidateTag("leaderboard", "default")
+    revalidateTag("test-series", "default")
+    revalidatePath("/leaderboard", "page")
+    revalidatePath("/tests", "page")
+    revalidatePath("/", "page")
+    revalidatePath("/admin", "layout")
+    revalidatePath("/student", "layout")
   } catch (error) {
-    console.warn('[Cache] revalidate called from invalid context:', error)
+    console.warn("[Cache] revalidate called from invalid context:", error)
   }
 }

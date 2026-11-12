@@ -25,8 +25,8 @@ export default function AdminSubmissionsLoading() {
       </div>
 
       {/* Submissions table skeleton */}
-      <div className="rounded-xl border border-border/80 bg-card overflow-hidden">
-        <div className="h-12 border-b border-border bg-slate-50/80 px-6 flex items-center justify-between">
+      <div className="overflow-hidden rounded-xl border border-border/80 bg-card">
+        <div className="flex h-12 items-center justify-between border-b border-border bg-slate-50/80 px-6">
           <Skeleton className="h-4 w-32" />
           <Skeleton className="h-4 w-24" />
           <Skeleton className="h-4 w-24" />
@@ -34,7 +34,10 @@ export default function AdminSubmissionsLoading() {
         </div>
         <div className="divide-y divide-border/60">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="px-6 py-4 flex items-center justify-between">
+            <div
+              key={i}
+              className="flex items-center justify-between px-6 py-4"
+            >
               <div className="space-y-1">
                 <Skeleton className="h-4 w-44" />
                 <Skeleton className="h-3 w-32" />

@@ -25,10 +25,14 @@ export interface EvaluationEmailPayload {
   requiresReview?: boolean
 }
 
-export async function sendEvaluationReadyEmail(payload: EvaluationEmailPayload): Promise<boolean> {
+export async function sendEvaluationReadyEmail(
+  payload: EvaluationEmailPayload
+): Promise<boolean> {
   const resend = getResend()
   if (!resend) {
-    console.log(`[Worker:Email] RESEND_API_KEY not configured. Skipping email to ${payload.to}`)
+    console.log(
+      `[Worker:Email] RESEND_API_KEY not configured. Skipping email to ${payload.to}`
+    )
     return false
   }
 
@@ -57,7 +61,7 @@ export async function sendEvaluationReadyEmail(payload: EvaluationEmailPayload):
               </div>
               <div style="font-size: 14px; font-weight: 700; color: #059669; margin-top: 4px;">${payload.percentage}% Marks</div>
             </div>
-            ${payload.requiresReview ? '<p style="font-size: 12px; color: #D97706; background-color: #FFFBEB; padding: 10px; border-radius: 6px; border: 1px solid #FDE68A;">Notice: Portions of your script were flagged for moderator verification.</p>' : ''}
+            ${payload.requiresReview ? '<p style="font-size: 12px; color: #D97706; background-color: #FFFBEB; padding: 10px; border-radius: 6px; border: 1px solid #FDE68A;">Notice: Portions of your script were flagged for moderator verification.</p>' : ""}
             <div style="text-align: center; margin: 28px 0 16px;">
               <a href="${scorecardUrl}" style="background-color: #2A6AED; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px; display: inline-block;">View Detailed Scorecard</a>
             </div>
@@ -72,7 +76,9 @@ export async function sendEvaluationReadyEmail(payload: EvaluationEmailPayload):
       return false
     }
 
-    console.log(`[Worker:Email] Evaluation scorecard email sent to ${payload.to}`)
+    console.log(
+      `[Worker:Email] Evaluation scorecard email sent to ${payload.to}`
+    )
     return true
   } catch (err) {
     console.error("[Worker:Email] Failed to send email:", err)

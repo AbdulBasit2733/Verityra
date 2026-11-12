@@ -4,7 +4,10 @@ import { NextRequest } from "next/server"
 
 export const PRODUCTION_DEFAULT_ORIGIN = "https://verityra-fr.vercel.app"
 
-export function isTrustedHost(host: string, env: Partial<NodeJS.ProcessEnv> = process.env): boolean {
+export function isTrustedHost(
+  host: string,
+  env: Partial<NodeJS.ProcessEnv> = process.env
+): boolean {
   if (!host || /[@/\\?#\s]/.test(host)) return false
   const cleanHost = host.toLowerCase().split(":")[0]
 
@@ -23,7 +26,9 @@ export function isTrustedHost(host: string, env: Partial<NodeJS.ProcessEnv> = pr
 
   for (const origin of trustedOrigins) {
     try {
-      const url = origin?.startsWith("http") ? new URL(origin!) : new URL(`https://${origin}`)
+      const url = origin?.startsWith("http")
+        ? new URL(origin!)
+        : new URL(`https://${origin}`)
       if (url.hostname.toLowerCase() === cleanHost) return true
     } catch {}
   }
@@ -47,14 +52,19 @@ export function resolveEffectiveOrigin(
   env: Partial<NodeJS.ProcessEnv> = process.env
 ): string {
   const host = reqHost?.trim()
-  const isLoopback = Boolean(host && (host.includes("localhost") || host.includes("127.0.0.1")))
+  const isLoopback = Boolean(
+    host && (host.includes("localhost") || host.includes("127.0.0.1"))
+  )
   const proto = reqProto?.trim() || (isLoopback ? "http" : "https")
 
   if (host && isTrustedHost(host, env)) {
     return `${proto}://${host}`
   }
 
-  if (env.NEXT_PUBLIC_APP_URL && !env.NEXT_PUBLIC_APP_URL.includes("localhost")) {
+  if (
+    env.NEXT_PUBLIC_APP_URL &&
+    !env.NEXT_PUBLIC_APP_URL.includes("localhost")
+  ) {
     return env.NEXT_PUBLIC_APP_URL.replace(/\/+$/, "")
   }
 
@@ -75,8 +85,11 @@ export function resolveEffectiveOrigin(
 
 export function ensureProductionNextAuthUrl(req: NextRequest) {
   const host = req.headers.get("x-forwarded-host") || req.headers.get("host")
-  const isLoopback = Boolean(host && (host.includes("localhost") || host.includes("127.0.0.1")))
-  const proto = req.headers.get("x-forwarded-proto") || (isLoopback ? "http" : "https")
+  const isLoopback = Boolean(
+    host && (host.includes("localhost") || host.includes("127.0.0.1"))
+  )
+  const proto =
+    req.headers.get("x-forwarded-proto") || (isLoopback ? "http" : "https")
   const effectiveOrigin = resolveEffectiveOrigin(host, proto, process.env)
 
   // In production or when the incoming host is non-localhost, update NEXTAUTH_URL

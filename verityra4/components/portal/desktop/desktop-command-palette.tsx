@@ -69,7 +69,14 @@ const adminCommands: NavCommand[] = [
     label: "Question Papers Library",
     href: "/admin/question-papers",
     icon: FileText,
-    keywords: ["papers", "question papers", "upload", "download", "library", "curriculum"],
+    keywords: [
+      "papers",
+      "question papers",
+      "upload",
+      "download",
+      "library",
+      "curriculum",
+    ],
     category: "Navigation",
   },
   {
@@ -168,7 +175,11 @@ const studentCommands: NavCommand[] = [
   },
 ]
 
-export function DesktopCommandPalette({ open, onOpenChange, role }: CommandPaletteProps) {
+export function DesktopCommandPalette({
+  open,
+  onOpenChange,
+  role,
+}: CommandPaletteProps) {
   const router = useRouter()
   const [searchQuery, setSearchQuery] = React.useState("")
 
@@ -181,7 +192,9 @@ export function DesktopCommandPalette({ open, onOpenChange, role }: CommandPalet
     const query = searchQuery.toLowerCase()
     return commands.filter((cmd) => {
       const labelMatch = cmd.label.toLowerCase().includes(query)
-      const keywordMatch = cmd.keywords?.some((kw) => kw.toLowerCase().includes(query))
+      const keywordMatch = cmd.keywords?.some((kw) =>
+        kw.toLowerCase().includes(query)
+      )
       return labelMatch || keywordMatch
     })
   }, [commands, searchQuery])
@@ -229,7 +242,7 @@ export function DesktopCommandPalette({ open, onOpenChange, role }: CommandPalet
             onValueChange={setSearchQuery}
             className="flex h-12 w-full rounded-lg bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
           />
-          <kbd className="pointer-events-none ml-auto hidden h-6 select-none items-center gap-1 rounded border border-border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
+          <kbd className="pointer-events-none ml-auto hidden h-6 items-center gap-1 rounded border border-border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 select-none sm:flex">
             ESC
           </kbd>
         </div>
@@ -249,13 +262,15 @@ export function DesktopCommandPalette({ open, onOpenChange, role }: CommandPalet
                       key={command.href}
                       value={command.label}
                       onSelect={() => handleSelect(command.href)}
-                      className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm cursor-pointer aria-selected:bg-accent aria-selected:text-accent-foreground"
+                      className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm aria-selected:bg-accent aria-selected:text-accent-foreground"
                     >
                       <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
                         <Icon className="h-4 w-4 text-muted-foreground" />
                       </div>
                       <div className="flex-1">
-                        <p className="font-semibold text-foreground">{command.label}</p>
+                        <p className="font-semibold text-foreground">
+                          {command.label}
+                        </p>
                         {command.keywords && (
                           <p className="text-xs text-muted-foreground">
                             {command.keywords.slice(0, 3).join(" · ")}
@@ -272,10 +287,12 @@ export function DesktopCommandPalette({ open, onOpenChange, role }: CommandPalet
         </CommandList>
 
         {/* Footer hint */}
-        <div className="border-t border-border px-4 py-3 text-xs text-muted-foreground flex items-center justify-between">
+        <div className="flex items-center justify-between border-t border-border px-4 py-3 text-xs text-muted-foreground">
           <span>Navigate with arrow keys</span>
           <span className="flex items-center gap-2">
-            <kbd className="px-1.5 py-0.5 rounded bg-muted border border-border font-mono">↵</kbd>
+            <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono">
+              ↵
+            </kbd>
             to select
           </span>
         </div>

@@ -37,7 +37,10 @@ export async function POST(req: Request) {
     if (existing) {
       // Avoid leaking email enumeration while preventing duplicate registrations
       return NextResponse.json(
-        { error: "An account with this email address already exists. Please sign in." },
+        {
+          error:
+            "An account with this email address already exists. Please sign in.",
+        },
         { status: 409 }
       )
     }
@@ -68,7 +71,10 @@ export async function POST(req: Request) {
 
     try {
       const rawToken = crypto.randomBytes(32).toString("hex")
-      const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex")
+      const tokenHash = crypto
+        .createHash("sha256")
+        .update(rawToken)
+        .digest("hex")
       const expires = new Date(Date.now() + 24 * 60 * 60 * 1000)
 
       await prisma.verificationToken.deleteMany({
@@ -91,10 +97,16 @@ export async function POST(req: Request) {
       })
 
       if (!dispatch.success) {
-        console.error("[Register API] sendVerificationEmail unsuccessful:", dispatch.error)
+        console.error(
+          "[Register API] sendVerificationEmail unsuccessful:",
+          dispatch.error
+        )
       }
     } catch (verifyErr) {
-      console.error("[Register API] Failed to send verification email:", verifyErr)
+      console.error(
+        "[Register API] Failed to send verification email:",
+        verifyErr
+      )
     }
 
     return NextResponse.json(
@@ -108,7 +120,10 @@ export async function POST(req: Request) {
   } catch (err: unknown) {
     console.error("Registration error:", err)
     return NextResponse.json(
-      { error: "An unexpected error occurred during registration. Please try again later." },
+      {
+        error:
+          "An unexpected error occurred during registration. Please try again later.",
+      },
       { status: 500 }
     )
   }

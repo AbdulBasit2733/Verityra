@@ -165,7 +165,8 @@ export default async function StudentTestWorkspacePage({
             id: "demo-sub-1",
             attemptNumber: 1,
             status: "COMPLETED",
-            fileUrl: "/api/files/download?file=submissions/demo/sample-attempt.pdf",
+            fileUrl:
+              "/api/files/download?file=submissions/demo/sample-attempt.pdf",
             submittedAt: new Date(Date.now() - 3600000 * 5),
             evaluation: {
               id: "eval-1",
@@ -182,8 +183,10 @@ export default async function StudentTestWorkspacePage({
                   questionNumber: "Q1",
                   maxMarks: 10,
                   marksAwarded: 7.5,
-                  feedback: "Strong historical framing and accurate chronology.",
-                  missingConcepts: "Could cite the specific rock edict inscriptions.",
+                  feedback:
+                    "Strong historical framing and accurate chronology.",
+                  missingConcepts:
+                    "Could cite the specific rock edict inscriptions.",
                   isLegible: true,
                 },
                 {
@@ -191,8 +194,10 @@ export default async function StudentTestWorkspacePage({
                   questionNumber: "Q2",
                   maxMarks: 15,
                   marksAwarded: 11.0,
-                  feedback: "Clear geographical analysis with neat climatic flow diagram.",
-                  missingConcepts: "Omitted microclimatic impact on coastal plains.",
+                  feedback:
+                    "Clear geographical analysis with neat climatic flow diagram.",
+                  missingConcepts:
+                    "Omitted microclimatic impact on coastal plains.",
                   isLegible: true,
                 },
                 {
@@ -200,8 +205,10 @@ export default async function StudentTestWorkspacePage({
                   questionNumber: "Q3",
                   maxMarks: 15,
                   marksAwarded: 10.5,
-                  feedback: "Well-structured arguments regarding urban demographic pressures.",
-                  missingConcepts: "Could propose actionable civic governance interventions.",
+                  feedback:
+                    "Well-structured arguments regarding urban demographic pressures.",
+                  missingConcepts:
+                    "Could propose actionable civic governance interventions.",
                   isLegible: true,
                 },
               ],
@@ -247,7 +254,8 @@ export default async function StudentTestWorkspacePage({
           })),
         }
       : null,
-    evaluationRuns: sub.evaluation ? (sub.evaluationRuns || []).map((run: any) => ({
+    evaluationRuns: sub.evaluation
+      ? (sub.evaluationRuns || []).map((run: any) => ({
           id: run.id,
           runNumber: run.runNumber,
           trigger: run.trigger,
@@ -266,7 +274,8 @@ export default async function StudentTestWorkspacePage({
             improvementAdvice: q.improvementAdvice,
             isLegible: q.isLegible !== false,
           })),
-    })) : [],
+        }))
+      : [],
   }))
 
   // Note: Only studentInstructions are passed — privateEvaluationInstructions are never projected to student views.

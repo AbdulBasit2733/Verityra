@@ -26,7 +26,10 @@ import {
   ExternalLink,
   BookOpen,
 } from "lucide-react"
-import { updateAdminProfileAction, changePasswordAction } from "@/actions/auth-actions"
+import {
+  updateAdminProfileAction,
+  changePasswordAction,
+} from "@/actions/auth-actions"
 import { PageHeader } from "@/components/ui/page-header"
 
 interface AdminProfileProps {
@@ -59,13 +62,14 @@ export function AdminProfileClient({ initialData }: AdminProfileProps) {
 
   const displayName = name || initialData.name || "Administrator"
   const displayEmail = initialData.email || "admin@verityra.com"
-  const initials = displayName
-    .split(" ")
-    .map((p) => p[0])
-    .filter(Boolean)
-    .join("")
-    .slice(0, 2)
-    .toUpperCase() || "AD"
+  const initials =
+    displayName
+      .split(" ")
+      .map((p) => p[0])
+      .filter(Boolean)
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "AD"
 
   const formattedJoinDate = initialData.createdAt
     ? new Date(initialData.createdAt).toLocaleDateString("en-US", {
@@ -107,13 +111,15 @@ export function AdminProfileClient({ initialData }: AdminProfileProps) {
       }
 
       toast.success("Administrator profile updated", {
-        description: "Your administrative details and directory identity have been saved.",
+        description:
+          "Your administrative details and directory identity have been saved.",
       })
       setSavingProfile(false)
     } catch {
       showError({
         title: "Unexpected System Error",
-        message: "An unexpected error occurred while saving your admin profile.",
+        message:
+          "An unexpected error occurred while saving your admin profile.",
         code: "SYS_ERR",
       })
       setSavingProfile(false)
@@ -163,7 +169,8 @@ export function AdminProfileClient({ initialData }: AdminProfileProps) {
       }
 
       toast.success("Credentials updated successfully", {
-        description: result.message || "Your new administrative password is now active.",
+        description:
+          result.message || "Your new administrative password is now active.",
       })
       setCurrentPassword("")
       setNewPassword("")
@@ -172,7 +179,8 @@ export function AdminProfileClient({ initialData }: AdminProfileProps) {
     } catch {
       showError({
         title: "Unexpected Security Error",
-        message: "An unexpected error occurred while updating your administrator password.",
+        message:
+          "An unexpected error occurred while updating your administrator password.",
         code: "SYS_ERR",
       })
       setSavingPassword(false)
@@ -180,7 +188,7 @@ export function AdminProfileClient({ initialData }: AdminProfileProps) {
   }
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="max-w-4xl space-y-6">
       {/* Page Header */}
       <PageHeader
         icon={User}
@@ -192,7 +200,7 @@ export function AdminProfileClient({ initialData }: AdminProfileProps) {
           <Button
             variant="outline"
             size="sm"
-            className="h-10 px-3.5 rounded-xl border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-2xs"
+            className="h-10 rounded-xl border-slate-200 px-3.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800"
           >
             <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
             Back to Admin Overview
@@ -202,21 +210,35 @@ export function AdminProfileClient({ initialData }: AdminProfileProps) {
 
       {/* Tabs Interface */}
       <Tabs defaultValue="profile" className="w-full space-y-6">
-        <TabsList variant="line" className="border-b border-slate-200/80 w-full justify-start gap-4 sm:gap-8 pb-0">
-          <TabsTrigger value="profile" className="text-xs sm:text-sm font-semibold pb-3 rounded-none border-b-2 border-transparent data-[state=active]:border-[#2A6AED] data-[state=active]:text-[#2A6AED]">
-            <User className="h-4 w-4 mr-1.5" />
+        <TabsList
+          variant="line"
+          className="w-full justify-start gap-4 border-b border-slate-200/80 pb-0 sm:gap-8"
+        >
+          <TabsTrigger
+            value="profile"
+            className="rounded-none border-b-2 border-transparent pb-3 text-xs font-semibold data-[state=active]:border-[#2A6AED] data-[state=active]:text-[#2A6AED] sm:text-sm"
+          >
+            <User className="mr-1.5 h-4 w-4" />
             <span className="sm:hidden">Profile</span>
             <span className="hidden sm:inline">Administrator Profile</span>
           </TabsTrigger>
-          <TabsTrigger value="security" className="text-xs sm:text-sm font-semibold pb-3 rounded-none border-b-2 border-transparent data-[state=active]:border-[#2A6AED] data-[state=active]:text-[#2A6AED]">
-            <KeyRound className="h-4 w-4 mr-1.5" />
+          <TabsTrigger
+            value="security"
+            className="rounded-none border-b-2 border-transparent pb-3 text-xs font-semibold data-[state=active]:border-[#2A6AED] data-[state=active]:text-[#2A6AED] sm:text-sm"
+          >
+            <KeyRound className="mr-1.5 h-4 w-4" />
             <span className="sm:hidden">Security</span>
             <span className="hidden sm:inline">Security & Password</span>
           </TabsTrigger>
-          <TabsTrigger value="protocols" className="text-xs sm:text-sm font-semibold pb-3 rounded-none border-b-2 border-transparent data-[state=active]:border-[#2A6AED] data-[state=active]:text-[#2A6AED]">
-            <ShieldAlert className="h-4 w-4 mr-1.5" />
+          <TabsTrigger
+            value="protocols"
+            className="rounded-none border-b-2 border-transparent pb-3 text-xs font-semibold data-[state=active]:border-[#2A6AED] data-[state=active]:text-[#2A6AED] sm:text-sm"
+          >
+            <ShieldAlert className="mr-1.5 h-4 w-4" />
             <span className="sm:hidden">Governance</span>
-            <span className="hidden sm:inline">Platform Invariants & Governance</span>
+            <span className="hidden sm:inline">
+              Platform Invariants & Governance
+            </span>
           </TabsTrigger>
         </TabsList>
 
@@ -224,17 +246,21 @@ export function AdminProfileClient({ initialData }: AdminProfileProps) {
         <TabsContent value="profile" className="space-y-6 pt-2">
           <form onSubmit={handleProfileSubmit} className="space-y-6">
             <div className="space-y-1">
-              <h3 className="text-sm sm:text-base font-bold text-[#0F172A]">
+              <h3 className="text-sm font-bold text-[#0F172A] sm:text-base">
                 Administrative Identity & Office
               </h3>
               <p className="text-xs text-[#64748B]">
-                Update your administrative display name and office designation. Changes are attached to all audit log records.
+                Update your administrative display name and office designation.
+                Changes are attached to all audit log records.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
               <div className="space-y-1.5">
-                <Label htmlFor="adminName" className="text-xs font-bold text-[#0F172A]">
+                <Label
+                  htmlFor="adminName"
+                  className="text-xs font-bold text-[#0F172A]"
+                >
                   Administrator Full Name
                 </Label>
                 <Input
@@ -248,31 +274,40 @@ export function AdminProfileClient({ initialData }: AdminProfileProps) {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="adminEmail" className="text-xs font-bold text-[#0F172A]">
+                <Label
+                  htmlFor="adminEmail"
+                  className="text-xs font-bold text-[#0F172A]"
+                >
                   Official Email Address (Read-only)
                 </Label>
                 <Input
                   id="adminEmail"
                   disabled
                   value={displayEmail}
-                  className="h-10 rounded-lg border-slate-200 bg-slate-50 text-xs sm:text-sm text-slate-500 cursor-not-allowed"
+                  className="h-10 cursor-not-allowed rounded-lg border-slate-200 bg-slate-50 text-xs text-slate-500 sm:text-sm"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="adminRole" className="text-xs font-bold text-[#0F172A]">
+                <Label
+                  htmlFor="adminRole"
+                  className="text-xs font-bold text-[#0F172A]"
+                >
                   System Role & Privileges
                 </Label>
                 <Input
                   id="adminRole"
                   disabled
                   value="Role.ADMIN — Full Governance Authority"
-                  className="h-10 rounded-lg border-slate-200 bg-slate-50 text-xs sm:text-sm text-slate-500 cursor-not-allowed"
+                  className="h-10 cursor-not-allowed rounded-lg border-slate-200 bg-slate-50 text-xs text-slate-500 sm:text-sm"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="adminPhone" className="text-xs font-bold text-[#0F172A]">
+                <Label
+                  htmlFor="adminPhone"
+                  className="text-xs font-bold text-[#0F172A]"
+                >
                   Emergency Escalation Contact (Optional)
                 </Label>
                 <Input
@@ -286,7 +321,10 @@ export function AdminProfileClient({ initialData }: AdminProfileProps) {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="adminBio" className="text-xs font-bold text-[#0F172A]">
+              <Label
+                htmlFor="adminBio"
+                className="text-xs font-bold text-[#0F172A]"
+              >
                 Office Designation & Subjective Expertise
               </Label>
               <Textarea
@@ -301,22 +339,23 @@ export function AdminProfileClient({ initialData }: AdminProfileProps) {
 
             <Separator className="bg-slate-200" />
 
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-2 text-xs text-[#64748B]">
-                <ShieldCheck className="h-4 w-4 text-blue-600 shrink-0" />
+                <ShieldCheck className="h-4 w-4 shrink-0 text-blue-600" />
                 <span>
-                  All score adjustments and override actions are logged to the immutable PostgreSQL audit trail.
+                  All score adjustments and override actions are logged to the
+                  immutable PostgreSQL audit trail.
                 </span>
               </div>
               <Button
                 type="submit"
                 disabled={savingProfile}
-                className="w-full sm:w-auto bg-[#2A6AED] hover:bg-[#1E55C7] text-white font-semibold text-xs sm:text-sm h-10 px-6 rounded-lg shadow-xs"
+                className="h-10 w-full rounded-lg bg-[#2A6AED] px-6 text-xs font-semibold text-white shadow-xs hover:bg-[#1E55C7] sm:w-auto sm:text-sm"
               >
                 {savingProfile ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
-                  <User className="h-4 w-4 mr-2" />
+                  <User className="mr-2 h-4 w-4" />
                 )}
                 Save Admin Profile
               </Button>
@@ -326,19 +365,23 @@ export function AdminProfileClient({ initialData }: AdminProfileProps) {
 
         {/* Tab 2: Security & Password Form */}
         <TabsContent value="security" className="space-y-6 pt-2">
-          <form onSubmit={handlePasswordSubmit} className="space-y-6 max-w-xl">
+          <form onSubmit={handlePasswordSubmit} className="max-w-xl space-y-6">
             <div className="space-y-1">
-              <h3 className="text-sm sm:text-base font-bold text-[#0F172A]">
+              <h3 className="text-sm font-bold text-[#0F172A] sm:text-base">
                 Change Administrator Password
               </h3>
               <p className="text-xs text-[#64748B]">
-                Administrator accounts require high-entropy passwords to safeguard examination confidentiality.
+                Administrator accounts require high-entropy passwords to
+                safeguard examination confidentiality.
               </p>
             </div>
 
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="adminCurrentPassword" className="text-xs font-bold text-[#0F172A]">
+                <Label
+                  htmlFor="adminCurrentPassword"
+                  className="text-xs font-bold text-[#0F172A]"
+                >
                   Current Administrator Password
                 </Label>
                 <Input
@@ -353,7 +396,10 @@ export function AdminProfileClient({ initialData }: AdminProfileProps) {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="adminNewPassword" className="text-xs font-bold text-[#0F172A]">
+                <Label
+                  htmlFor="adminNewPassword"
+                  className="text-xs font-bold text-[#0F172A]"
+                >
                   New Administrator Password
                 </Label>
                 <Input
@@ -368,7 +414,10 @@ export function AdminProfileClient({ initialData }: AdminProfileProps) {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="adminConfirmPassword" className="text-xs font-bold text-[#0F172A]">
+                <Label
+                  htmlFor="adminConfirmPassword"
+                  className="text-xs font-bold text-[#0F172A]"
+                >
                   Confirm New Password
                 </Label>
                 <Input
@@ -384,25 +433,33 @@ export function AdminProfileClient({ initialData }: AdminProfileProps) {
             </div>
 
             {/* Password Requirement Indicators */}
-            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5 text-xs text-slate-600">
-              <p className="font-bold text-slate-800 text-[11px] uppercase tracking-wider">
+            <div className="space-y-1.5 rounded-xl border border-slate-200 bg-slate-50 p-3.5 text-xs text-slate-600">
+              <p className="text-[11px] font-bold tracking-wider text-slate-800 uppercase">
                 Password Security Criteria
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[11px]">
+              <div className="grid grid-cols-1 gap-1.5 text-[11px] sm:grid-cols-2">
                 <span className="flex items-center gap-1.5">
-                  <CheckCircle2 className={`h-3 w-3 ${newPassword.length >= 8 ? "text-emerald-600" : "text-slate-400"}`} />
+                  <CheckCircle2
+                    className={`h-3 w-3 ${newPassword.length >= 8 ? "text-emerald-600" : "text-slate-400"}`}
+                  />
                   Minimum 8 characters
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <CheckCircle2 className={`h-3 w-3 ${/[A-Z]/.test(newPassword) ? "text-emerald-600" : "text-slate-400"}`} />
+                  <CheckCircle2
+                    className={`h-3 w-3 ${/[A-Z]/.test(newPassword) ? "text-emerald-600" : "text-slate-400"}`}
+                  />
                   At least 1 uppercase letter
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <CheckCircle2 className={`h-3 w-3 ${/[0-9]/.test(newPassword) ? "text-emerald-600" : "text-slate-400"}`} />
+                  <CheckCircle2
+                    className={`h-3 w-3 ${/[0-9]/.test(newPassword) ? "text-emerald-600" : "text-slate-400"}`}
+                  />
                   At least 1 number
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <CheckCircle2 className={`h-3 w-3 ${/[^A-Za-z0-9]/.test(newPassword) ? "text-emerald-600" : "text-slate-400"}`} />
+                  <CheckCircle2
+                    className={`h-3 w-3 ${/[^A-Za-z0-9]/.test(newPassword) ? "text-emerald-600" : "text-slate-400"}`}
+                  />
                   At least 1 special character
                 </span>
               </div>
@@ -411,12 +468,12 @@ export function AdminProfileClient({ initialData }: AdminProfileProps) {
             <Button
               type="submit"
               disabled={savingPassword}
-              className="w-full sm:w-auto bg-[#2A6AED] hover:bg-[#1E55C7] text-white font-semibold text-xs sm:text-sm h-10 px-6 rounded-lg shadow-xs"
+              className="h-10 w-full rounded-lg bg-[#2A6AED] px-6 text-xs font-semibold text-white shadow-xs hover:bg-[#1E55C7] sm:w-auto sm:text-sm"
             >
               {savingPassword ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
-                <KeyRound className="h-4 w-4 mr-2" />
+                <KeyRound className="mr-2 h-4 w-4" />
               )}
               Update Administrator Credentials
             </Button>
@@ -426,72 +483,104 @@ export function AdminProfileClient({ initialData }: AdminProfileProps) {
         {/* Tab 3: Platform Governance & Invariants */}
         <TabsContent value="protocols" className="space-y-6 pt-2">
           <div className="space-y-1">
-            <h3 className="text-sm sm:text-base font-bold text-[#0F172A] flex items-center gap-2">
+            <h3 className="flex items-center gap-2 text-sm font-bold text-[#0F172A] sm:text-base">
               <ShieldAlert className="h-4 w-4 text-[#2A6AED]" />
               Core Platform Business Invariants
             </h3>
             <p className="text-xs text-[#64748B]">
-              Every administrative action is bound by Verityra&apos;s architectural and domain invariants.
+              Every administrative action is bound by Verityra&apos;s
+              architectural and domain invariants.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-1.5">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="space-y-1.5 rounded-xl border border-slate-200 bg-slate-50/50 p-4">
               <div className="flex items-center justify-between">
-                <span className="font-bold text-xs sm:text-sm text-slate-900">1. Strict Three-Attempt Limit</span>
-                <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px]">Active Invariant</Badge>
+                <span className="text-xs font-bold text-slate-900 sm:text-sm">
+                  1. Strict Three-Attempt Limit
+                </span>
+                <Badge className="border-emerald-200 bg-emerald-50 text-[10px] text-emerald-700">
+                  Active Invariant
+                </Badge>
               </div>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Protected by atomic database transactions and unique constraints. Overrides require audited justifications via the Candidate Management console.
+              <p className="text-xs leading-relaxed text-slate-600">
+                Protected by atomic database transactions and unique
+                constraints. Overrides require audited justifications via the
+                Candidate Management console.
               </p>
             </div>
 
-            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-1.5">
+            <div className="space-y-1.5 rounded-xl border border-slate-200 bg-slate-50/50 p-4">
               <div className="flex items-center justify-between">
-                <span className="font-bold text-xs sm:text-sm text-slate-900">2. Instruction Isolation</span>
-                <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px]">Strictly Guarded</Badge>
+                <span className="text-xs font-bold text-slate-900 sm:text-sm">
+                  2. Instruction Isolation
+                </span>
+                <Badge className="border-emerald-200 bg-emerald-50 text-[10px] text-emerald-700">
+                  Strictly Guarded
+                </Badge>
               </div>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Private evaluation rubrics and model answers are never serialized or returned in student-facing query projections.
+              <p className="text-xs leading-relaxed text-slate-600">
+                Private evaluation rubrics and model answers are never
+                serialized or returned in student-facing query projections.
               </p>
             </div>
 
-            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-1.5">
+            <div className="space-y-1.5 rounded-xl border border-slate-200 bg-slate-50/50 p-4">
               <div className="flex items-center justify-between">
-                <span className="font-bold text-xs sm:text-sm text-slate-900">3. Zero-AI Marketing Policy</span>
-                <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px]">Brand Rule</Badge>
+                <span className="text-xs font-bold text-slate-900 sm:text-sm">
+                  3. Zero-AI Marketing Policy
+                </span>
+                <Badge className="border-emerald-200 bg-emerald-50 text-[10px] text-emerald-700">
+                  Brand Rule
+                </Badge>
               </div>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Public materials strictly emphasize pen-and-paper stamina, margin alignment, and objective rubrics. Automated evaluation is purely an internal pipeline detail.
+              <p className="text-xs leading-relaxed text-slate-600">
+                Public materials strictly emphasize pen-and-paper stamina,
+                margin alignment, and objective rubrics. Automated evaluation is
+                purely an internal pipeline detail.
               </p>
             </div>
 
-            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-1.5">
+            <div className="space-y-1.5 rounded-xl border border-slate-200 bg-slate-50/50 p-4">
               <div className="flex items-center justify-between">
-                <span className="font-bold text-xs sm:text-sm text-slate-900">4. Immutable Audit Trail</span>
-                <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px]">Audited</Badge>
+                <span className="text-xs font-bold text-slate-900 sm:text-sm">
+                  4. Immutable Audit Trail
+                </span>
+                <Badge className="border-emerald-200 bg-emerald-50 text-[10px] text-emerald-700">
+                  Audited
+                </Badge>
               </div>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Every score adjustment, status change, and attempt override logs the administrator ID, timestamp, and previous-versus-new values.
+              <p className="text-xs leading-relaxed text-slate-600">
+                Every score adjustment, status change, and attempt override logs
+                the administrator ID, timestamp, and previous-versus-new values.
               </p>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-3 pt-2">
             <Link href="/admin/test-series">
-              <Button variant="outline" className="h-9 text-xs rounded-lg gap-1.5">
+              <Button
+                variant="outline"
+                className="h-9 gap-1.5 rounded-lg text-xs"
+              >
                 <BookOpen className="h-3.5 w-3.5" />
                 Manage Test Series
               </Button>
             </Link>
             <Link href="/admin/submissions">
-              <Button variant="outline" className="h-9 text-xs rounded-lg gap-1.5">
+              <Button
+                variant="outline"
+                className="h-9 gap-1.5 rounded-lg text-xs"
+              >
                 <FileCheck2 className="h-3.5 w-3.5" />
                 Review Submissions
               </Button>
             </Link>
             <Link href="/admin">
-              <Button variant="outline" className="h-9 text-xs rounded-lg gap-1.5">
+              <Button
+                variant="outline"
+                className="h-9 gap-1.5 rounded-lg text-xs"
+              >
                 <ExternalLink className="h-3.5 w-3.5" />
                 View Audit Trail
               </Button>

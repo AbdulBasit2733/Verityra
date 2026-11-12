@@ -11,6 +11,7 @@
     "start": "next start",
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
     "test": "tsx tests/run-all.ts",
     "test:unit": "tsx tests/run-all.ts",

@@ -1,7 +1,10 @@
 import { PaymentStatus } from "@prisma/client"
 import { requireStudent } from "@/lib/auth-guard"
 import { isDatabaseConnected, prisma } from "@/lib/prisma"
-import { StudentPurchaseRow, StudentPurchasesClient } from "@/components/student/purchases/student-purchases-client"
+import {
+  StudentPurchaseRow,
+  StudentPurchasesClient,
+} from "@/components/student/purchases/student-purchases-client"
 
 export const dynamic = "force-dynamic"
 
@@ -30,7 +33,9 @@ export default async function StudentPurchasesPage() {
       orderBy: { createdAt: "desc" },
     })
 
-    const testSeriesIds = Array.from(new Set(payments.map((p) => p.testSeriesId).filter(Boolean)))
+    const testSeriesIds = Array.from(
+      new Set(payments.map((p) => p.testSeriesId).filter(Boolean))
+    )
     const testSeriesRecords =
       testSeriesIds.length > 0
         ? await prisma.testSeries.findMany({
@@ -38,7 +43,9 @@ export default async function StudentPurchasesPage() {
             select: { id: true, title: true },
           })
         : []
-    const testSeriesTitleMap = new Map(testSeriesRecords.map((ts) => [ts.id, ts.title]))
+    const testSeriesTitleMap = new Map(
+      testSeriesRecords.map((ts) => [ts.id, ts.title])
+    )
 
     purchases = payments.map((payment) => ({
       id: payment.id,
@@ -55,7 +62,9 @@ export default async function StudentPurchasesPage() {
       razorpayOrderId: payment.razorpayOrderId,
       razorpayPaymentId: payment.razorpayPaymentId,
       createdAt: payment.createdAt.toISOString(),
-      hasAccess: payment.status === PaymentStatus.COMPLETED && Boolean(payment.registrationId),
+      hasAccess:
+        payment.status === PaymentStatus.COMPLETED &&
+        Boolean(payment.registrationId),
     }))
   }
 

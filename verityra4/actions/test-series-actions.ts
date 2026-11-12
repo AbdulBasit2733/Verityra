@@ -5,10 +5,18 @@ import { prisma, isDatabaseConnected } from "@/lib/prisma"
 import { uploadPrivateFile } from "@/lib/supabase"
 import { Role, TestSeriesStatus } from "@prisma/client"
 import { revalidatePath } from "next/cache"
-import { invalidateTestCatalogCache, invalidateLeaderboardCache } from "@/lib/cache"
+import {
+  invalidateTestCatalogCache,
+  invalidateLeaderboardCache,
+} from "@/lib/cache"
 import { ActionResult } from "./auth-actions"
 
-const DOCUMENT_MIME_TYPES = ["application/pdf", "image/jpeg", "image/png", "image/webp"]
+const DOCUMENT_MIME_TYPES = [
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+]
 const MAX_DOCUMENT_SIZE_BYTES = 25 * 1024 * 1024
 
 function documentValidationError(file: File): string | null {
@@ -50,28 +58,43 @@ export type CreateTestSeriesInput = {
 /**
  * Server Action: Create Test Series (ADMIN ONLY)
  */
-export async function createTestSeriesAction(input: CreateTestSeriesInput): Promise<ActionResult<{ id: string }>> {
+export async function createTestSeriesAction(
+  input: CreateTestSeriesInput
+): Promise<ActionResult<{ id: string }>> {
   const sessionUser = await getCurrentUser()
   if (!sessionUser || sessionUser.role !== Role.ADMIN) {
     return { success: false, error: "Unauthorized. Admin privileges required." }
   }
 
-  if (!input.title || !input.description || !input.studentInstructions || !input.privateEvaluationInstructions) {
-    return { success: false, error: "Please fill in all required fields including instructions." }
+  if (
+    !input.title ||
+    !input.description ||
+    !input.studentInstructions ||
+    !input.privateEvaluationInstructions
+  ) {
+    return {
+      success: false,
+      error: "Please fill in all required fields including instructions.",
+    }
   }
 
   const slug = `${slugify(input.title)}-${Date.now().toString(36)}`
   const priceInPaise = Math.round((input.price || 0) * 100)
-  const maxAttempts = input.maxAttempts && input.maxAttempts > 0 ? input.maxAttempts : 3
+  const maxAttempts =
+    input.maxAttempts && input.maxAttempts > 0 ? input.maxAttempts : 3
 
   const dbConnected = await isDatabaseConnected()
   if (!dbConnected) {
     if (process.env.NODE_ENV === "production") {
-      return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+      return {
+        success: false,
+        error: "Database temporarily unavailable. Please try again shortly.",
+      }
     }
     return {
       success: true,
-      message: "Test series created (Dev Mode). Connect PostgreSQL to persist permanently.",
+      message:
+        "Test series created (Dev Mode). Connect PostgreSQL to persist permanently.",
       data: { id: "dev-test-series-" + Date.now() },
     }
   }
@@ -112,7 +135,11 @@ export async function createTestSeriesAction(input: CreateTestSeriesInput): Prom
   revalidatePath("/tests")
   invalidateTestCatalogCache()
 
-  return { success: true, message: "Test series created successfully.", data: { id: created.id } }
+  return {
+    success: true,
+    message: "Test series created successfully.",
+    data: { id: created.id },
+  }
 }
 
 /**
@@ -120,7 +147,10 @@ export async function createTestSeriesAction(input: CreateTestSeriesInput): Prom
  */
 export async function updateTestSeriesAction(
   id: string,
-  input: Partial<CreateTestSeriesInput> & { isPublished?: boolean; resultsPublished?: boolean }
+  input: Partial<CreateTestSeriesInput> & {
+    isPublished?: boolean
+    resultsPublished?: boolean
+  }
 ): Promise<ActionResult> {
   const sessionUser = await getCurrentUser()
   if (!sessionUser || sessionUser.role !== Role.ADMIN) {
@@ -130,13 +160,24 @@ export async function updateTestSeriesAction(
   const dbConnected = await isDatabaseConnected()
   if (!dbConnected) {
     if (process.env.NODE_ENV === "production") {
-      return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+      return {
+        success: false,
+        error: "Database temporarily unavailable. Please try again shortly.",
+      }
     }
     return { success: true, message: "Test series updated (Dev Mode)." }
   }
 
-  if (input.maxMarks !== undefined && (!Number.isFinite(input.maxMarks) || input.maxMarks <= 0 || input.maxMarks > 10000)) {
-    return { success: false, error: "Maximum marks must be between 1 and 10,000." }
+  if (
+    input.maxMarks !== undefined &&
+    (!Number.isFinite(input.maxMarks) ||
+      input.maxMarks <= 0 ||
+      input.maxMarks > 10000)
+  ) {
+    return {
+      success: false,
+      error: "Maximum marks must be between 1 and 10,000.",
+    }
   }
 
   const actor = await resolvePersistedAdminActor(sessionUser)
@@ -145,15 +186,23 @@ export async function updateTestSeriesAction(
   const dataToUpdate: Record<string, unknown> = {}
   if (input.title) dataToUpdate.title = input.title
   if (input.description) dataToUpdate.description = input.description
-  if (input.price !== undefined) dataToUpdate.price = Math.round(input.price * 100)
+  if (input.price !== undefined)
+    dataToUpdate.price = Math.round(input.price * 100)
   if (input.maxMarks !== undefined) dataToUpdate.maxMarks = input.maxMarks
-  if (input.maxAttempts !== undefined) dataToUpdate.maxAttempts = input.maxAttempts
-  if (input.durationMinutes !== undefined) dataToUpdate.durationMinutes = input.durationMinutes
-  if (input.studentInstructions) dataToUpdate.studentInstructions = input.studentInstructions
-  if (input.privateEvaluationInstructions) dataToUpdate.privateEvaluationInstructions = input.privateEvaluationInstructions
+  if (input.maxAttempts !== undefined)
+    dataToUpdate.maxAttempts = input.maxAttempts
+  if (input.durationMinutes !== undefined)
+    dataToUpdate.durationMinutes = input.durationMinutes
+  if (input.studentInstructions)
+    dataToUpdate.studentInstructions = input.studentInstructions
+  if (input.privateEvaluationInstructions)
+    dataToUpdate.privateEvaluationInstructions =
+      input.privateEvaluationInstructions
   if (input.status) dataToUpdate.status = input.status
-  if (input.isPublished !== undefined) dataToUpdate.isPublished = input.isPublished
-  if (input.resultsPublished !== undefined) dataToUpdate.resultsPublished = input.resultsPublished
+  if (input.isPublished !== undefined)
+    dataToUpdate.isPublished = input.isPublished
+  if (input.resultsPublished !== undefined)
+    dataToUpdate.resultsPublished = input.resultsPublished
   if (input.startDate) dataToUpdate.startDate = new Date(input.startDate)
   if (input.endDate) dataToUpdate.endDate = new Date(input.endDate)
 
@@ -183,7 +232,10 @@ export async function updateTestSeriesAction(
 /**
  * Server Action: Publish or Unpublish Test Series (ADMIN ONLY)
  */
-export async function togglePublishTestSeriesAction(id: string, publish: boolean): Promise<ActionResult> {
+export async function togglePublishTestSeriesAction(
+  id: string,
+  publish: boolean
+): Promise<ActionResult> {
   const sessionUser = await getCurrentUser()
   if (!sessionUser || sessionUser.role !== Role.ADMIN) {
     return { success: false, error: "Unauthorized. Admin privileges required." }
@@ -191,7 +243,10 @@ export async function togglePublishTestSeriesAction(id: string, publish: boolean
 
   const dbConnected = await isDatabaseConnected()
   if (!dbConnected && process.env.NODE_ENV === "production") {
-    return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+    return {
+      success: false,
+      error: "Database temporarily unavailable. Please try again shortly.",
+    }
   }
   if (dbConnected) {
     const actor = await resolvePersistedAdminActor(sessionUser)
@@ -219,13 +274,19 @@ export async function togglePublishTestSeriesAction(id: string, publish: boolean
   revalidatePath("/admin/test-series")
   revalidatePath("/tests")
   invalidateTestCatalogCache()
-  return { success: true, message: `Test series ${publish ? "published" : "unpublished"} successfully.` }
+  return {
+    success: true,
+    message: `Test series ${publish ? "published" : "unpublished"} successfully.`,
+  }
 }
 
 /**
  * Server Action: Toggle Results Publication (ADMIN ONLY)
  */
-export async function togglePublishResultsAction(testSeriesId: string, publish: boolean): Promise<ActionResult> {
+export async function togglePublishResultsAction(
+  testSeriesId: string,
+  publish: boolean
+): Promise<ActionResult> {
   const sessionUser = await getCurrentUser()
   if (!sessionUser || sessionUser.role !== Role.ADMIN) {
     return { success: false, error: "Unauthorized. Admin privileges required." }
@@ -233,7 +294,10 @@ export async function togglePublishResultsAction(testSeriesId: string, publish: 
 
   const dbConnected = await isDatabaseConnected()
   if (!dbConnected && process.env.NODE_ENV === "production") {
-    return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+    return {
+      success: false,
+      error: "Database temporarily unavailable. Please try again shortly.",
+    }
   }
   if (dbConnected) {
     const actor = await resolvePersistedAdminActor(sessionUser)
@@ -261,50 +325,73 @@ export async function togglePublishResultsAction(testSeriesId: string, publish: 
   invalidateLeaderboardCache()
   invalidateTestCatalogCache()
 
-  return { success: true, message: `Results ${publish ? "published to students and leaderboard" : "hidden"}.` }
+  return {
+    success: true,
+    message: `Results ${publish ? "published to students and leaderboard" : "hidden"}.`,
+  }
 }
 
 /**
  * Server Action: Upload Test Paper & Model Answer / Rubric (ADMIN ONLY)
  */
-export async function uploadTestPaperAction(formData: FormData): Promise<ActionResult> {
+export async function uploadTestPaperAction(
+  formData: FormData
+): Promise<ActionResult> {
   const sessionUser = await getCurrentUser()
   if (!sessionUser || sessionUser.role !== Role.ADMIN) {
     return { success: false, error: "Unauthorized. Admin privileges required." }
   }
 
   const testSeriesIdValue = formData.get("testSeriesId")
-  const testSeriesId = typeof testSeriesIdValue === "string" ? testSeriesIdValue : ""
+  const testSeriesId =
+    typeof testSeriesIdValue === "string" ? testSeriesIdValue : ""
   const title = (formData.get("title") as string) || "Main Question Paper"
   const rubricContent = (formData.get("rubricContent") as string) || ""
   const paperFileValue = formData.get("paperFile")
   const modelAnswerFileValue = formData.get("modelAnswerFile")
   const paperFile = paperFileValue instanceof File ? paperFileValue : null
-  const modelAnswerFile = modelAnswerFileValue instanceof File ? modelAnswerFileValue : null
+  const modelAnswerFile =
+    modelAnswerFileValue instanceof File ? modelAnswerFileValue : null
 
   if (!testSeriesId || !paperFile) {
-    return { success: false, error: "Question paper file and test series are required." }
+    return {
+      success: false,
+      error: "Question paper file and test series are required.",
+    }
   }
 
   const paperError = documentValidationError(paperFile)
-  const modelError = modelAnswerFile?.size ? documentValidationError(modelAnswerFile) : null
+  const modelError = modelAnswerFile?.size
+    ? documentValidationError(modelAnswerFile)
+    : null
   const parsedMaxMarks = Number(formData.get("maxMarks") || 100)
   if (paperError || modelError) {
-    return { success: false, error: paperError || modelError || "Invalid document." }
+    return {
+      success: false,
+      error: paperError || modelError || "Invalid document.",
+    }
   }
   if (!Number.isFinite(parsedMaxMarks) || parsedMaxMarks <= 0) {
     return { success: false, error: "Maximum marks must be a positive number." }
   }
 
   if (!(await isDatabaseConnected())) {
-    return { success: false, error: "Connect the database before uploading test documents." }
+    return {
+      success: false,
+      error: "Connect the database before uploading test documents.",
+    }
   }
 
   const actor = await resolvePersistedAdminActor(sessionUser)
   if (!actor.success) return { success: false, error: actor.error }
 
   try {
-    if (!(await prisma.testSeries.findUnique({ where: { id: testSeriesId }, select: { id: true } }))) {
+    if (
+      !(await prisma.testSeries.findUnique({
+        where: { id: testSeriesId },
+        select: { id: true },
+      }))
+    ) {
       return { success: false, error: "Test series not found." }
     }
 
@@ -365,43 +452,63 @@ export async function uploadTestPaperAction(formData: FormData): Promise<ActionR
     }
   } catch (error) {
     console.error("[TEST PAPER UPLOAD ERROR]", error)
-    return { success: false, error: "Question paper upload failed. Verify storage configuration and try again." }
+    return {
+      success: false,
+      error:
+        "Question paper upload failed. Verify storage configuration and try again.",
+    }
   }
 }
 
 /**
  * Server Action: Upload Answer Sheet Template (ADMIN ONLY)
  */
-export async function uploadAnswerSheetTemplateAction(formData: FormData): Promise<ActionResult> {
+export async function uploadAnswerSheetTemplateAction(
+  formData: FormData
+): Promise<ActionResult> {
   const sessionUser = await getCurrentUser()
   if (!sessionUser || sessionUser.role !== Role.ADMIN) {
     return { success: false, error: "Unauthorized. Admin privileges required." }
   }
 
   const testSeriesIdValue = formData.get("testSeriesId")
-  const testSeriesId = typeof testSeriesIdValue === "string" ? testSeriesIdValue : ""
-  const title = (formData.get("title") as string) || "Standard Answer Sheet Template"
+  const testSeriesId =
+    typeof testSeriesIdValue === "string" ? testSeriesIdValue : ""
+  const title =
+    (formData.get("title") as string) || "Standard Answer Sheet Template"
   const description = formData.get("description") as string
   const templateRequired = formData.get("templateRequired") === "true"
   const templateFileValue = formData.get("templateFile")
-  const templateFile = templateFileValue instanceof File ? templateFileValue : null
+  const templateFile =
+    templateFileValue instanceof File ? templateFileValue : null
 
   if (!testSeriesId || !templateFile) {
-    return { success: false, error: "Template file and test series ID are required." }
+    return {
+      success: false,
+      error: "Template file and test series ID are required.",
+    }
   }
 
   const fileError = documentValidationError(templateFile)
   if (fileError) return { success: false, error: fileError }
 
   if (!(await isDatabaseConnected())) {
-    return { success: false, error: "Connect the database before uploading test documents." }
+    return {
+      success: false,
+      error: "Connect the database before uploading test documents.",
+    }
   }
 
   const actor = await resolvePersistedAdminActor(sessionUser)
   if (!actor.success) return { success: false, error: actor.error }
 
   try {
-    if (!(await prisma.testSeries.findUnique({ where: { id: testSeriesId }, select: { id: true } }))) {
+    if (
+      !(await prisma.testSeries.findUnique({
+        where: { id: testSeriesId },
+        select: { id: true },
+      }))
+    ) {
       return { success: false, error: "Test series not found." }
     }
 
@@ -450,7 +557,11 @@ export async function uploadAnswerSheetTemplateAction(formData: FormData): Promi
     }
   } catch (error) {
     console.error("[ANSWER SHEET TEMPLATE UPLOAD ERROR]", error)
-    return { success: false, error: "Template upload failed. Verify storage configuration and try again." }
+    return {
+      success: false,
+      error:
+        "Template upload failed. Verify storage configuration and try again.",
+    }
   }
 }
 
@@ -500,7 +611,9 @@ export async function validateTestSeriesDeletionAction(
  * Server Action: Archive Test Series (Soft Delete)
  * Safer alternative to deletion - marks test series as ARCHIVED
  */
-export async function archiveTestSeriesAction(testSeriesId: string): Promise<ActionResult> {
+export async function archiveTestSeriesAction(
+  testSeriesId: string
+): Promise<ActionResult> {
   const sessionUser = await getCurrentUser()
   if (!sessionUser || sessionUser.role !== Role.ADMIN) {
     return { success: false, error: "Unauthorized. Admin privileges required." }

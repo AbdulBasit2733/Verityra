@@ -9,11 +9,7 @@ export default async function StudentLayout({
   const user = await requireStudent("/student/dashboard")
 
   return (
-    <PortalShell
-      role="STUDENT"
-      userName={user.name}
-      userEmail={user.email}
-    >
+    <PortalShell role="STUDENT" userName={user.name} userEmail={user.email}>
       {children}
     </PortalShell>
   )

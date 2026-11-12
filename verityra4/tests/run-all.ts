@@ -11,9 +11,13 @@ import { runStudentTests } from "./student-tests.test"
 import { runExamTimerTests } from "./exam-timer.test"
 import { TestResult } from "./test-utils"
 
-console.log("================================================================================")
+console.log(
+  "================================================================================"
+)
 console.log("                    VERITYRA MODULAR TEST RUNNER")
-console.log("================================================================================")
+console.log(
+  "================================================================================"
+)
 
 const startTime = Date.now()
 const results: TestResult[] = []
@@ -37,9 +41,13 @@ try {
 
 const elapsedMs = Date.now() - startTime
 
-console.log("\n================================================================================")
+console.log(
+  "\n================================================================================"
+)
 console.log("                           FINAL TEST EXECUTION SUMMARY")
-console.log("================================================================================")
+console.log(
+  "================================================================================"
+)
 
 let totalPassed = 0
 let totalFailed = 0
@@ -48,12 +56,20 @@ for (const res of results) {
   totalPassed += res.passed
   totalFailed += res.failed
   const statusIcon = res.failed === 0 ? "✓ PASS" : "✗ FAIL"
-  console.log(`[${statusIcon}] ${res.suiteName.padEnd(55)}: ${res.passed} passed, ${res.failed} failed`)
+  console.log(
+    `[${statusIcon}] ${res.suiteName.padEnd(55)}: ${res.passed} passed, ${res.failed} failed`
+  )
 }
 
-console.log("--------------------------------------------------------------------------------")
-console.log(`TOTAL TESTS: ${totalPassed + totalFailed} | PASSED: ${totalPassed} | FAILED: ${totalFailed} | DURATION: ${elapsedMs}ms`)
-console.log("================================================================================")
+console.log(
+  "--------------------------------------------------------------------------------"
+)
+console.log(
+  `TOTAL TESTS: ${totalPassed + totalFailed} | PASSED: ${totalPassed} | FAILED: ${totalFailed} | DURATION: ${elapsedMs}ms`
+)
+console.log(
+  "================================================================================"
+)
 
 if (totalFailed > 0) {
   console.error(`\nFAILED SUITES REPORT (${totalFailed} failures):`)

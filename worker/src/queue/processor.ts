@@ -1,9 +1,18 @@
 import { Worker, Job, Queue } from "bullmq"
 import { getRedisConnection, closeRedisConnection } from "./connection.js"
 import { prisma } from "../db/prisma.js"
-import { evaluateAnswerSheetWithGemini, getGeminiModelName } from "../ai/gemini-evaluator.js"
-import { persistEvaluationRun, failEvaluationRun } from "../db/evaluation-run-service.js"
-import { downloadPrivateFile, parsePrivateFileReference } from "../storage/supabase.js"
+import {
+  evaluateAnswerSheetWithGemini,
+  getGeminiModelName,
+} from "../ai/gemini-evaluator.js"
+import {
+  persistEvaluationRun,
+  failEvaluationRun,
+} from "../db/evaluation-run-service.js"
+import {
+  downloadPrivateFile,
+  parsePrivateFileReference,
+} from "../storage/supabase.js"
 import { sendEvaluationReadyEmail } from "../email/mailer.js"
 import { EvaluationStatus, SubmissionStatus } from "@prisma/client"
 import { config } from "../config.js"
@@ -31,19 +40,31 @@ export function createEvaluationWorker(): Worker<EvaluationJobData> {
   evaluationWorkerInstance = new Worker<EvaluationJobData>(
     "evaluation",
     async (job: Job<EvaluationJobData>) => {
-      const { submissionId, testSeriesId, fileUrl, fileBuffer, mimeType, runId, runNumber } = job.data
+      const {
+        submissionId,
+        testSeriesId,
+        fileUrl,
+        fileBuffer,
+        mimeType,
+        runId,
+        runNumber,
+      } = job.data
 
-      console.log(`[Worker] Starting job ${job.id} for submission ${submissionId} (Attempt run #${runNumber})`)
+      console.log(
+        `[Worker] Starting job ${job.id} for submission ${submissionId} (Attempt run #${runNumber})`
+      )
 
       try {
-        await prisma.evaluationJob.update({
-          where: { submissionId },
-          data: {
-            status: "PROCESSING",
-            startedAt: new Date(),
-            attempts: job.attemptsMade,
-          },
-        }).catch(() => undefined)
+        await prisma.evaluationJob
+          .update({
+            where: { submissionId },
+            data: {
+              status: "PROCESSING",
+              startedAt: new Date(),
+              attempts: job.attemptsMade,
+            },
+          })
+          .catch(() => undefined)
 
         const submission = await prisma.submission.findUnique({
           where: { id: submissionId },
@@ -68,19 +89,27 @@ export function createEvaluationWorker(): Worker<EvaluationJobData> {
         } else {
           const fileReference = parsePrivateFileReference(fileUrl)
           if (!fileReference || fileReference.bucket !== "verityra-private") {
-            throw new Error(`Invalid answer sheet storage reference: ${fileUrl}`)
+            throw new Error(
+              `Invalid answer sheet storage reference: ${fileUrl}`
+            )
           }
-          buffer = await downloadPrivateFile(fileReference.bucket, fileReference.filePath)
+          buffer = await downloadPrivateFile(
+            fileReference.bucket,
+            fileReference.filePath
+          )
         }
 
         await job.updateProgress(25)
 
-        console.log(`[Worker] Running multimodal Gemini evaluation on ${buffer.length} bytes for submission ${submissionId}`)
+        console.log(
+          `[Worker] Running multimodal Gemini evaluation on ${buffer.length} bytes for submission ${submissionId}`
+        )
         const aiResult = await evaluateAnswerSheetWithGemini({
           testTitle: submission.testSeries.title,
           maxMarks: submission.testSeries.maxMarks,
           rubricContent: submission.testSeries.papers[0]?.rubricContent || null,
-          privateEvaluationInstructions: submission.testSeries.privateEvaluationInstructions || "",
+          privateEvaluationInstructions:
+            submission.testSeries.privateEvaluationInstructions || "",
           studentAnswerSheetBuffer: buffer,
           studentAnswerSheetMimeType: mimeType,
           studentAnswerSheetUrl: fileUrl,
@@ -97,10 +126,16 @@ export function createEvaluationWorker(): Worker<EvaluationJobData> {
           evaluatorModel: getGeminiModelName(),
         })
 
-        await prisma.evaluationJob.update({
-          where: { submissionId },
-          data: { status: "COMPLETED", completedAt: new Date(), lastError: null },
-        }).catch(() => undefined)
+        await prisma.evaluationJob
+          .update({
+            where: { submissionId },
+            data: {
+              status: "COMPLETED",
+              completedAt: new Date(),
+              lastError: null,
+            },
+          })
+          .catch(() => undefined)
 
         await job.updateProgress(100)
 
@@ -126,13 +161,19 @@ export function createEvaluationWorker(): Worker<EvaluationJobData> {
             totalMarksAwarded: persisted.totalMarksAwarded,
             maxMarks: submission.testSeries.maxMarks,
             percentage: persisted.percentage,
-            requiresReview: persisted.status === EvaluationStatus.REVIEW_REQUIRED,
+            requiresReview:
+              persisted.status === EvaluationStatus.REVIEW_REQUIRED,
           }).catch((mailErr) => {
-            console.error(`[Worker] Failed to dispatch scorecard notification:`, mailErr)
+            console.error(
+              `[Worker] Failed to dispatch scorecard notification:`,
+              mailErr
+            )
           })
         }
 
-        console.log(`[Worker] Job ${job.id} completed successfully for submission ${submissionId}: ${persisted.totalMarksAwarded}/${submission.testSeries.maxMarks} marks (${persisted.percentage}%)`)
+        console.log(
+          `[Worker] Job ${job.id} completed successfully for submission ${submissionId}: ${persisted.totalMarksAwarded}/${submission.testSeries.maxMarks} marks (${persisted.percentage}%)`
+        )
 
         return {
           success: true,
@@ -143,31 +184,40 @@ export function createEvaluationWorker(): Worker<EvaluationJobData> {
       } catch (error: any) {
         console.error(`[Worker] Job ${job.id} failed:`, error)
 
-        await prisma.evaluationJob.update({
-          where: { submissionId },
-          data: {
-            status: job.attemptsMade >= 2 ? "FAILED" : "RETRYING",
-            lastError: error.message || "Unknown error",
-            attempts: job.attemptsMade,
-          },
-        }).catch(() => undefined)
+        await prisma.evaluationJob
+          .update({
+            where: { submissionId },
+            data: {
+              status: job.attemptsMade >= 2 ? "FAILED" : "RETRYING",
+              lastError: error.message || "Unknown error",
+              attempts: job.attemptsMade,
+            },
+          })
+          .catch(() => undefined)
 
         // On terminal attempt failure (attempt 3, i.e. attemptsMade >= 2)
         if (job.attemptsMade >= 2) {
-          const failedSub = await prisma.submission.update({
-            where: { id: submissionId },
-            data: { status: SubmissionStatus.FAILED },
-            select: { registrationId: true },
-          }).catch(() => null)
+          const failedSub = await prisma.submission
+            .update({
+              where: { id: submissionId },
+              data: { status: SubmissionStatus.FAILED },
+              select: { registrationId: true },
+            })
+            .catch(() => null)
 
           if (failedSub?.registrationId && job.data.runNumber === 1) {
-            await prisma.testRegistration.update({
-              where: { id: failedSub.registrationId },
-              data: { maxAttempts: { increment: 1 } },
-            }).catch(() => undefined)
+            await prisma.testRegistration
+              .update({
+                where: { id: failedSub.registrationId },
+                data: { maxAttempts: { increment: 1 } },
+              })
+              .catch(() => undefined)
           }
 
-          await failEvaluationRun(runId, error.message || "Evaluation failed after retries").catch(() => undefined)
+          await failEvaluationRun(
+            runId,
+            error.message || "Evaluation failed after retries"
+          ).catch(() => undefined)
         }
 
         throw error
@@ -193,18 +243,22 @@ export function createEvaluationWorker(): Worker<EvaluationJobData> {
 export async function recoverPendingEvaluationJobs(): Promise<number> {
   const staleThreshold = new Date(Date.now() - 10 * 60 * 1000) // 10 minutes ago
 
-  const stalledJobs = await prisma.evaluationJob.findMany({
-    where: {
-      status: "PROCESSING",
-      startedAt: { lt: staleThreshold },
-      attempts: { lt: 3 },
-    },
-    take: 10,
-  }).catch(() => [])
+  const stalledJobs = await prisma.evaluationJob
+    .findMany({
+      where: {
+        status: "PROCESSING",
+        startedAt: { lt: staleThreshold },
+        attempts: { lt: 3 },
+      },
+      take: 10,
+    })
+    .catch(() => [])
 
   if (stalledJobs.length === 0) return 0
 
-  console.log(`[Worker:Recovery] Found ${stalledJobs.length} stalled evaluation jobs to re-enqueue.`)
+  console.log(
+    `[Worker:Recovery] Found ${stalledJobs.length} stalled evaluation jobs to re-enqueue.`
+  )
 
   const connection = getRedisConnection()
   const queue = new Queue<EvaluationJobData>("evaluation", { connection })
@@ -214,7 +268,13 @@ export async function recoverPendingEvaluationJobs(): Promise<number> {
     try {
       const submission = await prisma.submission.findUnique({
         where: { id: job.submissionId },
-        select: { id: true, testSeriesId: true, userId: true, fileUrl: true, fileType: true },
+        select: {
+          id: true,
+          testSeriesId: true,
+          userId: true,
+          fileUrl: true,
+          fileType: true,
+        },
       })
       if (!submission) continue
 
@@ -241,7 +301,10 @@ export async function recoverPendingEvaluationJobs(): Promise<number> {
 
       recoveredCount++
     } catch (err) {
-      console.error(`[Worker:Recovery] Failed to recover job ${job.submissionId}:`, err)
+      console.error(
+        `[Worker:Recovery] Failed to recover job ${job.submissionId}:`,
+        err
+      )
     }
   }
 

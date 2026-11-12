@@ -26,7 +26,8 @@ export function renderVerifyEmail({
   `
 
   const html = renderBaseEmailLayout({
-    preheader: "Confirm your email address to complete your Verityra candidate setup.",
+    preheader:
+      "Confirm your email address to complete your Verityra candidate setup.",
     badgeText: "Email Verification",
     heading: "Verify your email address",
     bodyHtml,

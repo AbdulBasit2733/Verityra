@@ -8,18 +8,32 @@ export default function LeaderboardLoading() {
           <Skeleton className="h-8 w-40 rounded-full" />
           <Skeleton className="h-14 w-full max-w-2xl sm:h-20" />
           <Skeleton className="h-5 w-full max-w-2xl" />
-          <div className="flex gap-3"><Skeleton className="h-11 w-44 rounded-xl" /><Skeleton className="h-11 w-48 rounded-xl" /></div>
+          <div className="flex gap-3">
+            <Skeleton className="h-11 w-44 rounded-xl" />
+            <Skeleton className="h-11 w-48 rounded-xl" />
+          </div>
         </div>
         <Skeleton className="h-56 rounded-2xl" />
       </div>
       <div className="space-y-6">
-        <div className="space-y-2"><Skeleton className="h-3 w-32" /><Skeleton className="h-8 w-64" /></div>
+        <div className="space-y-2">
+          <Skeleton className="h-3 w-32" />
+          <Skeleton className="h-8 w-64" />
+        </div>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-56 rounded-2xl" />)}
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-56 rounded-2xl" />
+          ))}
         </div>
         <Skeleton className="h-24 rounded-2xl" />
       </div>
-      <div className="space-y-5"><div className="flex justify-between"><Skeleton className="h-8 w-56" /><Skeleton className="h-5 w-36" /></div><Skeleton className="h-[28rem] rounded-2xl" /></div>
+      <div className="space-y-5">
+        <div className="flex justify-between">
+          <Skeleton className="h-8 w-56" />
+          <Skeleton className="h-5 w-36" />
+        </div>
+        <Skeleton className="h-[28rem] rounded-2xl" />
+      </div>
     </div>
   )
 }

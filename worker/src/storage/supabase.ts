@@ -11,15 +11,24 @@ export function getSupabase(): SupabaseClient | null {
   }
 
   if (!supabaseClient) {
-    supabaseClient = createClient(config.supabaseUrl, config.supabaseServiceKey, {
-      auth: { persistSession: false },
-    })
+    supabaseClient = createClient(
+      config.supabaseUrl,
+      config.supabaseServiceKey,
+      {
+        auth: { persistSession: false },
+      }
+    )
   }
 
   return supabaseClient
 }
 
-const LOCAL_STORAGE_DIR = path.resolve(process.cwd(), "..", "verityra4", "uploads")
+const LOCAL_STORAGE_DIR = path.resolve(
+  process.cwd(),
+  "..",
+  "verityra4",
+  "uploads"
+)
 
 export function parsePrivateFileReference(
   fileUrl: string
@@ -43,23 +52,34 @@ export function parsePrivateFileReference(
     return { bucket: firstSegment, filePath: fileUrl.slice(separator + 1) }
   }
 
-  if (["papers", "templates", "submissions", "model-answers"].includes(firstSegment)) {
+  if (
+    ["papers", "templates", "submissions", "model-answers"].includes(
+      firstSegment
+    )
+  ) {
     return { bucket: "verityra-private", filePath: fileUrl }
   }
 
   return { bucket: firstSegment, filePath: fileUrl.slice(separator + 1) }
 }
 
-export async function downloadPrivateFile(bucketName: string, filePath: string): Promise<Buffer> {
+export async function downloadPrivateFile(
+  bucketName: string,
+  filePath: string
+): Promise<Buffer> {
   const supabase = getSupabase()
 
   if (supabase) {
-    const { data, error } = await supabase.storage.from(bucketName).download(filePath)
+    const { data, error } = await supabase.storage
+      .from(bucketName)
+      .download(filePath)
     if (!error && data) {
       return Buffer.from(await data.arrayBuffer())
     }
     if (error) {
-      console.warn(`[Worker:Storage] Supabase download error for ${filePath}: ${error.message}. Checking local storage fallback.`)
+      console.warn(
+        `[Worker:Storage] Supabase download error for ${filePath}: ${error.message}. Checking local storage fallback.`
+      )
     }
   }
 
@@ -69,5 +89,7 @@ export async function downloadPrivateFile(bucketName: string, filePath: string):
     return await fs.promises.readFile(fullPath)
   }
 
-  throw new Error(`File ${filePath} could not be retrieved from private storage.`)
+  throw new Error(
+    `File ${filePath} could not be retrieved from private storage.`
+  )
 }

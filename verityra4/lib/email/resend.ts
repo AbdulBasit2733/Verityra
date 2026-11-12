@@ -10,21 +10,32 @@ const globalForResend = globalThis as unknown as {
  * Resolve the base application URL for email action links
  */
 export function getAppBaseUrl(): string {
-  const isProduction = process.env.NODE_ENV === "production" || Boolean(process.env.VERCEL)
+  const isProduction =
+    process.env.NODE_ENV === "production" || Boolean(process.env.VERCEL)
 
   if (process.env.NEXT_PUBLIC_APP_URL) {
-    if (!isProduction || !process.env.NEXT_PUBLIC_APP_URL.includes("localhost")) {
+    if (
+      !isProduction ||
+      !process.env.NEXT_PUBLIC_APP_URL.includes("localhost")
+    ) {
       return process.env.NEXT_PUBLIC_APP_URL.replace(/\/+$/, "")
     }
   }
   if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
     return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL.replace(/\/+$/, "")}`
   }
-  if (process.env.VERCEL_URL && (!isProduction || !process.env.VERCEL_URL.includes("localhost"))) {
+  if (
+    process.env.VERCEL_URL &&
+    (!isProduction || !process.env.VERCEL_URL.includes("localhost"))
+  ) {
     return `https://${process.env.VERCEL_URL.replace(/\/+$/, "")}`
   }
   const configured = process.env.NEXTAUTH_URL
-  if (configured && (!isProduction || (!configured.includes("localhost") && !configured.includes("127.0.0.1")))) {
+  if (
+    configured &&
+    (!isProduction ||
+      (!configured.includes("localhost") && !configured.includes("127.0.0.1")))
+  ) {
     return configured.replace(/\/+$/, "")
   }
   if (isProduction) {
@@ -40,7 +51,10 @@ export function isResendConfigured(apiKey?: string): boolean {
   const resolved = arguments.length === 0 ? process.env.RESEND_API_KEY : apiKey
   const trimmed = resolved?.trim()
   if (!trimmed) return false
-  if (trimmed === "re_your_resend_api_key" || trimmed === "your-resend-api-key") {
+  if (
+    trimmed === "re_your_resend_api_key" ||
+    trimmed === "your-resend-api-key"
+  ) {
     return false
   }
   return trimmed.startsWith("re_")
@@ -68,7 +82,9 @@ export function getResendClient(): Resend | null {
 /**
  * Dispatch an email via Resend, or gracefully simulate delivery in dev/CI when RESEND_API_KEY is absent.
  */
-export async function sendEmail(payload: EmailPayload): Promise<EmailDispatchResult> {
+export async function sendEmail(
+  payload: EmailPayload
+): Promise<EmailDispatchResult> {
   const resend = getResendClient()
   const fromEmail =
     payload.from ||
@@ -76,8 +92,12 @@ export async function sendEmail(payload: EmailPayload): Promise<EmailDispatchRes
     "Verityra <onboarding@resend.dev>"
 
   if (!resend) {
-    const recipient = Array.isArray(payload.to) ? payload.to.join(", ") : payload.to
-    console.log(`[Email:Simulation] To: ${recipient} | Subject: ${payload.subject}`)
+    const recipient = Array.isArray(payload.to)
+      ? payload.to.join(", ")
+      : payload.to
+    console.log(
+      `[Email:Simulation] To: ${recipient} | Subject: ${payload.subject}`
+    )
     if (payload.previewUrl) {
       console.log(`[Email:Simulation] Action URL: ${payload.previewUrl}`)
     }
@@ -108,12 +128,20 @@ export async function sendEmail(payload: EmailPayload): Promise<EmailDispatchRes
 
       // In non-production/dev environments, don't let Resend sandbox limitation block developers
       if (isSandboxRestriction && process.env.NODE_ENV !== "production") {
-        const recipient = Array.isArray(payload.to) ? payload.to.join(", ") : payload.to
-        console.warn(`[Email:SandboxNotice] Resend is restricted to sending to account owner email when unverified domain (onboarding@resend.dev) is used.`)
+        const recipient = Array.isArray(payload.to)
+          ? payload.to.join(", ")
+          : payload.to
+        console.warn(
+          `[Email:SandboxNotice] Resend is restricted to sending to account owner email when unverified domain (onboarding@resend.dev) is used.`
+        )
         console.warn(`[Email:SandboxNotice] Recipient was: ${recipient}`)
-        console.log(`[Email:SimulationFallback] To: ${recipient} | Subject: ${payload.subject}`)
+        console.log(
+          `[Email:SimulationFallback] To: ${recipient} | Subject: ${payload.subject}`
+        )
         if (payload.previewUrl) {
-          console.log(`[Email:SimulationFallback] Action URL: ${payload.previewUrl}`)
+          console.log(
+            `[Email:SimulationFallback] Action URL: ${payload.previewUrl}`
+          )
         }
         return {
           success: true,
@@ -137,8 +165,12 @@ export async function sendEmail(payload: EmailPayload): Promise<EmailDispatchRes
     }
   } catch (err: any) {
     if (process.env.NODE_ENV !== "production") {
-      const recipient = Array.isArray(payload.to) ? payload.to.join(", ") : payload.to
-      console.warn(`[Email:DevFallback] Unexpected Resend failure: ${err?.message || err}. Falling back to simulation for: ${recipient}`)
+      const recipient = Array.isArray(payload.to)
+        ? payload.to.join(", ")
+        : payload.to
+      console.warn(
+        `[Email:DevFallback] Unexpected Resend failure: ${err?.message || err}. Falling back to simulation for: ${recipient}`
+      )
       if (payload.previewUrl) {
         console.log(`[Email:DevFallback] Action URL: ${payload.previewUrl}`)
       }

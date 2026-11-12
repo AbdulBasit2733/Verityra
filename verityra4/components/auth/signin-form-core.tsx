@@ -72,16 +72,22 @@ export function SignInFormCore({ isMobile }: SignInFormCoreProps) {
 
   return (
     <div className="w-full space-y-5">
-
       {error && (
-        <Alert variant="destructive" role="alert" className="rounded-lg py-3 text-xs sm:text-sm">
+        <Alert
+          variant="destructive"
+          role="alert"
+          className="rounded-lg py-3 text-xs sm:text-sm"
+        >
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-1.5">
-          <Label htmlFor={`email-${isMobile ? "mobile" : "desktop"}`} className="text-xs font-bold text-slate-700 dark:text-slate-300">
+          <Label
+            htmlFor={`email-${isMobile ? "mobile" : "desktop"}`}
+            className="text-xs font-bold text-slate-700 dark:text-slate-300"
+          >
             Registered Email
           </Label>
           <Input
@@ -100,12 +106,15 @@ export function SignInFormCore({ isMobile }: SignInFormCoreProps) {
 
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <Label htmlFor={`password-${isMobile ? "mobile" : "desktop"}`} className="text-xs font-bold text-slate-700 dark:text-slate-300">
+            <Label
+              htmlFor={`password-${isMobile ? "mobile" : "desktop"}`}
+              className="text-xs font-bold text-slate-700 dark:text-slate-300"
+            >
               Account Password
             </Label>
             <Link
               href="/forgot-password"
-              className="text-xs font-semibold text-[#2A6AED] dark:text-blue-400 hover:underline"
+              className="text-xs font-semibold text-[#2A6AED] hover:underline dark:text-blue-400"
             >
               Forgot password?
             </Link>
@@ -121,15 +130,19 @@ export function SignInFormCore({ isMobile }: SignInFormCoreProps) {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••••••"
               disabled={loading}
-              className="auth-control h-11 pr-10 text-sm font-mono"
+              className="auth-control h-11 pr-10 font-mono text-sm"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 hover:bg-blue-50 hover:text-[#1E55C7] dark:hover:bg-blue-950/50 dark:hover:text-blue-200"
+              className="absolute top-1/2 right-2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 hover:bg-blue-50 hover:text-[#1E55C7] dark:hover:bg-blue-950/50 dark:hover:text-blue-200"
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
-              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              {showPassword ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
             </button>
           </div>
         </div>
@@ -155,7 +168,10 @@ export function SignInFormCore({ isMobile }: SignInFormCoreProps) {
 
       <div className="pt-2 text-center text-xs text-slate-600 dark:text-slate-400">
         Don&apos;t have an account?{" "}
-        <Link href="/signup" className="font-bold text-[#2A6AED] dark:text-blue-400 hover:underline">
+        <Link
+          href="/signup"
+          className="font-bold text-[#2A6AED] hover:underline dark:text-blue-400"
+        >
           Create candidate account
         </Link>
       </div>

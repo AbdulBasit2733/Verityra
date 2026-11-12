@@ -1,14 +1,22 @@
 import { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import GoogleProvider from "next-auth/providers/google"
-import { prisma, isDatabaseConnected, resetDatabaseConnectionCache } from "@/lib/prisma"
+import {
+  prisma,
+  isDatabaseConnected,
+  resetDatabaseConnectionCache,
+} from "@/lib/prisma"
 import bcrypt from "bcryptjs"
 import { Role, UserStatus } from "@prisma/client"
 
 const credentialsProviderFn =
   typeof CredentialsProvider === "function"
     ? CredentialsProvider
-    : (CredentialsProvider as unknown as { default: typeof CredentialsProvider }).default
+    : (
+        CredentialsProvider as unknown as {
+          default: typeof CredentialsProvider
+        }
+      ).default
 
 const googleProviderFn =
   typeof GoogleProvider === "function"
@@ -67,7 +75,9 @@ export const authOptions: NextAuthOptions = {
         const dbConnected = await isDatabaseConnected()
 
         if (!dbConnected) {
-          throw new Error("Database connection required. Please contact support if this issue persists.")
+          throw new Error(
+            "Database connection required. Please contact support if this issue persists."
+          )
         }
 
         const user = await prisma.user.findUnique({
@@ -79,10 +89,15 @@ export const authOptions: NextAuthOptions = {
         }
 
         if (user.status === UserStatus.SUSPENDED) {
-          throw new Error("Your account has been suspended. Please contact support.")
+          throw new Error(
+            "Your account has been suspended. Please contact support."
+          )
         }
 
-        const isValid = await bcrypt.compare(credentials.password, user.passwordHash)
+        const isValid = await bcrypt.compare(
+          credentials.password,
+          user.passwordHash
+        )
         if (!isValid) {
           throw new Error("Invalid email or password.")
         }
@@ -114,7 +129,9 @@ export const authOptions: NextAuthOptions = {
         }
 
         if (!dbConnected) {
-          console.error("[NextAuth] Google sign-in rejected: database connection unavailable")
+          console.error(
+            "[NextAuth] Google sign-in rejected: database connection unavailable"
+          )
           return false
         }
 
@@ -145,28 +162,34 @@ export const authOptions: NextAuthOptions = {
           }
 
           if (account.providerAccountId) {
-            await prisma.account.upsert({
-              where: {
-                provider_providerAccountId: {
+            await prisma.account
+              .upsert({
+                where: {
+                  provider_providerAccountId: {
+                    provider: account.provider,
+                    providerAccountId: account.providerAccountId,
+                  },
+                },
+                update: {},
+                create: {
+                  userId: existingUser.id,
+                  type: account.type,
                   provider: account.provider,
                   providerAccountId: account.providerAccountId,
+                  refresh_token: account.refresh_token,
+                  access_token: account.access_token,
+                  expires_at: account.expires_at,
+                  token_type: account.token_type,
+                  scope: account.scope,
+                  id_token: account.id_token,
+                  session_state: account.session_state
+                    ? String(account.session_state)
+                    : null,
                 },
-              },
-              update: {},
-              create: {
-                userId: existingUser.id,
-                type: account.type,
-                provider: account.provider,
-                providerAccountId: account.providerAccountId,
-                refresh_token: account.refresh_token,
-                access_token: account.access_token,
-                expires_at: account.expires_at,
-                token_type: account.token_type,
-                scope: account.scope,
-                id_token: account.id_token,
-                session_state: account.session_state ? String(account.session_state) : null,
-              },
-            }).catch((err) => console.warn("[NextAuth] Account linking notice:", err?.message))
+              })
+              .catch((err) =>
+                console.warn("[NextAuth] Account linking notice:", err?.message)
+              )
           }
 
           user.id = existingUser.id
@@ -190,7 +213,8 @@ export const authOptions: NextAuthOptions = {
       // Resolve the true persisted database cuid from email to ensure foreign key integrity
       if (
         account?.provider === "google" ||
-        (token.email && (!token.id || token.id.length > 30 || /^\d+$/.test(String(token.id))))
+        (token.email &&
+          (!token.id || token.id.length > 30 || /^\d+$/.test(String(token.id))))
       ) {
         if (token.email) {
           const normalizedEmail = token.email.toLowerCase().trim()
@@ -226,7 +250,11 @@ export const authOptions: NextAuthOptions = {
     },
     async redirect({ url, baseUrl }) {
       // 1. If relative URL, ensure it is strictly a single-slash path (prevent protocol-relative // or /\ open redirect)
-      if (url.startsWith("/") && !url.startsWith("//") && !url.startsWith("/\\")) {
+      if (
+        url.startsWith("/") &&
+        !url.startsWith("//") &&
+        !url.startsWith("/\\")
+      ) {
         return url
       }
 
@@ -236,14 +264,18 @@ export const authOptions: NextAuthOptions = {
         // If the URL points to localhost but in production or if baseUrl is not localhost, rewrite to safe relative path
         if (
           (process.env.NODE_ENV === "production" || process.env.VERCEL) &&
-          (parsedUrl.hostname === "localhost" || parsedUrl.hostname === "127.0.0.1")
+          (parsedUrl.hostname === "localhost" ||
+            parsedUrl.hostname === "127.0.0.1")
         ) {
           const rel = `${parsedUrl.pathname}${parsedUrl.search}`
           return rel.startsWith("//") || rel.startsWith("/\\") ? "/" : rel
         }
 
         // Allow same origin
-        if (parsedUrl.origin === baseUrl || parsedUrl.origin === PRODUCTION_FALLBACK_URL) {
+        if (
+          parsedUrl.origin === baseUrl ||
+          parsedUrl.origin === PRODUCTION_FALLBACK_URL
+        ) {
           return url
         }
       } catch {}

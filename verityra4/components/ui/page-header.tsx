@@ -26,14 +26,14 @@ export function PageHeader({
   return (
     <div
       className={cn(
-        "flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2",
+        "flex flex-col gap-4 pb-2 sm:flex-row sm:items-center sm:justify-between",
         className
       )}
     >
       {/* Left: Icon Tile + Title + Subtitle Stack */}
-      <div className="flex items-center gap-3.5 min-w-0">
+      <div className="flex min-w-0 items-center gap-3.5">
         {icon && (
-          <div className="flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-xs shrink-0">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-xs sm:h-12 sm:w-12">
             {IconComponent ? (
               <IconComponent className="h-6 w-6 sm:h-7 sm:w-7" />
             ) : React.isValidElement(icon) ? (
@@ -43,17 +43,17 @@ export function PageHeader({
         )}
         <div className="min-w-0 space-y-0.5">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-foreground tracking-tight truncate">
+            <h1 className="truncate text-xl font-extrabold tracking-tight text-foreground sm:text-2xl lg:text-3xl">
               {title}
             </h1>
             {badgeText && (
-              <span className="inline-flex items-center rounded-full bg-secondary px-2.5 py-0.5 text-[11px] font-bold text-secondary-foreground border border-border">
+              <span className="inline-flex items-center rounded-full border border-border bg-secondary px-2.5 py-0.5 text-[11px] font-bold text-secondary-foreground">
                 {badgeText}
               </span>
             )}
           </div>
           {subtitle && (
-            <p className="text-xs sm:text-sm text-muted-foreground font-medium truncate">
+            <p className="truncate text-xs font-medium text-muted-foreground sm:text-sm">
               {subtitle}
             </p>
           )}
@@ -61,7 +61,7 @@ export function PageHeader({
       </div>
 
       {/* Right: Refresh button + Action CTA buttons */}
-      <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 shrink-0">
+      <div className="flex shrink-0 flex-wrap items-center gap-2 sm:gap-2.5">
         {showRefresh && <PageHeaderRefreshButton />}
         {children}
       </div>

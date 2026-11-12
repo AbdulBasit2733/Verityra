@@ -45,8 +45,7 @@ export function ProgressSection() {
               </h2>
               <p className="mt-5 max-w-md text-base leading-7 text-slate-300">
                 Your preparation should leave you with a next step, not another
-                vague score. Keep practice, feedback, and progress in one
-                place.
+                vague score. Keep practice, feedback, and progress in one place.
               </p>
 
               <ul className="mt-8 space-y-5">

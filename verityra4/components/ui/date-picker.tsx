@@ -1,12 +1,22 @@
 "use client"
 
 import * as React from "react"
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, X } from "lucide-react"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import {
+  Calendar as CalendarIcon,
+  ChevronLeft,
+  ChevronRight,
+  X,
+} from "lucide-react"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
 import { formatDate, formatTime, formatDateTimeFull } from "@/lib/format"
 
-export type DateFilterPreset = "ALL" | "TODAY" | "LAST_7_DAYS" | "LAST_30_DAYS" | "CUSTOM"
+export type DateFilterPreset =
+  "ALL" | "TODAY" | "LAST_7_DAYS" | "LAST_30_DAYS" | "CUSTOM"
 
 export interface DateFilterValue {
   preset: DateFilterPreset
@@ -135,18 +145,23 @@ export function DateFilterPicker({
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger
           className={cn(
-            "inline-flex h-9 items-center gap-2 rounded-lg border px-3 text-xs font-semibold transition-colors cursor-pointer outline-none",
+            "inline-flex h-9 cursor-pointer items-center gap-2 rounded-lg border px-3 text-xs font-semibold transition-colors outline-none",
             isActive
               ? "border-blue-200 bg-[#EFF6FF] text-[#2A6AED]"
               : "border-slate-200/90 bg-white text-slate-700 hover:bg-slate-50"
           )}
         >
-          <CalendarIcon className={cn("h-3.5 w-3.5", isActive ? "text-[#2A6AED]" : "text-slate-400")} />
+          <CalendarIcon
+            className={cn(
+              "h-3.5 w-3.5",
+              isActive ? "text-[#2A6AED]" : "text-slate-400"
+            )}
+          />
           <span>{label}</span>
         </PopoverTrigger>
-        <PopoverContent className="w-72 p-3 space-y-3" align="end">
+        <PopoverContent className="w-72 space-y-3 p-3" align="end">
           {/* Quick Presets */}
-          <div className="grid grid-cols-2 gap-1.5 pb-2.5 border-b border-slate-100">
+          <div className="grid grid-cols-2 gap-1.5 border-b border-slate-100 pb-2.5">
             {(
               [
                 { id: "ALL", label: "All Dates" },
@@ -163,7 +178,7 @@ export function DateFilterPicker({
                   setOpen(false)
                 }}
                 className={cn(
-                  "h-7 px-2.5 rounded-lg text-[11px] font-semibold text-left transition-colors cursor-pointer",
+                  "h-7 cursor-pointer rounded-lg px-2.5 text-left text-[11px] font-semibold transition-colors",
                   value.preset === preset.id
                     ? "bg-[#2A6AED] text-white"
                     : "bg-slate-50 text-slate-700 hover:bg-slate-100"
@@ -179,7 +194,7 @@ export function DateFilterPicker({
             <button
               type="button"
               onClick={handlePrevMonth}
-              className="h-7 w-7 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 cursor-pointer"
+              className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50"
               aria-label="Previous month"
             >
               <ChevronLeft className="h-3.5 w-3.5" />
@@ -190,7 +205,7 @@ export function DateFilterPicker({
             <button
               type="button"
               onClick={handleNextMonth}
-              className="h-7 w-7 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 cursor-pointer"
+              className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50"
               aria-label="Next month"
             >
               <ChevronRight className="h-3.5 w-3.5" />
@@ -200,7 +215,10 @@ export function DateFilterPicker({
           {/* Calendar Grid */}
           <div className="grid grid-cols-7 gap-1 text-center">
             {DAYS.map((d) => (
-              <span key={d} className="text-[10px] font-bold text-slate-400 py-1">
+              <span
+                key={d}
+                className="py-1 text-[10px] font-bold text-slate-400"
+              >
                 {d}
               </span>
             ))}
@@ -222,9 +240,9 @@ export function DateFilterPicker({
                   type="button"
                   onClick={() => selectSpecificDay(day)}
                   className={cn(
-                    "h-7 w-7 rounded-lg text-xs font-medium flex items-center justify-center transition-colors cursor-pointer mx-auto",
+                    "mx-auto flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-xs font-medium transition-colors",
                     isSelected
-                      ? "bg-[#2A6AED] text-white font-bold"
+                      ? "bg-[#2A6AED] font-bold text-white"
                       : "text-slate-700 hover:bg-[#EFF6FF] hover:text-[#2A6AED]"
                   )}
                 >
@@ -240,7 +258,7 @@ export function DateFilterPicker({
         <button
           type="button"
           onClick={() => onChange({ preset: "ALL", selectedDate: null })}
-          className="h-9 w-8 rounded-lg border border-slate-200 bg-white text-slate-400 hover:text-slate-700 flex items-center justify-center cursor-pointer"
+          className="flex h-9 w-8 cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-400 hover:text-slate-700"
           aria-label="Clear date filter"
         >
           <X className="h-3.5 w-3.5" />
@@ -264,9 +282,10 @@ export function FormattedDate({
   includeTime?: boolean
   className?: string
 }) {
-  if (!date) return <span className="text-slate-400 text-xs">—</span>
+  if (!date) return <span className="text-xs text-slate-400">—</span>
   const parsed = new Date(date)
-  if (isNaN(parsed.getTime())) return <span className="text-slate-400 text-xs">—</span>
+  if (isNaN(parsed.getTime()))
+    return <span className="text-xs text-slate-400">—</span>
 
   const formattedDate = formatDate(parsed)
   const formattedTime = formatTime(parsed)
@@ -276,12 +295,17 @@ export function FormattedDate({
     <span
       suppressHydrationWarning
       title={fullDateTime}
-      className={cn("inline-flex items-center gap-1.5 text-xs text-slate-600 font-medium", className)}
+      className={cn(
+        "inline-flex items-center gap-1.5 text-xs font-medium text-slate-600",
+        className
+      )}
     >
-      <CalendarIcon className="h-3 w-3 text-slate-400 shrink-0" />
+      <CalendarIcon className="h-3 w-3 shrink-0 text-slate-400" />
       <span suppressHydrationWarning>{formattedDate}</span>
       {(showTime || includeTime) && (
-        <span suppressHydrationWarning className="text-[11px] text-slate-400">{formattedTime}</span>
+        <span suppressHydrationWarning className="text-[11px] text-slate-400">
+          {formattedTime}
+        </span>
       )}
     </span>
   )

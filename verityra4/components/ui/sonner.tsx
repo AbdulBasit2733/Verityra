@@ -46,14 +46,22 @@ export const toast = Object.assign(
   (title: string, options?: { description?: string; duration?: number }) =>
     addToast({ title, variant: "default", ...options }),
   {
-    success: (title: string, options?: { description?: string; duration?: number }) =>
-      addToast({ title, variant: "success", ...options }),
-    error: (title: string, options?: { description?: string; duration?: number }) =>
-      addToast({ title, variant: "error", duration: 6000, ...options }),
-    warning: (title: string, options?: { description?: string; duration?: number }) =>
-      addToast({ title, variant: "warning", ...options }),
-    info: (title: string, options?: { description?: string; duration?: number }) =>
-      addToast({ title, variant: "info", ...options }),
+    success: (
+      title: string,
+      options?: { description?: string; duration?: number }
+    ) => addToast({ title, variant: "success", ...options }),
+    error: (
+      title: string,
+      options?: { description?: string; duration?: number }
+    ) => addToast({ title, variant: "error", duration: 6000, ...options }),
+    warning: (
+      title: string,
+      options?: { description?: string; duration?: number }
+    ) => addToast({ title, variant: "warning", ...options }),
+    info: (
+      title: string,
+      options?: { description?: string; duration?: number }
+    ) => addToast({ title, variant: "info", ...options }),
     dismiss: dismissToast,
   }
 )
@@ -78,48 +86,51 @@ export function Toaster({
     position === "top-right"
       ? "top-4 right-4"
       : position === "top-center"
-      ? "top-4 left-1/2 -translate-x-1/2"
-      : "bottom-4 right-4"
+        ? "top-4 left-1/2 -translate-x-1/2"
+        : "bottom-4 right-4"
 
   return (
     <div
       data-slot="sonner-toaster"
       aria-live="polite"
       className={cn(
-        "fixed z-[100] flex flex-col gap-2.5 w-[calc(100vw-2rem)] max-w-sm pointer-events-none",
+        "pointer-events-none fixed z-[100] flex w-[calc(100vw-2rem)] max-w-sm flex-col gap-2.5",
         posClasses
       )}
     >
       {items.map((item) => {
         const icon =
           item.variant === "success" ? (
-            <CheckCircle2 className="h-4.5 w-4.5 text-emerald-600 shrink-0 mt-0.5" />
+            <CheckCircle2 className="mt-0.5 h-4.5 w-4.5 shrink-0 text-emerald-600" />
           ) : item.variant === "error" ? (
-            <AlertCircle className="h-4.5 w-4.5 text-red-600 shrink-0 mt-0.5" />
+            <AlertCircle className="mt-0.5 h-4.5 w-4.5 shrink-0 text-red-600" />
           ) : item.variant === "warning" ? (
-            <AlertTriangle className="h-4.5 w-4.5 text-amber-600 shrink-0 mt-0.5" />
+            <AlertTriangle className="mt-0.5 h-4.5 w-4.5 shrink-0 text-amber-600" />
           ) : (
-            <Info className="h-4.5 w-4.5 text-[#2A6AED] shrink-0 mt-0.5" />
+            <Info className="mt-0.5 h-4.5 w-4.5 shrink-0 text-[#2A6AED]" />
           )
 
         return (
           <div
             key={item.id}
             className={cn(
-              "pointer-events-auto flex items-start justify-between gap-3 rounded-xl border p-3.5 shadow-xl bg-popover text-popover-foreground border-border transition-all animate-in fade-in slide-in-from-bottom-2 duration-200",
-              item.variant === "error" && "border-red-300 dark:border-red-800/70",
-              item.variant === "success" && "border-emerald-300 dark:border-emerald-800/70",
-              item.variant === "warning" && "border-amber-300 dark:border-amber-800/70"
+              "pointer-events-auto flex animate-in items-start justify-between gap-3 rounded-xl border border-border bg-popover p-3.5 text-popover-foreground shadow-xl transition-all duration-200 fade-in slide-in-from-bottom-2",
+              item.variant === "error" &&
+                "border-red-300 dark:border-red-800/70",
+              item.variant === "success" &&
+                "border-emerald-300 dark:border-emerald-800/70",
+              item.variant === "warning" &&
+                "border-amber-300 dark:border-amber-800/70"
             )}
           >
-            <div className="flex items-start gap-2.5 min-w-0">
+            <div className="flex min-w-0 items-start gap-2.5">
               {icon}
-              <div className="space-y-0.5 min-w-0">
-                <p className="text-xs sm:text-[13px] font-semibold leading-snug text-foreground">
+              <div className="min-w-0 space-y-0.5">
+                <p className="text-xs leading-snug font-semibold text-foreground sm:text-[13px]">
                   {item.title}
                 </p>
                 {item.description && (
-                  <p className="text-[11.5px] text-muted-foreground leading-relaxed break-words">
+                  <p className="text-[11.5px] leading-relaxed break-words text-muted-foreground">
                     {item.description}
                   </p>
                 )}
@@ -128,7 +139,7 @@ export function Toaster({
             <button
               type="button"
               onClick={() => dismissToast(item.id)}
-              className="rounded-lg p-1 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
+              className="shrink-0 rounded-lg p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               aria-label="Dismiss notification"
             >
               <X className="h-3.5 w-3.5" />

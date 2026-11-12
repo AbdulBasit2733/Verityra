@@ -7,7 +7,11 @@ import type { StudentEvaluationDetail } from "@/components/student/evaluations/t
 
 export const dynamic = "force-dynamic"
 
-export default async function StudentEvaluationDetailPage({ params }: { params: Promise<{ submissionId: string }> }) {
+export default async function StudentEvaluationDetailPage({
+  params,
+}: {
+  params: Promise<{ submissionId: string }>
+}) {
   const { submissionId } = await params
   const user = await requireStudent(`/student/evaluations/${submissionId}`)
   if (!(await isDatabaseConnected())) notFound()
@@ -33,7 +37,20 @@ export default async function StudentEvaluationDetailPage({ params }: { params: 
           uncertaintyFlag: true,
           questions: {
             orderBy: { questionNumber: "asc" },
-            select: { id: true, questionNumber: true, maxMarks: true, marksAwarded: true, scoreBand: true, feedback: true, strengths: true, missingConcepts: true, improvementAdvice: true, examinerExpectation: true, isLegible: true, isUncertain: true },
+            select: {
+              id: true,
+              questionNumber: true,
+              maxMarks: true,
+              marksAwarded: true,
+              scoreBand: true,
+              feedback: true,
+              strengths: true,
+              missingConcepts: true,
+              improvementAdvice: true,
+              examinerExpectation: true,
+              isLegible: true,
+              isUncertain: true,
+            },
           },
         },
       },
@@ -48,17 +65,24 @@ export default async function StudentEvaluationDetailPage({ params }: { params: 
     attemptNumber: submission.attemptNumber,
     submittedAt: submission.submittedAt.toISOString(),
     status: submission.status,
-    evaluation: submission.evaluation ? {
-      totalMarksAwarded: submission.evaluation.totalMarksAwarded,
-      maxMarks: submission.evaluation.maxMarks,
-      percentage: submission.evaluation.percentage,
-      generalFeedback: submission.evaluation.generalFeedback,
-      evaluatedAt: submission.evaluation.evaluatedAt?.toISOString() || null,
-      legibilityWarning: submission.evaluation.legibilityWarning,
-      uncertaintyFlag: submission.evaluation.uncertaintyFlag,
-      questions: submission.evaluation.questions,
-    } : null,
+    evaluation: submission.evaluation
+      ? {
+          totalMarksAwarded: submission.evaluation.totalMarksAwarded,
+          maxMarks: submission.evaluation.maxMarks,
+          percentage: submission.evaluation.percentage,
+          generalFeedback: submission.evaluation.generalFeedback,
+          evaluatedAt: submission.evaluation.evaluatedAt?.toISOString() || null,
+          legibilityWarning: submission.evaluation.legibilityWarning,
+          uncertaintyFlag: submission.evaluation.uncertaintyFlag,
+          questions: submission.evaluation.questions,
+        }
+      : null,
   }
 
-  return <StudentEvaluationDetailClient detail={detail} submissionFileUrl={normalizePrivateFileUrl(submission.fileUrl)} />
+  return (
+    <StudentEvaluationDetailClient
+      detail={detail}
+      submissionFileUrl={normalizePrivateFileUrl(submission.fileUrl)}
+    />
+  )
 }

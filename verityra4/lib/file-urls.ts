@@ -5,16 +5,23 @@
  * Safe to import in both client components and server actions.
  */
 
-export function privateFileDownloadUrl(bucketName: string, filePath: string): string {
+export function privateFileDownloadUrl(
+  bucketName: string,
+  filePath: string
+): string {
   return `/api/files/download?bucket=${encodeURIComponent(bucketName)}&file=${encodeURIComponent(filePath)}`
 }
 
-export function normalizePrivateFileUrl(fileUrl: string | null | undefined): string | null {
+export function normalizePrivateFileUrl(
+  fileUrl: string | null | undefined
+): string | null {
   if (!fileUrl) return null
   if (fileUrl.startsWith("/") || /^https?:\/\//i.test(fileUrl)) return fileUrl
 
   const reference = parsePrivateFileReference(fileUrl)
-  return reference ? privateFileDownloadUrl(reference.bucket, reference.filePath) : null
+  return reference
+    ? privateFileDownloadUrl(reference.bucket, reference.filePath)
+    : null
 }
 
 export function parsePrivateFileReference(
@@ -39,7 +46,11 @@ export function parsePrivateFileReference(
     return { bucket: firstSegment, filePath: fileUrl.slice(separator + 1) }
   }
 
-  if (["papers", "templates", "submissions", "model-answers"].includes(firstSegment)) {
+  if (
+    ["papers", "templates", "submissions", "model-answers"].includes(
+      firstSegment
+    )
+  ) {
     return { bucket: "verityra-private", filePath: fileUrl }
   }
 

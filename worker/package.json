@@ -10,7 +10,9 @@
     "start:tsx": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
     "prisma:generate": "prisma generate",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "format": "prettier --write \"src/**/*.{ts,js,json}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,js,json}\""
   },
   "dependencies": {
     "@google/genai": "^2.28.0",
@@ -24,6 +26,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.17.24",
+    "prettier": "^3.5.3",
     "prisma": "^6.19.3",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2"

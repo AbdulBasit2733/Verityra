@@ -11,7 +11,9 @@ const LEGACY_GEMINI_MODEL = "gemini-2.5-flash-lite"
 
 export function getGeminiModelName(): string {
   const configured = config.geminiModel || DEFAULT_GEMINI_MODEL
-  return configured === LEGACY_GEMINI_MODEL ? CURRENT_FREE_FALLBACK_GEMINI_MODEL : configured
+  return configured === LEGACY_GEMINI_MODEL
+    ? CURRENT_FREE_FALLBACK_GEMINI_MODEL
+    : configured
 }
 
 export type EvaluationInput = {
@@ -32,7 +34,9 @@ export async function evaluateAnswerSheetWithGemini(
 
   // Use simulation in development when API key is unconfigured
   if (!apiKey || apiKey === "your-gemini-api-key") {
-    console.warn("[Worker:AI] GEMINI_API_KEY not configured. Running mock evaluation.")
+    console.warn(
+      "[Worker:AI] GEMINI_API_KEY not configured. Running mock evaluation."
+    )
     return simulateEvaluation(input)
   }
 
@@ -114,10 +118,15 @@ Please evaluate the attached student answer sheet thoroughly and return the stru
         },
       })
     } catch (error: any) {
-      if (![404, 503].includes(error?.status) || modelName === CURRENT_FREE_FALLBACK_GEMINI_MODEL) {
+      if (
+        ![404, 503].includes(error?.status) ||
+        modelName === CURRENT_FREE_FALLBACK_GEMINI_MODEL
+      ) {
         throw error
       }
-      console.warn(`[Worker:AI] ${modelName} unavailable (HTTP ${error?.status}); retrying with ${CURRENT_FREE_FALLBACK_GEMINI_MODEL}.`)
+      console.warn(
+        `[Worker:AI] ${modelName} unavailable (HTTP ${error?.status}); retrying with ${CURRENT_FREE_FALLBACK_GEMINI_MODEL}.`
+      )
       response = await ai.models.generateContent({
         model: CURRENT_FREE_FALLBACK_GEMINI_MODEL,
         contents,
@@ -131,10 +140,12 @@ Please evaluate the attached student answer sheet thoroughly and return the stru
     const responseText = response.text || ""
     const parsedJson = extractAndParseJson(responseText)
     if (Array.isArray(parsedJson.questions)) {
-      parsedJson.questions = parsedJson.questions.map((q: Record<string, unknown>) => ({
-        ...q,
-        scoreBand: normalizeScoreBand(q.scoreBand),
-      }))
+      parsedJson.questions = parsedJson.questions.map(
+        (q: Record<string, unknown>) => ({
+          ...q,
+          scoreBand: normalizeScoreBand(q.scoreBand),
+        })
+      )
     }
 
     const validated = aiEvaluationResponseSchema.parse(parsedJson)
@@ -171,8 +182,14 @@ export function extractAndParseJson(rawText: string): Record<string, unknown> {
 }
 
 function normalizeScoreBand(value: unknown): "GOOD" | "PARTIAL" | "WEAK" {
-  const normalized = String(value ?? "PARTIAL").toUpperCase().trim()
-  if (normalized === "GOOD" || normalized === "PARTIAL" || normalized === "WEAK") {
+  const normalized = String(value ?? "PARTIAL")
+    .toUpperCase()
+    .trim()
+  if (
+    normalized === "GOOD" ||
+    normalized === "PARTIAL" ||
+    normalized === "WEAK"
+  ) {
     return normalized
   }
   return "PARTIAL"
@@ -190,12 +207,16 @@ function simulateEvaluation(input: EvaluationInput): AiEvaluationResult {
         maxMarks: Math.round(input.maxMarks * 0.4),
         marksAwarded: Math.round(input.maxMarks * 0.32),
         scoreBand: "GOOD",
-        scoreExplanation: "Accurate problem formulation and clear step-by-step reasoning.",
-        strengths: "Structured diagrammatic articulation and thorough proof points.",
-        feedback: "Comprehensive answer addressing all compulsory requirements.",
+        scoreExplanation:
+          "Accurate problem formulation and clear step-by-step reasoning.",
+        strengths:
+          "Structured diagrammatic articulation and thorough proof points.",
+        feedback:
+          "Comprehensive answer addressing all compulsory requirements.",
         missingConcepts: null,
         examinerExpectation: "Expected standard analytical depth met.",
-        improvementAdvice: "Highlight critical assumptions in the introductory paragraph.",
+        improvementAdvice:
+          "Highlight critical assumptions in the introductory paragraph.",
         isLegible: true,
         isUncertain: false,
       },
@@ -204,12 +225,15 @@ function simulateEvaluation(input: EvaluationInput): AiEvaluationResult {
         maxMarks: Math.round(input.maxMarks * 0.6),
         marksAwarded: marks - Math.round(input.maxMarks * 0.32),
         scoreBand: "PARTIAL",
-        scoreExplanation: "Good conceptual synthesis; minor omission in secondary factors.",
+        scoreExplanation:
+          "Good conceptual synthesis; minor omission in secondary factors.",
         strengths: "Directly addresses core prompt with supporting examples.",
         feedback: "Solid performance with concise contextual examples.",
-        missingConcepts: "Could integrate recent statutory amendments or empirical precedents.",
+        missingConcepts:
+          "Could integrate recent statutory amendments or empirical precedents.",
         examinerExpectation: "Integrate multi-dimensional impacts.",
-        improvementAdvice: "Add subheadings to improve readability under timed pressure.",
+        improvementAdvice:
+          "Add subheadings to improve readability under timed pressure.",
         isLegible: true,
         isUncertain: false,
       },

@@ -5,7 +5,12 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { toast } from "@/components/ui/sonner"
 import {
   ShieldCheck,
@@ -83,8 +88,11 @@ export function PortalDesktopLayout({
     return () => window.removeEventListener("keydown", handleKeyDown)
   }, [toggleSidebar])
 
-  const displayName = userName || (role === "ADMIN" ? "Administrator" : "Candidate")
-  const displayEmail = userEmail || (role === "ADMIN" ? "admin@verityra.com" : "candidate@verityra.com")
+  const displayName =
+    userName || (role === "ADMIN" ? "Administrator" : "Candidate")
+  const displayEmail =
+    userEmail ||
+    (role === "ADMIN" ? "admin@verityra.com" : "candidate@verityra.com")
   const initials =
     displayName
       .split(" ")
@@ -94,56 +102,66 @@ export function PortalDesktopLayout({
       .toUpperCase() || "VT"
 
   return (
-    <div className="hidden lg:flex min-h-screen bg-background text-foreground w-full overflow-x-hidden">
+    <div className="hidden min-h-screen w-full overflow-x-hidden bg-background text-foreground lg:flex">
       {/* =========================================================
           DESKTOP LEFT SIDEBAR (Screen L: >= 1024px)
           Collapsible: w-64 expanded | w-16 collapsed (Ctrl+B)
       ========================================================= */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 bg-card border-r border-border z-40 select-none shadow-sm transition-[width] duration-200 ease-in-out flex flex-col justify-between",
+          "fixed inset-y-0 left-0 z-40 flex flex-col justify-between border-r border-border bg-card shadow-sm transition-[width] duration-200 ease-in-out select-none",
           sidebarCollapsed ? "w-16" : "w-64"
         )}
       >
         {/* Brand Header */}
         <div
           className={cn(
-            "h-16 flex items-center border-b border-border",
+            "flex h-16 items-center border-b border-border",
             sidebarCollapsed ? "justify-center px-2" : "justify-between px-5"
           )}
         >
           <Link
             href={role === "ADMIN" ? "/admin" : "/student/dashboard"}
-            className={cn("flex items-center group", sidebarCollapsed ? "gap-0" : "gap-2.5")}
+            className={cn(
+              "group flex items-center",
+              sidebarCollapsed ? "gap-0" : "gap-2.5"
+            )}
             title={sidebarCollapsed ? "Verityra" : undefined}
           >
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#2A6AED] text-white font-extrabold text-base shadow-xs shadow-blue-500/20 group-hover:scale-105 transition-transform">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#2A6AED] text-base font-extrabold text-white shadow-xs shadow-blue-500/20 transition-transform group-hover:scale-105">
               V
             </div>
             {!sidebarCollapsed && (
               <div className="flex flex-col">
-                <span className="font-heading text-base font-extrabold tracking-tight text-slate-900 dark:text-slate-100 leading-none">
+                <span className="font-heading text-base leading-none font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
                   Verityra
                 </span>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#2A6AED] dark:text-blue-400 mt-1">
+                <span className="mt-1 text-[10px] font-bold tracking-wider text-[#2A6AED] uppercase dark:text-blue-400">
                   {role === "ADMIN" ? "Admin Suite" : "Candidate Suite"}
                 </span>
               </div>
             )}
           </Link>
           {!sidebarCollapsed && (
-            <div className="h-6 w-6 rounded-md bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
+            <div className="flex h-6 w-6 items-center justify-center rounded-md bg-slate-100 text-slate-400 dark:bg-slate-800">
               <ChevronRight className="h-3.5 w-3.5" />
             </div>
           )}
         </div>
 
         {/* Navigation Links with Shadcn Tooltips */}
-        <div className={cn("flex-1 overflow-y-auto py-5 space-y-5", sidebarCollapsed ? "px-2" : "px-3.5")}>
+        <div
+          className={cn(
+            "flex-1 space-y-5 overflow-y-auto py-5",
+            sidebarCollapsed ? "px-2" : "px-3.5"
+          )}
+        >
           <div className="space-y-1.5">
             {!sidebarCollapsed && (
-              <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">
-                {role === "ADMIN" ? "Management & Governance" : "Workspace & Practice"}
+              <p className="mb-2 px-3 text-[10px] font-bold tracking-wider text-slate-400 uppercase dark:text-slate-500">
+                {role === "ADMIN"
+                  ? "Management & Governance"
+                  : "Workspace & Practice"}
               </p>
             )}
             <TooltipProvider>
@@ -158,10 +176,10 @@ export function PortalDesktopLayout({
                         <Link
                           href={item.href}
                           className={cn(
-                            "flex items-center rounded-lg text-xs font-bold transition-colors duration-150 group justify-center p-2.5 w-full cursor-pointer",
+                            "group flex w-full cursor-pointer items-center justify-center rounded-lg p-2.5 text-xs font-bold transition-colors duration-150",
                             active
                               ? "bg-primary text-primary-foreground shadow-sm"
-                              : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-slate-100"
+                              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800/80 dark:hover:text-slate-100"
                           )}
                         >
                           <Icon
@@ -169,12 +187,15 @@ export function PortalDesktopLayout({
                               "h-5 w-5 shrink-0 transition-colors",
                               active
                                 ? "text-white"
-                                : "text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300"
+                                : "text-slate-400 group-hover:text-slate-700 dark:text-slate-500 dark:group-hover:text-slate-300"
                             )}
                           />
                         </Link>
                       </TooltipTrigger>
-                      <TooltipContent side="right" className="text-xs font-semibold">
+                      <TooltipContent
+                        side="right"
+                        className="text-xs font-semibold"
+                      >
                         {item.label}
                       </TooltipContent>
                     </Tooltip>
@@ -186,10 +207,10 @@ export function PortalDesktopLayout({
                     key={item.href}
                     href={item.href}
                     className={cn(
-                      "flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-bold transition-colors duration-150 group cursor-pointer",
+                      "group flex cursor-pointer items-center justify-between rounded-lg px-3.5 py-2.5 text-xs font-bold transition-colors duration-150",
                       active
                         ? "bg-primary text-primary-foreground shadow-sm"
-                        : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-slate-100"
+                        : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800/80 dark:hover:text-slate-100"
                     )}
                   >
                     <span className="flex items-center gap-2.5 truncate">
@@ -198,12 +219,14 @@ export function PortalDesktopLayout({
                           "h-4 w-4 shrink-0 transition-colors",
                           active
                             ? "text-white"
-                            : "text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300"
+                            : "text-slate-400 group-hover:text-slate-700 dark:text-slate-500 dark:group-hover:text-slate-300"
                         )}
                       />
                       <span className="truncate">{item.label}</span>
                     </span>
-                    {active && <ChevronRight className="h-3.5 w-3.5 text-white/80 shrink-0" />}
+                    {active && (
+                      <ChevronRight className="h-3.5 w-3.5 shrink-0 text-white/80" />
+                    )}
                   </Link>
                 )
               })}
@@ -215,7 +238,7 @@ export function PortalDesktopLayout({
               <Separator className="bg-slate-200/80 dark:bg-slate-800" />
 
               {/* Security & Invariant Note */}
-              <div className="px-3 space-y-1.5">
+              <div className="space-y-1.5 px-3">
                 <div className="flex items-center gap-2 text-[#2A6AED] dark:text-blue-400">
                   {role === "ADMIN" ? (
                     <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
@@ -223,10 +246,12 @@ export function PortalDesktopLayout({
                     <Lock className="h-3.5 w-3.5 shrink-0" />
                   )}
                   <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200">
-                    {role === "ADMIN" ? "Audited Governance" : "3-Attempt Guarantee"}
+                    {role === "ADMIN"
+                      ? "Audited Governance"
+                      : "3-Attempt Guarantee"}
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                <p className="text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
                   {role === "ADMIN"
                     ? "All score edits & extra attempt overrides are logged to the immutable audit trail."
                     : "Each enrolled test includes 3 evaluated handwritten attempts in our encrypted vault."}
@@ -237,17 +262,19 @@ export function PortalDesktopLayout({
         </div>
 
         {/* Bottom Profile, Quick Links & Collapse Button */}
-        <div className="p-3.5 border-t border-border bg-card space-y-2.5">
+        <div className="space-y-2.5 border-t border-border bg-card p-3.5">
           {sidebarCollapsed ? (
             <TooltipProvider>
               {/* Collapsed: Show only avatar */}
               <Tooltip>
                 <TooltipTrigger>
                   <Link
-                    href={role === "ADMIN" ? "/admin/profile" : "/student/profile"}
-                    className="flex items-center justify-center p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer w-full"
+                    href={
+                      role === "ADMIN" ? "/admin/profile" : "/student/profile"
+                    }
+                    className="flex w-full cursor-pointer items-center justify-center rounded-xl p-2 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
                   >
-                    <div className="h-9 w-9 rounded-full bg-[#2A6AED] text-white font-bold text-xs flex items-center justify-center shadow-2xs">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#2A6AED] text-xs font-bold text-white shadow-2xs">
                       {initials}
                     </div>
                   </Link>
@@ -264,7 +291,7 @@ export function PortalDesktopLayout({
                   <button
                     type="button"
                     onClick={toggleSidebar}
-                    className="w-full flex items-center justify-center h-9 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                    className="flex h-9 w-full cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                     aria-label="Expand sidebar"
                   >
                     <PanelLeftOpen className="h-4 w-4" />
@@ -279,25 +306,27 @@ export function PortalDesktopLayout({
             <>
               <Link
                 href={role === "ADMIN" ? "/admin/profile" : "/student/profile"}
-                className="flex items-center gap-2.5 px-2 py-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group cursor-pointer"
+                className="group flex cursor-pointer items-center gap-2.5 rounded-xl px-2 py-1.5 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
                 title="Open Profile & Settings"
               >
-                <div className="h-8 w-8 rounded-full bg-[#2A6AED] text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#2A6AED] text-xs font-bold text-white shadow-2xs">
                   {initials}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-bold text-slate-900 dark:text-slate-100 group-hover:text-[#2A6AED] transition-colors truncate">
+                  <p className="truncate text-xs font-bold text-slate-900 transition-colors group-hover:text-[#2A6AED] dark:text-slate-100">
                     {displayName}
                   </p>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">{displayEmail}</p>
+                  <p className="truncate text-[11px] text-slate-500 dark:text-slate-400">
+                    {displayEmail}
+                  </p>
                 </div>
-                <ChevronRight className="h-3.5 w-3.5 text-slate-400 group-hover:text-[#2A6AED] transition-colors shrink-0" />
+                <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-400 transition-colors group-hover:text-[#2A6AED]" />
               </Link>
 
               <div className="grid grid-cols-2 gap-1.5">
                 <Link
                   href="/"
-                  className="inline-flex items-center justify-center gap-1.5 h-8 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[11px] font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                  className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 text-[11px] font-semibold text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-slate-100"
                 >
                   <ExternalLink className="h-3 w-3" />
                   Public Site
@@ -305,7 +334,7 @@ export function PortalDesktopLayout({
                 <button
                   type="button"
                   onClick={handleSignOut}
-                  className="inline-flex items-center justify-center gap-1.5 h-8 px-2.5 rounded-lg border border-red-200/80 dark:border-red-900/60 bg-red-50/50 dark:bg-red-950/30 text-[11px] font-semibold text-red-600 dark:text-red-400 hover:bg-red-100/70 dark:hover:bg-red-900/40 transition-colors cursor-pointer"
+                  className="inline-flex h-8 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-red-200/80 bg-red-50/50 px-2.5 text-[11px] font-semibold text-red-600 transition-colors hover:bg-red-100/70 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-400 dark:hover:bg-red-900/40"
                 >
                   <LogOut className="h-3 w-3" />
                   Sign Out
@@ -316,12 +345,12 @@ export function PortalDesktopLayout({
               <button
                 type="button"
                 onClick={toggleSidebar}
-                className="w-full flex items-center justify-center gap-2 h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-[11px] font-semibold cursor-pointer"
+                className="flex h-9 w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 text-[11px] font-semibold text-slate-600 transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                 aria-label="Collapse sidebar"
               >
                 <PanelLeftClose className="h-3.5 w-3.5" />
                 Collapse Sidebar
-                <kbd className="hidden xl:inline-flex ml-auto px-1.5 py-0.5 rounded text-[10px] font-mono bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+                <kbd className="ml-auto hidden rounded border border-slate-200 bg-white px-1.5 py-0.5 font-mono text-[10px] xl:inline-flex dark:border-slate-700 dark:bg-slate-900">
                   Ctrl+B
                 </kbd>
               </button>
@@ -336,15 +365,15 @@ export function PortalDesktopLayout({
       ========================================================= */}
       <div
         className={cn(
-          "flex-1 flex flex-col min-w-0 transition-all duration-300 ease-in-out",
+          "flex min-w-0 flex-1 flex-col transition-all duration-300 ease-in-out",
           sidebarCollapsed ? "pl-16" : "pl-64"
         )}
       >
         {/* Sticky Command Topbar */}
-        <header className="sticky top-0 z-30 h-16 bg-card/95 backdrop-blur-md border-b border-border px-6 lg:px-8 flex items-center justify-between gap-4">
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b border-border bg-card/95 px-6 backdrop-blur-md lg:px-8">
           {/* Global Search Input - Opens Command Palette (Ctrl+K) */}
-          <div className="relative flex-1 max-w-xl min-w-0">
-            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <div className="relative max-w-xl min-w-0 flex-1">
+            <Search className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               placeholder={
@@ -354,9 +383,9 @@ export function PortalDesktopLayout({
               }
               readOnly
               onClick={() => setCommandPaletteOpen(true)}
-              className="w-full h-11 pl-10 pr-16 rounded-lg border border-border bg-muted/70 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground cursor-pointer hover:border-[#2A6AED]/50 hover:bg-card transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2A6AED]/30"
+              className="h-11 w-full cursor-pointer rounded-lg border border-border bg-muted/70 pr-16 pl-10 text-xs text-foreground transition-colors placeholder:text-muted-foreground hover:border-[#2A6AED]/50 hover:bg-card focus-visible:ring-2 focus-visible:ring-[#2A6AED]/30 focus-visible:outline-none sm:text-sm"
             />
-            <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-0.5 px-1.5 py-0.5 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[10px] font-bold text-slate-400 dark:text-slate-500 shadow-2xs">
+            <div className="absolute top-1/2 right-2.5 flex -translate-y-1/2 items-center gap-0.5 rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-bold text-slate-400 shadow-2xs dark:border-slate-800 dark:bg-slate-900 dark:text-slate-500">
               <kbd className="font-mono">Ctrl</kbd>
               <span className="text-slate-300 dark:text-slate-700">+</span>
               <kbd className="font-mono">K</kbd>
@@ -364,13 +393,13 @@ export function PortalDesktopLayout({
           </div>
 
           {/* Right Utility Actions */}
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex shrink-0 items-center gap-3">
             {/* Quick Action Button */}
             {role === "ADMIN" ? (
               <Link href="/admin/test-series/new">
                 <Button
                   size="sm"
-                  className="h-9 px-3.5 rounded-lg bg-[#2A6AED] hover:bg-[#1E55C7] text-white text-xs font-semibold shadow-xs cursor-pointer"
+                  className="h-9 cursor-pointer rounded-lg bg-[#2A6AED] px-3.5 text-xs font-semibold text-white shadow-xs hover:bg-[#1E55C7]"
                 >
                   <Plus className="mr-1.5 h-3.5 w-3.5" />
                   Add New
@@ -380,7 +409,7 @@ export function PortalDesktopLayout({
               <Link href="/tests">
                 <Button
                   size="sm"
-                  className="h-9 px-3.5 rounded-lg bg-[#2A6AED] hover:bg-[#1E55C7] text-white text-xs font-semibold shadow-xs cursor-pointer"
+                  className="h-9 cursor-pointer rounded-lg bg-[#2A6AED] px-3.5 text-xs font-semibold text-white shadow-xs hover:bg-[#1E55C7]"
                 >
                   <Compass className="mr-1.5 h-3.5 w-3.5" />
                   Explore Tests
@@ -391,7 +420,7 @@ export function PortalDesktopLayout({
             {/* Role / Vault Status Badge */}
             <Badge
               variant="outline"
-              className="inline-flex items-center gap-1.5 bg-[#EFF6FF] dark:bg-blue-950/50 text-[#2A6AED] dark:text-blue-400 border-blue-200 dark:border-blue-900/60 text-[11px] font-bold px-2.5 py-1 rounded-full"
+              className="inline-flex items-center gap-1.5 rounded-full border-blue-200 bg-[#EFF6FF] px-2.5 py-1 text-[11px] font-bold text-[#2A6AED] dark:border-blue-900/60 dark:bg-blue-950/50 dark:text-blue-400"
             >
               <ShieldCheck className="h-3.5 w-3.5" />
               {role === "ADMIN" ? "Admin Suite" : "256-Bit Vault"}
@@ -402,10 +431,11 @@ export function PortalDesktopLayout({
               type="button"
               onClick={() => {
                 toast.info("Notifications", {
-                  description: "All evaluation queues and security audits are up to date.",
+                  description:
+                    "All evaluation queues and security audits are up to date.",
                 })
               }}
-              className="relative h-11 w-11 rounded-lg border border-border bg-card flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors shadow-none cursor-pointer"
+              className="relative flex h-11 w-11 cursor-pointer items-center justify-center rounded-lg border border-border bg-card text-muted-foreground shadow-none transition-colors hover:bg-muted"
               aria-label="View notifications"
             >
               <Bell className="h-4 w-4" />
@@ -417,12 +447,12 @@ export function PortalDesktopLayout({
             {/* User Profile Avatar Pill */}
             <Link
               href={role === "ADMIN" ? "/admin/profile" : "/student/profile"}
-              className="flex items-center gap-2 pl-3 border-l border-slate-200 dark:border-slate-800 group cursor-pointer"
+              className="group flex cursor-pointer items-center gap-2 border-l border-slate-200 pl-3 dark:border-slate-800"
             >
-              <div className="h-9 w-9 rounded-full bg-[#EFF6FF] dark:bg-blue-950/80 border border-blue-200 dark:border-blue-800 text-[#2A6AED] dark:text-blue-400 font-extrabold text-xs flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-blue-200 bg-[#EFF6FF] text-xs font-extrabold text-[#2A6AED] shadow-2xs transition-transform group-hover:scale-105 dark:border-blue-800 dark:bg-blue-950/80 dark:text-blue-400">
                 {initials}
               </div>
-              <span className="hidden xl:inline-block text-xs font-bold text-slate-800 dark:text-slate-200 max-w-[130px] truncate group-hover:text-[#2A6AED] transition-colors">
+              <span className="hidden max-w-[130px] truncate text-xs font-bold text-slate-800 transition-colors group-hover:text-[#2A6AED] xl:inline-block dark:text-slate-200">
                 {displayName}
               </span>
             </Link>
@@ -430,7 +460,7 @@ export function PortalDesktopLayout({
         </header>
 
         {/* Main Workspace Canvas */}
-        <main className="flex-1 py-8 px-6 lg:px-8 max-w-7xl w-full mx-auto space-y-6">
+        <main className="mx-auto w-full max-w-7xl flex-1 space-y-6 px-6 py-8 lg:px-8">
           {children}
         </main>
       </div>

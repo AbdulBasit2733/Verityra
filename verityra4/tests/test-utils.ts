@@ -21,7 +21,9 @@ export class TestSuite {
     try {
       const res = fn()
       if (res instanceof Promise) {
-        throw new Error(`Asynchronous test "${testName}" should be awaited or handled synchronously in unit tests`)
+        throw new Error(
+          `Asynchronous test "${testName}" should be awaited or handled synchronously in unit tests`
+        )
       }
       this.passed++
       console.log(`  ✓ ${testName}`)
@@ -49,7 +51,9 @@ export class TestSuite {
   }
 
   summary(): TestResult {
-    console.log(`\n  Suite Result: ${this.passed} passed, ${this.failed} failed\n`)
+    console.log(
+      `\n  Suite Result: ${this.passed} passed, ${this.failed} failed\n`
+    )
     return {
       suiteName: this.name,
       passed: this.passed,

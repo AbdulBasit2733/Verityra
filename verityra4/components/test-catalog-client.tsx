@@ -18,9 +18,15 @@ export interface TestCatalogItem {
   createdAt?: string
 }
 
-export function TestCatalogClient({ testSeriesList }: { testSeriesList: TestCatalogItem[] }) {
-  return <>
-    <TestCatalogDesktop items={testSeriesList} />
-    <TestCatalogMobile items={testSeriesList} />
-  </>
+export function TestCatalogClient({
+  testSeriesList,
+}: {
+  testSeriesList: TestCatalogItem[]
+}) {
+  return (
+    <>
+      <TestCatalogDesktop items={testSeriesList} />
+      <TestCatalogMobile items={testSeriesList} />
+    </>
+  )
 }

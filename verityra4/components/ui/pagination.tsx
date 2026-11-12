@@ -57,7 +57,7 @@ function PaginationLink({
       data-slot="pagination-link"
       data-active={isActive}
       className={cn(
-        "inline-flex h-8 min-w-8 items-center justify-center rounded-lg px-2.5 text-xs font-semibold transition-colors outline-none select-none cursor-pointer disabled:pointer-events-none disabled:opacity-50",
+        "inline-flex h-8 min-w-8 cursor-pointer items-center justify-center rounded-lg px-2.5 text-xs font-semibold transition-colors outline-none select-none disabled:pointer-events-none disabled:opacity-50",
         isActive
           ? "bg-primary text-primary-foreground shadow-2xs"
           : "border border-border bg-card text-foreground hover:bg-muted hover:text-foreground",
@@ -108,7 +108,10 @@ function PaginationEllipsis({
     <span
       aria-hidden
       data-slot="pagination-ellipsis"
-      className={cn("flex h-8 w-8 items-center justify-center text-muted-foreground", className)}
+      className={cn(
+        "flex h-8 w-8 items-center justify-center text-muted-foreground",
+        className
+      )}
       {...props}
     >
       <MoreHorizontal className="h-4 w-4" />
@@ -159,12 +162,22 @@ export function GlobalPagination({
   }
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
-      <div className="flex flex-wrap items-center justify-between sm:justify-start gap-3">
+    <div className="flex flex-col gap-3 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between dark:text-slate-400">
+      <div className="flex flex-wrap items-center justify-between gap-3 sm:justify-start">
         <span>
-          Showing <strong className="font-bold text-slate-900 dark:text-slate-100">{startItem}</strong> to{" "}
-          <strong className="font-bold text-slate-900 dark:text-slate-100">{endItem}</strong> of{" "}
-          <strong className="font-bold text-slate-900 dark:text-slate-100">{totalItems}</strong> items
+          Showing{" "}
+          <strong className="font-bold text-slate-900 dark:text-slate-100">
+            {startItem}
+          </strong>{" "}
+          to{" "}
+          <strong className="font-bold text-slate-900 dark:text-slate-100">
+            {endItem}
+          </strong>{" "}
+          of{" "}
+          <strong className="font-bold text-slate-900 dark:text-slate-100">
+            {totalItems}
+          </strong>{" "}
+          items
         </span>
 
         {onPageSizeChange && (
@@ -176,7 +189,10 @@ export function GlobalPagination({
                 if (val) onPageSizeChange(Number(val))
               }}
             >
-              <SelectTrigger size="sm" className="h-8 px-2.5 text-xs rounded-lg border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+              <SelectTrigger
+                size="sm"
+                className="h-8 rounded-lg border-slate-200 bg-white px-2.5 text-xs dark:border-slate-800 dark:bg-slate-900"
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -192,16 +208,16 @@ export function GlobalPagination({
       </div>
 
       {/* Mobile Compact Controls (< sm screens) */}
-      <div className="flex sm:hidden items-center justify-between w-full pt-2 border-t border-slate-100 dark:border-slate-800">
+      <div className="flex w-full items-center justify-between border-t border-slate-100 pt-2 sm:hidden dark:border-slate-800">
         <Button
           type="button"
           variant="outline"
           size="sm"
           disabled={currentPage <= 1}
           onClick={() => onPageChange(Math.max(1, currentPage - 1))}
-          className="h-8 px-3 text-xs font-semibold rounded-lg border-slate-200 dark:border-slate-800"
+          className="h-8 rounded-lg border-slate-200 px-3 text-xs font-semibold dark:border-slate-800"
         >
-          <ChevronLeft className="h-3.5 w-3.5 mr-1" />
+          <ChevronLeft className="mr-1 h-3.5 w-3.5" />
           Previous
         </Button>
 
@@ -214,19 +230,27 @@ export function GlobalPagination({
           variant="outline"
           size="sm"
           disabled={currentPage >= safeTotalPages}
-          onClick={() => onPageChange(Math.min(safeTotalPages, currentPage + 1))}
-          className="h-8 px-3 text-xs font-semibold rounded-lg border-slate-200 dark:border-slate-800"
+          onClick={() =>
+            onPageChange(Math.min(safeTotalPages, currentPage + 1))
+          }
+          className="h-8 rounded-lg border-slate-200 px-3 text-xs font-semibold dark:border-slate-800"
         >
           Next
-          <ChevronRight className="h-3.5 w-3.5 ml-1" />
+          <ChevronRight className="ml-1 h-3.5 w-3.5" />
         </Button>
       </div>
 
       {/* Desktop & Tablet Full Pagination (sm+) */}
-      <div className="hidden sm:flex items-center gap-3 self-end sm:self-auto">
-        <span className="hidden md:inline-block font-medium text-slate-500 dark:text-slate-400">
-          Page <strong className="font-bold text-slate-900 dark:text-slate-100">{currentPage}</strong> of{" "}
-          <strong className="font-bold text-slate-900 dark:text-slate-100">{safeTotalPages}</strong>
+      <div className="hidden items-center gap-3 self-end sm:flex sm:self-auto">
+        <span className="hidden font-medium text-slate-500 md:inline-block dark:text-slate-400">
+          Page{" "}
+          <strong className="font-bold text-slate-900 dark:text-slate-100">
+            {currentPage}
+          </strong>{" "}
+          of{" "}
+          <strong className="font-bold text-slate-900 dark:text-slate-100">
+            {safeTotalPages}
+          </strong>
         </span>
 
         <Pagination className="mx-0 w-auto justify-end">
@@ -258,7 +282,9 @@ export function GlobalPagination({
             <PaginationItem>
               <PaginationNext
                 disabled={currentPage >= safeTotalPages}
-                onClick={() => onPageChange(Math.min(safeTotalPages, currentPage + 1))}
+                onClick={() =>
+                  onPageChange(Math.min(safeTotalPages, currentPage + 1))
+                }
               />
             </PaginationItem>
           </PaginationContent>

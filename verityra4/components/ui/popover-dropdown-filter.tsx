@@ -1,7 +1,11 @@
 "use client"
 
 import * as React from "react"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Check, ChevronDown, Search, X } from "lucide-react"
@@ -66,10 +70,10 @@ export function PopoverDropdownFilter({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
         className={cn(
-          "inline-flex h-10 items-center justify-between gap-2 rounded-xl border px-3 text-xs font-semibold transition-all cursor-pointer outline-none shadow-xs select-none",
+          "inline-flex h-10 cursor-pointer items-center justify-between gap-2 rounded-xl border px-3 text-xs font-semibold shadow-xs transition-all outline-none select-none",
           isActive
             ? "border-[#BFD5FA] bg-[#EFF6FF] text-[#145DEB] hover:bg-[#E4F0FF]"
-            : "border-[#DCE7FA] bg-white text-[#071B3A] hover:bg-[#F1F6FF] hover:border-[#BFD5FA]",
+            : "border-[#DCE7FA] bg-white text-[#071B3A] hover:border-[#BFD5FA] hover:bg-[#F1F6FF]",
           className
         )}
       >
@@ -82,13 +86,15 @@ export function PopoverDropdownFilter({
               )}
             />
           )}
-          <span className="text-slate-500 font-medium">{title}:</span>
-          <span className="font-bold truncate">
-            {isActive ? selectedOption?.label || selectedValue : defaultAllLabel}
+          <span className="font-medium text-slate-500">{title}:</span>
+          <span className="truncate font-bold">
+            {isActive
+              ? selectedOption?.label || selectedValue
+              : defaultAllLabel}
           </span>
         </div>
 
-        <div className="flex items-center gap-1 shrink-0 ml-1">
+        <div className="ml-1 flex shrink-0 items-center gap-1">
           {isActive ? (
             <span
               role="button"
@@ -100,7 +106,7 @@ export function PopoverDropdownFilter({
                 }
               }}
               title={`Clear ${title} filter`}
-              className="flex h-4 w-4 items-center justify-center rounded-full hover:bg-blue-200/60 text-[#145DEB] transition-colors"
+              className="flex h-4 w-4 items-center justify-center rounded-full text-[#145DEB] transition-colors hover:bg-blue-200/60"
             >
               <X className="h-3 w-3" />
             </span>
@@ -113,23 +119,26 @@ export function PopoverDropdownFilter({
       <PopoverContent
         align="start"
         sideOffset={6}
-        className={cn("p-2 border-[#DCE7FA] bg-white shadow-xl rounded-2xl", width)}
+        className={cn(
+          "rounded-2xl border-[#DCE7FA] bg-white p-2 shadow-xl",
+          width
+        )}
       >
         {/* Search Header */}
         <div className="relative mb-1.5 px-1 pt-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+          <Search className="absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={searchPlaceholder}
-            className="w-full h-8 pl-8 pr-7 text-xs bg-[#F1F6FF]/60 border border-[#DCE7FA] rounded-lg outline-none focus:border-[#145DEB] text-[#071B3A] placeholder:text-slate-400"
+            className="h-8 w-full rounded-lg border border-[#DCE7FA] bg-[#F1F6FF]/60 pr-7 pl-8 text-xs text-[#071B3A] outline-none placeholder:text-slate-400 focus:border-[#145DEB]"
           />
           {search && (
             <button
               type="button"
               onClick={() => setSearch("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              className="absolute top-1/2 right-3 -translate-y-1/2 text-slate-400 hover:text-slate-600"
             >
               <X className="h-3 w-3" />
             </button>
@@ -137,16 +146,16 @@ export function PopoverDropdownFilter({
         </div>
 
         {/* Options List */}
-        <div className="max-h-60 overflow-y-auto space-y-0.5 py-1 px-1 text-xs">
+        <div className="max-h-60 space-y-0.5 overflow-y-auto px-1 py-1 text-xs">
           {/* Default 'ALL' option */}
           {!search.trim() && (
             <button
               type="button"
               onClick={() => handleSelectOption("ALL")}
               className={cn(
-                "w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left transition-colors cursor-pointer",
+                "flex w-full cursor-pointer items-center justify-between rounded-lg px-2.5 py-2 text-left transition-colors",
                 selectedValue === "ALL" || !selectedValue
-                  ? "bg-[#EFF6FF] text-[#145DEB] font-bold"
+                  ? "bg-[#EFF6FF] font-bold text-[#145DEB]"
                   : "text-slate-700 hover:bg-[#F1F6FF]"
               )}
             >
@@ -168,9 +177,9 @@ export function PopoverDropdownFilter({
                   type="button"
                   onClick={() => handleSelectOption(option.value)}
                   className={cn(
-                    "w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left transition-colors cursor-pointer group",
+                    "group flex w-full cursor-pointer items-center justify-between rounded-lg px-2.5 py-2 text-left transition-colors",
                     isSelected
-                      ? "bg-[#EFF6FF] text-[#145DEB] font-bold"
+                      ? "bg-[#EFF6FF] font-bold text-[#145DEB]"
                       : "text-slate-700 hover:bg-[#F1F6FF]"
                   )}
                 >
@@ -179,20 +188,24 @@ export function PopoverDropdownFilter({
                       <OptionIcon
                         className={cn(
                           "h-3.5 w-3.5 shrink-0",
-                          isSelected ? "text-[#145DEB]" : "text-slate-400 group-hover:text-[#145DEB]"
+                          isSelected
+                            ? "text-[#145DEB]"
+                            : "text-slate-400 group-hover:text-[#145DEB]"
                         )}
                       />
                     )}
                     <span className="truncate">{option.label}</span>
                   </div>
 
-                  <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                  <div className="ml-2 flex shrink-0 items-center gap-1.5">
                     {option.count !== undefined && (
-                      <span className="text-[10px] font-semibold text-slate-400 bg-slate-100 rounded-md px-1.5 py-0.5">
+                      <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-400">
                         {option.count}
                       </span>
                     )}
-                    {isSelected && <Check className="h-3.5 w-3.5 text-[#145DEB]" />}
+                    {isSelected && (
+                      <Check className="h-3.5 w-3.5 text-[#145DEB]" />
+                    )}
                   </div>
                 </button>
               )
@@ -206,13 +219,13 @@ export function PopoverDropdownFilter({
 
         {/* Footer */}
         {isActive && (
-          <div className="border-t border-[#DCE7FA] pt-1.5 mt-1 px-1">
+          <div className="mt-1 border-t border-[#DCE7FA] px-1 pt-1.5">
             <Button
               type="button"
               variant="ghost"
               size="sm"
               onClick={handleClear}
-              className="w-full h-7 text-[11px] text-[#145DEB] hover:bg-[#EFF6FF] justify-center"
+              className="h-7 w-full justify-center text-[11px] text-[#145DEB] hover:bg-[#EFF6FF]"
             >
               Clear filter
             </Button>

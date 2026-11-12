@@ -3,7 +3,10 @@ import { isDatabaseConnected, prisma } from "@/lib/prisma"
 import { normalizePrivateFileUrl } from "@/lib/supabase"
 import { StudentDownloadsClient } from "@/components/student/downloads/student-downloads-client"
 import type { StudentDownloadGroup } from "@/components/student/downloads/types"
-import { DEMO_QUESTION_PAPERS, QuestionPaperItem } from "@/lib/mock-question-papers"
+import {
+  DEMO_QUESTION_PAPERS,
+  QuestionPaperItem,
+} from "@/lib/mock-question-papers"
 
 export const dynamic = "force-dynamic"
 
@@ -23,11 +26,24 @@ export default async function StudentDownloadsPage() {
             title: true,
             papers: {
               orderBy: { title: "asc" },
-              select: { id: true, title: true, fileUrl: true, version: true, createdAt: true },
+              select: {
+                id: true,
+                title: true,
+                fileUrl: true,
+                version: true,
+                createdAt: true,
+              },
             },
             templates: {
               orderBy: { title: "asc" },
-              select: { id: true, title: true, description: true, fileUrl: true, version: true, createdAt: true },
+              select: {
+                id: true,
+                title: true,
+                description: true,
+                fileUrl: true,
+                version: true,
+                createdAt: true,
+              },
             },
           },
         },
@@ -89,7 +105,9 @@ export default async function StudentDownloadsPage() {
           fileSizeBytes: r.fileSizeBytes,
           isPublished: r.isPublished,
           downloadsCount: r.downloadsCount || 0,
-          createdAt: r.createdAt ? new Date(r.createdAt).toISOString() : new Date().toISOString(),
+          createdAt: r.createdAt
+            ? new Date(r.createdAt).toISOString()
+            : new Date().toISOString(),
         }))
       }
     } catch (err) {

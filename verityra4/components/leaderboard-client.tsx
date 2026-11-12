@@ -16,9 +16,16 @@ export interface LeaderboardEntry {
   submittedAt: string
 }
 
-export function LeaderboardClient({ rankings }: { rankings: LeaderboardEntry[] }) {
+export function LeaderboardClient({
+  rankings,
+}: {
+  rankings: LeaderboardEntry[]
+}) {
   // Never assume the server sends rows in rank order
-  const sorted = useMemo(() => [...rankings].sort((a, b) => a.rank - b.rank), [rankings])
+  const sorted = useMemo(
+    () => [...rankings].sort((a, b) => a.rank - b.rank),
+    [rankings]
+  )
 
   if (sorted.length === 0) {
     return (

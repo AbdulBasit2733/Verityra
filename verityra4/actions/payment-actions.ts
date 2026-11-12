@@ -55,7 +55,9 @@ const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000
 /**
  * Server Action: Retrieve all student payments for Admin Panel
  */
-export async function getAdminPaymentsAction(): Promise<ActionResult<{ payments: AdminPaymentRow[] }>> {
+export async function getAdminPaymentsAction(): Promise<
+  ActionResult<{ payments: AdminPaymentRow[] }>
+> {
   try {
     await requireAdmin("/admin/payments")
     const dbConnected = await isDatabaseConnected()
@@ -225,7 +227,9 @@ export async function getAdminPaymentsAction(): Promise<ActionResult<{ payments:
       },
     })
 
-    const testSeriesIds = Array.from(new Set(payments.map((p) => p.testSeriesId).filter(Boolean)))
+    const testSeriesIds = Array.from(
+      new Set(payments.map((p) => p.testSeriesId).filter(Boolean))
+    )
     const testSeriesRecords =
       testSeriesIds.length > 0
         ? await prisma.testSeries.findMany({
@@ -233,7 +237,9 @@ export async function getAdminPaymentsAction(): Promise<ActionResult<{ payments:
             select: { id: true, title: true },
           })
         : []
-    const testSeriesTitleMap = new Map(testSeriesRecords.map((ts) => [ts.id, ts.title]))
+    const testSeriesTitleMap = new Map(
+      testSeriesRecords.map((ts) => [ts.id, ts.title])
+    )
 
     const now = Date.now()
 
@@ -310,17 +316,25 @@ export async function adminTriggerRefundAction(params: {
       return { success: false, error: "Payment ID is required." }
     }
     if (!params.adminNotes?.trim()) {
-      return { success: false, error: "Please provide detailed administrative notes for the refund audit trail." }
+      return {
+        success: false,
+        error:
+          "Please provide detailed administrative notes for the refund audit trail.",
+      }
     }
 
     if (!dbConnected) {
       if (process.env.NODE_ENV === "production") {
-        return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+        return {
+          success: false,
+          error: "Database temporarily unavailable. Please try again shortly.",
+        }
       }
       // Dev mode mock success
       return {
         success: true,
-        message: "Refund processed successfully (Development Mock). Access revoked.",
+        message:
+          "Refund processed successfully (Development Mock). Access revoked.",
         data: {
           refundId: "rfnd_dev_" + Date.now(),
           amountRefunded: 49900,
@@ -353,7 +367,10 @@ export async function adminTriggerRefundAction(params: {
 
     // Idempotency: Check if already refunded
     if (payment.status === PaymentStatus.REFUNDED) {
-      return { success: false, error: "This payment has already been 100% refunded." }
+      return {
+        success: false,
+        error: "This payment has already been 100% refunded.",
+      }
     }
 
     const razorpayConfigured = Boolean(
@@ -368,14 +385,20 @@ export async function adminTriggerRefundAction(params: {
     // transaction commits. Reconcile that state before allowing another refund.
     if (payment.status === PaymentStatus.REFUND_PENDING) {
       if (!razorpayConfigured || !payment.razorpayPaymentId) {
-        return { success: false, error: "Refund is still being reconciled. Please retry after Razorpay credentials are available." }
+        return {
+          success: false,
+          error:
+            "Refund is still being reconciled. Please retry after Razorpay credentials are available.",
+        }
       }
       try {
         const razorpay = new Razorpay({
           key_id: process.env.RAZORPAY_KEY_ID!,
           key_secret: process.env.RAZORPAY_KEY_SECRET!,
         })
-        const refundsResponse = await razorpay.payments.fetchMultipleRefund(payment.razorpayPaymentId)
+        const refundsResponse = await razorpay.payments.fetchMultipleRefund(
+          payment.razorpayPaymentId
+        )
         const matchingRefund = refundsResponse.items?.find(
           (refund: any) =>
             refund.amount === payment.amount &&
@@ -396,8 +419,15 @@ export async function adminTriggerRefundAction(params: {
           payment.status = PaymentStatus.COMPLETED
         }
       } catch (reconcileError) {
-        console.error("[adminTriggerRefundAction] Failed to reconcile pending refund:", reconcileError)
-        return { success: false, error: "Could not verify the pending refund with Razorpay. Please retry shortly." }
+        console.error(
+          "[adminTriggerRefundAction] Failed to reconcile pending refund:",
+          reconcileError
+        )
+        return {
+          success: false,
+          error:
+            "Could not verify the pending refund with Razorpay. Please retry shortly.",
+        }
       }
     }
 
@@ -412,16 +442,26 @@ export async function adminTriggerRefundAction(params: {
       }
     }
 
-    const refundableAmount = Math.max(0, payment.amount - payment.amountRefunded)
+    const refundableAmount = Math.max(
+      0,
+      payment.amount - payment.amountRefunded
+    )
     if (refundableAmount <= 0 && !recoveredRefundId) {
-      return { success: false, error: "This payment has already been fully refunded." }
+      return {
+        success: false,
+        error: "This payment has already been fully refunded.",
+      }
     }
 
     const existingRefund = payment.refunds.find(
-      (refund) => refund.status === "PROCESSED" && refund.amount >= payment.amount
+      (refund) =>
+        refund.status === "PROCESSED" && refund.amount >= payment.amount
     )
     if (existingRefund) {
-      return { success: false, error: "A full refund has already been recorded for this payment." }
+      return {
+        success: false,
+        error: "A full refund has already been recorded for this payment.",
+      }
     }
 
     // 2. 7-Day Return Policy Check
@@ -451,15 +491,23 @@ export async function adminTriggerRefundAction(params: {
     const claim = await prisma.payment.updateMany({
       where: {
         id: payment.id,
-        status: { in: [PaymentStatus.COMPLETED, PaymentStatus.PARTIALLY_REFUNDED] },
+        status: {
+          in: [PaymentStatus.COMPLETED, PaymentStatus.PARTIALLY_REFUNDED],
+        },
       },
       data: { status: PaymentStatus.REFUND_PENDING },
     })
     if (claim.count !== 1) {
-      return { success: false, error: "This payment is already being refunded or has changed state. Refresh and try again." }
+      return {
+        success: false,
+        error:
+          "This payment is already being refunded or has changed state. Refresh and try again.",
+      }
     }
 
-    const refundAmountToProcess = recoveredRefundId ? payment.amount : refundableAmount
+    const refundAmountToProcess = recoveredRefundId
+      ? payment.amount
+      : refundableAmount
     let razorpayRefundId = recoveredRefundId || `rfnd_${Date.now()}`
 
     if (!recoveredRefundId && razorpayConfigured && payment.razorpayPaymentId) {
@@ -469,31 +517,50 @@ export async function adminTriggerRefundAction(params: {
           key_secret: process.env.RAZORPAY_KEY_SECRET,
         })
 
-        const rzpRefund: any = await razorpay.payments.refund(payment.razorpayPaymentId, {
-          amount: refundAmountToProcess,
-          speed: "normal",
-          notes: {
-            adminId: admin.id,
-            reason: params.reason,
-            policy: isWithin7Days ? "7_DAY_RETURN_WINDOW" : "SUPERADMIN_OVERRIDE",
-          },
-          receipt: `refund_${payment.id}`,
-        })
+        const rzpRefund: any = await razorpay.payments.refund(
+          payment.razorpayPaymentId,
+          {
+            amount: refundAmountToProcess,
+            speed: "normal",
+            notes: {
+              adminId: admin.id,
+              reason: params.reason,
+              policy: isWithin7Days
+                ? "7_DAY_RETURN_WINDOW"
+                : "SUPERADMIN_OVERRIDE",
+            },
+            receipt: `refund_${payment.id}`,
+          }
+        )
         razorpayRefundId = rzpRefund.id
       } catch (rzpErr: any) {
         console.error("[adminTriggerRefundAction] Razorpay API Error:", rzpErr)
-        await prisma.payment.update({
-          where: { id: payment.id },
-          data: { status: previousStatus },
-        }).catch((resetError) => console.error("[adminTriggerRefundAction] Failed to reset refund claim:", resetError))
+        await prisma.payment
+          .update({
+            where: { id: payment.id },
+            data: { status: previousStatus },
+          })
+          .catch((resetError) =>
+            console.error(
+              "[adminTriggerRefundAction] Failed to reset refund claim:",
+              resetError
+            )
+          )
         return {
           success: false,
           error: `Razorpay Gateway Error: ${rzpErr.error?.description || rzpErr.message || "Failed to process refund with bank."}`,
         }
       }
     } else if (!recoveredRefundId && process.env.NODE_ENV === "production") {
-      await prisma.payment.update({ where: { id: payment.id }, data: { status: previousStatus } })
-      return { success: false, error: "Razorpay refund configuration is missing. No refund was submitted." }
+      await prisma.payment.update({
+        where: { id: payment.id },
+        data: { status: previousStatus },
+      })
+      return {
+        success: false,
+        error:
+          "Razorpay refund configuration is missing. No refund was submitted.",
+      }
     }
 
     // 5. Atomic Transaction: Update payment, revoke registration, log audit & ledger
@@ -611,9 +678,9 @@ export async function adminTriggerRefundAction(params: {
 /**
  * Server Action: Fetch Chronological Transaction Ledger for a Payment
  */
-export async function getPaymentLedgerAction(paymentId: string): Promise<
-  ActionResult<{ logs: PaymentLedgerItem[] }>
-> {
+export async function getPaymentLedgerAction(
+  paymentId: string
+): Promise<ActionResult<{ logs: PaymentLedgerItem[] }>> {
   try {
     await requireAdmin("/admin/payments")
     const dbConnected = await isDatabaseConnected()
@@ -682,7 +749,10 @@ export async function reconcilePendingPaymentsAction(): Promise<
     if (!dbConnected) {
       return {
         success: true,
-        data: { reconciledCount: 0, message: "DB offline dev mode: No stale orders reconciled." },
+        data: {
+          reconciledCount: 0,
+          message: "DB offline dev mode: No stale orders reconciled.",
+        },
       }
     }
 
@@ -701,7 +771,10 @@ export async function reconcilePendingPaymentsAction(): Promise<
     if (pendingPayments.length === 0) {
       return {
         success: true,
-        data: { reconciledCount: 0, message: "All transactions are fully synchronized." },
+        data: {
+          reconciledCount: 0,
+          message: "All transactions are fully synchronized.",
+        },
       }
     }
 
@@ -719,8 +792,12 @@ export async function reconcilePendingPaymentsAction(): Promise<
 
       for (const p of pendingPayments) {
         try {
-          const paymentsForOrder: any = await razorpay.orders.fetchPayments(p.razorpayOrderId)
-          const capturedPayment = paymentsForOrder.items?.find((item: any) => item.status === "captured")
+          const paymentsForOrder: any = await razorpay.orders.fetchPayments(
+            p.razorpayOrderId
+          )
+          const capturedPayment = paymentsForOrder.items?.find(
+            (item: any) => item.status === "captured"
+          )
 
           if (capturedPayment) {
             const testSeries = await prisma.testSeries.findUnique({
@@ -765,7 +842,9 @@ export async function reconcilePendingPaymentsAction(): Promise<
                   status: PaymentStatus.COMPLETED,
                   razorpayPaymentId: capturedPayment.id,
                   paymentMethod: capturedPayment.method,
-                  bankReference: capturedPayment.acquirer_data?.rrn || capturedPayment.acquirer_data?.bank_transaction_id,
+                  bankReference:
+                    capturedPayment.acquirer_data?.rrn ||
+                    capturedPayment.acquirer_data?.bank_transaction_id,
                   registrationId: registration.id,
                 },
               })
@@ -790,7 +869,12 @@ export async function reconcilePendingPaymentsAction(): Promise<
                 amountPaise: p.amount,
                 maxAttempts,
                 orderId: p.razorpayOrderId,
-              }).catch((err) => console.error("[reconcilePendingPaymentsAction] Failed to send receipt:", err))
+              }).catch((err) =>
+                console.error(
+                  "[reconcilePendingPaymentsAction] Failed to send receipt:",
+                  err
+                )
+              )
             }
 
             reconciledCount++
@@ -802,13 +886,17 @@ export async function reconcilePendingPaymentsAction(): Promise<
                 where: { id: p.id },
                 data: {
                   status: PaymentStatus.FAILED,
-                  failureReason: "Checkout abandoned / expired after 60 minutes without gateway capture.",
+                  failureReason:
+                    "Checkout abandoned / expired after 60 minutes without gateway capture.",
                 },
               })
             }
           }
         } catch (fetchErr) {
-          console.warn(`[reconcilePendingPaymentsAction] Failed to check order ${p.razorpayOrderId}:`, fetchErr)
+          console.warn(
+            `[reconcilePendingPaymentsAction] Failed to check order ${p.razorpayOrderId}:`,
+            fetchErr
+          )
         }
       }
     }

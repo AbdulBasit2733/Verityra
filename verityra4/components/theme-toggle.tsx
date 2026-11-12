@@ -31,7 +31,7 @@ export function ThemeToggle({
     return (
       <div
         className={cn(
-          "inline-flex items-center rounded-xl border border-border bg-muted/50 p-1 gap-1",
+          "inline-flex items-center gap-1 rounded-xl border border-border bg-muted/50 p-1",
           className
         )}
         role="group"
@@ -41,7 +41,7 @@ export function ThemeToggle({
           type="button"
           onClick={() => setTheme("light")}
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer",
+            "inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all",
             activeTheme === "light"
               ? "bg-card text-foreground shadow-2xs"
               : "text-muted-foreground hover:text-foreground"
@@ -54,7 +54,7 @@ export function ThemeToggle({
           type="button"
           onClick={() => setTheme("dark")}
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer",
+            "inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all",
             activeTheme === "dark"
               ? "bg-card text-foreground shadow-2xs"
               : "text-muted-foreground hover:text-foreground"
@@ -67,7 +67,7 @@ export function ThemeToggle({
           type="button"
           onClick={() => setTheme("system")}
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer",
+            "inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all",
             activeTheme === "system"
               ? "bg-card text-foreground shadow-2xs"
               : "text-muted-foreground hover:text-foreground"
@@ -91,7 +91,7 @@ export function ThemeToggle({
             size="icon-sm"
             aria-label="Toggle color theme"
             className={cn(
-              "h-9 w-9 rounded-lg border-border bg-card text-foreground hover:bg-secondary hover:text-brand transition-colors shrink-0",
+              "h-9 w-9 shrink-0 rounded-lg border-border bg-card text-foreground transition-colors hover:bg-secondary hover:text-brand",
               className
             )}
           />
@@ -104,36 +104,42 @@ export function ThemeToggle({
         )}
         <span className="sr-only">Toggle theme</span>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-40 p-1.5 rounded-xl">
+      <DropdownMenuContent align="end" className="w-40 rounded-xl p-1.5">
         <DropdownMenuItem
           onClick={() => setTheme("light")}
-          className="flex items-center justify-between text-xs font-semibold rounded-lg py-2 px-2.5 cursor-pointer"
+          className="flex cursor-pointer items-center justify-between rounded-lg px-2.5 py-2 text-xs font-semibold"
         >
           <span className="flex items-center gap-2">
             <Sun className="h-3.5 w-3.5 text-amber-500" />
             Light Mode
           </span>
-          {mounted && theme === "light" && <Check className="h-3.5 w-3.5 text-brand" />}
+          {mounted && theme === "light" && (
+            <Check className="h-3.5 w-3.5 text-brand" />
+          )}
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => setTheme("dark")}
-          className="flex items-center justify-between text-xs font-semibold rounded-lg py-2 px-2.5 cursor-pointer"
+          className="flex cursor-pointer items-center justify-between rounded-lg px-2.5 py-2 text-xs font-semibold"
         >
           <span className="flex items-center gap-2">
             <Moon className="h-3.5 w-3.5 text-[#60A5FA]" />
             Dark Mode
           </span>
-          {mounted && theme === "dark" && <Check className="h-3.5 w-3.5 text-brand" />}
+          {mounted && theme === "dark" && (
+            <Check className="h-3.5 w-3.5 text-brand" />
+          )}
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => setTheme("system")}
-          className="flex items-center justify-between text-xs font-semibold rounded-lg py-2 px-2.5 cursor-pointer"
+          className="flex cursor-pointer items-center justify-between rounded-lg px-2.5 py-2 text-xs font-semibold"
         >
           <span className="flex items-center gap-2">
             <Laptop className="h-3.5 w-3.5 text-muted-foreground" />
             System
           </span>
-          {mounted && theme === "system" && <Check className="h-3.5 w-3.5 text-brand" />}
+          {mounted && theme === "system" && (
+            <Check className="h-3.5 w-3.5 text-brand" />
+          )}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

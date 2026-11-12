@@ -17,7 +17,9 @@ export type LeaderboardEntry = {
 /**
  * Server Action: Fetch Leaderboard Rankings for Published Test Series
  */
-export async function getLeaderboardAction(testSeriesId?: string): Promise<LeaderboardEntry[]> {
+export async function getLeaderboardAction(
+  testSeriesId?: string
+): Promise<LeaderboardEntry[]> {
   const dbConnected = await isDatabaseConnected()
   if (!dbConnected) {
     return [
@@ -69,7 +71,11 @@ export async function getLeaderboardAction(testSeriesId?: string): Promise<Leade
   const evaluations = await prisma.evaluation.findMany({
     where: {
       status: {
-        in: [EvaluationStatus.COMPLETED, EvaluationStatus.APPROVED, EvaluationStatus.ADJUSTED],
+        in: [
+          EvaluationStatus.COMPLETED,
+          EvaluationStatus.APPROVED,
+          EvaluationStatus.ADJUSTED,
+        ],
       },
       submission: {
         testSeries: {

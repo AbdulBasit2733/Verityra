@@ -10,13 +10,8 @@ export default async function AdminLayout({
   const user = await requireAdmin("/admin")
 
   return (
-    <PortalShell
-      role="ADMIN"
-      userName={user.name}
-      userEmail={user.email}
-    >
+    <PortalShell role="ADMIN" userName={user.name} userEmail={user.email}>
       {children}
     </PortalShell>
   )
 }
-

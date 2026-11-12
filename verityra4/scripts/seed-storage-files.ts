@@ -1,7 +1,11 @@
 import fs from "fs"
 import path from "path"
 
-function buildMinimalPdf(title: string, subtitle: string, lines: string[]): Buffer {
+function buildMinimalPdf(
+  title: string,
+  subtitle: string,
+  lines: string[]
+): Buffer {
   const content = [
     "BT",
     "/F1 15 Tf",
@@ -87,7 +91,8 @@ const PAPERS = [
   {
     path: "papers/upsc-paper.pdf",
     title: "UPSC Civil Services General Studies Paper I Mock Examination",
-    subtitle: "Official Question Paper | Total Marks: 250 | Duration: 180 Minutes",
+    subtitle:
+      "Official Question Paper | Total Marks: 250 | Duration: 180 Minutes",
     lines: [
       "INSTRUCTIONS TO CANDIDATES:",
       "1. There are 20 questions printed in English and Hindi.",
@@ -153,7 +158,9 @@ const PAPERS = [
     path: "papers/state-psc-essay.pdf",
     title: "State PSC Advanced Essay Prompt Document",
     subtitle: "Maximum Marks: 150 | Duration: 180 Mins",
-    lines: ["Section A: Ethical leadership and governance in the 21st century."],
+    lines: [
+      "Section A: Ethical leadership and governance in the 21st century.",
+    ],
   },
 ]
 
@@ -198,7 +205,9 @@ const TEMPLATES = [
     path: "templates/class-12-physics-template.pdf",
     title: "Class 12 Science Standard Answer Booklet Template (32 Pages)",
     subtitle: "32-Page Board Examination Booklet with Millimeter Ruling",
-    lines: ["Prescribed physics laboratory and theoretical examination format."],
+    lines: [
+      "Prescribed physics laboratory and theoretical examination format.",
+    ],
   },
   {
     path: "templates/state-psc-template.pdf",
@@ -212,7 +221,8 @@ const SUBMISSIONS = [
   {
     path: "submissions/demo/sample-attempt.pdf",
     title: "UPSC CSE Mains Mock Attempt #1 - Candidate Handwritten Response",
-    subtitle: "Evaluated Booklet | Score: 184.5 / 250 (73.8%) | Verified Assessment",
+    subtitle:
+      "Evaluated Booklet | Score: 184.5 / 250 (73.8%) | Verified Assessment",
     lines: [
       "EVALUATED ANSWER SCRIPT SAMPLE:",
       "Candidate Name: Roll No. 2026-CSE-4891 | Attempt: 1 of 3",
@@ -241,18 +251,28 @@ export function seedStoragePdfs() {
   fs.mkdirSync(SAMPLES_DIR, { recursive: true })
   fs.writeFileSync(
     path.join(SAMPLES_DIR, "upsc-sample-answer-sheet.pdf"),
-    buildMinimalPdf(SUBMISSIONS[0].title, SUBMISSIONS[0].subtitle, SUBMISSIONS[0].lines)
+    buildMinimalPdf(
+      SUBMISSIONS[0].title,
+      SUBMISSIONS[0].subtitle,
+      SUBMISSIONS[0].lines
+    )
   )
   fs.writeFileSync(
     path.join(SAMPLES_DIR, "standard-margin-template.pdf"),
-    buildMinimalPdf(TEMPLATES[0].title, TEMPLATES[0].subtitle, TEMPLATES[0].lines)
+    buildMinimalPdf(
+      TEMPLATES[0].title,
+      TEMPLATES[0].subtitle,
+      TEMPLATES[0].lines
+    )
   )
   fs.writeFileSync(
     path.join(SAMPLES_DIR, "upsc-gs1-question-paper.pdf"),
     buildMinimalPdf(PAPERS[0].title, PAPERS[0].subtitle, PAPERS[0].lines)
   )
 
-  console.log("✓ All seed storage PDFs and public sample files successfully created.")
+  console.log(
+    "✓ All seed storage PDFs and public sample files successfully created."
+  )
 }
 
 seedStoragePdfs()

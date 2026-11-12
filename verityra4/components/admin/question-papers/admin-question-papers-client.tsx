@@ -29,7 +29,10 @@ import {
   togglePublishQuestionPaperAction,
   QuestionPaperData,
 } from "@/actions/question-paper-actions"
-import { QuestionPaperItem, EXAMINATION_STREAMS } from "@/lib/mock-question-papers"
+import {
+  QuestionPaperItem,
+  EXAMINATION_STREAMS,
+} from "@/lib/mock-question-papers"
 import {
   PopoverDropdownFilter,
   FilterOption,
@@ -53,21 +56,29 @@ export function AdminQuestionPapersClient({
   const [addModalOpen, setAddModalOpen] = React.useState(false)
 
   // Preview state
-  const [previewPaper, setPreviewPaper] = React.useState<QuestionPaperItem | null>(null)
+  const [previewPaper, setPreviewPaper] =
+    React.useState<QuestionPaperItem | null>(null)
 
   // Actions loading state
-  const [actionLoadingId, setActionLoadingId] = React.useState<string | null>(null)
+  const [actionLoadingId, setActionLoadingId] = React.useState<string | null>(
+    null
+  )
 
   // Metrics
   const totalPapers = papers.length
   const publishedCount = papers.filter((p) => p.isPublished).length
-  const totalDownloads = papers.reduce((sum, p) => sum + (p.downloadsCount || 0), 0)
+  const totalDownloads = papers.reduce(
+    (sum, p) => sum + (p.downloadsCount || 0),
+    0
+  )
   const uniqueCategories = new Set(papers.map((p) => p.category)).size
 
   // Category Options for Popover Filter
   const streamOptions: FilterOption[] = React.useMemo(() => {
     const presentStreams = new Set(papers.map((p) => p.category))
-    const allKnown = Array.from(new Set([...EXAMINATION_STREAMS, ...Array.from(presentStreams)]))
+    const allKnown = Array.from(
+      new Set([...EXAMINATION_STREAMS, ...Array.from(presentStreams)])
+    )
 
     return allKnown.map((stream) => {
       const count = papers.filter((p) => p.category === stream).length
@@ -80,8 +91,18 @@ export function AdminQuestionPapersClient({
   }, [papers])
 
   const statusOptions: FilterOption[] = [
-    { label: "Published (Live)", value: "PUBLISHED", count: publishedCount, icon: Globe },
-    { label: "Draft (Hidden)", value: "DRAFT", count: totalPapers - publishedCount, icon: EyeOff },
+    {
+      label: "Published (Live)",
+      value: "PUBLISHED",
+      count: publishedCount,
+      icon: Globe,
+    },
+    {
+      label: "Draft (Hidden)",
+      value: "DRAFT",
+      count: totalPapers - publishedCount,
+      icon: EyeOff,
+    },
   ]
 
   // Filtering
@@ -115,7 +136,8 @@ export function AdminQuestionPapersClient({
   const handleDelete = async (paper: QuestionPaperItem) => {
     const confirmed = await confirm({
       title: `Delete "${paper.title}"?`,
-      description: "This question paper will be permanently removed from the library and will no longer be downloadable by students.",
+      description:
+        "This question paper will be permanently removed from the library and will no longer be downloadable by students.",
       confirmText: "Delete Paper",
       cancelText: "Cancel",
       variant: "destructive",
@@ -132,10 +154,14 @@ export function AdminQuestionPapersClient({
         setPapers((prev) => prev.filter((p) => p.id !== paper.id))
         router.refresh()
       } else {
-        toast.error("Delete failed", { description: res.error || "Unable to delete question paper." })
+        toast.error("Delete failed", {
+          description: res.error || "Unable to delete question paper.",
+        })
       }
     } catch (err: any) {
-      toast.error("Error", { description: err?.message || "Failed to delete question paper." })
+      toast.error("Error", {
+        description: err?.message || "Failed to delete question paper.",
+      })
     } finally {
       setActionLoadingId(null)
     }
@@ -147,20 +173,27 @@ export function AdminQuestionPapersClient({
     try {
       const res = await togglePublishQuestionPaperAction(paper.id, nextState)
       if (res.success) {
-        toast.success(nextState ? "Question Paper Published" : "Question Paper Hidden", {
-          description: nextState
-            ? `"${paper.title}" is now visible to students at /question-papers.`
-            : `"${paper.title}" is now hidden from the public library.`,
-        })
+        toast.success(
+          nextState ? "Question Paper Published" : "Question Paper Hidden",
+          {
+            description: nextState
+              ? `"${paper.title}" is now visible to students at /question-papers.`
+              : `"${paper.title}" is now hidden from the public library.`,
+          }
+        )
         setPapers((prev) =>
-          prev.map((p) => (p.id === paper.id ? { ...p, isPublished: nextState } : p))
+          prev.map((p) =>
+            p.id === paper.id ? { ...p, isPublished: nextState } : p
+          )
         )
         router.refresh()
       } else {
         toast.error("Status update failed", { description: res.error })
       }
     } catch (err: any) {
-      toast.error("Error", { description: err?.message || "Failed to update publication status." })
+      toast.error("Error", {
+        description: err?.message || "Failed to update publication status.",
+      })
     } finally {
       setActionLoadingId(null)
     }
@@ -177,7 +210,7 @@ export function AdminQuestionPapersClient({
       >
         <Button
           onClick={() => setAddModalOpen(true)}
-          className="h-10 rounded-xl bg-[#145DEB] hover:bg-[#0F4DC7] text-white text-xs font-semibold px-4 shadow-sm"
+          className="h-10 rounded-xl bg-[#145DEB] px-4 text-xs font-semibold text-white shadow-sm hover:bg-[#0F4DC7]"
         >
           <Plus className="mr-1.5 h-4 w-4" /> Add Question Paper
         </Button>
@@ -213,8 +246,8 @@ export function AdminQuestionPapersClient({
 
       {/* Filter and Search Bar using PopoverDropdownFilter */}
       <div className="flex flex-col gap-3 rounded-2xl border border-[#DCE7FA] bg-white p-4 shadow-xs sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+        <div className="relative max-w-md flex-1">
+          <Search className="absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <Input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -253,79 +286,93 @@ export function AdminQuestionPapersClient({
       <div className="overflow-hidden rounded-2xl border border-[#DCE7FA] bg-white shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs sm:text-sm">
-            <thead className="border-b border-[#DCE7FA] bg-[#F1F6FF]/70 text-slate-600 font-semibold">
+            <thead className="border-b border-[#DCE7FA] bg-[#F1F6FF]/70 font-semibold text-slate-600">
               <tr>
-                <th className="py-3.5 px-4 sm:px-6">Question Paper</th>
-                <th className="py-3.5 px-3">Examination Stream</th>
-                <th className="py-3.5 px-3">Details</th>
-                <th className="py-3.5 px-3">Status</th>
-                <th className="py-3.5 px-3">Downloads</th>
-                <th className="py-3.5 px-4 text-right">Actions</th>
+                <th className="px-4 py-3.5 sm:px-6">Question Paper</th>
+                <th className="px-3 py-3.5">Examination Stream</th>
+                <th className="px-3 py-3.5">Details</th>
+                <th className="px-3 py-3.5">Status</th>
+                <th className="px-3 py-3.5">Downloads</th>
+                <th className="px-4 py-3.5 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#DCE7FA]/70">
               {filteredPapers.length > 0 ? (
                 filteredPapers.map((paper) => (
-                  <tr key={paper.id} className="hover:bg-[#F1F6FF]/30 transition-colors">
-                    <td className="py-4 px-4 sm:px-6">
+                  <tr
+                    key={paper.id}
+                    className="transition-colors hover:bg-[#F1F6FF]/30"
+                  >
+                    <td className="px-4 py-4 sm:px-6">
                       <div className="flex items-start gap-3">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#F1F6FF] text-[#145DEB] border border-[#BFD5FA]/60">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#BFD5FA]/60 bg-[#F1F6FF] text-[#145DEB]">
                           <FileText className="h-4 w-4" />
                         </div>
                         <div className="min-w-0">
-                          <p className="font-bold text-[#071B3A] line-clamp-1">{paper.title}</p>
-                          <p className="text-xs text-[#64748B] mt-0.5">
-                            {paper.subject || "General"} {paper.year ? `· ${paper.year}` : ""}
+                          <p className="line-clamp-1 font-bold text-[#071B3A]">
+                            {paper.title}
+                          </p>
+                          <p className="mt-0.5 text-xs text-[#64748B]">
+                            {paper.subject || "General"}{" "}
+                            {paper.year ? `· ${paper.year}` : ""}
                           </p>
                         </div>
                       </div>
                     </td>
 
-                    <td className="py-4 px-3">
-                      <Badge variant="secondary" className="rounded-full bg-[#F1F6FF] text-[#145DEB] border border-[#BFD5FA]/50 text-[11px] font-semibold">
+                    <td className="px-3 py-4">
+                      <Badge
+                        variant="secondary"
+                        className="rounded-full border border-[#BFD5FA]/50 bg-[#F1F6FF] text-[11px] font-semibold text-[#145DEB]"
+                      >
                         {paper.category}
                       </Badge>
                     </td>
 
-                    <td className="py-4 px-3">
+                    <td className="px-3 py-4">
                       <div className="flex flex-col gap-0.5 text-xs text-[#64748B]">
-                        <span className="font-semibold text-slate-800 flex items-center gap-1">
-                          <Award className="h-3 w-3 text-[#145DEB]" /> {paper.maxMarks} Marks
+                        <span className="flex items-center gap-1 font-semibold text-slate-800">
+                          <Award className="h-3 w-3 text-[#145DEB]" />{" "}
+                          {paper.maxMarks} Marks
                         </span>
                         {paper.durationMinutes && (
                           <span className="flex items-center gap-1">
-                            <Clock className="h-3 w-3 text-slate-400" /> {paper.durationMinutes} Mins
+                            <Clock className="h-3 w-3 text-slate-400" />{" "}
+                            {paper.durationMinutes} Mins
                           </span>
                         )}
                       </div>
                     </td>
 
-                    <td className="py-4 px-3">
+                    <td className="px-3 py-4">
                       <button
                         onClick={() => handleTogglePublish(paper)}
                         disabled={actionLoadingId === paper.id}
-                        className="inline-flex items-center gap-1.5 cursor-pointer"
+                        className="inline-flex cursor-pointer items-center gap-1.5"
                         title="Click to toggle publish status"
                       >
                         {paper.isPublished ? (
-                          <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold gap-1 hover:bg-emerald-100">
+                          <Badge className="gap-1 border border-emerald-200 bg-emerald-50 text-[10px] font-bold text-emerald-700 hover:bg-emerald-100">
                             <Globe className="h-3 w-3" /> Published
                           </Badge>
                         ) : (
-                          <Badge variant="outline" className="text-slate-500 border-slate-300 text-[10px] font-bold gap-1 hover:bg-slate-50">
+                          <Badge
+                            variant="outline"
+                            className="gap-1 border-slate-300 text-[10px] font-bold text-slate-500 hover:bg-slate-50"
+                          >
                             <EyeOff className="h-3 w-3" /> Draft
                           </Badge>
                         )}
                       </button>
                     </td>
 
-                    <td className="py-4 px-3">
-                      <span className="font-bold text-slate-800 text-xs">
+                    <td className="px-3 py-4">
+                      <span className="text-xs font-bold text-slate-800">
                         {paper.downloadsCount || 0}
                       </span>
                     </td>
 
-                    <td className="py-4 px-4 text-right">
+                    <td className="px-4 py-4 text-right">
                       <div className="flex items-center justify-end gap-1.5">
                         <Button
                           size="sm"
@@ -342,7 +389,7 @@ export function AdminQuestionPapersClient({
                             size="sm"
                             variant="ghost"
                             title="Download PDF"
-                            className="h-8 w-8 p-0 text-slate-600 hover:text-[#145DEB] hover:bg-[#F1F6FF]"
+                            className="h-8 w-8 p-0 text-slate-600 hover:bg-[#F1F6FF] hover:text-[#145DEB]"
                           >
                             <Download className="h-4 w-4" />
                           </Button>
@@ -354,7 +401,7 @@ export function AdminQuestionPapersClient({
                           onClick={() => handleDelete(paper)}
                           disabled={actionLoadingId === paper.id}
                           title="Delete Paper"
-                          className="h-8 w-8 p-0 text-rose-500 hover:text-rose-700 hover:bg-rose-50"
+                          className="h-8 w-8 p-0 text-rose-500 hover:bg-rose-50 hover:text-rose-700"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -365,10 +412,14 @@ export function AdminQuestionPapersClient({
               ) : (
                 <tr>
                   <td colSpan={6} className="py-12 text-center text-slate-500">
-                    <FileText className="mx-auto h-8 w-8 text-slate-300 mb-2" />
-                    <p className="font-bold text-slate-700 text-sm">No question papers found</p>
-                    <p className="text-xs text-slate-400 mt-1">
-                      {searchQuery || streamFilter !== "ALL" || statusFilter !== "ALL"
+                    <FileText className="mx-auto mb-2 h-8 w-8 text-slate-300" />
+                    <p className="text-sm font-bold text-slate-700">
+                      No question papers found
+                    </p>
+                    <p className="mt-1 text-xs text-slate-400">
+                      {searchQuery ||
+                      streamFilter !== "ALL" ||
+                      statusFilter !== "ALL"
                         ? "Try adjusting your search query or filters."
                         : "Click 'Add Question Paper' to upload your first paper."}
                     </p>

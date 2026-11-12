@@ -21,7 +21,17 @@ export default async function StudentEvaluationsPage() {
         status: true,
         submittedAt: true,
         testSeries: { select: { title: true } },
-        evaluation: { select: { totalMarksAwarded: true, maxMarks: true, percentage: true, evaluatedAt: true, legibilityWarning: true, uncertaintyFlag: true, _count: { select: { questions: true } } } },
+        evaluation: {
+          select: {
+            totalMarksAwarded: true,
+            maxMarks: true,
+            percentage: true,
+            evaluatedAt: true,
+            legibilityWarning: true,
+            uncertaintyFlag: true,
+            _count: { select: { questions: true } },
+          },
+        },
       },
     })
     evaluations = submissions.map((submission) => ({

@@ -13,8 +13,8 @@ export default async function AdminSubmissionsPage({
   searchParams: Promise<{ page?: string; limit?: string }>
 }) {
   const params = await searchParams
-  const page = parseInt(params.page || '1', 10)
-  const limit = parseInt(params.limit || '25', 10)
+  const page = parseInt(params.page || "1", 10)
+  const limit = parseInt(params.limit || "25", 10)
   const skip = (page - 1) * limit
 
   let submissions: any[] = []
@@ -22,14 +22,21 @@ export default async function AdminSubmissionsPage({
 
   try {
     // The queries themselves are the health check; avoid an extra round trip to the database.
-    [submissions, totalCount] = await Promise.all([
+    ;[submissions, totalCount] = await Promise.all([
       prisma.submission.findMany({
         skip,
         take: limit,
         include: {
           user: { select: { name: true, email: true } },
           testSeries: { select: { title: true, maxMarks: true } },
-          evaluation: { select: { status: true, totalMarksAwarded: true, maxMarks: true, uncertaintyFlag: true } },
+          evaluation: {
+            select: {
+              status: true,
+              totalMarksAwarded: true,
+              maxMarks: true,
+              uncertaintyFlag: true,
+            },
+          },
         },
         orderBy: { submittedAt: "desc" },
       }),
@@ -62,7 +69,9 @@ export default async function AdminSubmissionsPage({
     attemptNumber: sub.attemptNumber,
     status: sub.status,
     totalMarksAwarded: sub.evaluation ? sub.evaluation.totalMarksAwarded : null,
-    maxMarks: sub.evaluation ? sub.evaluation.maxMarks : sub.testSeries?.maxMarks || 250,
+    maxMarks: sub.evaluation
+      ? sub.evaluation.maxMarks
+      : sub.testSeries?.maxMarks || 250,
     uncertaintyFlag: Boolean(sub.evaluation?.uncertaintyFlag),
     fileUrl: normalizePrivateFileUrl(sub.fileUrl),
     submittedAt: new Date(sub.submittedAt).toISOString(),

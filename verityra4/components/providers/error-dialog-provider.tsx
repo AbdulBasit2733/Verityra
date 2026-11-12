@@ -75,22 +75,22 @@ export function ErrorDialogProvider({
     <ErrorDialogContext.Provider value={{ showError, clearError }}>
       {children}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-md rounded-2xl p-6 gap-5 border-red-200">
+        <DialogContent className="gap-5 rounded-2xl border-red-200 p-6 sm:max-w-md">
           <DialogHeader className="gap-3">
             <div className="flex items-start gap-3.5">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-50 border border-red-200 text-red-600">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-red-600">
                 <AlertOctagon className="h-5 w-5" />
               </div>
-              <div className="space-y-1.5 flex-1 min-w-0">
+              <div className="min-w-0 flex-1 space-y-1.5">
                 <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center rounded-md bg-red-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-red-700">
+                  <span className="inline-flex items-center rounded-md bg-red-100 px-2 py-0.5 text-[10px] font-bold tracking-wider text-red-700 uppercase">
                     {error?.code || "Action Blocked"}
                   </span>
                 </div>
-                <DialogTitle className="text-base font-bold text-[#0F172A] leading-snug">
+                <DialogTitle className="text-base leading-snug font-bold text-[#0F172A]">
                   {error?.title || "Operation Failed"}
                 </DialogTitle>
-                <DialogDescription className="text-xs sm:text-sm text-[#64748B] leading-relaxed">
+                <DialogDescription className="text-xs leading-relaxed text-[#64748B] sm:text-sm">
                   {error?.message}
                 </DialogDescription>
               </div>
@@ -98,12 +98,12 @@ export function ErrorDialogProvider({
           </DialogHeader>
 
           {error?.details && (
-            <div className="rounded-xl bg-slate-50 border border-slate-200/80 p-3 text-xs font-mono text-slate-600 break-words">
+            <div className="rounded-xl border border-slate-200/80 bg-slate-50 p-3 font-mono text-xs break-words text-slate-600">
               {error.details}
             </div>
           )}
 
-          <DialogFooter className="gap-2 sm:justify-between pt-2 border-t border-slate-100">
+          <DialogFooter className="gap-2 border-t border-slate-100 pt-2 sm:justify-between">
             <Button
               type="button"
               variant="ghost"
@@ -113,12 +113,12 @@ export function ErrorDialogProvider({
             >
               {copied ? (
                 <>
-                  <Check className="h-3.5 w-3.5 mr-1 text-emerald-600" />
+                  <Check className="mr-1 h-3.5 w-3.5 text-emerald-600" />
                   Copied
                 </>
               ) : (
                 <>
-                  <Copy className="h-3.5 w-3.5 mr-1" />
+                  <Copy className="mr-1 h-3.5 w-3.5" />
                   Copy diagnostic
                 </>
               )}
@@ -127,7 +127,7 @@ export function ErrorDialogProvider({
               type="button"
               size="sm"
               onClick={() => setOpen(false)}
-              className="h-9 px-4 rounded-lg bg-[#0F172A] hover:bg-slate-800 text-white font-semibold"
+              className="h-9 rounded-lg bg-[#0F172A] px-4 font-semibold text-white hover:bg-slate-800"
             >
               Dismiss
             </Button>

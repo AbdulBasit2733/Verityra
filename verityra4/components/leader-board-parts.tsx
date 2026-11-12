@@ -34,30 +34,83 @@ export function ScoreBar({
     <div
       role="img"
       aria-label={`${value.toFixed(1)} percent`}
-      className={cn("h-1.5 w-full overflow-hidden rounded-full", onDark ? "bg-white/15" : "bg-[var(--surface-sunken)]", className)}
+      className={cn(
+        "h-1.5 w-full overflow-hidden rounded-full",
+        onDark ? "bg-white/15" : "bg-[var(--surface-sunken)]",
+        className
+      )}
     >
       <div
         className="h-full rounded-full"
-        style={{ width: `${width}%`, background: onDark ? "#93c5fd" : scoreTone(value) }}
+        style={{
+          width: `${width}%`,
+          background: onDark ? "#93c5fd" : scoreTone(value),
+        }}
       />
     </div>
   )
 }
 
-export function RankChip({ rank, className }: { rank: number; className?: string }) {
-  const base = "inline-flex h-8 min-w-8 items-center justify-center rounded-lg px-2 text-sm font-extrabold tabular-nums"
+export function RankChip({
+  rank,
+  className,
+}: {
+  rank: number
+  className?: string
+}) {
+  const base =
+    "inline-flex h-8 min-w-8 items-center justify-center rounded-lg px-2 text-sm font-extrabold tabular-nums"
   if (rank === 1) {
     return (
-      <span className={cn(base, "bg-[var(--score-accent)] text-[var(--score-accent-foreground)]", className)} aria-label="Rank 1">
+      <span
+        className={cn(
+          base,
+          "bg-[var(--score-accent)] text-[var(--score-accent-foreground)]",
+          className
+        )}
+        aria-label="Rank 1"
+      >
         <Trophy className="h-4 w-4" aria-hidden />
       </span>
     )
   }
   if (rank === 2) {
-    return <span className={cn(base, "bg-[var(--line-strong)] text-foreground", className)} aria-label="Rank 2">2</span>
+    return (
+      <span
+        className={cn(
+          base,
+          "bg-[var(--line-strong)] text-foreground",
+          className
+        )}
+        aria-label="Rank 2"
+      >
+        2
+      </span>
+    )
   }
   if (rank === 3) {
-    return <span className={cn(base, "bg-[var(--chart-4)]/25 text-foreground", className)} aria-label="Rank 3">3</span>
+    return (
+      <span
+        className={cn(
+          base,
+          "bg-[var(--chart-4)]/25 text-foreground",
+          className
+        )}
+        aria-label="Rank 3"
+      >
+        3
+      </span>
+    )
   }
-  return <span className={cn(base, "bg-[var(--surface-sunken)] text-muted-foreground", className)}>{rank}</span>
+  return (
+    <span
+      className={cn(
+        base,
+        "bg-[var(--surface-sunken)] text-muted-foreground",
+        className
+      )}
+    >
+      {rank}
+    </span>
+  )
 }

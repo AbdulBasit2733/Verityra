@@ -1,6 +1,9 @@
 import { requireAdmin } from "@/lib/auth-guard"
 import { prisma, isDatabaseConnected } from "@/lib/prisma"
-import { DEMO_QUESTION_PAPERS, QuestionPaperItem } from "@/lib/mock-question-papers"
+import {
+  DEMO_QUESTION_PAPERS,
+  QuestionPaperItem,
+} from "@/lib/mock-question-papers"
 import { AdminQuestionPapersClient } from "@/components/admin/question-papers/admin-question-papers-client"
 
 export const dynamic = "force-dynamic"
@@ -31,8 +34,12 @@ export default async function AdminQuestionPapersPage() {
           fileSizeBytes: r.fileSizeBytes,
           isPublished: r.isPublished,
           downloadsCount: r.downloadsCount || 0,
-          createdAt: r.createdAt ? new Date(r.createdAt).toISOString() : new Date().toISOString(),
-          updatedAt: r.updatedAt ? new Date(r.updatedAt).toISOString() : new Date().toISOString(),
+          createdAt: r.createdAt
+            ? new Date(r.createdAt).toISOString()
+            : new Date().toISOString(),
+          updatedAt: r.updatedAt
+            ? new Date(r.updatedAt).toISOString()
+            : new Date().toISOString(),
         }))
       }
     } catch (err) {

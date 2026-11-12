@@ -6,7 +6,11 @@ import { useRouter } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { IconActionButton } from "@/components/ui/icon-action-button"
-import { DataTable, DataTableColumn, DataTableFilter } from "@/components/ui/data-table"
+import {
+  DataTable,
+  DataTableColumn,
+  DataTableFilter,
+} from "@/components/ui/data-table"
 import { FormattedDate } from "@/components/ui/date-picker"
 import { PageHeader } from "@/components/ui/page-header"
 import { KpiStatCard } from "@/components/ui/kpi-stat-card"
@@ -51,11 +55,18 @@ export function AdminTestSeriesClient({
   const router = useRouter()
   const confirm = useConfirm()
   const { showError } = useGlobalError()
-  const [toggleLoadingId, setToggleLoadingId] = React.useState<string | null>(null)
+  const [toggleLoadingId, setToggleLoadingId] = React.useState<string | null>(
+    null
+  )
 
-  const publishedCount = testSeries.filter((t) => t.status === "PUBLISHED").length
+  const publishedCount = testSeries.filter(
+    (t) => t.status === "PUBLISHED"
+  ).length
   const draftCount = testSeries.filter((t) => t.status === "DRAFT").length
-  const totalEnrolled = testSeries.reduce((acc, t) => acc + t.registrationsCount, 0)
+  const totalEnrolled = testSeries.reduce(
+    (acc, t) => acc + t.registrationsCount,
+    0
+  )
 
   async function handleTogglePublish(row: AdminTestSeriesRow) {
     const isCurrentlyPublished = row.status === "PUBLISHED"
@@ -80,9 +91,12 @@ export function AdminTestSeriesClient({
     try {
       const res = await togglePublishTestSeriesAction(row.id, nextState)
       if (res.success) {
-        toast.success(nextState ? "Test Series Published" : "Test Series Unpublished", {
-          description: res.message,
-        })
+        toast.success(
+          nextState ? "Test Series Published" : "Test Series Unpublished",
+          {
+            description: res.message,
+          }
+        )
         router.refresh()
       } else {
         showError({
@@ -94,7 +108,8 @@ export function AdminTestSeriesClient({
     } catch {
       showError({
         title: "Publication Error",
-        message: "An unexpected error occurred while toggling publication status.",
+        message:
+          "An unexpected error occurred while toggling publication status.",
         code: "PUBLISH_TOGGLE_ERR",
       })
     } finally {
@@ -110,14 +125,16 @@ export function AdminTestSeriesClient({
       sortAccessor: (t) => t.title,
       searchAccessor: (t) => `${t.title} ${t.slug} ${t.status}`,
       cell: (t) => (
-        <div className="space-y-0.5 max-w-xs whitespace-normal">
+        <div className="max-w-xs space-y-0.5 whitespace-normal">
           <Link
             href={`/admin/test-series/${t.id}`}
-            className="font-bold text-slate-900 dark:text-slate-100 hover:text-[#2A6AED] dark:hover:text-blue-400 transition-colors block leading-snug"
+            className="block leading-snug font-bold text-slate-900 transition-colors hover:text-[#2A6AED] dark:text-slate-100 dark:hover:text-blue-400"
           >
             {t.title}
           </Link>
-          <span className="text-[11px] font-mono text-slate-400">/{t.slug}</span>
+          <span className="font-mono text-[11px] text-slate-400">
+            /{t.slug}
+          </span>
         </div>
       ),
     },
@@ -128,11 +145,11 @@ export function AdminTestSeriesClient({
       sortAccessor: (t) => t.price,
       cell: (t) =>
         t.price === 0 ? (
-          <Badge className="bg-emerald-600 text-white font-bold text-[10px] border-0 px-2 py-0.5 rounded-full">
+          <Badge className="rounded-full border-0 bg-emerald-600 px-2 py-0.5 text-[10px] font-bold text-white">
             FREE
           </Badge>
         ) : (
-          <span className="font-extrabold text-[#2A6AED] dark:text-blue-400 text-xs sm:text-sm">
+          <span className="text-xs font-extrabold text-[#2A6AED] sm:text-sm dark:text-blue-400">
             ₹{(t.price / 100).toLocaleString()}
           </span>
         ),
@@ -147,8 +164,8 @@ export function AdminTestSeriesClient({
           variant="outline"
           className={
             t.status === "PUBLISHED"
-              ? "border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 text-[11px] font-semibold rounded-full"
-              : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-900 text-[11px] font-semibold rounded-full"
+              ? "rounded-full border-emerald-200 bg-emerald-50 text-[11px] font-semibold text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-400"
+              : "rounded-full border-slate-200 bg-slate-50 text-[11px] font-semibold text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400"
           }
         >
           {t.status}
@@ -160,7 +177,11 @@ export function AdminTestSeriesClient({
       header: "Max Marks",
       sortable: true,
       sortAccessor: (t) => t.maxMarks,
-      cell: (t) => <span className="font-semibold text-slate-900 dark:text-slate-100 text-xs sm:text-sm">{t.maxMarks} Marks</span>,
+      cell: (t) => (
+        <span className="text-xs font-semibold text-slate-900 sm:text-sm dark:text-slate-100">
+          {t.maxMarks} Marks
+        </span>
+      ),
     },
     {
       id: "maxAttempts",
@@ -168,7 +189,9 @@ export function AdminTestSeriesClient({
       sortable: true,
       sortAccessor: (t) => t.maxAttempts,
       cell: (t) => (
-        <span className="font-bold text-[#2A6AED] dark:text-blue-400 text-xs sm:text-sm">{t.maxAttempts} attempts</span>
+        <span className="text-xs font-bold text-[#2A6AED] sm:text-sm dark:text-blue-400">
+          {t.maxAttempts} attempts
+        </span>
       ),
     },
     {
@@ -177,7 +200,9 @@ export function AdminTestSeriesClient({
       sortable: true,
       sortAccessor: (t) => t.registrationsCount,
       cell: (t) => (
-        <span className="font-bold text-slate-900 dark:text-slate-100 text-xs sm:text-sm">{t.registrationsCount} candidates</span>
+        <span className="text-xs font-bold text-slate-900 sm:text-sm dark:text-slate-100">
+          {t.registrationsCount} candidates
+        </span>
       ),
     },
     {
@@ -200,15 +225,21 @@ export function AdminTestSeriesClient({
           <div className="flex items-center justify-end gap-1">
             {/* Quick Toggle Publish */}
             <IconActionButton
-              label={isLoading ? "Updating publication status" : isPublished ? "Unpublish to draft" : "Publish to catalog"}
+              label={
+                isLoading
+                  ? "Updating publication status"
+                  : isPublished
+                    ? "Unpublish to draft"
+                    : "Publish to catalog"
+              }
               variant="outline"
               disabled={isLoading}
               onClick={() => handleTogglePublish(t)}
               className={cn(
                 "border-slate-200 dark:border-slate-800",
                 isPublished
-                  ? "hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-700 dark:text-amber-400"
-                  : "hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400"
+                  ? "text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950/40"
+                  : "text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
               )}
             >
               {isLoading ? (
@@ -293,7 +324,7 @@ export function AdminTestSeriesClient({
         subtitle="Viewing: All UPSC Mains GS Papers & Rubrics"
       >
         <Link href="/admin/test-series/new">
-          <Button className="h-10 px-4 rounded-xl bg-[#2A6AED] hover:bg-[#1E55C7] text-white text-xs sm:text-sm font-semibold shadow-xs">
+          <Button className="h-10 rounded-xl bg-[#2A6AED] px-4 text-xs font-semibold text-white shadow-xs hover:bg-[#1E55C7] sm:text-sm">
             <Plus className="mr-1.5 h-4 w-4" />
             Create Test Series
           </Button>
@@ -301,7 +332,7 @@ export function AdminTestSeriesClient({
       </PageHeader>
 
       {/* KPI Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KpiStatCard
           label="Total Test Series"
           value={testSeries.length}
@@ -354,21 +385,21 @@ export function AdminTestSeriesClient({
           return (
             <div
               key={t.id}
-              className="rounded-xl border border-border bg-card p-4 sm:p-5 shadow-none hover:border-primary/40 transition-colors flex flex-col justify-between gap-4"
+              className="flex flex-col justify-between gap-4 rounded-xl border border-border bg-card p-4 shadow-none transition-colors hover:border-primary/40 sm:p-5"
             >
               <div className="space-y-3">
                 {/* Header: SN + Status + Price */}
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-[11px] font-bold text-slate-600 dark:text-slate-400">
+                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-slate-100 text-[11px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-400">
                       #{sn}
                     </span>
                     <Badge
                       variant="outline"
                       className={
                         isPublished
-                          ? "border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 text-[10px] font-semibold rounded-full"
-                          : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-900 text-[10px] font-semibold rounded-full"
+                          ? "rounded-full border-emerald-200 bg-emerald-50 text-[10px] font-semibold text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-400"
+                          : "rounded-full border-slate-200 bg-slate-50 text-[10px] font-semibold text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400"
                       }
                     >
                       {t.status}
@@ -376,11 +407,11 @@ export function AdminTestSeriesClient({
                   </div>
 
                   {t.price === 0 ? (
-                    <Badge className="bg-emerald-600 text-white font-bold text-[10px] border-0 px-2 py-0.5 rounded-full">
+                    <Badge className="rounded-full border-0 bg-emerald-600 px-2 py-0.5 text-[10px] font-bold text-white">
                       FREE
                     </Badge>
                   ) : (
-                    <span className="font-extrabold text-[#2A6AED] dark:text-blue-400 text-sm">
+                    <span className="text-sm font-extrabold text-[#2A6AED] dark:text-blue-400">
                       ₹{(t.price / 100).toLocaleString()}
                     </span>
                   )}
@@ -390,26 +421,40 @@ export function AdminTestSeriesClient({
                 <div>
                   <Link
                     href={`/admin/test-series/${t.id}`}
-                    className="font-bold text-slate-900 dark:text-slate-100 hover:text-[#2A6AED] dark:hover:text-blue-400 transition-colors block text-sm leading-snug"
+                    className="block text-sm leading-snug font-bold text-slate-900 transition-colors hover:text-[#2A6AED] dark:text-slate-100 dark:hover:text-blue-400"
                   >
                     {t.title}
                   </Link>
-                  <span className="text-[11px] font-mono text-slate-400">/{t.slug}</span>
+                  <span className="font-mono text-[11px] text-slate-400">
+                    /{t.slug}
+                  </span>
                 </div>
 
                 {/* Metrics Stats */}
-                <div className="grid grid-cols-3 gap-2 py-2 px-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800/80 text-center">
+                <div className="grid grid-cols-3 gap-2 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-center dark:border-slate-800/80 dark:bg-slate-950">
                   <div>
-                    <span className="text-[10px] text-slate-400 block font-medium">Marks</span>
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">{t.maxMarks}</span>
+                    <span className="block text-[10px] font-medium text-slate-400">
+                      Marks
+                    </span>
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                      {t.maxMarks}
+                    </span>
                   </div>
                   <div className="border-x border-slate-200/60 dark:border-slate-800">
-                    <span className="text-[10px] text-slate-400 block font-medium">Quota</span>
-                    <span className="text-xs font-bold text-[#2A6AED] dark:text-blue-400">{t.maxAttempts} att.</span>
+                    <span className="block text-[10px] font-medium text-slate-400">
+                      Quota
+                    </span>
+                    <span className="text-xs font-bold text-[#2A6AED] dark:text-blue-400">
+                      {t.maxAttempts} att.
+                    </span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-400 block font-medium">Enrolled</span>
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">{t.registrationsCount}</span>
+                    <span className="block text-[10px] font-medium text-slate-400">
+                      Enrolled
+                    </span>
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                      {t.registrationsCount}
+                    </span>
                   </div>
                 </div>
 
@@ -420,29 +465,29 @@ export function AdminTestSeriesClient({
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center gap-1.5 pt-3 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-1.5 border-t border-slate-100 pt-3 dark:border-slate-800">
                 <Button
                   size="sm"
                   variant="outline"
                   disabled={isLoading}
                   onClick={() => handleTogglePublish(t)}
                   className={cn(
-                    "flex-1 h-8 px-2 text-xs font-semibold rounded-lg shadow-2xs border-slate-200 dark:border-slate-800",
+                    "h-8 flex-1 rounded-lg border-slate-200 px-2 text-xs font-semibold shadow-2xs dark:border-slate-800",
                     isPublished
-                      ? "hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-700 dark:text-amber-400"
-                      : "hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400"
+                      ? "text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950/40"
+                      : "text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
                   )}
                 >
                   {isLoading ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
                   ) : isPublished ? (
                     <>
-                      <EyeOff className="h-3.5 w-3.5 mr-1" />
+                      <EyeOff className="mr-1 h-3.5 w-3.5" />
                       Unpublish
                     </>
                   ) : (
                     <>
-                      <Globe className="h-3.5 w-3.5 mr-1" />
+                      <Globe className="mr-1 h-3.5 w-3.5" />
                       Publish
                     </>
                   )}
@@ -452,9 +497,9 @@ export function AdminTestSeriesClient({
                   <Button
                     size="sm"
                     variant="outline"
-                    className="h-8 px-3 border-slate-200 dark:border-slate-800 text-[#2A6AED] dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950 font-semibold text-xs rounded-lg shadow-2xs"
+                    className="h-8 rounded-lg border-slate-200 px-3 text-xs font-semibold text-[#2A6AED] shadow-2xs hover:bg-blue-50 dark:border-slate-800 dark:text-blue-400 dark:hover:bg-blue-950"
                   >
-                    <Edit className="h-3.5 w-3.5 mr-1" />
+                    <Edit className="mr-1 h-3.5 w-3.5" />
                     Manage
                   </Button>
                 </Link>
@@ -464,7 +509,7 @@ export function AdminTestSeriesClient({
                     size="sm"
                     variant="ghost"
                     title="Preview candidate view in new tab"
-                    className="h-8 w-8 p-0 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg"
+                    className="h-8 w-8 rounded-lg p-0 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
                   >
                     <ExternalLink className="h-3.5 w-3.5" />
                   </Button>

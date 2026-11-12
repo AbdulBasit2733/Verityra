@@ -59,7 +59,11 @@ interface RootAdaptiveDialogProps {
   children: React.ReactNode
 }
 
-const AdaptiveDialog = ({ children, open, onOpenChange }: RootAdaptiveDialogProps) => {
+const AdaptiveDialog = ({
+  children,
+  open,
+  onOpenChange,
+}: RootAdaptiveDialogProps) => {
   const isDesktop = useMediaQuery("(min-width: 1024px)")
   const [mounted, setMounted] = React.useState(false)
 
@@ -113,7 +117,11 @@ const AdaptiveDialogTrigger = ({ children, ...props }: BaseProps & any) => {
   return <DrawerTrigger {...props}>{children}</DrawerTrigger>
 }
 
-const AdaptiveDialogContent = ({ children, className, ...props }: BaseProps & { className?: string }) => {
+const AdaptiveDialogContent = ({
+  children,
+  className,
+  ...props
+}: BaseProps & { className?: string }) => {
   const isDesktop = useMediaQuery("(min-width: 1024px)")
   const [mounted, setMounted] = React.useState(false)
 
@@ -141,14 +149,16 @@ const AdaptiveDialogContent = ({ children, className, ...props }: BaseProps & { 
 
   return (
     <DrawerContent className={className} {...props}>
-      <div className="max-h-[90vh] overflow-y-auto">
-        {children}
-      </div>
+      <div className="max-h-[90vh] overflow-y-auto">{children}</div>
     </DrawerContent>
   )
 }
 
-const AdaptiveDialogHeader = ({ children, className, ...props }: BaseProps & { className?: string }) => {
+const AdaptiveDialogHeader = ({
+  children,
+  className,
+  ...props
+}: BaseProps & { className?: string }) => {
   const isDesktop = useMediaQuery("(min-width: 1024px)")
   const [mounted, setMounted] = React.useState(false)
 
@@ -181,7 +191,11 @@ const AdaptiveDialogHeader = ({ children, className, ...props }: BaseProps & { c
   )
 }
 
-const AdaptiveDialogTitle = ({ children, className, ...props }: BaseProps & { className?: string }) => {
+const AdaptiveDialogTitle = ({
+  children,
+  className,
+  ...props
+}: BaseProps & { className?: string }) => {
   const isDesktop = useMediaQuery("(min-width: 1024px)")
   const [mounted, setMounted] = React.useState(false)
 
@@ -214,7 +228,11 @@ const AdaptiveDialogTitle = ({ children, className, ...props }: BaseProps & { cl
   )
 }
 
-const AdaptiveDialogDescription = ({ children, className, ...props }: BaseProps & { className?: string }) => {
+const AdaptiveDialogDescription = ({
+  children,
+  className,
+  ...props
+}: BaseProps & { className?: string }) => {
   const isDesktop = useMediaQuery("(min-width: 1024px)")
   const [mounted, setMounted] = React.useState(false)
 
@@ -247,7 +265,11 @@ const AdaptiveDialogDescription = ({ children, className, ...props }: BaseProps 
   )
 }
 
-const AdaptiveDialogFooter = ({ children, className, ...props }: BaseProps & { className?: string }) => {
+const AdaptiveDialogFooter = ({
+  children,
+  className,
+  ...props
+}: BaseProps & { className?: string }) => {
   const isDesktop = useMediaQuery("(min-width: 1024px)")
   const [mounted, setMounted] = React.useState(false)
 

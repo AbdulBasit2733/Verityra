@@ -1,15 +1,24 @@
 "use client"
 
 import { useMemo } from "react"
-import { DataTable, type DataTableColumn, type DataTableFilter } from "@/components/ui/data-table"
+import {
+  DataTable,
+  type DataTableColumn,
+  type DataTableFilter,
+} from "@/components/ui/data-table"
 import { FormattedDate } from "@/components/ui/date-picker"
 import type { LeaderboardEntry } from "./leaderboard-client"
 import { LeaderboardRankCard } from "./leaderboard-rank-card"
 import { RankChip, ScoreBar, initials } from "./leader-board-parts"
 
-const rowKey = (r: LeaderboardEntry) => `${r.rank}-${r.studentName}-${r.testTitle}-${r.attemptNumber}-${r.submittedAt}`
+const rowKey = (r: LeaderboardEntry) =>
+  `${r.rank}-${r.studentName}-${r.testTitle}-${r.attemptNumber}-${r.submittedAt}`
 
-export function LeaderboardTable({ rankings }: { rankings: LeaderboardEntry[] }) {
+export function LeaderboardTable({
+  rankings,
+}: {
+  rankings: LeaderboardEntry[]
+}) {
   const columns = useMemo<DataTableColumn<LeaderboardEntry>[]>(
     () => [
       {
@@ -35,8 +44,12 @@ export function LeaderboardTable({ rankings }: { rankings: LeaderboardEntry[] })
               {initials(r.studentName)}
             </span>
             <div className="min-w-0">
-              <p className="truncate font-semibold text-foreground">{r.studentName}</p>
-              <p className="text-xs text-muted-foreground">Attempt {r.attemptNumber}</p>
+              <p className="truncate font-semibold text-foreground">
+                {r.studentName}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Attempt {r.attemptNumber}
+              </p>
             </div>
           </div>
         ),
@@ -46,7 +59,11 @@ export function LeaderboardTable({ rankings }: { rankings: LeaderboardEntry[] })
         header: "Paper",
         sortable: true,
         sortAccessor: (r) => r.testTitle,
-        cell: (r) => <span className="block max-w-xs truncate text-muted-foreground">{r.testTitle}</span>,
+        cell: (r) => (
+          <span className="block max-w-xs truncate text-muted-foreground">
+            {r.testTitle}
+          </span>
+        ),
       },
       {
         id: "score",
@@ -59,9 +76,13 @@ export function LeaderboardTable({ rankings }: { rankings: LeaderboardEntry[] })
             <div className="flex items-baseline justify-between gap-3 tabular-nums">
               <span className="font-bold text-foreground">
                 {r.score}
-                <span className="ml-1 text-xs font-normal text-muted-foreground">/ {r.maxMarks}</span>
+                <span className="ml-1 text-xs font-normal text-muted-foreground">
+                  / {r.maxMarks}
+                </span>
               </span>
-              <span className="text-xs font-semibold text-muted-foreground">{r.percentage.toFixed(1)}%</span>
+              <span className="text-xs font-semibold text-muted-foreground">
+                {r.percentage.toFixed(1)}%
+              </span>
             </div>
             <ScoreBar value={r.percentage} />
           </div>
@@ -76,7 +97,7 @@ export function LeaderboardTable({ rankings }: { rankings: LeaderboardEntry[] })
         cell: (r) => <FormattedDate date={r.submittedAt} />,
       },
     ],
-    [],
+    []
   )
 
   const filters = useMemo<DataTableFilter<LeaderboardEntry>[]>(
@@ -85,12 +106,22 @@ export function LeaderboardTable({ rankings }: { rankings: LeaderboardEntry[] })
         id: "attempt",
         label: "Attempt",
         accessor: (r) => String(r.attemptNumber),
-        options: [1, 2, 3].map((n) => ({ label: `Attempt ${n}`, value: String(n) })),
+        options: [1, 2, 3].map((n) => ({
+          label: `Attempt ${n}`,
+          value: String(n),
+        })),
       },
       {
         id: "bracket",
         label: "Score band",
-        accessor: (r) => (r.percentage >= 75 ? "TOP" : r.percentage >= 60 ? "HIGH" : r.percentage >= 50 ? "PASS" : "BELOW"),
+        accessor: (r) =>
+          r.percentage >= 75
+            ? "TOP"
+            : r.percentage >= 60
+              ? "HIGH"
+              : r.percentage >= 50
+                ? "PASS"
+                : "BELOW",
         options: [
           { label: "75% and above", value: "TOP" },
           { label: "60–74%", value: "HIGH" },
@@ -99,14 +130,18 @@ export function LeaderboardTable({ rankings }: { rankings: LeaderboardEntry[] })
         ],
       },
     ],
-    [],
+    []
   )
 
   return (
     <section aria-label="All rankings" className="space-y-5">
       <div className="flex items-end justify-between gap-3">
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">All published results</p>
-        <span className="text-sm tabular-nums text-muted-foreground">{rankings.length} ranked submissions</span>
+        <p className="text-xs font-bold tracking-[0.16em] text-primary uppercase">
+          All published results
+        </p>
+        <span className="text-sm text-muted-foreground tabular-nums">
+          {rankings.length} ranked submissions
+        </span>
       </div>
 
       {/* DataTable renders cards below md and the table from md up, so there is one search/filter/page state */}
@@ -124,7 +159,9 @@ export function LeaderboardTable({ rankings }: { rankings: LeaderboardEntry[] })
         showSerialNumber={false}
         defaultViewMode="auto"
         gridClassName="sm:grid-cols-2 xl:grid-cols-3"
-        renderCard={(r) => <LeaderboardRankCard key={rowKey(r)} entry={r} compact />}
+        renderCard={(r) => (
+          <LeaderboardRankCard key={rowKey(r)} entry={r} compact />
+        )}
         emptyTitle="No rankings match"
         emptyDescription="Clear the search or filters to see everyone."
       />

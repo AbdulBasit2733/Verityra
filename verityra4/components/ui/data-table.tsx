@@ -116,17 +116,19 @@ export function DataTable<T>({
   gridClassName,
   tableClassName,
 }: DataTableProps<T>) {
-  const [viewMode, setViewMode] = React.useState<"auto" | "table" | "grid">(defaultViewMode)
-  const [searchQuery, setSearchQuery] = React.useState("")
-  const [activeFilters, setActiveFilters] = React.useState<Record<string, string>>(
-    () => {
-      const initial: Record<string, string> = {}
-      for (const f of filters) {
-        initial[f.id] = f.defaultValue || "ALL"
-      }
-      return initial
-    }
+  const [viewMode, setViewMode] = React.useState<"auto" | "table" | "grid">(
+    defaultViewMode
   )
+  const [searchQuery, setSearchQuery] = React.useState("")
+  const [activeFilters, setActiveFilters] = React.useState<
+    Record<string, string>
+  >(() => {
+    const initial: Record<string, string> = {}
+    for (const f of filters) {
+      initial[f.id] = f.defaultValue || "ALL"
+    }
+    return initial
+  })
   const [dateFilter, setDateFilter] = React.useState<DateFilterValue>({
     preset: "ALL",
     selectedDate: null,
@@ -141,15 +143,15 @@ export function DataTable<T>({
   const [pageSize, setPageSize] = React.useState(defaultPageSize)
 
   // Column visibility state
-  const [columnVisibility, setColumnVisibility] = React.useState<Record<string, boolean>>(
-    () => {
-      const initial: Record<string, boolean> = {}
-      for (const col of columns) {
-        initial[col.id] = !col.defaultHidden
-      }
-      return initial
+  const [columnVisibility, setColumnVisibility] = React.useState<
+    Record<string, boolean>
+  >(() => {
+    const initial: Record<string, boolean> = {}
+    for (const col of columns) {
+      initial[col.id] = !col.defaultHidden
     }
-  )
+    return initial
+  })
 
   const visibleColumns = React.useMemo(() => {
     return columns.filter((col) => columnVisibility[col.id] !== false)
@@ -236,7 +238,15 @@ export function DataTable<T>({
 
       return true
     })
-  }, [data, columns, searchQuery, filters, activeFilters, dateAccessor, dateFilter])
+  }, [
+    data,
+    columns,
+    searchQuery,
+    filters,
+    activeFilters,
+    dateAccessor,
+    dateFilter,
+  ])
 
   // 2. Sort filtered rows
   const sortedData = React.useMemo(() => {
@@ -290,7 +300,7 @@ export function DataTable<T>({
   return (
     <div
       className={cn(
-        "rounded-xl border border-border bg-card shadow-card overflow-hidden",
+        "overflow-hidden rounded-xl border border-border bg-card shadow-card",
         className
       )}
     >
@@ -299,11 +309,11 @@ export function DataTable<T>({
           Row 1: Search input + Column Selector + Toolbar Actions
           Row 2: Dropdown filters + Date Picker + Reset Filters
       ========================================================================= */}
-      <div className="p-4 sm:p-5 border-b border-border space-y-3 bg-card">
+      <div className="space-y-3 border-b border-border bg-card p-4 sm:p-5">
         {/* Tier 1: Search & Right Tools */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          <div className="relative flex-1 max-w-2xl">
-            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+        <div className="flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-center">
+          <div className="relative max-w-2xl flex-1">
+            <Search className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <Input
               value={searchQuery}
               onChange={(e) => {
@@ -311,7 +321,7 @@ export function DataTable<T>({
                 setCurrentPage(1)
               }}
               placeholder={searchPlaceholder}
-              className="h-10 pl-10 pr-9 rounded-lg border-border bg-muted/50 text-xs sm:text-sm shadow-none focus-visible:ring-primary/20 focus-visible:border-primary"
+              className="h-10 rounded-lg border-border bg-muted/50 pr-9 pl-10 text-xs shadow-none focus-visible:border-primary focus-visible:ring-primary/20 sm:text-sm"
             />
             {searchQuery && (
               <button
@@ -321,26 +331,28 @@ export function DataTable<T>({
                   setCurrentPage(1)
                 }}
                 aria-label="Clear search query"
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                className="absolute top-1/2 right-3 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
               >
                 <X className="h-4 w-4" />
               </button>
             )}
           </div>
 
-          <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0">
+          <div className="flex shrink-0 items-center justify-between gap-2 sm:justify-end">
             {/* View Mode Switcher: [ ▦ Grid | ▤ Table ] */}
-            <div className="inline-flex items-center rounded-xl border border-slate-200 dark:border-slate-800 p-0.5 bg-slate-100/70 dark:bg-slate-950/70 shadow-2xs">
+            <div className="inline-flex items-center rounded-xl border border-slate-200 bg-slate-100/70 p-0.5 shadow-2xs dark:border-slate-800 dark:bg-slate-950/70">
               <button
                 type="button"
-                onClick={() => setViewMode(viewMode === "grid" ? "auto" : "grid")}
+                onClick={() =>
+                  setViewMode(viewMode === "grid" ? "auto" : "grid")
+                }
                 title="Grid Card View (Default on Mobile)"
                 className={cn(
-                  "inline-flex items-center justify-center h-8 px-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer",
+                  "inline-flex h-8 cursor-pointer items-center justify-center rounded-lg px-2.5 text-xs font-semibold transition-all",
                   viewMode === "grid"
-                    ? "!bg-white dark:!bg-slate-800 !text-[#2A6AED] dark:!text-blue-400 !shadow-2xs"
+                    ? "!bg-white !text-[#2A6AED] !shadow-2xs dark:!bg-slate-800 dark:!text-blue-400"
                     : viewMode === "auto"
-                      ? "bg-white dark:bg-slate-800 text-[#2A6AED] dark:text-blue-400 shadow-2xs md:bg-transparent md:text-slate-500 md:shadow-none"
+                      ? "bg-white text-[#2A6AED] shadow-2xs md:bg-transparent md:text-slate-500 md:shadow-none dark:bg-slate-800 dark:text-blue-400"
                       : "text-slate-500 hover:text-slate-900 dark:hover:text-slate-100"
                 )}
               >
@@ -349,14 +361,16 @@ export function DataTable<T>({
               </button>
               <button
                 type="button"
-                onClick={() => setViewMode(viewMode === "table" ? "auto" : "table")}
+                onClick={() =>
+                  setViewMode(viewMode === "table" ? "auto" : "table")
+                }
                 title="Table List View (Default on Desktop)"
                 className={cn(
-                  "inline-flex items-center justify-center h-8 px-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer",
+                  "inline-flex h-8 cursor-pointer items-center justify-center rounded-lg px-2.5 text-xs font-semibold transition-all",
                   viewMode === "table"
-                    ? "!bg-white dark:!bg-slate-800 !text-[#2A6AED] dark:!text-blue-400 !shadow-2xs"
+                    ? "!bg-white !text-[#2A6AED] !shadow-2xs dark:!bg-slate-800 dark:!text-blue-400"
                     : viewMode === "auto"
-                      ? "hidden md:inline-flex md:bg-white md:dark:bg-slate-800 md:text-[#2A6AED] md:dark:text-blue-400 md:shadow-2xs"
+                      ? "hidden md:inline-flex md:bg-white md:text-[#2A6AED] md:shadow-2xs md:dark:bg-slate-800 md:dark:text-blue-400"
                       : "text-slate-500 hover:text-slate-900 dark:hover:text-slate-100"
                 )}
               >
@@ -367,19 +381,17 @@ export function DataTable<T>({
 
             {/* Columns (N/N) Dropdown Selector */}
             <DropdownMenu>
-              <DropdownMenuTrigger
-                className="inline-flex h-9 sm:h-10 items-center gap-1.5 sm:gap-2 rounded-lg border border-border bg-card px-2.5 sm:px-3.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors outline-none cursor-pointer shadow-none"
-              >
+              <DropdownMenuTrigger className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 text-xs font-semibold text-foreground shadow-none transition-colors outline-none hover:bg-muted sm:h-10 sm:gap-2 sm:px-3.5">
                 <SlidersHorizontal className="h-3.5 w-3.5 text-slate-500" />
                 <span className="hidden sm:inline">
                   Columns ({visibleColumns.length}/{columns.length})
                 </span>
-                <span className="sm:hidden text-[11px]">
+                <span className="text-[11px] sm:hidden">
                   ({visibleColumns.length})
                 </span>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-52">
-                <DropdownMenuLabel className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                <DropdownMenuLabel className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
                   Toggle Columns
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
@@ -410,11 +422,13 @@ export function DataTable<T>({
 
         {/* Tier 2: Horizontal Filter Strip */}
         {(filters.length > 0 || dateAccessor || hasActiveControls) && (
-          <div className="flex overflow-x-auto no-scrollbar scroll-smooth flex-nowrap sm:flex-wrap items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/80">
+          <div className="no-scrollbar flex flex-nowrap items-center gap-2 overflow-x-auto scroll-smooth border-t border-slate-100 pt-1 sm:flex-wrap dark:border-slate-800/80">
             {/* Dropdown Filters */}
             {filters.map((filter) => {
               const currentVal = activeFilters[filter.id] || "ALL"
-              const activeOption = filter.options.find((o) => o.value === currentVal)
+              const activeOption = filter.options.find(
+                (o) => o.value === currentVal
+              )
               const isFiltered = currentVal !== "ALL"
               const FilterIcon = filter.icon || Filter
 
@@ -422,7 +436,7 @@ export function DataTable<T>({
                 <DropdownMenu key={filter.id}>
                   <DropdownMenuTrigger
                     className={cn(
-                      "inline-flex h-9 items-center gap-2 rounded-xl border px-3 text-xs font-semibold transition-colors outline-none cursor-pointer shadow-2xs",
+                      "inline-flex h-9 cursor-pointer items-center gap-2 rounded-xl border px-3 text-xs font-semibold shadow-2xs transition-colors outline-none",
                       isFiltered
                         ? "border-primary/30 bg-secondary text-secondary-foreground"
                         : "border-border bg-card text-foreground hover:bg-muted"
@@ -431,21 +445,26 @@ export function DataTable<T>({
                     <FilterIcon className="h-3.5 w-3.5 shrink-0 opacity-70" />
                     <span>{filter.label}</span>
                     {isFiltered && activeOption && (
-                      <Badge className="ml-0.5 h-5 rounded-md bg-primary px-1.5 py-0 text-[10px] font-bold text-primary-foreground border-0">
+                      <Badge className="ml-0.5 h-5 rounded-md border-0 bg-primary px-1.5 py-0 text-[10px] font-bold text-primary-foreground">
                         {activeOption.label}
                       </Badge>
                     )}
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start" className="w-56">
-                    <DropdownMenuLabel className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                    <DropdownMenuLabel className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
                       Filter by {filter.label}
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuRadioGroup
                       value={currentVal}
-                      onValueChange={(val) => handleFilterChange(filter.id, val)}
+                      onValueChange={(val) =>
+                        handleFilterChange(filter.id, val)
+                      }
                     >
-                      <DropdownMenuRadioItem value="ALL" className="text-xs font-medium">
+                      <DropdownMenuRadioItem
+                        value="ALL"
+                        className="text-xs font-medium"
+                      >
                         All {filter.label}
                       </DropdownMenuRadioItem>
                       {filter.options.map((opt) => (
@@ -482,9 +501,9 @@ export function DataTable<T>({
                 variant="ghost"
                 size="sm"
                 onClick={resetAllFilters}
-                className="h-9 px-2.5 text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 rounded-xl"
+                className="h-9 rounded-xl px-2.5 text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-slate-100"
               >
-                <RotateCcw className="h-3.5 w-3.5 mr-1" />
+                <RotateCcw className="mr-1 h-3.5 w-3.5" />
                 Reset
               </Button>
             )}
@@ -514,7 +533,7 @@ export function DataTable<T>({
             <p className="text-sm font-bold text-slate-900 dark:text-slate-100">
               {emptyTitle}
             </p>
-            <p className="text-xs text-slate-500 dark:text-slate-400 whitespace-normal leading-relaxed">
+            <p className="text-xs leading-relaxed whitespace-normal text-slate-500 dark:text-slate-400">
               {emptyDescription}
             </p>
             {hasActiveControls ? (
@@ -523,9 +542,9 @@ export function DataTable<T>({
                 variant="outline"
                 size="sm"
                 onClick={resetAllFilters}
-                className="mt-2 h-8 px-3 text-xs font-semibold rounded-lg"
+                className="mt-2 h-8 rounded-lg px-3 text-xs font-semibold"
               >
-                <RotateCcw className="h-3 w-3 mr-1.5" />
+                <RotateCcw className="mr-1.5 h-3 w-3" />
                 Clear all filters
               </Button>
             ) : (
@@ -535,7 +554,7 @@ export function DataTable<T>({
         ) : (
           <div
             className={cn(
-              "grid grid-cols-1 sm:grid-cols-2 gap-4",
+              "grid grid-cols-1 gap-4 sm:grid-cols-2",
               gridClassName
             )}
           >
@@ -551,7 +570,9 @@ export function DataTable<T>({
 
               // Automatic fallback card generator from visible columns
               const primaryCol = visibleColumns[0]
-              const actionCol = visibleColumns.find((c) => c.id === "action" || c.id === "actions")
+              const actionCol = visibleColumns.find(
+                (c) => c.id === "action" || c.id === "actions"
+              )
               const otherCols = visibleColumns.filter(
                 (c) => c.id !== primaryCol?.id && c.id !== actionCol?.id
               )
@@ -559,12 +580,12 @@ export function DataTable<T>({
               return (
                 <div
                   key={keyExtractor(row)}
-                  className="rounded-xl border border-border bg-card p-4 shadow-none space-y-3"
+                  className="space-y-3 rounded-xl border border-border bg-card p-4 shadow-none"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-2">
                       {showSerialNumber && (
-                        <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-[11px] font-bold text-slate-500 shrink-0">
+                        <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-[11px] font-bold text-slate-500 dark:bg-slate-800">
                           #{serialNumber}
                         </span>
                       )}
@@ -579,9 +600,12 @@ export function DataTable<T>({
                   </div>
 
                   {otherCols.length > 0 && (
-                    <div className="grid grid-cols-1 gap-2 pt-2 border-t border-slate-100 dark:border-slate-800/80 text-xs">
+                    <div className="grid grid-cols-1 gap-2 border-t border-slate-100 pt-2 text-xs dark:border-slate-800/80">
                       {otherCols.map((col) => (
-                        <div key={col.id} className="flex items-center justify-between gap-2">
+                        <div
+                          key={col.id}
+                          className="flex items-center justify-between gap-2"
+                        >
                           <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500">
                             {col.header}
                           </span>
@@ -598,7 +622,7 @@ export function DataTable<T>({
                   )}
 
                   {actionCol && (
-                    <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-end">
+                    <div className="flex items-center justify-end border-t border-slate-100 pt-2 dark:border-slate-800/80">
                       {actionCol.cell
                         ? actionCol.cell(row)
                         : actionCol.accessor
@@ -626,10 +650,10 @@ export function DataTable<T>({
       >
         <Table className={tableClassName}>
           <TableHeader className="sticky top-0 z-10">
-            <TableRow className="bg-muted/50 hover:bg-muted/70 border-b border-border">
+            <TableRow className="border-b border-border bg-muted/50 hover:bg-muted/70">
               {/* Sr. Column Header matching reference screenshots */}
               {showSerialNumber && (
-                <TableHead className="w-14 h-11 px-4 text-center text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                <TableHead className="h-11 w-14 px-4 text-center text-[11px] font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
                   Sr.
                 </TableHead>
               )}
@@ -639,7 +663,7 @@ export function DataTable<T>({
                   <TableHead
                     key={col.id}
                     className={cn(
-                      "h-11 px-4 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400",
+                      "h-11 px-4 text-[11px] font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400",
                       col.headerClassName
                     )}
                   >
@@ -648,8 +672,9 @@ export function DataTable<T>({
                         type="button"
                         onClick={() => handleSort(col.id)}
                         className={cn(
-                          "inline-flex items-center gap-1.5 uppercase tracking-wider transition-colors hover:text-slate-900 dark:hover:text-slate-100 cursor-pointer select-none",
-                          isSorted && "text-[#2A6AED] dark:text-blue-400 font-bold"
+                          "inline-flex cursor-pointer items-center gap-1.5 tracking-wider uppercase transition-colors select-none hover:text-slate-900 dark:hover:text-slate-100",
+                          isSorted &&
+                            "font-bold text-[#2A6AED] dark:text-blue-400"
                         )}
                       >
                         <span>{col.header}</span>
@@ -682,7 +707,7 @@ export function DataTable<T>({
                     <p className="text-sm font-bold text-slate-900 dark:text-slate-100">
                       {emptyTitle}
                     </p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 whitespace-normal leading-relaxed">
+                    <p className="text-xs leading-relaxed whitespace-normal text-slate-500 dark:text-slate-400">
                       {emptyDescription}
                     </p>
                     {hasActiveControls ? (
@@ -691,9 +716,9 @@ export function DataTable<T>({
                         variant="outline"
                         size="sm"
                         onClick={resetAllFilters}
-                        className="mt-2 h-8 px-3 text-xs font-semibold rounded-lg"
+                        className="mt-2 h-8 rounded-lg px-3 text-xs font-semibold"
                       >
-                        <RotateCcw className="h-3 w-3 mr-1.5" />
+                        <RotateCcw className="mr-1.5 h-3 w-3" />
                         Clear all filters
                       </Button>
                     ) : (
@@ -708,7 +733,7 @@ export function DataTable<T>({
                 return (
                   <TableRow
                     key={keyExtractor(row)}
-                    className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800/80 transition-colors"
+                    className="border-b border-slate-100 transition-colors hover:bg-slate-50/60 dark:border-slate-800/80 dark:hover:bg-slate-800/40"
                   >
                     {showSerialNumber && (
                       <TableCell className="w-14 px-4 py-3.5 text-center text-xs font-bold text-slate-400 dark:text-slate-500">
@@ -718,7 +743,10 @@ export function DataTable<T>({
                     {visibleColumns.map((col) => (
                       <TableCell
                         key={col.id}
-                        className={cn("px-4 py-3.5 text-xs sm:text-sm", col.className)}
+                        className={cn(
+                          "px-4 py-3.5 text-xs sm:text-sm",
+                          col.className
+                        )}
                       >
                         {col.cell
                           ? col.cell(row)
@@ -738,7 +766,7 @@ export function DataTable<T>({
       {/* =========================================================================
           GLOBAL PAGINATION FOOTER
       ========================================================================= */}
-      <div className="px-4 sm:px-5 py-3.5 bg-card border-t border-border">
+      <div className="border-t border-border bg-card px-4 py-3.5 sm:px-5">
         <GlobalPagination
           currentPage={currentPage}
           totalPages={Math.max(1, Math.ceil(sortedData.length / pageSize))}

@@ -15,10 +15,13 @@ export function runExamTimerTests(): TestResult {
     assert.equal(res.seconds, "00")
   })
 
-  suite.test("formatTimerDigits formats seconds under one minute correctly", () => {
-    const res = formatTimerDigits(45)
-    assert.equal(res.formatted, "00:00:45")
-  })
+  suite.test(
+    "formatTimerDigits formats seconds under one minute correctly",
+    () => {
+      const res = formatTimerDigits(45)
+      assert.equal(res.formatted, "00:00:45")
+    }
+  )
 
   suite.test("formatTimerDigits formats minutes and seconds correctly", () => {
     const res = formatTimerDigits(125) // 2m 5s
@@ -27,27 +30,37 @@ export function runExamTimerTests(): TestResult {
     assert.equal(res.seconds, "05")
   })
 
-  suite.test("formatTimerDigits formats full multi-hour exam durations correctly", () => {
-    const res = formatTimerDigits(10800) // 3 hours
-    assert.equal(res.formatted, "03:00:00")
-    assert.equal(res.hours, "03")
-    assert.equal(res.minutes, "00")
-    assert.equal(res.seconds, "00")
-  })
+  suite.test(
+    "formatTimerDigits formats full multi-hour exam durations correctly",
+    () => {
+      const res = formatTimerDigits(10800) // 3 hours
+      assert.equal(res.formatted, "03:00:00")
+      assert.equal(res.hours, "03")
+      assert.equal(res.minutes, "00")
+      assert.equal(res.seconds, "00")
+    }
+  )
 
-  suite.test("formatTimerDigits formats overtime (negative seconds) with prefix", () => {
-    const res = formatTimerDigits(-75) // 1m 15s overtime
-    assert.equal(res.formatted, "+ 00:01:15")
-    assert.equal(res.minutes, "01")
-    assert.equal(res.seconds, "15")
-  })
+  suite.test(
+    "formatTimerDigits formats overtime (negative seconds) with prefix",
+    () => {
+      const res = formatTimerDigits(-75) // 1m 15s overtime
+      assert.equal(res.formatted, "+ 00:01:15")
+      assert.equal(res.minutes, "01")
+      assert.equal(res.seconds, "15")
+    }
+  )
 
   // 2. Phase Transition Calculations
   suite.test("Determines correct exam phase across lifecycle", () => {
     const durationSeconds = 180 * 60 // 10800s
     const bufferSeconds = 20 * 60 // 1200s
 
-    function computePhase(startedAt: number | null, elapsedSeconds: number, finishedWriting: boolean) {
+    function computePhase(
+      startedAt: number | null,
+      elapsedSeconds: number,
+      finishedWriting: boolean
+    ) {
       if (!startedAt) return "IDLE"
       if (finishedWriting) {
         return elapsedSeconds > bufferSeconds ? "OVERTIME" : "BUFFER"
@@ -68,22 +81,28 @@ export function runExamTimerTests(): TestResult {
   })
 
   // 3. Wall-Clock Pause Deduction Math
-  suite.test("Calculates effective elapsed time accurately with paused durations", () => {
-    const startedAt = 100000
-    const totalPausedMs = 15000 // 15 seconds paused
-    const clockNow = 160000 // 60 seconds wall-clock elapsed
+  suite.test(
+    "Calculates effective elapsed time accurately with paused durations",
+    () => {
+      const startedAt = 100000
+      const totalPausedMs = 15000 // 15 seconds paused
+      const clockNow = 160000 // 60 seconds wall-clock elapsed
 
-    const activeElapsedMs = Math.max(0, clockNow - startedAt - totalPausedMs)
-    const effectiveElapsedSeconds = Math.floor(activeElapsedMs / 1000)
+      const activeElapsedMs = Math.max(0, clockNow - startedAt - totalPausedMs)
+      const effectiveElapsedSeconds = Math.floor(activeElapsedMs / 1000)
 
-    assert.equal(effectiveElapsedSeconds, 45) // 60 - 15 = 45s
-  })
+      assert.equal(effectiveElapsedSeconds, 45) // 60 - 15 = 45s
+    }
+  )
 
-  suite.test("Attempt-aware storage key isolates timer state per attempt", () => {
-    const key1 = `verityra-exam-timer:test-1:att-1`
-    const key2 = `verityra-exam-timer:test-1:att-2`
-    assert.notEqual(key1, key2)
-  })
+  suite.test(
+    "Attempt-aware storage key isolates timer state per attempt",
+    () => {
+      const key1 = `verityra-exam-timer:test-1:att-1`
+      const key2 = `verityra-exam-timer:test-1:att-2`
+      assert.notEqual(key1, key2)
+    }
+  )
 
   return {
     suiteName: suite.name,

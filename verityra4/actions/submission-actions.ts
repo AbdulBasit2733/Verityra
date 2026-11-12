@@ -7,9 +7,16 @@ import {
 } from "@/lib/auth-guard"
 import { prisma, isDatabaseConnected } from "@/lib/prisma"
 import { uploadPrivateFile } from "@/lib/supabase"
-import { evaluateAnswerSheetWithGemini, getGeminiModelName } from "@/lib/ai/gemini-evaluator"
+import {
+  evaluateAnswerSheetWithGemini,
+  getGeminiModelName,
+} from "@/lib/ai/gemini-evaluator"
 import { queueEvaluation } from "@/lib/queue/evaluation-queue"
-import { claimEvaluationRun, failEvaluationRun, persistEvaluationRun } from "@/lib/evaluation/evaluation-run-service"
+import {
+  claimEvaluationRun,
+  failEvaluationRun,
+  persistEvaluationRun,
+} from "@/lib/evaluation/evaluation-run-service"
 import { RegistrationStatus, SubmissionStatus } from "@prisma/client"
 import { revalidatePath } from "next/cache"
 import { ActionResult } from "./auth-actions"
@@ -26,28 +33,40 @@ const MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024 // Keep scanned answer sheets under 
  * Server Action: Submit Handwritten Answer Sheet
  * Strict atomic three-attempt enforcement with database concurrency safety.
  */
-export async function submitAnswerSheetAction(formData: FormData): Promise<ActionResult<{ submissionId: string; attemptNumber: number }>> {
+export async function submitAnswerSheetAction(
+  formData: FormData
+): Promise<ActionResult<{ submissionId: string; attemptNumber: number }>> {
   let user
   try {
     user = await getPersistedCurrentUser()
   } catch (err) {
     if (err instanceof PersistedUserLookupError) {
-      return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+      return {
+        success: false,
+        error: "Database temporarily unavailable. Please try again shortly.",
+      }
     }
     throw err
   }
 
   if (!user) {
-    return { success: false, error: "Authentication required to submit answers. Please sign in again." }
+    return {
+      success: false,
+      error: "Authentication required to submit answers. Please sign in again.",
+    }
   }
 
   const testSeriesIdValue = formData.get("testSeriesId")
   const fileValue = formData.get("file")
-  const testSeriesId = typeof testSeriesIdValue === "string" ? testSeriesIdValue : ""
+  const testSeriesId =
+    typeof testSeriesIdValue === "string" ? testSeriesIdValue : ""
   const file = fileValue instanceof File ? fileValue : null
 
   if (!testSeriesId || !file) {
-    return { success: false, error: "Test series ID and answer sheet file are required." }
+    return {
+      success: false,
+      error: "Test series ID and answer sheet file are required.",
+    }
   }
 
   // 1. File Type and Size Validation (Does NOT consume attempt if invalid)
@@ -68,7 +87,10 @@ export async function submitAnswerSheetAction(formData: FormData): Promise<Actio
   const dbConnected = await isDatabaseConnected()
   if (!dbConnected) {
     if (process.env.NODE_ENV === "production") {
-      return { success: false, error: "Database temporarily unavailable. Please try again shortly." }
+      return {
+        success: false,
+        error: "Database temporarily unavailable. Please try again shortly.",
+      }
     }
     return {
       success: true,
@@ -97,7 +119,8 @@ export async function submitAnswerSheetAction(formData: FormData): Promise<Actio
   if (!registration || registration.status !== RegistrationStatus.ACTIVE) {
     return {
       success: false,
-      error: "You are not registered for this test series or your registration is inactive.",
+      error:
+        "You are not registered for this test series or your registration is inactive.",
     }
   }
 
@@ -111,7 +134,10 @@ export async function submitAnswerSheetAction(formData: FormData): Promise<Actio
 
   // 4. Verify test window
   const now = new Date()
-  if (registration.testSeries.endDate && now > registration.testSeries.endDate) {
+  if (
+    registration.testSeries.endDate &&
+    now > registration.testSeries.endDate
+  ) {
     return {
       success: false,
       error: "The submission deadline for this test series has passed.",
@@ -121,16 +147,26 @@ export async function submitAnswerSheetAction(formData: FormData): Promise<Actio
   // 5. Upload File Securely to Private Storage
   const fileBytes = Buffer.from(await file.arrayBuffer())
   const attemptToReserve = registration.attemptsUsed + 1
-  const safeFileName = (file.name.split(/[\\/]/).pop() || "answer-sheet").replace(/[^\w.-]/g, "_")
+  const safeFileName = (
+    file.name.split(/[\\/]/).pop() || "answer-sheet"
+  ).replace(/[^\w.-]/g, "_")
   const storagePath = `submissions/${testSeriesId}/${user.id}/attempt_${attemptToReserve}_${Date.now()}_${safeFileName}`
 
   let uploadedFileUrl: string
   try {
-    const uploadResult = await uploadPrivateFile("verityra-private", storagePath, fileBytes, file.type)
+    const uploadResult = await uploadPrivateFile(
+      "verityra-private",
+      storagePath,
+      fileBytes,
+      file.type
+    )
     uploadedFileUrl = uploadResult.url
   } catch (err: any) {
     console.error("[UPLOAD ERROR]", err)
-    return { success: false, error: "Failed to store answer sheet securely. Please try again." }
+    return {
+      success: false,
+      error: "Failed to store answer sheet securely. Please try again.",
+    }
   }
 
   // 6. Atomically Reserve Attempt & Create Submission in Database Transaction
@@ -171,14 +207,21 @@ export async function submitAnswerSheetAction(formData: FormData): Promise<Actio
       return newSub
     })
   } catch (txError: any) {
-    if (txError.message === "ATTEMPT_LIMIT_EXCEEDED" || txError.code === "P2002") {
+    if (
+      txError.message === "ATTEMPT_LIMIT_EXCEEDED" ||
+      txError.code === "P2002"
+    ) {
       return {
         success: false,
-        error: "Attempt limit exceeded or concurrent submission detected. Further submissions blocked.",
+        error:
+          "Attempt limit exceeded or concurrent submission detected. Further submissions blocked.",
       }
     }
     console.error("[TRANSACTION SUBMISSION ERROR]", txError)
-    return { success: false, error: "Database transaction failed. Please try again." }
+    return {
+      success: false,
+      error: "Database transaction failed. Please try again.",
+    }
   }
 
   let evaluationRun
@@ -200,7 +243,8 @@ export async function submitAnswerSheetAction(formData: FormData): Promise<Actio
     }
     return {
       success: false,
-      error: "Evaluation setup encountered a system error. Your attempt has been restored. Please try submitting again.",
+      error:
+        "Evaluation setup encountered a system error. Your attempt has been restored. Please try submitting again.",
     }
   }
 
@@ -219,7 +263,9 @@ export async function submitAnswerSheetAction(formData: FormData): Promise<Actio
   let evaluationFailed = false
   if (!jobId && process.env.NODE_ENV === "development") {
     // Keep local development usable without Redis; production is always asynchronous.
-    console.warn('[Submission] Redis unavailable in development, using synchronous evaluation')
+    console.warn(
+      "[Submission] Redis unavailable in development, using synchronous evaluation"
+    )
 
     try {
       const testSeries = registration.testSeries
@@ -245,11 +291,17 @@ export async function submitAnswerSheetAction(formData: FormData): Promise<Actio
     } catch (evalErr) {
       console.error("[EVALUATION FAILED]", evalErr)
       evaluationFailed = true
-      await failEvaluationRun(evaluationRun.id, evalErr instanceof Error ? evalErr.message : "Evaluation failed")
+      await failEvaluationRun(
+        evaluationRun.id,
+        evalErr instanceof Error ? evalErr.message : "Evaluation failed"
+      )
     }
   } else if (!jobId) {
     evaluationFailed = true
-    await failEvaluationRun(evaluationRun.id, "Evaluation worker is unavailable. Configure REDIS_URL and start the worker.")
+    await failEvaluationRun(
+      evaluationRun.id,
+      "Evaluation worker is unavailable. Configure REDIS_URL and start the worker."
+    )
   } else {
     evaluationFailed = false
   }
@@ -267,6 +319,9 @@ export async function submitAnswerSheetAction(formData: FormData): Promise<Actio
   return {
     success: true,
     message: `Attempt ${submission.attemptNumber} of ${registration.maxAttempts} submitted successfully. ${evaluationMessage}`,
-    data: { submissionId: submission.id, attemptNumber: submission.attemptNumber },
+    data: {
+      submissionId: submission.id,
+      attemptNumber: submission.attemptNumber,
+    },
   }
 }

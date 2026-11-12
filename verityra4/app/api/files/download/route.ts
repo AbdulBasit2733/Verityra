@@ -9,7 +9,11 @@ import path from "path"
 const LOCAL_STORAGE_DIR = path.join(process.cwd(), "uploads")
 const SAMPLES_DIR = path.join(process.cwd(), "public", "samples")
 
-function generateFallbackPdf(title: string, subtitle: string, lines: string[]): Buffer {
+function generateFallbackPdf(
+  title: string,
+  subtitle: string,
+  lines: string[]
+): Buffer {
   const content = [
     "BT",
     "/F1 15 Tf",
@@ -91,14 +95,23 @@ export async function GET(req: NextRequest) {
     const searchParams = req.nextUrl.searchParams
     const bucket = searchParams.get("bucket") || "verityra-private"
     const file = searchParams.get("file")
-    const isDownload = searchParams.get("download") === "1" || searchParams.get("download") === "true"
+    const isDownload =
+      searchParams.get("download") === "1" ||
+      searchParams.get("download") === "true"
 
     if (!file || bucket !== "verityra-private") {
-      return NextResponse.json({ error: "A valid private file is required." }, { status: 400 })
+      return NextResponse.json(
+        { error: "A valid private file is required." },
+        { status: 400 }
+      )
     }
 
     const safeFilePath = path.posix.normalize(file.replace(/\\/g, "/"))
-    if (safeFilePath.startsWith("../") || safeFilePath === ".." || path.posix.isAbsolute(safeFilePath)) {
+    if (
+      safeFilePath.startsWith("../") ||
+      safeFilePath === ".." ||
+      path.posix.isAbsolute(safeFilePath)
+    ) {
       return NextResponse.json({ error: "Invalid file path." }, { status: 400 })
     }
 
@@ -125,14 +138,19 @@ export async function GET(req: NextRequest) {
               OR: [
                 { fileUrl: { contains: safeFilePath } },
                 { fileUrl: { contains: filename } },
-                ...(testSeriesIdCandidate ? [{ id: testSeriesIdCandidate }] : []),
+                ...(testSeriesIdCandidate
+                  ? [{ id: testSeriesIdCandidate }]
+                  : []),
               ],
             },
             select: { id: true, isPublished: true },
           })
 
           if (paper && !paper.isPublished) {
-            return NextResponse.json({ error: "This question paper is currently unpublished." }, { status: 403 })
+            return NextResponse.json(
+              { error: "This question paper is currently unpublished." },
+              { status: 403 }
+            )
           }
 
           if (paper) {
@@ -152,11 +170,10 @@ export async function GET(req: NextRequest) {
       }
       const isOwner = user.id === ownerUserIdCandidate
       const isDemoSubmission =
-        process.env.NODE_ENV === "development" && (
-          safeFilePath.startsWith("submissions/demo/") ||
+        process.env.NODE_ENV === "development" &&
+        (safeFilePath.startsWith("submissions/demo/") ||
           safeFilePath.startsWith("submissions/dev-") ||
-          filename === "sample-attempt.pdf"
-        )
+          filename === "sample-attempt.pdf")
 
       if (user.role !== Role.ADMIN && !isOwner && !isDemoSubmission) {
         if (dbConnected) {
@@ -171,10 +188,16 @@ export async function GET(req: NextRequest) {
             select: { id: true },
           })
           if (!matchingSubmission) {
-            return NextResponse.json({ error: "Access denied to this student submission" }, { status: 403 })
+            return NextResponse.json(
+              { error: "Access denied to this student submission" },
+              { status: 403 }
+            )
           }
         } else {
-          return NextResponse.json({ error: "Access denied to this student submission" }, { status: 403 })
+          return NextResponse.json(
+            { error: "Access denied to this student submission" },
+            { status: 403 }
+          )
         }
       }
     } else if (fileType === "papers" || fileType === "templates") {
@@ -186,9 +209,9 @@ export async function GET(req: NextRequest) {
         const isDevDemoResource =
           process.env.NODE_ENV === "development" &&
           (testSeriesIdCandidate.startsWith("demo-") ||
-           testSeriesIdCandidate.startsWith("dev-") ||
-           safeFilePath.startsWith("papers/demo-") ||
-           safeFilePath.startsWith("templates/demo-"))
+            testSeriesIdCandidate.startsWith("dev-") ||
+            safeFilePath.startsWith("papers/demo-") ||
+            safeFilePath.startsWith("templates/demo-"))
 
         if (!isDevDemoResource) {
           if (!dbConnected) {
@@ -230,11 +253,26 @@ export async function GET(req: NextRequest) {
             where: {
               userId: user.id,
               OR: [
-                ...(resolvedTestSeriesId ? [{ testSeriesId: resolvedTestSeriesId }, { testSeries: { slug: resolvedTestSeriesId } }] : []),
-                { testSeries: { papers: { some: { fileUrl: { contains: filename } } } } },
-                { testSeries: { templates: { some: { fileUrl: { contains: filename } } } } },
+                ...(resolvedTestSeriesId
+                  ? [
+                      { testSeriesId: resolvedTestSeriesId },
+                      { testSeries: { slug: resolvedTestSeriesId } },
+                    ]
+                  : []),
+                {
+                  testSeries: {
+                    papers: { some: { fileUrl: { contains: filename } } },
+                  },
+                },
+                {
+                  testSeries: {
+                    templates: { some: { fileUrl: { contains: filename } } },
+                  },
+                },
               ],
-              status: { in: [RegistrationStatus.ACTIVE, RegistrationStatus.COMPLETED] },
+              status: {
+                in: [RegistrationStatus.ACTIVE, RegistrationStatus.COMPLETED],
+              },
             },
             select: { id: true },
           })
@@ -251,7 +289,10 @@ export async function GET(req: NextRequest) {
 
             if (!testSeries) {
               return NextResponse.json(
-                { error: "Enroll in this test series to access its official papers and margin templates." },
+                {
+                  error:
+                    "Enroll in this test series to access its official papers and margin templates.",
+                },
                 { status: 403 }
               )
             }
@@ -260,10 +301,16 @@ export async function GET(req: NextRequest) {
       }
     } else if (fileType === "model-answers") {
       if (!user || user.role !== Role.ADMIN) {
-        return NextResponse.json({ error: "Admin access required for model answer keys." }, { status: 403 })
+        return NextResponse.json(
+          { error: "Admin access required for model answer keys." },
+          { status: 403 }
+        )
       }
     } else {
-      return NextResponse.json({ error: "Unsupported private file type." }, { status: 400 })
+      return NextResponse.json(
+        { error: "Unsupported private file type." },
+        { status: 400 }
+      )
     }
 
     // Retrieve file buffer
@@ -272,7 +319,9 @@ export async function GET(req: NextRequest) {
 
     if (supabase) {
       try {
-        const { data, error } = await supabase.storage.from(bucket).download(safeFilePath)
+        const { data, error } = await supabase.storage
+          .from(bucket)
+          .download(safeFilePath)
         if (!error && data) {
           fileBuffer = Buffer.from(await data.arrayBuffer())
         }
@@ -293,25 +342,31 @@ export async function GET(req: NextRequest) {
     const isDevFixture =
       process.env.NODE_ENV === "development" &&
       (safeFilePath.includes("/demo/") ||
-       safeFilePath.startsWith("papers/demo-") ||
-       safeFilePath.startsWith("templates/demo-") ||
-       safeFilePath.startsWith("question-papers/") ||
-       testSeriesIdCandidate.startsWith("demo-") ||
-       testSeriesIdCandidate.startsWith("dev-"))
+        safeFilePath.startsWith("papers/demo-") ||
+        safeFilePath.startsWith("templates/demo-") ||
+        safeFilePath.startsWith("question-papers/") ||
+        testSeriesIdCandidate.startsWith("demo-") ||
+        testSeriesIdCandidate.startsWith("dev-"))
 
     if (!fileBuffer && isDevFixture) {
       const samplePath = path.join(SAMPLES_DIR, filename)
       if (fs.existsSync(samplePath)) {
         fileBuffer = await fs.promises.readFile(samplePath)
       } else {
-        const defaultSample = path.join(SAMPLES_DIR, "class-10-science-sample-answer-sheet.pdf")
+        const defaultSample = path.join(
+          SAMPLES_DIR,
+          "class-10-science-sample-answer-sheet.pdf"
+        )
         if (fs.existsSync(defaultSample)) {
           fileBuffer = await fs.promises.readFile(defaultSample)
         }
       }
 
       if (!fileBuffer) {
-        const title = filename.replace(/\.pdf$/i, "").replace(/[-_]/g, " ").toUpperCase()
+        const title = filename
+          .replace(/\.pdf$/i, "")
+          .replace(/[-_]/g, " ")
+          .toUpperCase()
         const category = fileType.toUpperCase()
         fileBuffer = generateFallbackPdf(
           title,
@@ -319,7 +374,7 @@ export async function GET(req: NextRequest) {
           [
             "Official examination material prepared for authorized candidate usage.",
             "Ensure answers are numbered clearly and written within designated margins.",
-            `Generated for verified user: ${user?.email || user?.name || "Student"}`
+            `Generated for verified user: ${user?.email || user?.name || "Student"}`,
           ]
         )
       }
@@ -340,7 +395,8 @@ export async function GET(req: NextRequest) {
     else if (ext === ".webp") contentType = "image/webp"
 
     const dispositionType = isDownload ? "attachment" : "inline"
-    const downloadFilename = filename || (ext ? `document${ext}` : "document.pdf")
+    const downloadFilename =
+      filename || (ext ? `document${ext}` : "document.pdf")
 
     return new NextResponse(new Uint8Array(fileBuffer), {
       headers: {
@@ -351,6 +407,9 @@ export async function GET(req: NextRequest) {
     })
   } catch (error) {
     console.error("[FILE DOWNLOAD ERROR]", error)
-    return NextResponse.json({ error: "Failed to download file" }, { status: 500 })
+    return NextResponse.json(
+      { error: "Failed to download file" },
+      { status: 500 }
+    )
   }
 }

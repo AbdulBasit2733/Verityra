@@ -11,12 +11,21 @@ export default async function LeaderboardPage() {
   return (
     <main className="min-h-screen bg-background">
       <div className="relative overflow-hidden bg-[radial-gradient(circle_at_88%_0%,rgb(42_106_237/0.14),transparent_34%)]">
-        <div aria-hidden className="pointer-events-none absolute -right-24 top-12 h-72 w-72 rounded-full border border-primary/10 bg-primary/[0.04]" />
-        <div aria-hidden className="pointer-events-none absolute right-16 top-28 h-40 w-40 rounded-full border border-dashed border-primary/15" />
-        <div aria-hidden className="pointer-events-none absolute left-[-8rem] top-[23rem] h-64 w-64 rounded-full border border-primary/10" />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute top-12 -right-24 h-72 w-72 rounded-full border border-primary/10 bg-primary/[0.04]"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute top-28 right-16 h-40 w-40 rounded-full border border-dashed border-primary/15"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute top-[23rem] left-[-8rem] h-64 w-64 rounded-full border border-primary/10"
+        />
         <div className="ui-page relative space-y-10 py-8 sm:space-y-12 sm:py-12 lg:py-16">
-          <header className="flex flex-col justify-center items-center space-y-4">
-            <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/[0.07] px-3.5 py-2 text-xs font-bold uppercase tracking-[0.14em] text-primary">
+          <header className="flex flex-col items-center justify-center space-y-4">
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/[0.07] px-3.5 py-2 text-xs font-bold tracking-[0.14em] text-primary uppercase">
               <Trophy className="h-4 w-4" aria-hidden />
               Verityra rankings
             </div>

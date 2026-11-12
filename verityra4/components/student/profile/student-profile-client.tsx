@@ -25,7 +25,10 @@ import {
   Calendar,
   CheckCircle2,
 } from "lucide-react"
-import { updateStudentProfileAction, changePasswordAction } from "@/actions/auth-actions"
+import {
+  updateStudentProfileAction,
+  changePasswordAction,
+} from "@/actions/auth-actions"
 import { PageHeader } from "@/components/ui/page-header"
 
 interface StudentProfileProps {
@@ -47,7 +50,9 @@ export function StudentProfileClient({ initialData }: StudentProfileProps) {
 
   // Profile Form State
   const [name, setName] = React.useState(initialData.name)
-  const [educationLevel, setEducationLevel] = React.useState(initialData.educationLevel)
+  const [educationLevel, setEducationLevel] = React.useState(
+    initialData.educationLevel
+  )
   const [institution, setInstitution] = React.useState(initialData.institution)
   const [targetExam, setTargetExam] = React.useState(initialData.targetExam)
   const [phoneNumber, setPhoneNumber] = React.useState(initialData.phoneNumber)
@@ -62,13 +67,14 @@ export function StudentProfileClient({ initialData }: StudentProfileProps) {
 
   const displayName = name || initialData.name || "Candidate"
   const displayEmail = initialData.email || "candidate@verityra.com"
-  const initials = displayName
-    .split(" ")
-    .map((p) => p[0])
-    .filter(Boolean)
-    .join("")
-    .slice(0, 2)
-    .toUpperCase() || "CA"
+  const initials =
+    displayName
+      .split(" ")
+      .map((p) => p[0])
+      .filter(Boolean)
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "CA"
 
   const formattedJoinDate = initialData.createdAt
     ? new Date(initialData.createdAt).toLocaleDateString("en-US", {
@@ -113,13 +119,15 @@ export function StudentProfileClient({ initialData }: StudentProfileProps) {
       }
 
       toast.success("Profile updated successfully", {
-        description: "Your academic details and display identity have been saved.",
+        description:
+          "Your academic details and display identity have been saved.",
       })
       setSavingProfile(false)
     } catch {
       showError({
         title: "Unexpected System Error",
-        message: "An unexpected error occurred while saving your profile. Please try again.",
+        message:
+          "An unexpected error occurred while saving your profile. Please try again.",
         code: "SYS_ERR",
       })
       setSavingProfile(false)
@@ -186,7 +194,7 @@ export function StudentProfileClient({ initialData }: StudentProfileProps) {
   }
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="max-w-4xl space-y-6">
       {/* Page Header */}
       <PageHeader
         icon={User}
@@ -198,7 +206,7 @@ export function StudentProfileClient({ initialData }: StudentProfileProps) {
           <Button
             variant="outline"
             size="sm"
-            className="h-10 px-3.5 rounded-xl border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-2xs"
+            className="h-10 rounded-xl border-slate-200 px-3.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800"
           >
             <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
             Back to Dashboard
@@ -208,19 +216,31 @@ export function StudentProfileClient({ initialData }: StudentProfileProps) {
 
       {/* Tabs Interface */}
       <Tabs defaultValue="academic" className="w-full space-y-6">
-        <TabsList variant="line" className="border-b border-slate-200/80 dark:border-slate-800 w-full justify-start gap-2 sm:gap-6 pb-0">
-          <TabsTrigger value="academic" className="text-xs sm:text-sm font-semibold pb-3 rounded-none border-b-2 border-transparent data-[state=active]:border-[#2A6AED] data-[state=active]:text-[#2A6AED]">
-            <GraduationCap className="h-4 w-4 mr-1.5" />
+        <TabsList
+          variant="line"
+          className="w-full justify-start gap-2 border-b border-slate-200/80 pb-0 sm:gap-6 dark:border-slate-800"
+        >
+          <TabsTrigger
+            value="academic"
+            className="rounded-none border-b-2 border-transparent pb-3 text-xs font-semibold data-[state=active]:border-[#2A6AED] data-[state=active]:text-[#2A6AED] sm:text-sm"
+          >
+            <GraduationCap className="mr-1.5 h-4 w-4" />
             <span className="sm:hidden">Academic</span>
             <span className="hidden sm:inline">Academic & Target Focus</span>
           </TabsTrigger>
-          <TabsTrigger value="security" className="text-xs sm:text-sm font-semibold pb-3 rounded-none border-b-2 border-transparent data-[state=active]:border-[#2A6AED] data-[state=active]:text-[#2A6AED]">
-            <KeyRound className="h-4 w-4 mr-1.5" />
+          <TabsTrigger
+            value="security"
+            className="rounded-none border-b-2 border-transparent pb-3 text-xs font-semibold data-[state=active]:border-[#2A6AED] data-[state=active]:text-[#2A6AED] sm:text-sm"
+          >
+            <KeyRound className="mr-1.5 h-4 w-4" />
             <span className="sm:hidden">Security</span>
             <span className="hidden sm:inline">Security & Password</span>
           </TabsTrigger>
-          <TabsTrigger value="quota" className="text-xs sm:text-sm font-semibold pb-3 rounded-none border-b-2 border-transparent data-[state=active]:border-[#2A6AED] data-[state=active]:text-[#2A6AED]">
-            <FileText className="h-4 w-4 mr-1.5" />
+          <TabsTrigger
+            value="quota"
+            className="rounded-none border-b-2 border-transparent pb-3 text-xs font-semibold data-[state=active]:border-[#2A6AED] data-[state=active]:text-[#2A6AED] sm:text-sm"
+          >
+            <FileText className="mr-1.5 h-4 w-4" />
             <span className="sm:hidden">3-Attempt Quota</span>
             <span className="hidden sm:inline">Three-Attempt Guarantee</span>
           </TabsTrigger>
@@ -230,17 +250,21 @@ export function StudentProfileClient({ initialData }: StudentProfileProps) {
         <TabsContent value="academic" className="space-y-6 pt-2">
           <form onSubmit={handleProfileSubmit} className="space-y-6">
             <div className="space-y-1">
-              <h3 className="text-sm sm:text-base font-bold text-[#0F172A]">
+              <h3 className="text-sm font-bold text-[#0F172A] sm:text-base">
                 Personal & Examination Focus
               </h3>
               <p className="text-xs text-[#64748B]">
-                Update your candidate details below. Your target examination focus helps align your preparation tracking.
+                Update your candidate details below. Your target examination
+                focus helps align your preparation tracking.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
               <div className="space-y-1.5">
-                <Label htmlFor="name" className="text-xs font-bold text-[#0F172A]">
+                <Label
+                  htmlFor="name"
+                  className="text-xs font-bold text-[#0F172A]"
+                >
                   Full Display Name
                 </Label>
                 <Input
@@ -254,19 +278,25 @@ export function StudentProfileClient({ initialData }: StudentProfileProps) {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="email" className="text-xs font-bold text-[#0F172A]">
+                <Label
+                  htmlFor="email"
+                  className="text-xs font-bold text-[#0F172A]"
+                >
                   Registered Email Address (Read-only)
                 </Label>
                 <Input
                   id="email"
                   disabled
                   value={displayEmail}
-                  className="h-10 rounded-lg border-slate-200 bg-slate-50 text-xs sm:text-sm text-slate-500 cursor-not-allowed"
+                  className="h-10 cursor-not-allowed rounded-lg border-slate-200 bg-slate-50 text-xs text-slate-500 sm:text-sm"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="targetExam" className="text-xs font-bold text-[#0F172A]">
+                <Label
+                  htmlFor="targetExam"
+                  className="text-xs font-bold text-[#0F172A]"
+                >
                   Target Examination
                 </Label>
                 <Input
@@ -279,7 +309,10 @@ export function StudentProfileClient({ initialData }: StudentProfileProps) {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="educationLevel" className="text-xs font-bold text-[#0F172A]">
+                <Label
+                  htmlFor="educationLevel"
+                  className="text-xs font-bold text-[#0F172A]"
+                >
                   Highest Academic Qualification
                 </Label>
                 <Input
@@ -292,7 +325,10 @@ export function StudentProfileClient({ initialData }: StudentProfileProps) {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="institution" className="text-xs font-bold text-[#0F172A]">
+                <Label
+                  htmlFor="institution"
+                  className="text-xs font-bold text-[#0F172A]"
+                >
                   University / Institution
                 </Label>
                 <Input
@@ -305,7 +341,10 @@ export function StudentProfileClient({ initialData }: StudentProfileProps) {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="phoneNumber" className="text-xs font-bold text-[#0F172A]">
+                <Label
+                  htmlFor="phoneNumber"
+                  className="text-xs font-bold text-[#0F172A]"
+                >
                   Contact Number (Optional)
                 </Label>
                 <Input
@@ -334,22 +373,23 @@ export function StudentProfileClient({ initialData }: StudentProfileProps) {
 
             <Separator className="bg-slate-200" />
 
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-2 text-xs text-[#64748B]">
-                <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0" />
+                <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-600" />
                 <span>
-                  Your uploaded handwritten booklets remain encrypted and strictly private to your account.
+                  Your uploaded handwritten booklets remain encrypted and
+                  strictly private to your account.
                 </span>
               </div>
               <Button
                 type="submit"
                 disabled={savingProfile}
-                className="w-full sm:w-auto bg-[#2A6AED] hover:bg-[#1E55C7] text-white font-semibold text-xs sm:text-sm h-10 px-6 rounded-lg shadow-xs"
+                className="h-10 w-full rounded-lg bg-[#2A6AED] px-6 text-xs font-semibold text-white shadow-xs hover:bg-[#1E55C7] sm:w-auto sm:text-sm"
               >
                 {savingProfile ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
-                  <User className="h-4 w-4 mr-2" />
+                  <User className="mr-2 h-4 w-4" />
                 )}
                 Save Profile Changes
               </Button>
@@ -359,19 +399,23 @@ export function StudentProfileClient({ initialData }: StudentProfileProps) {
 
         {/* Tab 2: Security & Password Form */}
         <TabsContent value="security" className="space-y-6 pt-2">
-          <form onSubmit={handlePasswordSubmit} className="space-y-6 max-w-xl">
+          <form onSubmit={handlePasswordSubmit} className="max-w-xl space-y-6">
             <div className="space-y-1">
-              <h3 className="text-sm sm:text-base font-bold text-[#0F172A]">
+              <h3 className="text-sm font-bold text-[#0F172A] sm:text-base">
                 Change Account Password
               </h3>
               <p className="text-xs text-[#64748B]">
-                Ensure your account is protected with a strong, distinct password.
+                Ensure your account is protected with a strong, distinct
+                password.
               </p>
             </div>
 
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="currentPassword" className="text-xs font-bold text-[#0F172A]">
+                <Label
+                  htmlFor="currentPassword"
+                  className="text-xs font-bold text-[#0F172A]"
+                >
                   Current Password
                 </Label>
                 <Input
@@ -386,7 +430,10 @@ export function StudentProfileClient({ initialData }: StudentProfileProps) {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="newPassword" className="text-xs font-bold text-[#0F172A]">
+                <Label
+                  htmlFor="newPassword"
+                  className="text-xs font-bold text-[#0F172A]"
+                >
                   New Password
                 </Label>
                 <Input
@@ -401,7 +448,10 @@ export function StudentProfileClient({ initialData }: StudentProfileProps) {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="confirmPassword" className="text-xs font-bold text-[#0F172A]">
+                <Label
+                  htmlFor="confirmPassword"
+                  className="text-xs font-bold text-[#0F172A]"
+                >
                   Confirm New Password
                 </Label>
                 <Input
@@ -417,25 +467,33 @@ export function StudentProfileClient({ initialData }: StudentProfileProps) {
             </div>
 
             {/* Password Requirement Indicators */}
-            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5 text-xs text-slate-600">
-              <p className="font-bold text-slate-800 text-[11px] uppercase tracking-wider">
+            <div className="space-y-1.5 rounded-xl border border-slate-200 bg-slate-50 p-3.5 text-xs text-slate-600">
+              <p className="text-[11px] font-bold tracking-wider text-slate-800 uppercase">
                 Password Requirements
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[11px]">
+              <div className="grid grid-cols-1 gap-1.5 text-[11px] sm:grid-cols-2">
                 <span className="flex items-center gap-1.5">
-                  <CheckCircle2 className={`h-3 w-3 ${newPassword.length >= 8 ? "text-emerald-600" : "text-slate-400"}`} />
+                  <CheckCircle2
+                    className={`h-3 w-3 ${newPassword.length >= 8 ? "text-emerald-600" : "text-slate-400"}`}
+                  />
                   Minimum 8 characters
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <CheckCircle2 className={`h-3 w-3 ${/[A-Z]/.test(newPassword) ? "text-emerald-600" : "text-slate-400"}`} />
+                  <CheckCircle2
+                    className={`h-3 w-3 ${/[A-Z]/.test(newPassword) ? "text-emerald-600" : "text-slate-400"}`}
+                  />
                   At least 1 uppercase letter
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <CheckCircle2 className={`h-3 w-3 ${/[0-9]/.test(newPassword) ? "text-emerald-600" : "text-slate-400"}`} />
+                  <CheckCircle2
+                    className={`h-3 w-3 ${/[0-9]/.test(newPassword) ? "text-emerald-600" : "text-slate-400"}`}
+                  />
                   At least 1 number
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <CheckCircle2 className={`h-3 w-3 ${/[^A-Za-z0-9]/.test(newPassword) ? "text-emerald-600" : "text-slate-400"}`} />
+                  <CheckCircle2
+                    className={`h-3 w-3 ${/[^A-Za-z0-9]/.test(newPassword) ? "text-emerald-600" : "text-slate-400"}`}
+                  />
                   At least 1 special character
                 </span>
               </div>
@@ -444,12 +502,12 @@ export function StudentProfileClient({ initialData }: StudentProfileProps) {
             <Button
               type="submit"
               disabled={savingPassword}
-              className="w-full sm:w-auto bg-[#2A6AED] hover:bg-[#1E55C7] text-white font-semibold text-xs sm:text-sm h-10 px-6 rounded-lg shadow-xs"
+              className="h-10 w-full rounded-lg bg-[#2A6AED] px-6 text-xs font-semibold text-white shadow-xs hover:bg-[#1E55C7] sm:w-auto sm:text-sm"
             >
               {savingPassword ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
-                <KeyRound className="h-4 w-4 mr-2" />
+                <KeyRound className="mr-2 h-4 w-4" />
               )}
               Update Password
             </Button>
@@ -459,51 +517,66 @@ export function StudentProfileClient({ initialData }: StudentProfileProps) {
         {/* Tab 3: Three-Attempt Guarantee Policy */}
         <TabsContent value="quota" className="space-y-5 pt-2">
           <div className="space-y-1">
-            <h3 className="text-sm sm:text-base font-bold text-[#0F172A] flex items-center gap-2">
+            <h3 className="flex items-center gap-2 text-sm font-bold text-[#0F172A] sm:text-base">
               <Lock className="h-4 w-4 text-[#2A6AED]" />
               The Three-Attempt Examination Invariant
             </h3>
             <p className="text-xs text-[#64748B]">
-              Every registered candidate receives a strict allowance of three accepted handwritten attempts per enrolled test series.
+              Every registered candidate receives a strict allowance of three
+              accepted handwritten attempts per enrolled test series.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-2">
-              <Badge className="bg-[#EFF6FF] text-[#2A6AED] border border-blue-200 text-[10px] font-bold">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+              <Badge className="border border-blue-200 bg-[#EFF6FF] text-[10px] font-bold text-[#2A6AED]">
                 Attempt 1
               </Badge>
-              <h4 className="text-xs sm:text-sm font-bold text-slate-900">Diagnostic Baseline</h4>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Attempt the test under strict timed examination conditions to benchmark your baseline pen-on-paper endurance, pacing, and diagrammatic presentation.
+              <h4 className="text-xs font-bold text-slate-900 sm:text-sm">
+                Diagnostic Baseline
+              </h4>
+              <p className="text-xs leading-relaxed text-slate-600">
+                Attempt the test under strict timed examination conditions to
+                benchmark your baseline pen-on-paper endurance, pacing, and
+                diagrammatic presentation.
               </p>
             </div>
 
-            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-2">
-              <Badge className="bg-[#EFF6FF] text-[#2A6AED] border border-blue-200 text-[10px] font-bold">
+            <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+              <Badge className="border border-blue-200 bg-[#EFF6FF] text-[10px] font-bold text-[#2A6AED]">
                 Attempt 2
               </Badge>
-              <h4 className="text-xs sm:text-sm font-bold text-slate-900">Rubric Rectification</h4>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Study the itemized question-wise feedback and model answers to eliminate structural and conceptual gaps identified in your first submission.
+              <h4 className="text-xs font-bold text-slate-900 sm:text-sm">
+                Rubric Rectification
+              </h4>
+              <p className="text-xs leading-relaxed text-slate-600">
+                Study the itemized question-wise feedback and model answers to
+                eliminate structural and conceptual gaps identified in your
+                first submission.
               </p>
             </div>
 
-            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-2">
-              <Badge className="bg-[#EFF6FF] text-[#2A6AED] border border-blue-200 text-[10px] font-bold">
+            <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+              <Badge className="border border-blue-200 bg-[#EFF6FF] text-[10px] font-bold text-[#2A6AED]">
                 Attempt 3
               </Badge>
-              <h4 className="text-xs sm:text-sm font-bold text-slate-900">Exam-Ready Benchmark</h4>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Deliver your final polished submission. Your highest finalized score is eligible for inclusion on the public competitive leaderboard.
+              <h4 className="text-xs font-bold text-slate-900 sm:text-sm">
+                Exam-Ready Benchmark
+              </h4>
+              <p className="text-xs leading-relaxed text-slate-600">
+                Deliver your final polished submission. Your highest finalized
+                score is eligible for inclusion on the public competitive
+                leaderboard.
               </p>
             </div>
           </div>
 
-          <div className="p-4 rounded-xl border border-blue-200/80 bg-[#EFF6FF]/60 text-xs text-[#1E55C7] leading-relaxed">
+          <div className="rounded-xl border border-blue-200/80 bg-[#EFF6FF]/60 p-4 text-xs leading-relaxed text-[#1E55C7]">
             <p className="font-bold">Atomic Protection Guarantee:</p>
             <p className="mt-1 text-slate-600">
-              Network drops or invalid uploads before final server confirmation never burn your attempt allowance. Only successfully confirmed, valid handwritten booklets count against your 3 attempts.
+              Network drops or invalid uploads before final server confirmation
+              never burn your attempt allowance. Only successfully confirmed,
+              valid handwritten booklets count against your 3 attempts.
             </p>
           </div>
         </TabsContent>

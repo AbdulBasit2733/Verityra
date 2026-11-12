@@ -1,4 +1,9 @@
-import { PrismaClient, Role, UserStatus, TestSeriesStatus } from "@prisma/client"
+import {
+  PrismaClient,
+  Role,
+  UserStatus,
+  TestSeriesStatus,
+} from "@prisma/client"
 import bcrypt from "bcryptjs"
 import fs from "fs"
 import path from "path"
@@ -14,7 +19,10 @@ function loadLocalEnv() {
       if (eqIdx !== -1) {
         const key = trimmed.slice(0, eqIdx).trim()
         let val = trimmed.slice(eqIdx + 1).trim()
-        if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+        if (
+          (val.startsWith('"') && val.endsWith('"')) ||
+          (val.startsWith("'") && val.endsWith("'"))
+        ) {
           val = val.slice(1, -1)
         }
         if (!process.env[key]) {
@@ -111,9 +119,11 @@ const academicTestSeries: TestSeriesSeedData[] = [
     },
     template: {
       title: "Class 10 Science 32-Page Margin-Constrained Answer Booklet",
-      fileUrl: "/api/files/download?file=templates/class-10-science-template.pdf",
+      fileUrl:
+        "/api/files/download?file=templates/class-10-science-template.pdf",
       templateRequired: true,
-      description: "Official 32-page booklet format with diagram framing grids.",
+      description:
+        "Official 32-page booklet format with diagram framing grids.",
     },
   },
   // 3. 11th Mathematics
@@ -142,7 +152,8 @@ const academicTestSeries: TestSeriesSeedData[] = [
       title: "Senior Secondary Ruled 32-Page Answer Booklet",
       fileUrl: "/api/files/download?file=templates/class-11-maths-template.pdf",
       templateRequired: true,
-      description: "Standard 32-page senior secondary answer booklet with numbered margins.",
+      description:
+        "Standard 32-page senior secondary answer booklet with numbered margins.",
     },
   },
   // 4. 12th Mathematics
@@ -171,7 +182,8 @@ const academicTestSeries: TestSeriesSeedData[] = [
       title: "Class 12 Board 32-Page Ruled Answer Sheet Booklet with LPP Graph",
       fileUrl: "/api/files/download?file=templates/class-12-maths-template.pdf",
       templateRequired: true,
-      description: "32-page official board format including embedded 1mm square graph sheet for LPP questions.",
+      description:
+        "32-page official board format including embedded 1mm square graph sheet for LPP questions.",
     },
   },
   // 5. 12th Physics
@@ -198,9 +210,11 @@ const academicTestSeries: TestSeriesSeedData[] = [
     },
     template: {
       title: "Class 12 Physics 32-Page Board Answer Booklet",
-      fileUrl: "/api/files/download?file=templates/class-12-physics-template.pdf",
+      fileUrl:
+        "/api/files/download?file=templates/class-12-physics-template.pdf",
       templateRequired: true,
-      description: "32-page board examination booklet with millimeter graphing inserts.",
+      description:
+        "32-page board examination booklet with millimeter graphing inserts.",
     },
   },
 ]
@@ -210,7 +224,9 @@ async function clearAndInitialize() {
   console.log("          VERITYRA DATABASE PURGE & SETUP         ")
   console.log("==================================================")
 
-  console.log("\n[1/3] Purging all user data, tokens, submissions & registrations...")
+  console.log(
+    "\n[1/3] Purging all user data, tokens, submissions & registrations..."
+  )
 
   // Delete dependent rows in reverse dependency order
   await prisma.auditLog.deleteMany()
@@ -239,8 +255,11 @@ async function clearAndInitialize() {
 
   console.log("\n[2/3] Provisioning single official Administrator account...")
 
-  const adminEmail = (process.env.ADMIN_INITIAL_EMAIL || "admin@verityra.com").toLowerCase().trim()
-  const adminPassword = process.env.ADMIN_INITIAL_PASSWORD || "AdminSecurePassword123!"
+  const adminEmail = (process.env.ADMIN_INITIAL_EMAIL || "admin@verityra.com")
+    .toLowerCase()
+    .trim()
+  const adminPassword =
+    process.env.ADMIN_INITIAL_PASSWORD || "AdminSecurePassword123!"
   const adminPasswordHash = await bcrypt.hash(adminPassword, 12)
 
   const admin = await prisma.user.create({
@@ -281,7 +300,8 @@ async function clearAndInitialize() {
         title: "UPSC GS Paper I Authentic Mock Question Paper",
         fileUrl: "/api/files/download?file=papers/upsc-gs1-question-paper.pdf",
         maxMarks: 250,
-        rubricContent: "Section A: 10 Qs x 10 marks = 100m. Section B: 10 Qs x 15 marks = 150m. Total = 250 Marks.",
+        rubricContent:
+          "Section A: 10 Qs x 10 marks = 100m. Section B: 10 Qs x 15 marks = 150m. Total = 250 Marks.",
       },
       template: {
         title: "UPSC Standard Margin-Ruled 36-Page Answer Booklet",
@@ -310,7 +330,8 @@ async function clearAndInitialize() {
         title: "Judiciary Services Paper I Mock Question Paper",
         fileUrl: "/api/files/download?file=papers/judiciary-paper-1.pdf",
         maxMarks: 200,
-        rubricContent: "Procedural Law (100m) and Substantive Law (100m). Total: 200 Marks.",
+        rubricContent:
+          "Procedural Law (100m) and Substantive Law (100m). Total: 200 Marks.",
       },
       template: {
         title: "Judicial Services 40-Page Answer Sheet Booklet Template",
@@ -361,7 +382,9 @@ async function clearAndInitialize() {
       },
     })
 
-    console.log(`  ✓ Test series created: ${testSeries.title} (${testSeries.slug})`)
+    console.log(
+      `  ✓ Test series created: ${testSeries.title} (${testSeries.slug})`
+    )
   }
 
   const finalCounts = {
@@ -372,13 +395,17 @@ async function clearAndInitialize() {
     registrations: await prisma.testRegistration.count(),
     submissions: await prisma.submission.count(),
     payments: await prisma.payment.count(),
-    tokens: (await prisma.verificationToken.count()) + (await prisma.passwordResetToken.count()),
+    tokens:
+      (await prisma.verificationToken.count()) +
+      (await prisma.passwordResetToken.count()),
   }
 
   console.log("\n==================================================")
   console.log("               VERIFICATION COUNTS                ")
   console.log("==================================================")
-  console.log(`Total Users          : ${finalCounts.users} (Admin: ${finalCounts.adminUsers}, Students: ${finalCounts.studentUsers})`)
+  console.log(
+    `Total Users          : ${finalCounts.users} (Admin: ${finalCounts.adminUsers}, Students: ${finalCounts.studentUsers})`
+  )
   console.log(`Test Series Published: ${finalCounts.testSeries}`)
   console.log(`Registrations        : ${finalCounts.registrations}`)
   console.log(`Submissions          : ${finalCounts.submissions}`)

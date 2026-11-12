@@ -12,7 +12,8 @@ const globalForRateLimit = globalThis as unknown as {
   rateLimitStore: Map<string, RateLimitBucket> | undefined
 }
 
-const store = globalForRateLimit.rateLimitStore ?? new Map<string, RateLimitBucket>()
+const store =
+  globalForRateLimit.rateLimitStore ?? new Map<string, RateLimitBucket>()
 if (process.env.NODE_ENV !== "production") {
   globalForRateLimit.rateLimitStore = store
 }
@@ -42,7 +43,10 @@ export function checkRateLimit(
 
   if (bucket.timestamps.length >= maxRequests) {
     const oldestInWindow = bucket.timestamps[0]
-    const retryAfterSeconds = Math.max(1, Math.ceil((oldestInWindow + windowMs - now) / 1000))
+    const retryAfterSeconds = Math.max(
+      1,
+      Math.ceil((oldestInWindow + windowMs - now) / 1000)
+    )
     return { allowed: false, retryAfterSeconds }
   }
 

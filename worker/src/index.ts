@@ -1,7 +1,11 @@
 import http from "http"
 import { config, validateWorkerConfig } from "./config.js"
 import { checkDatabaseConnection } from "./db/prisma.js"
-import { createEvaluationWorker, recoverPendingEvaluationJobs, shutdownWorker } from "./queue/processor.js"
+import {
+  createEvaluationWorker,
+  recoverPendingEvaluationJobs,
+  shutdownWorker,
+} from "./queue/processor.js"
 
 console.log("==================================================")
 console.log("       VERITYRA AI EVALUATION WORKER DAEMON       ")
@@ -11,14 +15,18 @@ validateWorkerConfig()
 
 // Initialize background BullMQ evaluation worker
 const worker = createEvaluationWorker()
-console.log(`[Worker] Started BullMQ evaluation listener (Concurrency: ${config.workerConcurrency}).`)
+console.log(
+  `[Worker] Started BullMQ evaluation listener (Concurrency: ${config.workerConcurrency}).`
+)
 
 // Initial database connection check
 void checkDatabaseConnection().then((connected) => {
   if (connected) {
     console.log("[Worker] Database connection established.")
   } else {
-    console.warn("[Worker] Warning: Initial database ping failed. Ensure DATABASE_URL is valid.")
+    console.warn(
+      "[Worker] Warning: Initial database ping failed. Ensure DATABASE_URL is valid."
+    )
   }
 })
 
@@ -42,7 +50,9 @@ const healthServer = http.createServer((req, res) => {
 })
 
 healthServer.listen(config.port, "0.0.0.0", () => {
-  console.log(`[Worker] Health check HTTP server listening on port ${config.port}`)
+  console.log(
+    `[Worker] Health check HTTP server listening on port ${config.port}`
+  )
 })
 
 // Periodic Stalled Job Recovery Sweep (every 3 minutes)

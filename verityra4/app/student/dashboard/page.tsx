@@ -141,24 +141,26 @@ export default async function StudentDashboardPage() {
     }
   }
 
-  const registrationRows: StudentRegistrationRow[] = registrations.map((reg) => {
-    const latestSub = reg.submissions?.[0]
-    const latestEval = latestSub?.evaluation
-    return {
-      id: reg.id,
-      testSeriesId: reg.testSeriesId,
-      testTitle: reg.testSeries?.title || "Mock Examination",
-      maxMarks: reg.testSeries?.maxMarks || 250,
-      durationMinutes: reg.testSeries?.durationMinutes || 180,
-      attemptsUsed: reg.attemptsUsed,
-      maxAttempts: reg.maxAttempts,
-      registeredAt: new Date(reg.registeredAt).toISOString(),
-      latestScore: latestEval ? latestEval.totalMarksAwarded : null,
-      latestPercentage: latestEval ? latestEval.percentage : null,
-      latestStatus: latestSub ? latestSub.status : null,
-      latestFeedback: latestEval ? latestEval.generalFeedback : null,
+  const registrationRows: StudentRegistrationRow[] = registrations.map(
+    (reg) => {
+      const latestSub = reg.submissions?.[0]
+      const latestEval = latestSub?.evaluation
+      return {
+        id: reg.id,
+        testSeriesId: reg.testSeriesId,
+        testTitle: reg.testSeries?.title || "Mock Examination",
+        maxMarks: reg.testSeries?.maxMarks || 250,
+        durationMinutes: reg.testSeries?.durationMinutes || 180,
+        attemptsUsed: reg.attemptsUsed,
+        maxAttempts: reg.maxAttempts,
+        registeredAt: new Date(reg.registeredAt).toISOString(),
+        latestScore: latestEval ? latestEval.totalMarksAwarded : null,
+        latestPercentage: latestEval ? latestEval.percentage : null,
+        latestStatus: latestSub ? latestSub.status : null,
+        latestFeedback: latestEval ? latestEval.generalFeedback : null,
+      }
     }
-  })
+  )
 
   const submissionRows: StudentSubmissionRow[] = submissions.map((sub) => ({
     id: sub.id,

@@ -1,7 +1,15 @@
 "use client"
 
 import Link from "next/link"
-import { ArrowLeft, BookOpen, Check, FileText, PenLine, ShieldCheck, UploadCloud } from "lucide-react"
+import {
+  ArrowLeft,
+  BookOpen,
+  Check,
+  FileText,
+  PenLine,
+  ShieldCheck,
+  UploadCloud,
+} from "lucide-react"
 
 export interface AuthDesktopLayoutProps {
   title: string
@@ -10,7 +18,12 @@ export interface AuthDesktopLayoutProps {
   children: React.ReactNode
 }
 
-export function AuthDesktopLayout({ title, subtitle, mode, children }: AuthDesktopLayoutProps) {
+export function AuthDesktopLayout({
+  title,
+  subtitle,
+  mode,
+  children,
+}: AuthDesktopLayoutProps) {
   const isSignUp = mode === "signup"
 
   return (
@@ -19,26 +32,48 @@ export function AuthDesktopLayout({ title, subtitle, mode, children }: AuthDeskt
         <div className="auth-wave" aria-hidden="true" />
 
         <div className="relative z-10 flex items-center justify-between">
-          <Link href="/" className="group inline-flex items-center gap-3" aria-label="Verityra home">
-            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#2A6AED] text-white shadow-md shadow-blue-600/20 transition-colors group-hover:bg-[#1E55C7]"><BookOpen aria-hidden="true" className="h-6 w-6" /></span>
-            <span className="font-heading text-2xl font-extrabold tracking-[-0.05em] text-slate-950 dark:text-white">Verityra</span>
+          <Link
+            href="/"
+            className="group inline-flex items-center gap-3"
+            aria-label="Verityra home"
+          >
+            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#2A6AED] text-white shadow-md shadow-blue-600/20 transition-colors group-hover:bg-[#1E55C7]">
+              <BookOpen aria-hidden="true" className="h-6 w-6" />
+            </span>
+            <span className="font-heading text-2xl font-extrabold tracking-[-0.05em] text-slate-950 dark:text-white">
+              Verityra
+            </span>
           </Link>
-          <Link href="/" className="inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-white/70 hover:text-[#1E55C7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2A6AED] dark:text-slate-300 dark:hover:bg-slate-900/50 dark:hover:text-blue-200">
+          <Link
+            href="/"
+            className="inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-white/70 hover:text-[#1E55C7] focus-visible:ring-2 focus-visible:ring-[#2A6AED] focus-visible:outline-none dark:text-slate-300 dark:hover:bg-slate-900/50 dark:hover:text-blue-200"
+          >
             <ArrowLeft aria-hidden="true" className="h-4 w-4" /> Back to home
           </Link>
         </div>
 
         <div className="relative z-10 my-auto max-w-xl py-12">
-          <p className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50/80 px-3.5 py-2 text-xs font-bold uppercase tracking-[0.12em] text-[#1E55C7] dark:border-blue-900 dark:bg-blue-950/60 dark:text-blue-200">
-            <span className="h-2 w-2 rounded-full bg-[#2A6AED]" aria-hidden="true" />
-            {isSignUp ? "Start with the right practice" : "Welcome back to your preparation"}
+          <p className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50/80 px-3.5 py-2 text-xs font-bold tracking-[0.12em] text-[#1E55C7] uppercase dark:border-blue-900 dark:bg-blue-950/60 dark:text-blue-200">
+            <span
+              className="h-2 w-2 rounded-full bg-[#2A6AED]"
+              aria-hidden="true"
+            />
+            {isSignUp
+              ? "Start with the right practice"
+              : "Welcome back to your preparation"}
           </p>
-          <h1 className="mt-7 max-w-lg font-heading text-5xl font-extrabold leading-[1.05] tracking-[-0.05em] text-slate-950 dark:text-white xl:text-6xl">
-            {isSignUp ? "Build your answer-writing habit." : "Continue your preparation."}
-            <span className="mt-2 block text-[#2A6AED] dark:text-blue-400">One deliberate attempt at a time.</span>
+          <h1 className="mt-7 max-w-lg font-heading text-5xl leading-[1.05] font-extrabold tracking-[-0.05em] text-slate-950 xl:text-6xl dark:text-white">
+            {isSignUp
+              ? "Build your answer-writing habit."
+              : "Continue your preparation."}
+            <span className="mt-2 block text-[#2A6AED] dark:text-blue-400">
+              One deliberate attempt at a time.
+            </span>
           </h1>
           <p className="mt-6 max-w-lg text-lg leading-8 text-slate-700 dark:text-slate-300">
-            Practice on official-style margins, write under realistic conditions, and use clear feedback to make your next answer stronger.
+            Practice on official-style margins, write under realistic
+            conditions, and use clear feedback to make your next answer
+            stronger.
           </p>
 
           <div className="mt-9 grid max-w-lg grid-cols-3 gap-3">
@@ -47,16 +82,30 @@ export function AuthDesktopLayout({ title, subtitle, mode, children }: AuthDeskt
               { icon: PenLine, label: "Handwritten practice" },
               { icon: UploadCloud, label: "Rubric feedback" },
             ].map(({ icon: Icon, label }) => (
-              <div key={label} className="rounded-xl border border-white/80 bg-white/65 p-4 shadow-sm backdrop-blur-sm dark:border-slate-700/70 dark:bg-slate-900/50">
+              <div
+                key={label}
+                className="rounded-xl border border-white/80 bg-white/65 p-4 shadow-sm backdrop-blur-sm dark:border-slate-700/70 dark:bg-slate-900/50"
+              >
                 <Icon aria-hidden="true" className="h-5 w-5 text-[#2A6AED]" />
-                <p className="mt-3 text-sm font-bold leading-5 text-slate-800 dark:text-slate-100">{label}</p>
+                <p className="mt-3 text-sm leading-5 font-bold text-slate-800 dark:text-slate-100">
+                  {label}
+                </p>
               </div>
             ))}
           </div>
 
           <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-sm font-semibold text-slate-700 dark:text-slate-300">
-            <span className="inline-flex items-center gap-2"><Check aria-hidden="true" className="h-4 w-4 text-emerald-600" /> Three attempts</span>
-            <span className="inline-flex items-center gap-2"><ShieldCheck aria-hidden="true" className="h-4 w-4 text-emerald-600" /> Private workspace</span>
+            <span className="inline-flex items-center gap-2">
+              <Check aria-hidden="true" className="h-4 w-4 text-emerald-600" />{" "}
+              Three attempts
+            </span>
+            <span className="inline-flex items-center gap-2">
+              <ShieldCheck
+                aria-hidden="true"
+                className="h-4 w-4 text-emerald-600"
+              />{" "}
+              Private workspace
+            </span>
           </div>
         </div>
 
@@ -70,11 +119,21 @@ export function AuthDesktopLayout({ title, subtitle, mode, children }: AuthDeskt
         <div className="w-full max-w-[30rem]">
           <div className="mb-7">
             <p className="ui-eyebrow">Candidate account</p>
-            <h2 className="mt-3 font-heading text-3xl font-extrabold tracking-[-0.04em] text-slate-950 dark:text-white">{title}</h2>
-            <p className="mt-2 text-base leading-6 text-slate-600 dark:text-slate-300">{subtitle}</p>
+            <h2 className="mt-3 font-heading text-3xl font-extrabold tracking-[-0.04em] text-slate-950 dark:text-white">
+              {title}
+            </h2>
+            <p className="mt-2 text-base leading-6 text-slate-600 dark:text-slate-300">
+              {subtitle}
+            </p>
           </div>
           <div className="auth-form-surface p-7 xl:p-8">{children}</div>
-          <p className="mt-5 flex items-center justify-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400"><ShieldCheck aria-hidden="true" className="h-4 w-4 text-emerald-600" /> Your session is protected by Verityra security controls.</p>
+          <p className="mt-5 flex items-center justify-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+            <ShieldCheck
+              aria-hidden="true"
+              className="h-4 w-4 text-emerald-600"
+            />{" "}
+            Your session is protected by Verityra security controls.
+          </p>
         </div>
       </section>
     </div>

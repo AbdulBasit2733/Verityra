@@ -35,13 +35,15 @@ export const DEMO_QUESTION_PAPERS: QuestionPaperItem[] = [
   {
     id: "demo-qp-ssc-cgl-2025",
     title: "SSC CGL Tier-II Examination — Mathematical Abilities & Reasoning",
-    description: "Official pattern Tier-II Section I practice paper covering Advanced Arithmetic, Algebra, Geometry, Statistics, and Data Interpretation.",
+    description:
+      "Official pattern Tier-II Section I practice paper covering Advanced Arithmetic, Algebra, Geometry, Statistics, and Data Interpretation.",
     category: "SSC",
     subject: "Mathematics & Reasoning",
     year: 2025,
     maxMarks: 180,
     durationMinutes: 60,
-    fileUrl: "/api/files/download?bucket=verityra-private&file=question-papers/demo-ssc-cgl-2025.pdf",
+    fileUrl:
+      "/api/files/download?bucket=verityra-private&file=question-papers/demo-ssc-cgl-2025.pdf",
     fileSizeBytes: 1250000,
     isPublished: true,
     downloadsCount: 1420,
@@ -50,13 +52,15 @@ export const DEMO_QUESTION_PAPERS: QuestionPaperItem[] = [
   {
     id: "demo-qp-cbse-10-maths-2025",
     title: "CBSE Class 10 Board Examination — Mathematics (Standard)",
-    description: "Official CBSE Board pattern question paper with Sections A to E covering Real Numbers, Polynomials, Trigonometry, and Coordinate Geometry.",
+    description:
+      "Official CBSE Board pattern question paper with Sections A to E covering Real Numbers, Polynomials, Trigonometry, and Coordinate Geometry.",
     category: "CBSE Board",
     subject: "Mathematics",
     year: 2025,
     maxMarks: 80,
     durationMinutes: 180,
-    fileUrl: "/api/files/download?bucket=verityra-private&file=question-papers/demo-cbse-10-maths-2025.pdf",
+    fileUrl:
+      "/api/files/download?bucket=verityra-private&file=question-papers/demo-cbse-10-maths-2025.pdf",
     fileSizeBytes: 980000,
     isPublished: true,
     downloadsCount: 1890,
@@ -65,13 +69,15 @@ export const DEMO_QUESTION_PAPERS: QuestionPaperItem[] = [
   {
     id: "demo-qp-cbse-12-physics-2025",
     title: "CBSE Class 12 Board Examination — Physics Theoretical & Numerical",
-    description: "Comprehensive Class 12 Senior Secondary Physics paper with Electrostatics, Current Electricity, Wave Optics, and Semiconductor Electronics.",
+    description:
+      "Comprehensive Class 12 Senior Secondary Physics paper with Electrostatics, Current Electricity, Wave Optics, and Semiconductor Electronics.",
     category: "CBSE Board",
     subject: "Physics",
     year: 2025,
     maxMarks: 70,
     durationMinutes: 180,
-    fileUrl: "/api/files/download?bucket=verityra-private&file=question-papers/demo-cbse-12-physics-2025.pdf",
+    fileUrl:
+      "/api/files/download?bucket=verityra-private&file=question-papers/demo-cbse-12-physics-2025.pdf",
     fileSizeBytes: 1120000,
     isPublished: true,
     downloadsCount: 1350,
@@ -80,13 +86,15 @@ export const DEMO_QUESTION_PAPERS: QuestionPaperItem[] = [
   {
     id: "demo-qp-icse-10-chemistry-2025",
     title: "ICSE Class 10 Board Examination — Chemistry Science Paper 2",
-    description: "Council for the Indian School Certificate Examinations Class 10 Chemistry paper with Periodic Properties, Metallurgy, and Organic Chemistry.",
+    description:
+      "Council for the Indian School Certificate Examinations Class 10 Chemistry paper with Periodic Properties, Metallurgy, and Organic Chemistry.",
     category: "ICSE / ISC Board",
     subject: "Chemistry",
     year: 2025,
     maxMarks: 80,
     durationMinutes: 120,
-    fileUrl: "/api/files/download?bucket=verityra-private&file=question-papers/demo-icse-10-chemistry-2025.pdf",
+    fileUrl:
+      "/api/files/download?bucket=verityra-private&file=question-papers/demo-icse-10-chemistry-2025.pdf",
     fileSizeBytes: 890000,
     isPublished: true,
     downloadsCount: 820,
@@ -95,13 +103,15 @@ export const DEMO_QUESTION_PAPERS: QuestionPaperItem[] = [
   {
     id: "demo-qp-neet-ug-biology-2025",
     title: "NEET UG Full Mock Diagnostic — Biology, Botany & Zoology",
-    description: "NTA standard medical entrance diagnostic test with 100 questions covering Human Physiology, Genetics, Evolution, and Plant Biology.",
+    description:
+      "NTA standard medical entrance diagnostic test with 100 questions covering Human Physiology, Genetics, Evolution, and Plant Biology.",
     category: "NEET",
     subject: "Biology & Life Sciences",
     year: 2025,
     maxMarks: 360,
     durationMinutes: 100,
-    fileUrl: "/api/files/download?bucket=verityra-private&file=question-papers/demo-neet-ug-biology-2025.pdf",
+    fileUrl:
+      "/api/files/download?bucket=verityra-private&file=question-papers/demo-neet-ug-biology-2025.pdf",
     fileSizeBytes: 1680000,
     isPublished: true,
     downloadsCount: 2450,
@@ -109,14 +119,17 @@ export const DEMO_QUESTION_PAPERS: QuestionPaperItem[] = [
   },
   {
     id: "demo-qp-jee-main-full-2025",
-    title: "JEE Main Comprehensive All-India Test — Physics, Chemistry & Mathematics",
-    description: "National Testing Agency pattern test covering Mechanics, Organic Reaction Mechanisms, Coordinate Geometry, and Differential Equations.",
+    title:
+      "JEE Main Comprehensive All-India Test — Physics, Chemistry & Mathematics",
+    description:
+      "National Testing Agency pattern test covering Mechanics, Organic Reaction Mechanisms, Coordinate Geometry, and Differential Equations.",
     category: "JEE Main",
     subject: "PCM Comprehensive",
     year: 2025,
     maxMarks: 300,
     durationMinutes: 180,
-    fileUrl: "/api/files/download?bucket=verityra-private&file=question-papers/demo-jee-main-full-2025.pdf",
+    fileUrl:
+      "/api/files/download?bucket=verityra-private&file=question-papers/demo-jee-main-full-2025.pdf",
     fileSizeBytes: 1950000,
     isPublished: true,
     downloadsCount: 2890,
@@ -125,13 +138,15 @@ export const DEMO_QUESTION_PAPERS: QuestionPaperItem[] = [
   {
     id: "demo-qp-jee-adv-maths-2025",
     title: "JEE Advanced Paper 1 — Advanced Mathematics & Problem Solving",
-    description: "IIT entrance pattern paper featuring single-correct, multi-correct, and numerical value questions in Integral Calculus and Vectors.",
+    description:
+      "IIT entrance pattern paper featuring single-correct, multi-correct, and numerical value questions in Integral Calculus and Vectors.",
     category: "JEE Advanced",
     subject: "Mathematics",
     year: 2025,
     maxMarks: 120,
     durationMinutes: 180,
-    fileUrl: "/api/files/download?bucket=verityra-private&file=question-papers/demo-jee-adv-maths-2025.pdf",
+    fileUrl:
+      "/api/files/download?bucket=verityra-private&file=question-papers/demo-jee-adv-maths-2025.pdf",
     fileSizeBytes: 1540000,
     isPublished: true,
     downloadsCount: 1620,
@@ -140,13 +155,15 @@ export const DEMO_QUESTION_PAPERS: QuestionPaperItem[] = [
   {
     id: "demo-qp-upsc-gs1-2025",
     title: "UPSC Civil Services Mains Examination — General Studies Paper I",
-    description: "Covers Indian Heritage and Culture, Modern Indian History, World Geography, and Society. Contains 20 compulsory descriptive questions.",
+    description:
+      "Covers Indian Heritage and Culture, Modern Indian History, World Geography, and Society. Contains 20 compulsory descriptive questions.",
     category: "UPSC / Civil Services",
     subject: "General Studies",
     year: 2025,
     maxMarks: 250,
     durationMinutes: 180,
-    fileUrl: "/api/files/download?bucket=verityra-private&file=question-papers/demo-upsc-gs1-2025.pdf",
+    fileUrl:
+      "/api/files/download?bucket=verityra-private&file=question-papers/demo-upsc-gs1-2025.pdf",
     fileSizeBytes: 1420000,
     isPublished: true,
     downloadsCount: 940,
@@ -155,13 +172,15 @@ export const DEMO_QUESTION_PAPERS: QuestionPaperItem[] = [
   {
     id: "demo-qp-state-pcs-essay-2024",
     title: "State Public Service Commission — Analytical Essay & General Hindi",
-    description: "High-yield state examination paper requiring two thematic essays on socio-economic developments and administrative ethics.",
+    description:
+      "High-yield state examination paper requiring two thematic essays on socio-economic developments and administrative ethics.",
     category: "State PSC",
     subject: "Essay & Language",
     year: 2024,
     maxMarks: 150,
     durationMinutes: 180,
-    fileUrl: "/api/files/download?bucket=verityra-private&file=question-papers/demo-state-pcs-essay-2024.pdf",
+    fileUrl:
+      "/api/files/download?bucket=verityra-private&file=question-papers/demo-state-pcs-essay-2024.pdf",
     fileSizeBytes: 860000,
     isPublished: true,
     downloadsCount: 510,
@@ -170,13 +189,15 @@ export const DEMO_QUESTION_PAPERS: QuestionPaperItem[] = [
   {
     id: "demo-qp-judiciary-law-2024",
     title: "Judicial Services Preliminary Exam — Constitutional & Civil Law",
-    description: "Case-based procedural law questions covering the Code of Civil Procedure, Indian Contract Act, and Constitutional provisions.",
+    description:
+      "Case-based procedural law questions covering the Code of Civil Procedure, Indian Contract Act, and Constitutional provisions.",
     category: "Judiciary & Law",
     subject: "Law & Jurisprudence",
     year: 2024,
     maxMarks: 200,
     durationMinutes: 180,
-    fileUrl: "/api/files/download?bucket=verityra-private&file=question-papers/demo-judiciary-law-2024.pdf",
+    fileUrl:
+      "/api/files/download?bucket=verityra-private&file=question-papers/demo-judiciary-law-2024.pdf",
     fileSizeBytes: 1350000,
     isPublished: true,
     downloadsCount: 420,

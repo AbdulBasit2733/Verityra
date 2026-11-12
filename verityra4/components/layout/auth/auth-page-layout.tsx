@@ -9,7 +9,6 @@ import {
   UploadCloud,
 } from "lucide-react"
 
-
 interface AuthPageLayoutProps {
   title: string
   subtitle: string

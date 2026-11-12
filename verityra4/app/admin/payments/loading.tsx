@@ -15,7 +15,10 @@ export default function AdminPaymentsLoading() {
       {/* KPI Stats */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="rounded-xl border border-border/60 bg-card p-4 space-y-2">
+          <div
+            key={i}
+            className="space-y-2 rounded-xl border border-border/60 bg-card p-4"
+          >
             <Skeleton className="h-4 w-24" />
             <Skeleton className="h-7 w-20" />
           </div>
@@ -23,8 +26,8 @@ export default function AdminPaymentsLoading() {
       </div>
 
       {/* Table skeleton */}
-      <div className="rounded-xl border border-border/80 bg-card overflow-hidden">
-        <div className="h-12 border-b border-border bg-slate-50/80 px-6 flex items-center justify-between">
+      <div className="overflow-hidden rounded-xl border border-border/80 bg-card">
+        <div className="flex h-12 items-center justify-between border-b border-border bg-slate-50/80 px-6">
           <Skeleton className="h-4 w-28" />
           <Skeleton className="h-4 w-24" />
           <Skeleton className="h-4 w-20" />
@@ -32,7 +35,10 @@ export default function AdminPaymentsLoading() {
         </div>
         <div className="divide-y divide-border/60">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="px-6 py-4 flex items-center justify-between">
+            <div
+              key={i}
+              className="flex items-center justify-between px-6 py-4"
+            >
               <div className="space-y-1">
                 <Skeleton className="h-4 w-36" />
                 <Skeleton className="h-3 w-48" />

@@ -1,9 +1,9 @@
 "use client"
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { Badge } from '@/components/ui/badge'
-import { Loader2 } from 'lucide-react'
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { Badge } from "@/components/ui/badge"
+import { Loader2 } from "lucide-react"
 
 interface SubmissionStatusBadgeProps {
   submissionId: string
@@ -45,11 +45,11 @@ export function SubmissionStatusBadge({
   const [status, setStatus] = useState(initialStatus)
   const [percentage, setPercentage] = useState(initialPercentage)
   const [progress, setProgress] = useState(0)
-  const [isPolling, setIsPolling] = useState(initialStatus === 'PROCESSING')
+  const [isPolling, setIsPolling] = useState(initialStatus === "PROCESSING")
 
   useEffect(() => {
     // Only poll if status is PROCESSING
-    if (!isPolling || status !== 'PROCESSING') {
+    if (!isPolling || status !== "PROCESSING") {
       return
     }
 
@@ -62,13 +62,19 @@ export function SubmissionStatusBadge({
       if (inFlight) return
       inFlight = true
       try {
-        const response = await fetch(`/api/submissions/${submissionId}/status`, {
-          signal: controller.signal,
-          cache: 'no-store',
-        })
+        const response = await fetch(
+          `/api/submissions/${submissionId}/status`,
+          {
+            signal: controller.signal,
+            cache: "no-store",
+          }
+        )
 
         if (!response.ok) {
-          console.error('[Polling] Failed to fetch status:', response.statusText)
+          console.error(
+            "[Polling] Failed to fetch status:",
+            response.statusText
+          )
           return
         }
 
@@ -100,7 +106,7 @@ export function SubmissionStatusBadge({
           clearInterval(pollInterval)
         }
       } catch (error) {
-        console.error('[Polling] Error fetching submission status:', error)
+        console.error("[Polling] Error fetching submission status:", error)
         // Continue polling even on error - might be temporary network issue
       } finally {
         inFlight = false
@@ -121,20 +127,20 @@ export function SubmissionStatusBadge({
   }, [submissionId, status, isPolling])
 
   // Processing state with animation
-  if (status === 'PROCESSING') {
+  if (status === "PROCESSING") {
     return (
       <div className="flex flex-col gap-1.5">
         <Badge
           variant="outline"
-          className="border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 text-[10px] font-semibold animate-pulse"
+          className="animate-pulse border-blue-200 bg-blue-50 text-[10px] font-semibold text-blue-800 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-300"
         >
-          <Loader2 className="h-2.5 w-2.5 mr-1 animate-spin" />
+          <Loader2 className="mr-1 h-2.5 w-2.5 animate-spin" />
           Evaluating...
         </Badge>
         {progress > 0 && progress < 100 && (
-          <div className="w-full h-1 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+          <div className="h-1 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
             <div
-              className="h-full bg-blue-500 dark:bg-blue-400 transition-all duration-300"
+              className="h-full bg-blue-500 transition-all duration-300 dark:bg-blue-400"
               style={{ width: `${progress}%` }}
             />
           </div>
@@ -144,24 +150,26 @@ export function SubmissionStatusBadge({
   }
 
   // Completed state
-  if (status === 'COMPLETED') {
+  if (status === "COMPLETED") {
     return (
       <Badge
         variant="outline"
-        className="border-emerald-300 dark:border-emerald-700/60 text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 text-[10px] font-semibold"
+        className="border-emerald-300 bg-emerald-50 text-[10px] font-semibold text-emerald-800 dark:border-emerald-700/60 dark:bg-emerald-950/40 dark:text-emerald-300"
       >
         Evaluated
-        {percentage !== null && percentage !== undefined && ` (${percentage.toFixed(1)}%)`}
+        {percentage !== null &&
+          percentage !== undefined &&
+          ` (${percentage.toFixed(1)}%)`}
       </Badge>
     )
   }
 
   // Review required state
-  if (status === 'REVIEW_REQUIRED') {
+  if (status === "REVIEW_REQUIRED") {
     return (
       <Badge
         variant="outline"
-        className="border-amber-300 dark:border-amber-700/60 text-amber-900 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 text-[10px] font-semibold"
+        className="border-amber-300 bg-amber-50 text-[10px] font-semibold text-amber-900 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-300"
       >
         Under Review
       </Badge>
@@ -169,11 +177,11 @@ export function SubmissionStatusBadge({
   }
 
   // Failed state
-  if (status === 'FAILED') {
+  if (status === "FAILED") {
     return (
       <Badge
         variant="outline"
-        className="border-red-300 dark:border-red-700/60 text-red-800 dark:text-red-300 bg-red-50 dark:bg-red-950/40 text-[10px] font-semibold"
+        className="border-red-300 bg-red-50 text-[10px] font-semibold text-red-800 dark:border-red-700/60 dark:bg-red-950/40 dark:text-red-300"
       >
         Failed
       </Badge>
@@ -184,7 +192,7 @@ export function SubmissionStatusBadge({
   return (
     <Badge
       variant="outline"
-      className="border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-900 text-[10px] font-semibold"
+      className="border-slate-300 bg-slate-100 text-[10px] font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
     >
       {status}
     </Badge>

@@ -1,10 +1,16 @@
 import http from "http"
-import { createEvaluationWorker, recoverPendingEvaluationJobs, shutdownQueue } from "@/lib/queue/evaluation-queue"
+import {
+  createEvaluationWorker,
+  recoverPendingEvaluationJobs,
+  shutdownQueue,
+} from "@/lib/queue/evaluation-queue"
 
 const worker = createEvaluationWorker()
 
 if (!worker) {
-  console.error("[Evaluation Worker] REDIS_URL is required to start the worker.")
+  console.error(
+    "[Evaluation Worker] REDIS_URL is required to start the worker."
+  )
   process.exit(1)
 }
 
@@ -33,7 +39,9 @@ if (port) {
   })
 
   healthServer.listen(port, "0.0.0.0", () => {
-    console.log(`[Evaluation Worker] Health check server listening on port ${port}`)
+    console.log(
+      `[Evaluation Worker] Health check server listening on port ${port}`
+    )
   })
 }
 
@@ -43,11 +51,11 @@ const recoveryIntervalMs = Math.max(
 )
 const recoveryTimer = setInterval(() => {
   void recoverPendingEvaluationJobs().catch((error) => {
-    console.error('[Evaluation Worker] Recovery sweep failed:', error)
+    console.error("[Evaluation Worker] Recovery sweep failed:", error)
   })
 }, recoveryIntervalMs)
 void recoverPendingEvaluationJobs().catch((error) => {
-  console.error('[Evaluation Worker] Initial recovery sweep failed:', error)
+  console.error("[Evaluation Worker] Initial recovery sweep failed:", error)
 })
 
 async function shutdown(signal: string) {

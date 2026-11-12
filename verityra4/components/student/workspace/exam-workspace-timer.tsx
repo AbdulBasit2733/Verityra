@@ -31,7 +31,8 @@ import {
   VolumeX,
 } from "lucide-react"
 
-export type TimerPhase = "IDLE" | "WRITING" | "BUFFER" | "OVERTIME" | "COMPLETED"
+export type TimerPhase =
+  "IDLE" | "WRITING" | "BUFFER" | "OVERTIME" | "COMPLETED"
 export type TimerMode = "STRICT" | "PRACTICE"
 
 export interface ExamTimerState {
@@ -92,7 +93,8 @@ export function playChimeSound(type: "milestone" | "warning" | "finished") {
   try {
     const AudioContextClass =
       window.AudioContext ||
-      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+      (window as unknown as { webkitAudioContext: typeof AudioContext })
+        .webkitAudioContext
     if (!AudioContextClass) return
     const ctx = new AudioContextClass()
 
@@ -209,7 +211,8 @@ export function ExamWorkspaceTimer({
 
   // Sticky visibility observer
   React.useEffect(() => {
-    if (!containerRef.current || typeof IntersectionObserver === "undefined") return
+    if (!containerRef.current || typeof IntersectionObserver === "undefined")
+      return
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -241,7 +244,8 @@ export function ExamWorkspaceTimer({
   if (timerState.startedAt) {
     if (timerState.finishedWritingAt) {
       const bufferElapsedSec = Math.floor(
-        Math.max(0, (clockNow || Date.now()) - timerState.finishedWritingAt) / 1000
+        Math.max(0, (clockNow || Date.now()) - timerState.finishedWritingAt) /
+          1000
       )
       phase = bufferElapsedSec > bufferTotalSeconds ? "OVERTIME" : "BUFFER"
     } else if (effectiveElapsedSeconds < writingTotalSeconds) {
@@ -263,7 +267,10 @@ export function ExamWorkspaceTimer({
   // Progress percentage (0 - 100)
   const progressPercent = Math.min(
     100,
-    Math.max(0, Math.round((effectiveElapsedSeconds / writingTotalSeconds) * 100))
+    Math.max(
+      0,
+      Math.round((effectiveElapsedSeconds / writingTotalSeconds) * 100)
+    )
   )
 
   // Sound triggers at milestones
@@ -301,7 +308,12 @@ export function ExamWorkspaceTimer({
       lastAlertPlayedRef.current["0m"] = true
       playChimeSound("finished")
     }
-  }, [progressPercent, remainingWritingSeconds, timerState.soundEnabled, isWritingRunning])
+  }, [
+    progressPercent,
+    remainingWritingSeconds,
+    timerState.soundEnabled,
+    isWritingRunning,
+  ])
 
   // Timer Actions
   const handleStart = () => {
@@ -384,7 +396,10 @@ export function ExamWorkspaceTimer({
       ? formatTimerDigits(
           timerState.finishedWritingAt
             ? bufferTotalSeconds -
-                Math.floor(((clockNow || Date.now()) - timerState.finishedWritingAt) / 1000)
+                Math.floor(
+                  ((clockNow || Date.now()) - timerState.finishedWritingAt) /
+                    1000
+                )
             : remainingWritingSeconds
         )
       : formatTimerDigits(remainingWritingSeconds)
@@ -395,7 +410,8 @@ export function ExamWorkspaceTimer({
   const getUrgencyStyles = () => {
     if (phase === "OVERTIME") {
       return {
-        cardBorder: "border-destructive/40 bg-destructive/5 dark:bg-destructive/10",
+        cardBorder:
+          "border-destructive/40 bg-destructive/5 dark:bg-destructive/10",
         badgeVariant: "destructive" as const,
         clockColor: "text-destructive font-black animate-pulse",
         progressColor: "bg-destructive",
@@ -413,7 +429,8 @@ export function ExamWorkspaceTimer({
     }
     if (remainingWritingSeconds <= 10 * 60 && phase === "WRITING") {
       return {
-        cardBorder: "border-destructive/40 bg-destructive/5 dark:bg-destructive/10",
+        cardBorder:
+          "border-destructive/40 bg-destructive/5 dark:bg-destructive/10",
         badgeVariant: "destructive" as const,
         clockColor: "text-destructive font-black animate-pulse",
         progressColor: "bg-destructive",
@@ -447,13 +464,16 @@ export function ExamWorkspaceTimer({
     <>
       {/* 1. WORKSPACE TRIGGER / BANNER */}
       {variant === "compact" ? (
-        <div ref={containerRef} className={cn("inline-flex items-center gap-2", className)}>
+        <div
+          ref={containerRef}
+          className={cn("inline-flex items-center gap-2", className)}
+        >
           {phase === "IDLE" ? (
             <Button
               type="button"
               size="sm"
               onClick={() => setIsSheetOpen(true)}
-              className="h-9 rounded-xl bg-primary px-3.5 text-xs font-bold text-primary-foreground shadow-2xs hover:bg-hover-accent gap-1.5"
+              className="h-9 gap-1.5 rounded-xl bg-primary px-3.5 text-xs font-bold text-primary-foreground shadow-2xs hover:bg-hover-accent"
             >
               <Timer className="h-3.5 w-3.5" />
               <span>Exam Timer</span>
@@ -465,11 +485,11 @@ export function ExamWorkspaceTimer({
               size="sm"
               onClick={() => setIsSheetOpen(true)}
               className={cn(
-                "h-9 rounded-xl border px-3 text-xs font-bold shadow-2xs gap-2 transition-colors",
+                "h-9 gap-2 rounded-xl border px-3 text-xs font-bold shadow-2xs transition-colors",
                 urgency.cardBorder
               )}
             >
-              <span className="flex h-2 w-2 rounded-full bg-primary animate-ping" />
+              <span className="flex h-2 w-2 animate-ping rounded-full bg-primary" />
               <Timer className="h-3.5 w-3.5 text-primary" />
               <span
                 suppressHydrationWarning
@@ -477,8 +497,15 @@ export function ExamWorkspaceTimer({
               >
                 {isMounted ? displayCountdown.formatted : "03:00:00"}
               </span>
-              <Badge variant={urgency.badgeVariant} className="text-[9px] h-4 px-1.5 font-semibold">
-                {isPaused ? "PAUSED" : phase === "BUFFER" ? "BUFFER" : "WRITING"}
+              <Badge
+                variant={urgency.badgeVariant}
+                className="h-4 px-1.5 text-[9px] font-semibold"
+              >
+                {isPaused
+                  ? "PAUSED"
+                  : phase === "BUFFER"
+                    ? "BUFFER"
+                    : "WRITING"}
               </Badge>
             </Button>
           )}
@@ -487,7 +514,7 @@ export function ExamWorkspaceTimer({
         <div
           ref={containerRef}
           className={cn(
-            "relative overflow-hidden rounded-2xl border p-4 sm:p-5 transition-all duration-300 shadow-xs",
+            "relative overflow-hidden rounded-2xl border p-4 shadow-xs transition-all duration-300 sm:p-5",
             urgency.cardBorder,
             className
           )}
@@ -515,7 +542,7 @@ export function ExamWorkspaceTimer({
                   </h3>
                   <Badge
                     variant={urgency.badgeVariant}
-                    className="text-[10px] sm:text-[11px] font-semibold tracking-wide"
+                    className="text-[10px] font-semibold tracking-wide sm:text-[11px]"
                   >
                     {isPaused
                       ? "PAUSED"
@@ -528,7 +555,10 @@ export function ExamWorkspaceTimer({
                             : "OVERTIME"}
                   </Badge>
                   {timerState.mode === "STRICT" && (
-                    <Badge variant="outline" className="text-[10px] border-amber-500/40 text-amber-700 dark:text-amber-300">
+                    <Badge
+                      variant="outline"
+                      className="border-amber-500/40 text-[10px] text-amber-700 dark:text-amber-300"
+                    >
                       Strict Mode
                     </Badge>
                   )}
@@ -537,13 +567,16 @@ export function ExamWorkspaceTimer({
                 <p className="text-xs text-muted-foreground">
                   {phase === "IDLE" ? (
                     <span>
-                      Allotted: <strong>{durationMinutes} mins</strong> writing +{" "}
-                      <strong>{bufferMinutes} mins</strong> upload buffer
+                      Allotted: <strong>{durationMinutes} mins</strong> writing
+                      + <strong>{bufferMinutes} mins</strong> upload buffer
                     </span>
                   ) : (
                     <span>
                       {urgency.phaseLabel} ·{" "}
-                      <span suppressHydrationWarning className="font-mono font-semibold text-foreground">
+                      <span
+                        suppressHydrationWarning
+                        className="font-mono font-semibold text-foreground"
+                      >
                         {isMounted ? displayCountdown.formatted : "03:00:00"}
                       </span>{" "}
                       remaining ({progressPercent}% used)
@@ -570,7 +603,7 @@ export function ExamWorkspaceTimer({
                     type="button"
                     size="sm"
                     onClick={handleStart}
-                    className="rounded-xl bg-primary px-4 text-xs font-bold text-primary-foreground shadow-xs hover:bg-hover-accent gap-1.5"
+                    className="gap-1.5 rounded-xl bg-primary px-4 text-xs font-bold text-primary-foreground shadow-xs hover:bg-hover-accent"
                   >
                     <Play className="h-3.5 w-3.5 fill-current" />
                     Start Exam Timer
@@ -593,7 +626,7 @@ export function ExamWorkspaceTimer({
                     type="button"
                     size="sm"
                     onClick={() => setIsSheetOpen(true)}
-                    className="rounded-xl bg-primary px-4 text-xs font-bold text-primary-foreground shadow-xs hover:bg-hover-accent gap-1.5"
+                    className="gap-1.5 rounded-xl bg-primary px-4 text-xs font-bold text-primary-foreground shadow-xs hover:bg-hover-accent"
                   >
                     <Timer className="h-3.5 w-3.5" />
                     Open Timer Drawer
@@ -612,7 +645,7 @@ export function ExamWorkspaceTimer({
           role="region"
           aria-label="Floating Exam Timer Pill"
           className={cn(
-            "fixed bottom-5 right-5 z-40 transition-all duration-300 animate-in slide-in-from-bottom-5",
+            "fixed right-5 bottom-5 z-40 animate-in transition-all duration-300 slide-in-from-bottom-5",
             isMinimized ? "w-auto" : "w-[92vw] max-w-sm"
           )}
         >
@@ -637,8 +670,15 @@ export function ExamWorkspaceTimer({
                     >
                       {displayCountdown.formatted}
                     </span>
-                    <Badge variant={urgency.badgeVariant} className="text-[9px] h-4 px-1.5">
-                      {isPaused ? "PAUSED" : phase === "BUFFER" ? "BUFFER" : "WRITING"}
+                    <Badge
+                      variant={urgency.badgeVariant}
+                      className="h-4 px-1.5 text-[9px]"
+                    >
+                      {isPaused
+                        ? "PAUSED"
+                        : phase === "BUFFER"
+                          ? "BUFFER"
+                          : "WRITING"}
                     </Badge>
                   </div>
                   {!isMinimized && (
@@ -654,7 +694,7 @@ export function ExamWorkspaceTimer({
                   type="button"
                   size="sm"
                   onClick={() => setIsSheetOpen(true)}
-                  className="h-8 rounded-lg px-2.5 text-xs font-bold gap-1"
+                  className="h-8 gap-1 rounded-lg px-2.5 text-xs font-bold"
                 >
                   Sheet
                   <ArrowRight className="h-3 w-3" />
@@ -662,11 +702,19 @@ export function ExamWorkspaceTimer({
                 <button
                   type="button"
                   onClick={() => setIsMinimized((prev) => !prev)}
-                  title={isMinimized ? "Expand mini pill" : "Minimize mini pill"}
-                  aria-label={isMinimized ? "Expand mini pill" : "Minimize mini pill"}
+                  title={
+                    isMinimized ? "Expand mini pill" : "Minimize mini pill"
+                  }
+                  aria-label={
+                    isMinimized ? "Expand mini pill" : "Minimize mini pill"
+                  }
                   className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground hover:text-foreground"
                 >
-                  {isMinimized ? <Maximize2 className="h-3.5 w-3.5" /> : <Minimize2 className="h-3.5 w-3.5" />}
+                  {isMinimized ? (
+                    <Maximize2 className="h-3.5 w-3.5" />
+                  ) : (
+                    <Minimize2 className="h-3.5 w-3.5" />
+                  )}
                 </button>
               </div>
             </div>
@@ -678,15 +726,21 @@ export function ExamWorkspaceTimer({
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <SheetContent
           side="right"
-          className="flex h-full w-full flex-col justify-between overflow-y-auto sm:max-w-md md:max-w-lg p-5 sm:p-6"
+          className="flex h-full w-full flex-col justify-between overflow-y-auto p-5 sm:max-w-md sm:p-6 md:max-w-lg"
         >
           {/* Sheet Header */}
           <SheetHeader className="space-y-2 border-b border-border/60 pb-4 text-left">
             <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="outline" className="text-[11px] font-semibold border-primary/30 text-primary">
+              <Badge
+                variant="outline"
+                className="border-primary/30 text-[11px] font-semibold text-primary"
+              >
                 Attempt #{currentAttemptNumber}
               </Badge>
-              <Badge variant={urgency.badgeVariant} className="text-[11px] font-semibold">
+              <Badge
+                variant={urgency.badgeVariant}
+                className="text-[11px] font-semibold"
+              >
                 {isPaused
                   ? "PAUSED"
                   : phase === "IDLE"
@@ -698,7 +752,10 @@ export function ExamWorkspaceTimer({
                         : "OVERTIME"}
               </Badge>
               {timerState.mode === "STRICT" && (
-                <Badge variant="outline" className="text-[11px] border-amber-500/40 text-amber-700 dark:text-amber-300">
+                <Badge
+                  variant="outline"
+                  className="border-amber-500/40 text-[11px] text-amber-700 dark:text-amber-300"
+                >
                   Strict Continuous
                 </Badge>
               )}
@@ -709,8 +766,10 @@ export function ExamWorkspaceTimer({
               Exam Simulation Clock
             </SheetTitle>
 
-            <SheetDescription className="text-xs text-muted-foreground leading-relaxed">
-              Authentic UPSC CSE subjective examination simulation with real-time countdown, phase progression, and document scanning buffer.
+            <SheetDescription className="text-xs leading-relaxed text-muted-foreground">
+              Authentic UPSC CSE subjective examination simulation with
+              real-time countdown, phase progression, and document scanning
+              buffer.
             </SheetDescription>
           </SheetHeader>
 
@@ -730,7 +789,7 @@ export function ExamWorkspaceTimer({
               )}
             >
               <div className="flex items-start gap-2.5">
-                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                 <div>
                   <p className="font-bold text-foreground">
                     {urgency.phaseLabel}
@@ -750,7 +809,7 @@ export function ExamWorkspaceTimer({
 
             {/* Giant Digital Time Readout */}
             <div className="flex flex-col items-center justify-center rounded-2xl border border-border/80 bg-card p-6 text-center shadow-xs">
-              <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+              <span className="text-[11px] font-bold tracking-widest text-muted-foreground uppercase">
                 {phase === "BUFFER" || phase === "OVERTIME"
                   ? "Upload Buffer Remaining"
                   : "Writing Time Remaining"}
@@ -759,13 +818,18 @@ export function ExamWorkspaceTimer({
               <div
                 suppressHydrationWarning
                 className={cn(
-                  "my-2 font-mono text-5xl sm:text-6xl tracking-tight select-none",
+                  "my-2 font-mono text-5xl tracking-tight select-none sm:text-6xl",
                   urgency.clockColor
                 )}
               >
                 {isMounted
                   ? displayCountdown.formatted
-                  : `${Math.floor(durationMinutes / 60).toString().padStart(2, "0")}:${(durationMinutes % 60).toString().padStart(2, "0")}:00`}
+                  : `${Math.floor(durationMinutes / 60)
+                      .toString()
+                      .padStart(
+                        2,
+                        "0"
+                      )}:${(durationMinutes % 60).toString().padStart(2, "0")}:00`}
               </div>
 
               {/* Quick Sub-Stats */}
@@ -778,7 +842,10 @@ export function ExamWorkspaceTimer({
                 <span className="inline-flex items-center gap-1">
                   <Timer className="h-3.5 w-3.5" />
                   Elapsed:{" "}
-                  <span suppressHydrationWarning className="font-mono font-semibold">
+                  <span
+                    suppressHydrationWarning
+                    className="font-mono font-semibold"
+                  >
                     {isMounted ? displayElapsed.formatted : "00:00:00"}
                   </span>
                 </span>
@@ -794,14 +861,19 @@ export function ExamWorkspaceTimer({
             </div>
 
             {/* Progress Bar & Phase Milestones */}
-            <div className="rounded-xl border border-border/80 bg-card p-4 space-y-3 shadow-xs">
+            <div className="space-y-3 rounded-xl border border-border/80 bg-card p-4 shadow-xs">
               <div className="flex justify-between text-xs font-semibold">
                 <span className="text-muted-foreground">Exam Progression</span>
-                <span className="font-mono text-foreground">{progressPercent}%</span>
+                <span className="font-mono text-foreground">
+                  {progressPercent}%
+                </span>
               </div>
               <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                 <div
-                  className={cn("h-full transition-all duration-500 rounded-full", urgency.progressColor)}
+                  className={cn(
+                    "h-full rounded-full transition-all duration-500",
+                    urgency.progressColor
+                  )}
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>
@@ -811,12 +883,18 @@ export function ExamWorkspaceTimer({
                   <span
                     className={cn(
                       "h-2 w-2 rounded-full",
-                      phase === "WRITING" ? "bg-primary animate-ping" : "bg-muted-foreground/40"
+                      phase === "WRITING"
+                        ? "animate-ping bg-primary"
+                        : "bg-muted-foreground/40"
                     )}
                   />
                   <div className="leading-tight">
-                    <p className="font-semibold text-foreground">Writing Window</p>
-                    <p className="text-[11px] text-muted-foreground">{durationMinutes} minutes</p>
+                    <p className="font-semibold text-foreground">
+                      Writing Window
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {durationMinutes} minutes
+                    </p>
                   </div>
                 </div>
 
@@ -824,12 +902,18 @@ export function ExamWorkspaceTimer({
                   <span
                     className={cn(
                       "h-2 w-2 rounded-full",
-                      phase === "BUFFER" ? "bg-amber-500 animate-ping" : "bg-muted-foreground/40"
+                      phase === "BUFFER"
+                        ? "animate-ping bg-amber-500"
+                        : "bg-muted-foreground/40"
                     )}
                   />
                   <div className="leading-tight">
-                    <p className="font-semibold text-foreground">Scan & Buffer</p>
-                    <p className="text-[11px] text-muted-foreground">+{bufferMinutes} minutes</p>
+                    <p className="font-semibold text-foreground">
+                      Scan & Buffer
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      +{bufferMinutes} minutes
+                    </p>
                   </div>
                 </div>
               </div>
@@ -855,14 +939,26 @@ export function ExamWorkspaceTimer({
                   )}
                 >
                   <Sparkles className="h-3.5 w-3.5" />
-                  <span>{timerState.mode === "STRICT" ? "Strict Mode" : "Practice Mode"}</span>
+                  <span>
+                    {timerState.mode === "STRICT"
+                      ? "Strict Mode"
+                      : "Practice Mode"}
+                  </span>
                 </button>
 
                 <button
                   type="button"
                   onClick={toggleSound}
-                  title={timerState.soundEnabled ? "Mute audio chimes" : "Enable audio chimes"}
-                  aria-label={timerState.soundEnabled ? "Mute audio chimes" : "Enable audio chimes"}
+                  title={
+                    timerState.soundEnabled
+                      ? "Mute audio chimes"
+                      : "Enable audio chimes"
+                  }
+                  aria-label={
+                    timerState.soundEnabled
+                      ? "Mute audio chimes"
+                      : "Enable audio chimes"
+                  }
                   className={cn(
                     "flex h-8 w-8 items-center justify-center rounded-lg border transition-colors",
                     timerState.soundEnabled
@@ -870,7 +966,11 @@ export function ExamWorkspaceTimer({
                       : "border-border bg-background text-muted-foreground hover:text-foreground"
                   )}
                 >
-                  {timerState.soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+                  {timerState.soundEnabled ? (
+                    <Volume2 className="h-4 w-4" />
+                  ) : (
+                    <VolumeX className="h-4 w-4" />
+                  )}
                 </button>
               </div>
 
@@ -880,7 +980,7 @@ export function ExamWorkspaceTimer({
                   onClick={() => setShowConfirmReset(true)}
                   title="Reset exam timer"
                   aria-label="Reset exam timer"
-                  className="flex h-8 items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 text-xs text-muted-foreground hover:border-destructive hover:text-destructive transition-colors"
+                  className="flex h-8 items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 text-xs text-muted-foreground transition-colors hover:border-destructive hover:text-destructive"
                 >
                   <RotateCcw className="h-3.5 w-3.5" />
                   <span>Reset</span>
@@ -890,11 +990,14 @@ export function ExamWorkspaceTimer({
 
             {/* Reset Confirmation Overlay */}
             {showConfirmReset && (
-              <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-center animate-in fade-in-50">
-                <AlertCircle className="mx-auto h-8 w-8 text-destructive mb-2" />
-                <h4 className="text-sm font-bold text-foreground">Reset Exam Timer?</h4>
+              <div className="animate-in rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-center fade-in-50">
+                <AlertCircle className="mx-auto mb-2 h-8 w-8 text-destructive" />
+                <h4 className="text-sm font-bold text-foreground">
+                  Reset Exam Timer?
+                </h4>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  This will reset the elapsed time and all phase milestones for this attempt.
+                  This will reset the elapsed time and all phase milestones for
+                  this attempt.
                 </p>
                 <div className="mt-3 flex items-center justify-center gap-2">
                   <Button
@@ -920,12 +1023,20 @@ export function ExamWorkspaceTimer({
             )}
 
             {/* UPSC Booklet & Margin Guidelines */}
-            <div className="rounded-xl border border-border/80 bg-muted/30 p-3.5 text-xs space-y-1.5">
-              <p className="font-bold text-foreground">Exam Writing Directives:</p>
-              <ul className="list-disc list-inside space-y-1 text-muted-foreground text-[11px] leading-relaxed">
-                <li>Write strictly inside the vertical margins of the official booklet.</li>
+            <div className="space-y-1.5 rounded-xl border border-border/80 bg-muted/30 p-3.5 text-xs">
+              <p className="font-bold text-foreground">
+                Exam Writing Directives:
+              </p>
+              <ul className="list-inside list-disc space-y-1 text-[11px] leading-relaxed text-muted-foreground">
+                <li>
+                  Write strictly inside the vertical margins of the official
+                  booklet.
+                </li>
                 <li>Label each answer clearly with its question number.</li>
-                <li>When writing ends, photograph pages in natural light and combine them into a single PDF.</li>
+                <li>
+                  When writing ends, photograph pages in natural light and
+                  combine them into a single PDF.
+                </li>
               </ul>
             </div>
           </div>
