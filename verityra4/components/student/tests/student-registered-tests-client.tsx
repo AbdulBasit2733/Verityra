@@ -54,11 +54,11 @@ export function StudentRegisteredTestsClient({
                 {row.testTitle}
               </Link>
               {row.isPaid ? (
-                <Badge variant="default" className="text-[10px] h-4.5 px-1.5 font-medium bg-[#2A6AED] hover:bg-[#1E55C7]">
+                <Badge variant="default" className="text-[10px] h-4.5 px-1.5 font-medium">
                   Paid {typeof row.price === "number" && row.price > 0 ? `(₹${Math.round(row.price / 100)})` : ""}
                 </Badge>
               ) : (
-                <Badge variant="secondary" className="text-[10px] h-4.5 px-1.5 font-medium text-slate-600 bg-slate-100 dark:bg-slate-800 dark:text-slate-300">
+                <Badge variant="secondary" className="text-[10px] h-4.5 px-1.5 font-medium">
                   Free
                 </Badge>
               )}

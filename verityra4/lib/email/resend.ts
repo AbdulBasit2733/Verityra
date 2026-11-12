@@ -10,20 +10,24 @@ const globalForResend = globalThis as unknown as {
  * Resolve the base application URL for email action links
  */
 export function getAppBaseUrl(): string {
-  if (process.env.NEXT_PUBLIC_APP_URL && !process.env.NEXT_PUBLIC_APP_URL.includes("localhost")) {
-    return process.env.NEXT_PUBLIC_APP_URL.replace(/\/+$/, "")
+  const isProduction = process.env.NODE_ENV === "production" || Boolean(process.env.VERCEL)
+
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    if (!isProduction || !process.env.NEXT_PUBLIC_APP_URL.includes("localhost")) {
+      return process.env.NEXT_PUBLIC_APP_URL.replace(/\/+$/, "")
+    }
   }
   if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
     return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL.replace(/\/+$/, "")}`
   }
-  if (process.env.VERCEL_URL && !process.env.VERCEL_URL.includes("localhost")) {
+  if (process.env.VERCEL_URL && (!isProduction || !process.env.VERCEL_URL.includes("localhost"))) {
     return `https://${process.env.VERCEL_URL.replace(/\/+$/, "")}`
   }
   const configured = process.env.NEXTAUTH_URL
-  if (configured && !configured.includes("localhost") && !configured.includes("127.0.0.1")) {
+  if (configured && (!isProduction || (!configured.includes("localhost") && !configured.includes("127.0.0.1")))) {
     return configured.replace(/\/+$/, "")
   }
-  if (process.env.NODE_ENV === "production" || process.env.VERCEL) {
+  if (isProduction) {
     return "https://verityra-fr.vercel.app"
   }
   return (configured || "http://localhost:3000").replace(/\/+$/, "")

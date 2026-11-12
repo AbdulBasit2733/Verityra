@@ -13,31 +13,70 @@ declare global {
   }
 }
 
+const SCRIPT_LOAD_TIMEOUT_MS = 6000
+
+function appendFreshScript(onComplete: (success: boolean) => void) {
+  try {
+    const script = document.createElement("script")
+    script.src = "https://checkout.razorpay.com/v1/checkout.js"
+    script.async = true
+    script.onload = () => onComplete(true)
+    script.onerror = () => {
+      script.setAttribute("data-failed", "true")
+      onComplete(false)
+    }
+    document.body.appendChild(script)
+  } catch {
+    onComplete(false)
+  }
+}
+
 function loadRazorpayScript(): Promise<boolean> {
   if (typeof window !== "undefined" && (window as any).Razorpay) {
     return Promise.resolve(true)
   }
+  if (typeof document === "undefined") {
+    return Promise.resolve(false)
+  }
+
   return new Promise((resolve) => {
-    if (typeof document === "undefined") {
-      resolve(false)
-      return
+    let settled = false
+    const finish = (result: boolean) => {
+      if (!settled) {
+        settled = true
+        clearTimeout(timer)
+        resolve(result)
+      }
     }
+
+    const timer = setTimeout(() => {
+      finish(Boolean((window as any).Razorpay))
+    }, SCRIPT_LOAD_TIMEOUT_MS)
+
     const existing = document.querySelector('script[src*="checkout.razorpay.com"]')
     if (existing) {
       if ((window as any).Razorpay) {
-        resolve(true)
+        finish(true)
         return
       }
-      existing.addEventListener("load", () => resolve(true), { once: true })
-      existing.addEventListener("error", () => resolve(false), { once: true })
-      return
+      if (existing.getAttribute("data-failed") === "true") {
+        existing.remove()
+      } else {
+        existing.addEventListener("load", () => finish(true), { once: true })
+        existing.addEventListener(
+          "error",
+          () => {
+            existing.setAttribute("data-failed", "true")
+            existing.remove()
+            appendFreshScript(finish)
+          },
+          { once: true }
+        )
+        return
+      }
     }
-    const script = document.createElement("script")
-    script.src = "https://checkout.razorpay.com/v1/checkout.js"
-    script.async = true
-    script.onload = () => resolve(true)
-    script.onerror = () => resolve(false)
-    document.body.appendChild(script)
+
+    appendFreshScript(finish)
   })
 }
 

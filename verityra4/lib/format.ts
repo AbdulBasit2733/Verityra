@@ -4,6 +4,7 @@
  */
 
 const DEFAULT_LOCALE = "en-IN"
+export const DISPLAY_TIME_ZONE = "Asia/Kolkata"
 
 /**
  * Format date as "25 Oct, 2026"
@@ -14,6 +15,7 @@ export function formatDate(date: Date | string | null | undefined): string {
   if (isNaN(parsed.getTime())) return "—"
 
   return parsed.toLocaleDateString(DEFAULT_LOCALE, {
+    timeZone: DISPLAY_TIME_ZONE,
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -29,6 +31,7 @@ export function formatTime(date: Date | string | null | undefined): string {
   if (isNaN(parsed.getTime())) return "—"
 
   return parsed.toLocaleTimeString(DEFAULT_LOCALE, {
+    timeZone: DISPLAY_TIME_ZONE,
     hour: "2-digit",
     minute: "2-digit",
     hour12: false, // CRITICAL: Explicit 24-hour prevents server/client mismatch
@@ -45,6 +48,7 @@ export function formatDateTimeFull(date: Date | string | null | undefined): stri
   if (isNaN(parsed.getTime())) return "—"
 
   return parsed.toLocaleString(DEFAULT_LOCALE, {
+    timeZone: DISPLAY_TIME_ZONE,
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
