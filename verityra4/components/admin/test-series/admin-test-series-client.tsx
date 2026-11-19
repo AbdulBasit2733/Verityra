@@ -321,7 +321,7 @@ export function AdminTestSeriesClient({
       <PageHeader
         icon={BookOpen}
         title="Test Series Catalog"
-        subtitle="Viewing: All UPSC Mains GS Papers & Rubrics"
+        subtitle="Viewing: All Online Test Series & Evaluation Rubrics"
       >
         <Link href="/admin/test-series/new">
           <Button className="h-10 rounded-xl bg-[#2A6AED] px-4 text-xs font-semibold text-white shadow-xs hover:bg-[#1E55C7] sm:text-sm">
@@ -519,7 +519,7 @@ export function AdminTestSeriesClient({
           )
         }}
         emptyTitle="No test series found"
-        emptyDescription="Create your first UPSC test series to get started."
+        emptyDescription="Create your first online test series to get started."
         emptyAction={
           <Link href="/admin/test-series/new">
             <Button size="sm" className="bg-[#2A6AED] text-white">

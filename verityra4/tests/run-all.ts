@@ -9,12 +9,16 @@ import { runEmailTests } from "./email.test"
 import { runQuestionPaperTests } from "./question-papers.test"
 import { runStudentTests } from "./student-tests.test"
 import { runExamTimerTests } from "./exam-timer.test"
+import { runBrandTests } from "./brand.test"
+import { BRAND_CONFIG } from "../lib/brand"
 import { TestResult } from "./test-utils"
 
 console.log(
   "================================================================================"
 )
-console.log("                    VERITYRA MODULAR TEST RUNNER")
+console.log(
+  `                    ${BRAND_CONFIG.name.toUpperCase()} MODULAR TEST RUNNER`
+)
 console.log(
   "================================================================================"
 )
@@ -34,6 +38,7 @@ try {
   results.push(runQuestionPaperTests())
   results.push(runStudentTests())
   results.push(runExamTimerTests())
+  results.push(runBrandTests())
 } catch (err: any) {
   console.error("FATAL ERROR IN TEST SUITE RUNNER:", err)
   process.exit(1)

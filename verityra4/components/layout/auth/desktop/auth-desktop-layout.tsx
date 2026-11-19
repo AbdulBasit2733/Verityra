@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   UploadCloud,
 } from "lucide-react"
+import { BRAND_CONFIG } from "@/lib/brand"
 
 export interface AuthDesktopLayoutProps {
   title: string
@@ -35,13 +36,13 @@ export function AuthDesktopLayout({
           <Link
             href="/"
             className="group inline-flex items-center gap-3"
-            aria-label="Verityra home"
+            aria-label={`${BRAND_CONFIG.name} home`}
           >
             <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#2A6AED] text-white shadow-md shadow-blue-600/20 transition-colors group-hover:bg-[#1E55C7]">
               <BookOpen aria-hidden="true" className="h-6 w-6" />
             </span>
             <span className="font-heading text-2xl font-extrabold tracking-[-0.05em] text-slate-950 dark:text-white">
-              Verityra
+              {BRAND_CONFIG.name}
             </span>
           </Link>
           <Link
@@ -110,7 +111,7 @@ export function AuthDesktopLayout({
         </div>
 
         <div className="relative z-10 flex items-center justify-between border-t border-blue-200/70 pt-5 text-xs font-semibold text-slate-600 dark:border-slate-700 dark:text-slate-400">
-          <span>Verityra examination platform</span>
+          <span>{BRAND_CONFIG.platformLabel}</span>
           <span className="font-mono">3× attempt policy</span>
         </div>
       </section>
@@ -132,7 +133,7 @@ export function AuthDesktopLayout({
               aria-hidden="true"
               className="h-4 w-4 text-emerald-600"
             />{" "}
-            Your session is protected by Verityra security controls.
+            {BRAND_CONFIG.securityLabel}
           </p>
         </div>
       </section>

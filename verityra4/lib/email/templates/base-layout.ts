@@ -1,3 +1,5 @@
+import { BRAND_CONFIG } from "../../brand"
+
 export function escapeHtml(input: string): string {
   return input
     .replace(/&/g, "&amp;")
@@ -69,10 +71,10 @@ export function renderBaseEmailLayout(options: BaseEmailLayoutOptions): string {
               <table role="presentation" cellspacing="0" cellpadding="0" border="0">
                 <tr>
                   <td align="center" valign="middle" width="38" height="38" style="width:38px;height:38px;border-radius:10px;background-color:#2A6AED;color:#FFFFFF;font-size:20px;font-weight:900;text-align:center;">
-                    V
+                    ${escapeHtml(BRAND_CONFIG.initials)}
                   </td>
                   <td valign="middle" style="padding-left:10px;font-size:22px;font-weight:800;letter-spacing:-0.02em;color:#0F172A;">
-                    Verityra
+                    ${escapeHtml(BRAND_CONFIG.name)}
                   </td>
                 </tr>
               </table>
@@ -98,7 +100,7 @@ export function renderBaseEmailLayout(options: BaseEmailLayoutOptions): string {
             <td style="padding:24px 8px 0 8px;text-align:center;">
               ${footerNote}
               <p style="margin:0;font-size:12px;color:#94A3B8;">
-                &copy; ${year} Verityra Evaluation Platform. All rights reserved.
+                &copy; ${year} ${escapeHtml(BRAND_CONFIG.name)} Evaluation Platform. All rights reserved.
               </p>
             </td>
           </tr>

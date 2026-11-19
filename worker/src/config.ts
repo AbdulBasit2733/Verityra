@@ -2,6 +2,7 @@ import dotenv from "dotenv"
 dotenv.config()
 
 export interface WorkerConfig {
+  brandName: string
   redisUrl: string
   databaseUrl: string
   directUrl?: string
@@ -17,7 +18,15 @@ export interface WorkerConfig {
   recoveryIntervalMs: number
 }
 
+const resolvedBrandName =
+  process.env.NEXT_PUBLIC_BRAND_NAME?.trim() ||
+  process.env.BRAND_NAME?.trim() ||
+  "Izone"
+const resolvedBrandSlug =
+  resolvedBrandName.toLowerCase().replace(/[^a-z0-9]+/g, "") || "izone"
+
 export const config: WorkerConfig = {
+  brandName: resolvedBrandName,
   redisUrl: process.env.REDIS_URL || "redis://localhost:6379",
   databaseUrl: process.env.DATABASE_URL || "",
   directUrl: process.env.DIRECT_URL,
@@ -27,7 +36,8 @@ export const config: WorkerConfig = {
   supabaseServiceKey:
     process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY,
   resendApiKey: process.env.RESEND_API_KEY,
-  resendFromEmail: process.env.RESEND_FROM_EMAIL || "evaluations@verityra.com",
+  resendFromEmail:
+    process.env.RESEND_FROM_EMAIL || `evaluations@${resolvedBrandSlug}.com`,
   appBaseUrl: (
     process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
   ).replace(/\/+$/, ""),

@@ -15,6 +15,7 @@ import {
   ChevronRight,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { BRAND_CONFIG } from "@/lib/brand"
 
 export function HeroCockpitPreview() {
   const [activeLayer, setActiveLayer] = useState<"rubric" | "margin" | "model">(
@@ -39,12 +40,12 @@ export function HeroCockpitPreview() {
             </div>
             <div className="hidden items-center gap-2 border-l border-slate-200 pl-2 font-mono text-xs text-slate-500 sm:flex dark:border-slate-800 dark:text-slate-400">
               <span className="font-semibold text-[#2A6AED] dark:text-blue-400">
-                verityra.app
+                {BRAND_CONFIG.appDomain}
               </span>
               <span>/</span>
               <span>workspace</span>
               <span>/</span>
-              <span>upsc-mains-gs1</span>
+              <span>cbse-class12-physics</span>
             </div>
           </div>
 
@@ -215,7 +216,7 @@ export function HeroCockpitPreview() {
                 {activeLayer === "model" && (
                   <span className="inline-flex items-center gap-1.5 font-medium text-slate-600 dark:text-slate-300">
                     <FileCheck2 className="h-3 w-3 text-[#2A6AED]" />
-                    Model Answer: Aligned with standard UPSC GS Paper I scheme
+                    Model Answer: Aligned with Board &amp; Entrance marking scheme
                   </span>
                 )}
                 <span className="font-mono text-slate-400">Page 1 / 3</span>

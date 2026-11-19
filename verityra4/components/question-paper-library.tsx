@@ -255,13 +255,15 @@ export function QuestionPaperLibrary({
                 </p>
                 <div className="flex flex-col gap-1">
                   {[
-                    "SSC",
                     "CBSE Board",
                     "ICSE / ISC Board",
-                    "NEET",
+                    "State Board (Maharashtra)",
+                    "NEET-UG",
                     "JEE Main",
                     "JEE Advanced",
-                    "UPSC / Civil Services",
+                    "NTSE & Olympiads",
+                    "UGC NET",
+                    "English Grammar",
                   ].map((stream) => {
                     const isSelected = streamFilter === stream
                     const count = papers.filter(

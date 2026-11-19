@@ -33,7 +33,7 @@ export function PageHeader({
       {/* Left: Icon Tile + Title + Subtitle Stack */}
       <div className="flex min-w-0 items-center gap-3.5">
         {icon && (
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-xs sm:h-12 sm:w-12">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground shadow-xs sm:h-12 sm:w-12">
             {IconComponent ? (
               <IconComponent className="h-6 w-6 sm:h-7 sm:w-7" />
             ) : React.isValidElement(icon) ? (
@@ -47,7 +47,7 @@ export function PageHeader({
               {title}
             </h1>
             {badgeText && (
-              <span className="inline-flex items-center rounded-full border border-border bg-secondary px-2.5 py-0.5 text-[11px] font-bold text-secondary-foreground">
+              <span className="inline-flex items-center rounded-sm border border-border bg-secondary px-2.5 py-0.5 text-[11px] font-bold text-secondary-foreground">
                 {badgeText}
               </span>
             )}

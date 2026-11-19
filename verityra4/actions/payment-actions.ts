@@ -7,6 +7,7 @@ import { PaymentStatus, RegistrationStatus, RefundReason } from "@prisma/client"
 import { revalidatePath } from "next/cache"
 import Razorpay from "razorpay"
 import { ActionResult } from "./auth-actions"
+import { BRAND_CONFIG } from "@/lib/brand"
 
 export interface AdminPaymentRow {
   id: string
@@ -694,7 +695,7 @@ export async function getPaymentLedgerAction(
               id: "log_1",
               eventType: "ORDER_CREATED",
               actorType: "SYSTEM",
-              actorName: "Verityra Core",
+              actorName: `${BRAND_CONFIG.name} Core`,
               details: "Razorpay order created for candidate checkout.",
               rawPayload: JSON.stringify({ amount: 49900, currency: "INR" }),
               createdAt: new Date(Date.now() - 3600000).toISOString(),

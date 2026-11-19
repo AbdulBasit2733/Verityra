@@ -31,7 +31,7 @@ import {
 /**
  * Desktop Command Palette (Ctrl+K / Cmd+K)
  *
- * Fast jump navigation across the Verityra platform:
+ * Fast jump navigation across the Izone platform:
  * - Student: Dashboard, Tests, Leaderboard, Profile, Question Papers, Downloads
  * - Admin: Overview, Test Series, Question Papers, Submissions, Students, Payments, Profile
  */

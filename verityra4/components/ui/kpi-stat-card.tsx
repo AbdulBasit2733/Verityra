@@ -60,14 +60,14 @@ export function KpiStatCard({
   return (
     <div
       className={cn(
-        "flex items-center gap-4 rounded-xl border border-border bg-card p-4 shadow-card transition-colors hover:border-primary/40 sm:p-5",
+        "flex items-center gap-4 rounded-md border border-border bg-card p-4 shadow-none transition-colors hover:border-primary/40 sm:p-5",
         className
       )}
     >
       {/* Left Icon Container */}
       <div
         className={cn(
-          "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl",
+          "flex h-10 w-10 shrink-0 items-center justify-center rounded-sm",
           styles.iconBox
         )}
       >
@@ -76,7 +76,7 @@ export function KpiStatCard({
 
       {/* Right Content Stack */}
       <div className="min-w-0 flex-1">
-        <span className="block truncate text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
+        <span className="block truncate text-[11px] font-bold text-muted-foreground">
           {label}
         </span>
         <p className="mt-0.5 truncate text-xl font-extrabold tracking-tight text-foreground sm:text-2xl lg:text-3xl">

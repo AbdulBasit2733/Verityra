@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Eye, EyeOff, Loader2, ArrowRight, CheckCircle2 } from "lucide-react"
 import { registerStudentAction } from "@/actions/auth-actions"
+import { BRAND_CONFIG } from "@/lib/brand"
 
 export interface SignUpFormCoreProps {
   isMobile?: boolean
@@ -179,7 +180,7 @@ export function SignUpFormCore({ isMobile }: SignUpFormCoreProps) {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="candidate@verityra.com"
+            placeholder={BRAND_CONFIG.defaultCandidateEmail}
             disabled={loading}
             className="auth-control h-11 bg-transparent text-sm"
           />

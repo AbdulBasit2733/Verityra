@@ -1,5 +1,6 @@
 import { Resend } from "resend"
 import type { EmailPayload, EmailDispatchResult } from "./types"
+import { BRAND_CONFIG } from "../brand"
 
 const globalForResend = globalThis as unknown as {
   resendClient: Resend | null | undefined
@@ -89,7 +90,7 @@ export async function sendEmail(
   const fromEmail =
     payload.from ||
     process.env.RESEND_FROM_EMAIL?.trim() ||
-    "Verityra <onboarding@resend.dev>"
+    `${BRAND_CONFIG.name} <onboarding@resend.dev>`
 
   if (!resend) {
     const recipient = Array.isArray(payload.to)

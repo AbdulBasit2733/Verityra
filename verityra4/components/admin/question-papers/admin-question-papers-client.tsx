@@ -264,7 +264,7 @@ export function AdminQuestionPapersClient({
             options={streamOptions}
             selectedValue={streamFilter}
             onSelect={setStreamFilter}
-            searchPlaceholder="Search SSC, CBSE, NEET, JEE..."
+            searchPlaceholder="Search CBSE, ICSE, State Board, NEET, JEE..."
             allLabel="All Streams"
           />
 

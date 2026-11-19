@@ -24,6 +24,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { BRAND_CONFIG } from "@/lib/brand"
 
 const navigation = [
   { label: "Test Series", href: "/tests" },
@@ -53,21 +54,21 @@ export function Navbar({
 
   return (
     <header
-      className={`sticky top-0 z-50 w-full border-b backdrop-blur-xl ${isLightAppearance ? "border-slate-200 bg-white/95" : "border-border/80 bg-background/90"}`}
+      className={`sticky top-0 z-50 w-full border-b ${isLightAppearance ? "border-slate-200 bg-white" : "border-border bg-background"}`}
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-5 sm:h-[72px] sm:gap-6 sm:px-8 lg:h-[76px] lg:px-10">
         <Link
           href="/"
           className="group flex shrink-0 items-center gap-2.5"
-          aria-label="Verityra home"
+          aria-label={`${BRAND_CONFIG.name} home`}
         >
-          <span className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-[#2A6AED] text-xl font-black text-white shadow-md shadow-blue-600/20 transition-colors group-hover:bg-[#1E55C7]">
+          <span className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-md bg-[#2A6AED] text-xl font-black text-white shadow-xs transition-colors group-hover:bg-[#1E55C7]">
             <BookOpen aria-hidden="true" className="h-5 w-5" />
           </span>
           <span
             className={`font-heading text-[1.65rem] font-extrabold tracking-[-0.05em] transition-colors group-hover:text-[#2A6AED] ${isLightAppearance ? "text-slate-950" : "text-slate-950 dark:text-white"}`}
           >
-            Verityra
+            {BRAND_CONFIG.name}
           </span>
         </Link>
 
@@ -80,7 +81,7 @@ export function Navbar({
               key={item.label}
               href={item.href}
               aria-current={pathname === item.href ? "page" : undefined}
-              className={`inline-flex h-11 items-center gap-1 rounded-lg px-4 text-[15px] font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-[#2A6AED] focus-visible:outline-none ${pathname === item.href ? "bg-blue-50 text-[#1E55C7] dark:bg-blue-950/50 dark:text-blue-200" : isLightAppearance ? "text-slate-700 hover:bg-blue-50 hover:text-[#1E55C7]" : "text-slate-700 hover:bg-blue-50 hover:text-[#1E55C7] dark:text-slate-200 dark:hover:bg-blue-950/50 dark:hover:text-blue-200"}`}
+              className={`inline-flex h-11 items-center gap-1 rounded-md px-4 text-[15px] font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-[#2A6AED] focus-visible:outline-none ${pathname === item.href ? "bg-blue-50 text-[#1E55C7] dark:bg-blue-950/50 dark:text-blue-200" : isLightAppearance ? "text-slate-700 hover:bg-blue-50 hover:text-[#1E55C7]" : "text-slate-700 hover:bg-blue-50 hover:text-[#1E55C7] dark:text-slate-200 dark:hover:bg-blue-950/50 dark:hover:text-blue-200"}`}
             >
               {item.label}
             </Link>
@@ -93,7 +94,7 @@ export function Navbar({
               <Link href={isAdmin ? "/admin" : "/student/dashboard"}>
                 <Button
                   variant="outline"
-                  className="h-11 rounded-xl border-border px-4 font-bold text-slate-700 hover:border-[#2A6AED] hover:bg-blue-50 hover:text-[#1E55C7] dark:text-slate-100 dark:hover:bg-blue-950/50"
+                  className="h-11 rounded-md border-border px-4 font-bold text-slate-700 hover:border-[#2A6AED] hover:bg-blue-50 hover:text-[#1E55C7] dark:text-slate-100 dark:hover:bg-blue-950/50"
                 >
                   {isAdmin ? (
                     <Shield
@@ -127,7 +128,7 @@ export function Navbar({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align="end"
-                  className="w-56 rounded-xl border-border bg-popover p-1.5"
+                  className="w-56 rounded-md border-border bg-popover p-1.5"
                 >
                   <div className="p-2">
                     <p className="text-sm font-bold text-slate-900 dark:text-white">
@@ -163,13 +164,13 @@ export function Navbar({
               <Link href="/signin">
                 <Button
                   variant="outline"
-                  className="h-11 rounded-xl border-[#2A6AED] px-5 font-bold text-slate-800 hover:bg-blue-50 hover:text-[#1E55C7] dark:text-slate-100 dark:hover:bg-blue-950/50"
+                  className="h-11 rounded-md border-[#2A6AED] px-5 font-bold text-slate-800 hover:bg-blue-50 hover:text-[#1E55C7] dark:text-slate-100 dark:hover:bg-blue-950/50"
                 >
                   Login
                 </Button>
               </Link>
               <Link href="/signup">
-                <Button className="h-11 rounded-xl bg-[#2A6AED] px-5 font-bold text-white shadow-md shadow-blue-600/20 hover:bg-[#1E55C7]">
+                <Button className="h-11 rounded-md bg-[#2A6AED] px-5 font-bold text-white shadow-xs hover:bg-[#1E55C7]">
                   Get Started
                   <ArrowRight aria-hidden="true" className="ml-2 h-4 w-4" />
                 </Button>
@@ -184,7 +185,7 @@ export function Navbar({
             size="icon"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-            className={`h-11 w-11 rounded-xl ${isLightAppearance ? "text-slate-800" : "text-slate-800 dark:text-slate-100"}`}
+            className={`h-11 w-11 rounded-md ${isLightAppearance ? "text-slate-800" : "text-slate-800 dark:text-slate-100"}`}
           >
             {mobileMenuOpen ? (
               <X aria-hidden="true" className="h-5 w-5" />
@@ -197,7 +198,7 @@ export function Navbar({
 
       {mobileMenuOpen && (
         <div
-          className={`border-t px-5 py-4 shadow-lg lg:hidden ${isLightAppearance ? "border-slate-200 bg-white" : "border-border bg-background"}`}
+          className={`border-t px-5 py-4 shadow-sm lg:hidden ${isLightAppearance ? "border-slate-200 bg-white" : "border-border bg-background"}`}
         >
           <nav aria-label="Mobile navigation" className="grid gap-1">
             {navigation.map((item) => (
@@ -206,7 +207,7 @@ export function Navbar({
                 href={item.href}
                 onClick={closeMobileMenu}
                 aria-current={pathname === item.href ? "page" : undefined}
-                className={`flex min-h-11 items-center justify-between rounded-lg px-3 text-base font-semibold ${pathname === item.href ? "bg-blue-50 text-[#1E55C7] dark:bg-blue-950/50 dark:text-blue-200" : isLightAppearance ? "text-slate-700 hover:bg-blue-50 hover:text-[#1E55C7]" : "text-slate-700 hover:bg-blue-50 hover:text-[#1E55C7] dark:text-slate-200 dark:hover:bg-blue-950/50"}`}
+                className={`flex min-h-11 items-center justify-between rounded-md px-3 text-base font-semibold ${pathname === item.href ? "bg-blue-50 text-[#1E55C7] dark:bg-blue-950/50 dark:text-blue-200" : isLightAppearance ? "text-slate-700 hover:bg-blue-50 hover:text-[#1E55C7]" : "text-slate-700 hover:bg-blue-50 hover:text-[#1E55C7] dark:text-slate-200 dark:hover:bg-blue-950/50"}`}
               >
                 {item.label}
               </Link>
@@ -219,7 +220,7 @@ export function Navbar({
                   href={isAdmin ? "/admin" : "/student/dashboard"}
                   onClick={closeMobileMenu}
                 >
-                  <Button className="h-11 w-full rounded-xl bg-[#2A6AED] font-bold text-white hover:bg-[#1E55C7]">
+                  <Button className="h-11 w-full rounded-md bg-[#2A6AED] font-bold text-white hover:bg-[#1E55C7]">
                     {isAdmin ? "Admin Panel" : "Student Dashboard"}
                   </Button>
                 </Link>
@@ -229,7 +230,7 @@ export function Navbar({
                 >
                   <Button
                     variant="outline"
-                    className="h-11 w-full rounded-xl font-bold"
+                    className="h-11 w-full rounded-md font-bold"
                   >
                     Profile Settings
                   </Button>
@@ -237,7 +238,7 @@ export function Navbar({
                 <Button
                   variant="outline"
                   onClick={handleSignOut}
-                  className="h-11 rounded-xl border-red-200 font-bold text-red-600 hover:bg-red-50"
+                  className="h-11 rounded-md border-red-200 font-bold text-red-600 hover:bg-red-50"
                 >
                   Sign Out
                 </Button>
@@ -247,13 +248,13 @@ export function Navbar({
                 <Link href="/signin" onClick={closeMobileMenu}>
                   <Button
                     variant="outline"
-                    className="h-11 w-full rounded-xl font-bold"
+                    className="h-11 w-full rounded-md font-bold"
                   >
                     Login
                   </Button>
                 </Link>
                 <Link href="/signup" onClick={closeMobileMenu}>
-                  <Button className="h-11 w-full rounded-xl bg-[#2A6AED] font-bold text-white hover:bg-[#1E55C7]">
+                  <Button className="h-11 w-full rounded-md bg-[#2A6AED] font-bold text-white hover:bg-[#1E55C7]">
                     Get Started
                   </Button>
                 </Link>

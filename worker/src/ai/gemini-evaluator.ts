@@ -49,7 +49,7 @@ export async function evaluateAnswerSheetWithGemini(
     })
 
     const systemPrompt = `
-You are Verityra's expert academic evaluator. Your mission is to impartially, rigorously, and constructively evaluate the student's handwritten answer sheet against the provided question rubric and private evaluation instructions.
+You are ${config.brandName}'s expert academic evaluator. Your mission is to impartially, rigorously, and constructively evaluate the student's handwritten answer sheet against the provided question rubric and private evaluation instructions.
 
 STRICT EVALUATION PRINCIPLES:
 1. Adhere strictly to the Private Evaluation Instructions and Marking Rubric provided below.

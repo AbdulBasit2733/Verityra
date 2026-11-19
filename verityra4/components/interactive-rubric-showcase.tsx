@@ -18,6 +18,7 @@ import {
   ShieldCheck,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { BRAND_CONFIG } from "@/lib/brand"
 
 interface AttemptData {
   attemptNum: 1 | 2 | 3
@@ -80,7 +81,7 @@ const attemptsData: Record<number, AttemptData> = {
       },
     ],
     examinerComment:
-      "Solid basic handwriting, but the essay read like raw notes. Candidate must anchor arguments with Law Commission recommendations and structure points into crisp subheadings.",
+      "Solid basic handwriting, but the answer read like raw notes. Student must anchor explanations with core theorem formulas and structure points into crisp subheadings.",
     marginCompliance: {
       leftMargin: "Compliant (25mm)",
       rightMargin: "Compliant (20mm)",
@@ -103,13 +104,13 @@ const attemptsData: Record<number, AttemptData> = {
         name: "Introduction & Contextual Grounding",
         score: 15,
         max: 20,
-        note: "Significantly enhanced. Opens with Art. 32 and relevant historical lineage.",
+        note: "Significantly enhanced. Opens with formal definition and core governing equations.",
       },
       {
         name: "Core Arguments & Case Substantiation",
         score: 28,
         max: 40,
-        note: "Included 3 statutory precedents and Sarkaria Commission guidelines.",
+        note: "Included 3 worked numerical examples and board marking-scheme steps.",
       },
       {
         name: "Diagrammatic Schematics & Flowcharts",
@@ -419,7 +420,7 @@ export function InteractiveRubricShowcase() {
                       Physical Margin Boundaries: Fully Validated
                     </h4>
                     <p className="text-[11px] text-slate-500">
-                      Standardized Left (25mm) and Right (20mm) UPSC margin
+                      Standardized Left (25mm) and Right (20mm) exam margin
                       compliance.
                     </p>
                   </div>
@@ -458,9 +459,9 @@ export function InteractiveRubricShowcase() {
               </div>
 
               <p className="text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
-                *Verityra automatically rejects answer sheets that write beyond
-                official margins, mirroring real UPSC Commission negative
-                marking penalties before final grading.
+                *{BRAND_CONFIG.name} automatically checks that answer sheets
+                respect official margins, mirroring strict board &amp; entrance
+                exam presentation guidelines before final grading.
               </p>
             </div>
           )}

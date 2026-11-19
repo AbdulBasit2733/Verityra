@@ -124,7 +124,7 @@ export function KpiMetric({
       {/* Icon Container */}
       <div
         className={cn(
-          "flex h-11 w-11 shrink-0 items-center justify-center rounded-lg sm:h-12 sm:w-12",
+          "flex h-11 w-11 shrink-0 items-center justify-center rounded-sm sm:h-12 sm:w-12",
           styles.iconBg
         )}
       >
@@ -155,7 +155,7 @@ export function KpiMetric({
             </span>
           )}
         </div>
-        <span className="mt-0.5 block truncate text-[11px] font-bold tracking-wider text-muted-foreground uppercase sm:text-xs">
+        <span className="mt-0.5 block truncate text-[11px] font-bold text-muted-foreground sm:text-xs">
           {label}
         </span>
         {subtext && (

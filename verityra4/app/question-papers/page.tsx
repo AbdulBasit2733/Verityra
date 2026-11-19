@@ -80,10 +80,13 @@ export default async function QuestionPapersPage() {
                   Explore &amp; Download Question Papers
                 </h1>
                 <p className="mt-4 max-w-2xl text-sm leading-relaxed text-[#64748B] sm:text-base">
-                  Access authentic examination question papers across school
-                  education, board examinations, and competitive exams. Practice
-                  with actual formats, inspect marking schemes, and strengthen
-                  your preparation.
+                  Access authentic free &amp; practice question papers from{" "}
+                  <span className="font-semibold text-[#071B3A]">
+                    I Zone Coaching Classes
+                  </span>{" "}
+                  covering School Boards (Jr. KG–XII: CBSE, ICSE, State Board),
+                  NEET-UG, JEE (Main &amp; Advanced), NTSE &amp; Olympiads, UGC
+                  NET, and English Grammar.
                 </p>
               </div>
 

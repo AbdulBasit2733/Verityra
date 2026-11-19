@@ -385,7 +385,7 @@ export function StudentDashboardClient({
       <PageHeader
         icon={GraduationCap}
         title={`Welcome back, ${userName}`}
-        subtitle="Viewing: Your Enrolled UPSC Test Series & 3-Attempt Progression"
+        subtitle="Viewing: Your Enrolled Test Series & 3-Attempt Progression"
       >
         <Link href="/tests">
           <Button className="h-10 rounded-xl bg-[#2A6AED] px-4 text-xs font-semibold text-white shadow-xs hover:bg-[#1E55C7] sm:text-sm">
@@ -615,7 +615,7 @@ export function StudentDashboardClient({
                 )
               }}
               emptyTitle="No test series enrolled yet"
-              emptyDescription="Explore our UPSC Mains test series catalog to enroll and start submitting handwritten answer sheets."
+              emptyDescription="Explore our online test series catalog to enroll and start submitting handwritten answer sheets."
               emptyAction={
                 <Link href="/tests">
                   <Button size="sm" className="bg-[#2A6AED] text-white">

@@ -172,7 +172,7 @@ export function AdminTestSeriesEditor({
               required
               value={values.title}
               onChange={(e) => set("title", e.target.value)}
-              placeholder="e.g. UPSC CSE Mains 2026 GS Paper II Full Mock"
+              placeholder="e.g. Class 12 CBSE Physics Pre-Board Mock Series 2026"
               className="h-10 rounded-lg"
             />
           </div>

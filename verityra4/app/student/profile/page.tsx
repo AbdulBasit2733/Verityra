@@ -1,6 +1,7 @@
 import { requireStudent } from "@/lib/auth-guard"
 import { getStudentProfileAction } from "@/actions/auth-actions"
 import { StudentProfileClient } from "@/components/student/profile/student-profile-client"
+import { BRAND_CONFIG } from "@/lib/brand"
 
 export const dynamic = "force-dynamic"
 
@@ -13,11 +14,11 @@ export default async function StudentProfilePage() {
       ? profileResult.data
       : {
           name: user.name || "Candidate",
-          email: user.email || "candidate@verityra.com",
+          email: user.email || BRAND_CONFIG.defaultCandidateEmail,
           educationLevel: "Graduate / Aspirant",
           institution: "",
           phoneNumber: "",
-          targetExam: "UPSC CSE Mains / State PCS",
+          targetExam: "CBSE / NEET-UG / JEE Preparation",
           bio: "",
           createdAt: new Date().toISOString(),
         }

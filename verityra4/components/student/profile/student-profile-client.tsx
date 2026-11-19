@@ -12,6 +12,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { useConfirm } from "@/components/providers/confirm-dialog-provider"
 import { useGlobalError } from "@/components/providers/error-dialog-provider"
 import { toast } from "@/components/ui/sonner"
+import { BRAND_CONFIG } from "@/lib/brand"
 import {
   Loader2,
   User,
@@ -66,7 +67,7 @@ export function StudentProfileClient({ initialData }: StudentProfileProps) {
   const [savingPassword, setSavingPassword] = React.useState(false)
 
   const displayName = name || initialData.name || "Candidate"
-  const displayEmail = initialData.email || "candidate@verityra.com"
+  const displayEmail = initialData.email || BRAND_CONFIG.defaultCandidateEmail
   const initials =
     displayName
       .split(" ")
@@ -303,7 +304,7 @@ export function StudentProfileClient({ initialData }: StudentProfileProps) {
                   id="targetExam"
                   value={targetExam}
                   onChange={(e) => setTargetExam(e.target.value)}
-                  placeholder="e.g. UPSC CSE Mains, State PCS, Judicial Services"
+                  placeholder="e.g. CBSE Class 10, NEET-UG, JEE Main, Olympiads, English Grammar"
                   className="h-10 rounded-lg border-slate-200 bg-white text-xs sm:text-sm"
                 />
               </div>

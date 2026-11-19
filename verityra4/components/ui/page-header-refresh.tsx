@@ -25,7 +25,7 @@ export function PageHeaderRefreshButton() {
       size="sm"
       onClick={handleRefresh}
       disabled={isRefreshing}
-      className="h-10 rounded-xl border-slate-200 bg-white px-3.5 text-xs font-semibold text-slate-700 shadow-2xs transition-colors hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+      className="h-10 rounded-md border-slate-200 bg-white px-3.5 text-xs font-semibold text-slate-700 shadow-2xs transition-colors hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
     >
       <RotateCcw
         className={cn(

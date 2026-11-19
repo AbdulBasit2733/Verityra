@@ -8,6 +8,7 @@ import {
   ShieldCheck,
   UploadCloud,
 } from "lucide-react"
+import { BRAND_CONFIG } from "@/lib/brand"
 
 interface AuthPageLayoutProps {
   title: string
@@ -33,7 +34,7 @@ export function AuthPageLayout({
           <div className="flex items-center gap-2">
             <Link
               href="/"
-              className="inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-white/70 hover:text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none dark:text-slate-300 dark:hover:bg-slate-900/50"
+              className="inline-flex min-h-11 items-center gap-2 rounded-md px-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-white hover:text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none dark:text-slate-300 dark:hover:bg-slate-900/50"
             >
               <ArrowLeft aria-hidden="true" className="h-4 w-4" />
               Back to home
@@ -42,7 +43,7 @@ export function AuthPageLayout({
         </div>
 
         <div className="relative z-10 my-auto max-w-xl py-12">
-          <p className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50/80 px-3.5 py-2 text-xs font-bold tracking-[0.12em] text-secondary-foreground uppercase dark:border-blue-900 dark:bg-blue-950/60 dark:text-blue-200">
+          <p className="inline-flex items-center gap-2 rounded-sm border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-secondary-foreground dark:border-blue-900 dark:bg-blue-950/60 dark:text-blue-200">
             <span
               className="h-2 w-2 rounded-full bg-primary"
               aria-hidden="true"
@@ -65,7 +66,7 @@ export function AuthPageLayout({
             stronger.
           </p>
 
-          <div className="mt-9 grid max-w-lg grid-cols-3 gap-3">
+          <div className="mt-9 grid max-w-lg grid-cols-3 divide-x divide-blue-200/80 border-y border-blue-200/80 dark:divide-slate-700 dark:border-slate-700">
             {[
               { icon: FileText, label: "Margin booklets" },
               { icon: PenLine, label: "Handwritten practice" },
@@ -73,10 +74,10 @@ export function AuthPageLayout({
             ].map(({ icon: Icon, label }) => (
               <div
                 key={label}
-                className="rounded-xl border border-white/80 bg-white/65 p-4 shadow-sm backdrop-blur-sm dark:border-slate-700/70 dark:bg-slate-900/50"
+                className="px-4 py-4 first:pl-0 last:pr-0"
               >
                 <Icon aria-hidden="true" className="h-5 w-5 text-primary" />
-                <p className="mt-3 text-sm leading-5 font-bold text-slate-800 dark:text-slate-100">
+                <p className="mt-2.5 text-sm leading-5 font-bold text-slate-800 dark:text-slate-100">
                   {label}
                 </p>
               </div>
@@ -99,7 +100,7 @@ export function AuthPageLayout({
         </div>
 
         <div className="relative z-10 flex items-center justify-between border-t border-blue-200/70 pt-5 text-xs font-semibold text-slate-600 dark:border-slate-700 dark:text-slate-400">
-          <span>Verityra examination platform</span>
+          <span>{BRAND_CONFIG.platformLabel}</span>
           <span className="font-mono">3× attempt policy</span>
         </div>
       </aside>
@@ -133,7 +134,7 @@ export function AuthPageLayout({
               aria-hidden="true"
               className="h-4 w-4 shrink-0 text-emerald-600"
             />
-            Your session is protected by Verityra security controls.
+            {BRAND_CONFIG.securityLabel}
           </p>
         </div>
       </main>
@@ -146,7 +147,7 @@ function BrandMark({ compact = false }: { compact?: boolean }) {
     <Link
       href="/"
       className="group inline-flex min-h-11 items-center gap-2.5 rounded-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-      aria-label="Verityra home"
+      aria-label={`${BRAND_CONFIG.name} home`}
     >
       <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-white shadow-md shadow-blue-600/20 transition-colors group-hover:bg-primary/90">
         <BookOpen aria-hidden="true" className="h-5 w-5" />
@@ -154,7 +155,7 @@ function BrandMark({ compact = false }: { compact?: boolean }) {
       <span
         className={`font-heading font-extrabold tracking-[-0.05em] text-slate-950 dark:text-white ${compact ? "text-xl" : "text-2xl"}`}
       >
-        Verityra
+        {BRAND_CONFIG.name}
       </span>
     </Link>
   )

@@ -41,9 +41,7 @@ export function AdminAddQuestionPaperModal({
 }: AdminAddQuestionPaperModalProps) {
   const [loading, setLoading] = React.useState(false)
   const [title, setTitle] = React.useState("")
-  const [category, setCategory] = React.useState<string>(
-    "UPSC / Civil Services"
-  )
+  const [category, setCategory] = React.useState<string>("CBSE Board")
   const [subject, setSubject] = React.useState("")
   const [year, setYear] = React.useState(new Date().getFullYear().toString())
   const [maxMarks, setMaxMarks] = React.useState("100")
@@ -55,7 +53,7 @@ export function AdminAddQuestionPaperModal({
 
   const resetForm = () => {
     setTitle("")
-    setCategory("UPSC / Civil Services")
+    setCategory("CBSE Board")
     setSubject("")
     setYear(new Date().getFullYear().toString())
     setMaxMarks("100")
@@ -189,7 +187,7 @@ export function AdminAddQuestionPaperModal({
               id="qp-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. SSC CGL Tier-II Quantitative Abilities 2025"
+              placeholder="e.g. CBSE Class 10 Mathematics Board Paper 2026"
               className="h-10 border-[#DCE7FA] text-sm"
               required
             />

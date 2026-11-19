@@ -6,11 +6,12 @@ The public landing page is composed from reusable sections in `components/landin
 
 ## Page hierarchy
 
-1. Hero: explain handwritten exam practice, show the primary `/tests` action, and link to the workflow section.
-2. Preparation: explain download, handwritten practice, and feedback in three steps.
-3. Exam paths: give UPSC, State PCS, and Judicial Services visitors a direct route to the existing test catalog.
-4. Progress: explain candidate workspace privacy, progress, and the attempt policy, with a signup action.
-5. Footer: light surface with platform, candidate, and support links.
+1. Hero: position **Izone** as **I Zone Coaching Classes'** online portal for free & paid test series and question papers across **Jr. KG–XII (CBSE, ICSE, State Board)**, **NEET-UG**, **JEE**, **Olympiads**, **NTSE**, **UGC NET**, and **English Grammar**, with primary actions to `/tests` and `/question-papers`.
+2. Preparation: explain choosing a free/paid test series or paper, writing under exam timing, and improving via rubric feedback and doubt-clearing in three steps.
+3. Exam paths: showcase School Boards (Jr. KG–XII & Foundation VI–X), JEE & NEET-UG, and Olympiads / NTSE / UGC NET & English Grammar cards linking to `/tests` and `/question-papers`. (Never include UPSC, State PCS, Judicial Services, or government exam paths.)
+4. Institute highlights: present I Zone Coaching Classes' Chhatrapati Sambhajinagar campus details (`4.8★` rating, small batch sizes, study materials & doubt clearing, accessibility features, Central Naka Rd address, phone `+91 98604 47370`, Mon–Sat & Sunday hours, Justdial & I Zone Training Academy links).
+5. Progress: explain candidate workspace privacy, 3-attempt progression, and signup action.
+6. Footer: light surface with institute bio, clickable phone/location, platform/candidate links, and copyright (`I Zone Coaching Classes`).
 
 ## Visual system
 

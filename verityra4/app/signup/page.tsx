@@ -6,8 +6,8 @@ import { SignUpFormCore } from "@/components/auth/signup-form-core"
 export default function SignUpPage() {
   return (
     <AuthShell
-      title="Create Candidate Account"
-      subtitle="Join thousands of civil services & judicial aspirants testing with authentic physical booklets"
+      title="Create Student Account"
+      subtitle="Enroll in free & paid test series and access question papers for School Boards (Jr. KG–XII), NEET-UG, JEE, Olympiads & English Grammar"
       mode="signup"
     >
       <SignUpFormCore />

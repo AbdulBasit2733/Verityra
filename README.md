@@ -1,6 +1,15 @@
-# Verityra — Autonomous AI Examination & Evaluation Platform
+# Izone — Online Test Series & Question Paper Platform (I Zone Coaching Classes)
 
-This monorepo contains the complete Verityra platform, architected as a decoupled web application and standalone background evaluation worker.
+This monorepo powers the official online test series and question paper platform for **[I Zone Coaching Classes](verityra4/docs/company/izone-company-profile.md)** (Chhatrapati Sambhajinagar, Maharashtra), architected as a decoupled Next.js web application and standalone background evaluation worker.
+
+## 🏫 About I Zone Coaching Classes & Platform Scope
+
+- **Academic Coverage:** Classroom & online test support from **Jr. KG to Class XII** (**CBSE**, **ICSE**, and **Maharashtra State Board**, including Foundation Classes VI–X), **NEET-UG**, **JEE (Main & Advanced)**, **NTSE & Olympiads**, **UGC NET**, and **English Grammar** (with Spoken English via **I Zone Training Academy**).
+- **Platform Purpose:** Conduct **online free and paid test series** (pen-and-paper booklets, timed practice, handwritten upload, and structured rubric feedback) and distribute **free and paid question papers**.
+- **Scope Boundary:** I Zone Coaching Classes does **not** cover government civil services or judicial examinations (no UPSC, State PCS, Judiciary, or SSC).
+- **Detailed Documentation:**
+  - [Company & Institute Profile](verityra4/docs/company/izone-company-profile.md)
+  - [Platform & Product Overview](verityra4/docs/company/platform-overview.md)
 
 ---
 

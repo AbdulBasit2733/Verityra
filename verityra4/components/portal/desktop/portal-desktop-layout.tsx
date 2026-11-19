@@ -26,6 +26,7 @@ import {
   PanelLeftOpen,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { BRAND_CONFIG } from "@/lib/brand"
 
 export interface NavItem {
   label: string
@@ -59,9 +60,11 @@ export function PortalDesktopLayout({
 }: PortalDesktopLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false)
 
-  // Load sidebar preference from localStorage
+  // Load sidebar preference from localStorage (checking legacy key for seamless migration)
   React.useEffect(() => {
-    const saved = localStorage.getItem("verityra-sidebar-collapsed")
+    const saved =
+      localStorage.getItem(BRAND_CONFIG.sidebarStorageKey) ??
+      localStorage.getItem(BRAND_CONFIG.legacySidebarStorageKey)
     if (saved !== null) {
       setSidebarCollapsed(saved === "true")
     }
@@ -71,7 +74,7 @@ export function PortalDesktopLayout({
   const toggleSidebar = React.useCallback(() => {
     setSidebarCollapsed((prev) => {
       const newValue = !prev
-      localStorage.setItem("verityra-sidebar-collapsed", String(newValue))
+      localStorage.setItem(BRAND_CONFIG.sidebarStorageKey, String(newValue))
       return newValue
     })
   }, [])
@@ -92,24 +95,26 @@ export function PortalDesktopLayout({
     userName || (role === "ADMIN" ? "Administrator" : "Candidate")
   const displayEmail =
     userEmail ||
-    (role === "ADMIN" ? "admin@verityra.com" : "candidate@verityra.com")
+    (role === "ADMIN"
+      ? BRAND_CONFIG.defaultAdminEmail
+      : BRAND_CONFIG.defaultCandidateEmail)
   const initials =
     displayName
       .split(" ")
       .map((part) => part[0])
       .join("")
       .slice(0, 2)
-      .toUpperCase() || "VT"
+      .toUpperCase() || BRAND_CONFIG.monogram
 
   return (
-    <div className="hidden min-h-screen w-full overflow-x-hidden bg-background text-foreground lg:flex">
+    <div className="hidden min-h-screen w-full overflow-x-clip bg-background text-foreground lg:flex">
       {/* =========================================================
           DESKTOP LEFT SIDEBAR (Screen L: >= 1024px)
           Collapsible: w-64 expanded | w-16 collapsed (Ctrl+B)
       ========================================================= */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-40 flex flex-col justify-between border-r border-border bg-card shadow-sm transition-[width] duration-200 ease-in-out select-none",
+          "fixed inset-y-0 left-0 z-40 flex flex-col justify-between border-r border-border bg-card shadow-sm select-none",
           sidebarCollapsed ? "w-16" : "w-64"
         )}
       >
@@ -126,24 +131,24 @@ export function PortalDesktopLayout({
               "group flex items-center",
               sidebarCollapsed ? "gap-0" : "gap-2.5"
             )}
-            title={sidebarCollapsed ? "Verityra" : undefined}
+            title={sidebarCollapsed ? BRAND_CONFIG.name : undefined}
           >
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#2A6AED] text-base font-extrabold text-white shadow-xs shadow-blue-500/20 transition-transform group-hover:scale-105">
-              V
+            <div className="flex h-9 w-9 items-center justify-center rounded-md bg-[#2A6AED] text-base font-extrabold text-white shadow-xs">
+              {BRAND_CONFIG.initials}
             </div>
             {!sidebarCollapsed && (
               <div className="flex flex-col">
                 <span className="font-heading text-base leading-none font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
-                  Verityra
+                  {BRAND_CONFIG.name}
                 </span>
-                <span className="mt-1 text-[10px] font-bold tracking-wider text-[#2A6AED] uppercase dark:text-blue-400">
+                <span className="mt-1 text-[10px] font-bold text-[#2A6AED] dark:text-blue-400">
                   {role === "ADMIN" ? "Admin Suite" : "Candidate Suite"}
                 </span>
               </div>
             )}
           </Link>
           {!sidebarCollapsed && (
-            <div className="flex h-6 w-6 items-center justify-center rounded-md bg-slate-100 text-slate-400 dark:bg-slate-800">
+            <div className="flex h-6 w-6 items-center justify-center rounded-sm bg-slate-100 text-slate-400 dark:bg-slate-800">
               <ChevronRight className="h-3.5 w-3.5" />
             </div>
           )}
@@ -158,7 +163,7 @@ export function PortalDesktopLayout({
         >
           <div className="space-y-1.5">
             {!sidebarCollapsed && (
-              <p className="mb-2 px-3 text-[10px] font-bold tracking-wider text-slate-400 uppercase dark:text-slate-500">
+              <p className="mb-2 px-3 text-[11px] font-semibold text-slate-400 dark:text-slate-500">
                 {role === "ADMIN"
                   ? "Management & Governance"
                   : "Workspace & Practice"}
@@ -176,9 +181,9 @@ export function PortalDesktopLayout({
                         <Link
                           href={item.href}
                           className={cn(
-                            "group flex w-full cursor-pointer items-center justify-center rounded-lg p-2.5 text-xs font-bold transition-colors duration-150",
+                            "group flex w-full cursor-pointer items-center justify-center rounded-md p-2.5 text-xs font-bold transition-colors duration-150",
                             active
-                              ? "bg-primary text-primary-foreground shadow-sm"
+                              ? "bg-primary text-primary-foreground shadow-xs"
                               : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800/80 dark:hover:text-slate-100"
                           )}
                         >
@@ -207,9 +212,9 @@ export function PortalDesktopLayout({
                     key={item.href}
                     href={item.href}
                     className={cn(
-                      "group flex cursor-pointer items-center justify-between rounded-lg px-3.5 py-2.5 text-xs font-bold transition-colors duration-150",
+                      "group flex cursor-pointer items-center justify-between rounded-md px-3.5 py-2.5 text-xs font-bold transition-colors duration-150",
                       active
-                        ? "bg-primary text-primary-foreground shadow-sm"
+                        ? "bg-primary text-primary-foreground shadow-xs"
                         : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800/80 dark:hover:text-slate-100"
                     )}
                   >

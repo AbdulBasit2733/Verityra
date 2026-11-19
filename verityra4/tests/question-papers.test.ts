@@ -204,23 +204,31 @@ export function runQuestionPaperTests() {
         )
       )
 
-      const civilServicesOnly = DEMO_QUESTION_PAPERS.filter((p) =>
-        p.category.includes("Civil Services")
+      const neetOnly = DEMO_QUESTION_PAPERS.filter((p) =>
+        p.category.includes("NEET-UG")
       )
-      assert.ok(civilServicesOnly.length >= 1)
+      assert.ok(neetOnly.length >= 1)
+
+      const grammarOnly = DEMO_QUESTION_PAPERS.filter((p) =>
+        p.category.includes("English Grammar")
+      )
+      assert.ok(grammarOnly.length >= 1)
     }
   )
 
   suite.test(
-    "Stream Categories: Required examination streams are present",
+    "Stream Categories: Required Izone examination streams are present",
     () => {
       const requiredStreams = [
-        "SSC",
         "CBSE Board",
         "ICSE / ISC Board",
-        "NEET",
+        "State Board (Maharashtra)",
+        "NEET-UG",
         "JEE Main",
         "JEE Advanced",
+        "NTSE & Olympiads",
+        "UGC NET",
+        "English Grammar",
       ]
       for (const stream of requiredStreams) {
         assert.ok(
@@ -232,15 +240,18 @@ export function runQuestionPaperTests() {
   )
 
   suite.test(
-    "Stream Fixtures: Demo papers cover SSC, CBSE, ICSE, NEET, JEE Main, and JEE Advanced",
+    "Stream Fixtures: Demo papers cover Boards, NEET-UG, JEE, Olympiads, UGC NET, and English Grammar",
     () => {
       const streamsToVerify = [
-        "SSC",
         "CBSE Board",
         "ICSE / ISC Board",
-        "NEET",
+        "State Board (Maharashtra)",
+        "NEET-UG",
         "JEE Main",
         "JEE Advanced",
+        "NTSE & Olympiads",
+        "UGC NET",
+        "English Grammar",
       ]
       for (const stream of streamsToVerify) {
         const found = DEMO_QUESTION_PAPERS.some((p) => p.category === stream)
@@ -248,6 +259,35 @@ export function runQuestionPaperTests() {
           found,
           `Expected at least one demo paper for stream "${stream}"`
         )
+      }
+    }
+  )
+
+  suite.test(
+    "Domain Exclusion: Government civil service and judicial exam categories are absent",
+    () => {
+      const excluded = ["upsc", "state psc", "judic", "civil service", "ssc cgl"]
+      for (const stream of EXAMINATION_STREAMS) {
+        const lower = stream.toLowerCase()
+        for (const term of excluded) {
+          assert.equal(
+            lower.includes(term),
+            false,
+            `Excluded stream term "${term}" found in EXAMINATION_STREAMS: ${stream}`
+          )
+        }
+        assert.notEqual(lower.trim(), "ssc")
+      }
+      for (const paper of DEMO_QUESTION_PAPERS) {
+        const text = `${paper.title} ${paper.category}`.toLowerCase()
+        for (const term of excluded) {
+          assert.equal(
+            text.includes(term),
+            false,
+            `Excluded stream term "${term}" found in demo paper: ${paper.title}`
+          )
+        }
+        assert.notEqual(paper.category.toLowerCase().trim(), "ssc")
       }
     }
   )

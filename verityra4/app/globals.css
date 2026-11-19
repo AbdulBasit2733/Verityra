@@ -1,3 +1,6 @@
+/* Hallmark · v2.0.0 · built: the project · redesign: restyle · genre: editorial · theme: brand (Electric Sapphire #2A6AED) */
+/* Hallmark · pre-emit critique: P4 H5 E5 S4 R5 V4 · weakest: R, prior pass had heavy 2xl shadows, 2rem card radii and floating glass cards; flattened to shadow-sm max, rounded-md/sm only, and hairline-divided sections */
+
 /* Tailwind v4 entry */
 @import "tailwindcss";
 @import "tw-animate-css";
@@ -15,10 +18,10 @@
   --font-mono:
     "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, monospace;
 
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.375rem;
+  --radius-xl: 0.375rem;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -80,7 +83,7 @@ input[type="number"]::-webkit-outer-spin-button {
    ========================================================================== */
 :root {
   color-scheme: light;
-  --radius: 0.625rem;
+  --radius: 0.375rem;
   --background: #f8fafc;
   --foreground: #0f172a;
 
@@ -137,9 +140,13 @@ input[type="number"]::-webkit-outer-spin-button {
   --surface-canvas: #f8fafc;
   --surface-raised: #ffffff;
   --surface-sunken: #f1f5f9;
+  --surface-tint: #f4f8ff;
+  --brand-soft: #eff6ff;
+  --brand-soft-border: #bfdbfe;
   --ink-primary: #0f172a;
   --ink-secondary: #334155;
   --ink-muted: #64748b;
+  --ink-inverse: #f8fafc;
   --line-subtle: #e2e8f0;
   --line-strong: #cbd5e1;
   --brand-sapphire: #2a6aed;
@@ -214,13 +221,15 @@ input[type="number"]::-webkit-outer-spin-button {
     width: 100%;
     margin: 0;
     padding: 0;
+    overflow-x: clip;
   }
 
-  /* Only apply overflow hidden when dashboard is active */
+  /* Only apply vertical scroll lock when dashboard is active */
   body.dashboard-mode,
   body.dashboard-mode html,
   body.dashboard-mode #root {
-    overflow: hidden;
+    overflow-y: hidden;
+    overflow-x: clip;
   }
 
   *,
@@ -369,7 +378,7 @@ input[type="number"]::-webkit-outer-spin-button {
 .dark .text-\[\#0F172A\],
 .dark .text-\[\#0f172a\],
 .dark .text-slate-800 {
-  color: #ffffff !important;
+  color: #f8fafc !important;
 }
 
 .dark .text-slate-700 {
@@ -499,27 +508,22 @@ body.dashboard-mode main::-webkit-scrollbar-thumb:hover {
   }
 
   .auth-shadow {
-    box-shadow:
-      0 20px 25px -5px rgba(15, 23, 42, 0.08),
-      0 10px 10px -5px rgba(42, 106, 237, 0.04);
+    box-shadow: var(--shadow-panel);
   }
 
   .dark .auth-shadow {
-    box-shadow:
-      0 20px 30px -5px rgba(0, 0, 0, 0.5),
-      0 10px 15px -5px rgba(37, 99, 235, 0.12);
+    box-shadow: var(--shadow-panel);
   }
 
   .role-card {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    border: 2px solid transparent;
+    transition:
+      border-color 0.2s ease,
+      background-color 0.2s ease;
+    border: 1px solid var(--line-subtle);
   }
 
   .role-card:hover {
-    transform: translateY(-2px);
-    box-shadow:
-      0 10px 25px -3px rgba(15, 23, 42, 0.08),
-      0 4px 6px -2px rgba(42, 106, 237, 0.05);
+    box-shadow: var(--shadow-panel);
     border-color: var(--accent);
   }
 
@@ -532,16 +536,19 @@ body.dashboard-mode main::-webkit-scrollbar-thumb:hover {
   .btn-primary {
     background: var(--accent);
     color: var(--accent-foreground);
-    transition: all 0.2s;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
   }
 
   .btn-primary:hover {
     background: var(--hover-accent);
-    transform: translateY(-1px);
   }
 
   .floating-label {
-    transition: all 0.2s;
+    transition:
+      transform 0.2s ease,
+      color 0.2s ease;
   }
 
   .input-container:focus-within .floating-label {
@@ -555,66 +562,52 @@ body.dashboard-mode main::-webkit-scrollbar-thumb:hover {
   }
 
   .header-shadow {
-    box-shadow:
-      0 1px 3px 0 rgba(15, 23, 42, 0.06),
-      0 1px 2px 0 rgba(15, 23, 42, 0.04);
+    box-shadow: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
   }
 
   .dark .header-shadow {
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.4);
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
   }
 
   .dropdown-shadow {
-    box-shadow:
-      0 10px 15px -3px rgba(15, 23, 42, 0.08),
-      0 4px 6px -2px rgba(15, 23, 42, 0.04);
+    box-shadow: var(--shadow-panel);
   }
 
   .shadow-edtech {
-    box-shadow:
-      0 10px 25px -5px rgba(42, 106, 237, 0.15),
-      0 8px 10px -6px rgba(42, 106, 237, 0.08);
+    box-shadow: var(--shadow-panel);
   }
 
   .shadow-card {
-    box-shadow:
-      0 1px 3px 0 rgba(0, 0, 0, 0.04),
-      0 4px 14px -2px rgba(15, 23, 42, 0.05);
+    box-shadow: none;
   }
 
   .dark .shadow-card {
-    box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.35);
+    box-shadow: none;
   }
 
   .shadow-card-hover {
-    box-shadow:
-      0 10px 30px -4px rgba(15, 23, 42, 0.08),
-      0 4px 12px -2px rgba(42, 106, 237, 0.08);
+    box-shadow: var(--shadow-panel);
   }
 
   .dark .shadow-card-hover {
-    box-shadow:
-      0 10px 30px -4px rgba(0, 0, 0, 0.5),
-      0 4px 12px -2px rgba(59, 130, 246, 0.18);
+    box-shadow: var(--shadow-panel);
   }
 
   .shadow-mockup {
-    box-shadow:
-      0 20px 50px -10px rgba(15, 23, 42, 0.12),
-      0 10px 25px -5px rgba(42, 106, 237, 0.12);
+    box-shadow: var(--shadow-panel);
   }
 
   .dark .shadow-mockup {
-    box-shadow:
-      0 20px 50px -10px rgba(0, 0, 0, 0.65),
-      0 10px 25px -5px rgba(59, 130, 246, 0.2);
+    box-shadow: var(--shadow-panel);
   }
 }
 
 /* Utility-style custom classes and overrides */
 @layer utilities {
   .nav-item {
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
   }
 
   .nav-item:hover {
@@ -637,7 +630,7 @@ body.dashboard-mode main::-webkit-scrollbar-thumb:hover {
   }
 
   .sidebar-transition {
-    transition: width 0.3s ease-in-out;
+    transition: background-color 0.2s ease;
   }
 
   .accent {
@@ -893,11 +886,10 @@ body {
 }
 
 /* ==========================================================================
-   Modern SaaS Bento Grid & Aurora Glassmorphism Utilities
+   Flat Panel Helpers
    ========================================================================== */
 .glass-card {
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background-color: var(--surface-raised);
 }
 
 .aurora-glow-blue {
@@ -961,10 +953,9 @@ body {
   --control-sm: 2.25rem;
   --control-md: 2.75rem;
   --control-lg: 3.125rem;
-  --radius-control: 0.5rem;
-  --radius-card: 1rem;
-  --shadow-panel:
-    0 1px 2px rgb(15 23 42 / 0.04), 0 12px 32px rgb(15 23 42 / 0.06);
+  --radius-control: 0.375rem;
+  --radius-card: 0.375rem;
+  --shadow-panel: 0 1px 2px 0 rgb(15 23 42 / 0.05);
 }
 
 .dark {
@@ -979,7 +970,7 @@ body {
   --brand-sapphire: #3b82f6;
   --brand-sapphire-hover: #2563eb;
   --semantic-danger: #f87171;
-  --shadow-panel: 0 1px 2px rgb(0 0 0 / 0.2), 0 16px 36px rgb(0 0 0 / 0.2);
+  --shadow-panel: 0 1px 2px 0 rgb(0 0 0 / 0.25);
 }
 
 @layer base {
@@ -1059,11 +1050,11 @@ body {
 
   .ui-eyebrow {
     color: var(--brand-sapphire);
-    font-size: 0.6875rem;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    line-height: 1.2;
-    text-transform: uppercase;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: normal;
+    line-height: 1.3;
+    text-transform: none;
   }
 }
 
@@ -1086,7 +1077,7 @@ html {
 @layer components {
   .auth-page-shell {
     min-height: 100dvh;
-    overflow-x: hidden;
+    overflow-x: clip;
     background:
       radial-gradient(
         circle at 12% 0%,
@@ -1149,7 +1140,7 @@ html {
 
   .auth-form-surface {
     border: 1px solid var(--line-subtle);
-    border-radius: 1rem;
+    border-radius: var(--radius-card);
     background: var(--surface-raised);
     box-shadow: var(--shadow-panel);
   }
@@ -1157,11 +1148,10 @@ html {
   .auth-control {
     min-height: 2.75rem;
     border: 1px solid var(--line-strong);
-    border-radius: 0.625rem;
+    border-radius: var(--radius-control);
     background: var(--surface-raised);
     transition:
       border-color 160ms ease,
-      box-shadow 160ms ease,
       background-color 160ms ease;
   }
 
@@ -1175,18 +1165,16 @@ html {
 
   .auth-primary-action {
     min-height: 2.75rem;
-    border-radius: 0.625rem;
+    border-radius: var(--radius-control);
     background: var(--brand-sapphire);
-    color: white;
+    color: var(--brand-foreground);
     font-weight: 700;
-    transition:
-      background-color 160ms ease,
-      box-shadow 160ms ease;
+    transition: background-color 160ms ease;
   }
 
   .auth-primary-action:hover {
     background: var(--brand-sapphire-hover);
-    box-shadow: 0 8px 18px rgb(42 106 237 / 0.18);
+    box-shadow: var(--shadow-panel);
   }
 
   .auth-primary-action:disabled {

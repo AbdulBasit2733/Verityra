@@ -47,7 +47,7 @@ export async function sendEvaluationReadyEmail(
       html: `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #0F172A;">
           <div style="background-color: #2A6AED; padding: 20px; border-radius: 12px 12px 0 0; text-align: center;">
-            <h1 style="color: #ffffff; margin: 0; font-size: 20px; font-weight: 700;">Verityra AI Examination Suite</h1>
+            <h1 style="color: #ffffff; margin: 0; font-size: 20px; font-weight: 700;">${config.brandName} AI Examination Suite</h1>
           </div>
           <div style="border: 1px solid #E2E8F0; border-top: none; padding: 24px; border-radius: 0 0 12px 12px; background-color: #ffffff;">
             <h2 style="font-size: 18px; margin-top: 0; color: #0F172A;">Hello ${candidateName},</h2>
@@ -65,7 +65,7 @@ export async function sendEvaluationReadyEmail(
             <div style="text-align: center; margin: 28px 0 16px;">
               <a href="${scorecardUrl}" style="background-color: #2A6AED; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px; display: inline-block;">View Detailed Scorecard</a>
             </div>
-            <p style="font-size: 12px; color: #94A3B8; text-align: center; margin-top: 24px;">Verityra AI Examination Vault · Encrypted Academic Grading</p>
+            <p style="font-size: 12px; color: #94A3B8; text-align: center; margin-top: 24px;">${config.brandName} AI Examination Vault · Encrypted Academic Grading</p>
           </div>
         </div>
       `,

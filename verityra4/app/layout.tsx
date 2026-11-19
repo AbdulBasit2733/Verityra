@@ -8,6 +8,7 @@ import { Toaster } from "@/components/ui/sonner"
 import { cn } from "@/lib/utils"
 import Script from "next/script"
 import { SiteChrome } from "@/components/common/site-chrome"
+import { BRAND_CONFIG } from "@/lib/brand"
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -22,9 +23,8 @@ const inter = Inter({
 })
 
 export const metadata = {
-  title: "Verityra — Premier Subjective Test Series & Evaluation Cloud",
-  description:
-    "A high-integrity subjective test series for authentic pen-and-paper practice, rubric feedback, and three-attempt diagnostic mastery.",
+  title: BRAND_CONFIG.title,
+  description: BRAND_CONFIG.description,
 }
 
 export default function RootLayout({

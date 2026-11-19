@@ -41,46 +41,27 @@ export function TestCatalogMobile({ items }: { items: TestCatalogItem[] }) {
           )}
         </div>
         <div className="flex gap-2 overflow-x-auto pb-1">
-          <Button
-            type="button"
-            variant={state.categoryFilter === "ALL" ? "secondary" : "outline"}
-            size="sm"
-            className="shrink-0"
-            onClick={() => state.setCategoryFilter("ALL")}
-          >
-            All exams
-          </Button>
-          <Button
-            type="button"
-            variant={state.categoryFilter === "UPSC" ? "secondary" : "outline"}
-            size="sm"
-            className="shrink-0"
-            onClick={() => state.setCategoryFilter("UPSC")}
-          >
-            UPSC
-          </Button>
-          <Button
-            type="button"
-            variant={
-              state.categoryFilter === "STATE_PCS" ? "secondary" : "outline"
-            }
-            size="sm"
-            className="shrink-0"
-            onClick={() => state.setCategoryFilter("STATE_PCS")}
-          >
-            State PCS
-          </Button>
-          <Button
-            type="button"
-            variant={
-              state.categoryFilter === "JUDICIARY" ? "secondary" : "outline"
-            }
-            size="sm"
-            className="shrink-0"
-            onClick={() => state.setCategoryFilter("JUDICIARY")}
-          >
-            Judiciary
-          </Button>
+          {[
+            ["ALL", "All streams"],
+            ["SCHOOL_BOARDS", "Boards"],
+            ["NEET", "NEET-UG"],
+            ["JEE", "JEE"],
+            ["FOUNDATION_OLYMPIADS", "Olympiads & NTSE"],
+            ["UGC_NET_ENGLISH", "UGC NET & English"],
+          ].map(([value, label]) => (
+            <Button
+              key={value}
+              type="button"
+              variant={
+                state.categoryFilter === value ? "secondary" : "outline"
+              }
+              size="sm"
+              className="shrink-0"
+              onClick={() => state.setCategoryFilter(value)}
+            >
+              {label}
+            </Button>
+          ))}
         </div>
       </div>
       <div className="flex items-center justify-between gap-2 border-y border-border py-3">

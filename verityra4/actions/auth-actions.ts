@@ -16,6 +16,7 @@ import {
   resolvePersistedAdminActor,
 } from "@/lib/auth-guard"
 import { checkRateLimit } from "@/lib/rate-limit"
+import { BRAND_CONFIG } from "@/lib/brand"
 import {
   sendPasswordChangedEmail,
   sendPasswordResetEmail,
@@ -649,12 +650,12 @@ export async function getStudentProfileAction(): Promise<
       success: true,
       data: {
         name: user.name || "Candidate",
-        email: user.email || "student@verityra.com",
+        email: user.email || BRAND_CONFIG.defaultCandidateEmail,
         educationLevel: "Graduate / Aspirant",
         institution: "State University",
         phoneNumber: "+91 98765 43210",
-        targetExam: "UPSC CSE Mains / State PCS",
-        bio: "Focused on GS Paper I & II and public administration optional.",
+        targetExam: "CBSE / NEET-UG / JEE Preparation",
+        bio: "Preparing across Board exams, science concepts, and structured test series.",
         createdAt: new Date().toISOString(),
       },
     }
@@ -715,7 +716,7 @@ export async function getAdminProfileAction(): Promise<
       success: true,
       data: {
         name: user.name || "System Administrator",
-        email: user.email || "admin@verityra.com",
+        email: user.email || BRAND_CONFIG.defaultAdminEmail,
         role: "ADMIN",
         phoneNumber: "+91 11 2345 6789",
         bio: "Lead Controller of Examinations and Evaluation Reviewer.",

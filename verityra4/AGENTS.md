@@ -54,6 +54,7 @@ Whenever completing non-trivial tasks, the agent MUST generate or update the fol
   - **10%**: High-contrast `#2A6AED` focal points (primary CTA buttons, active tabs, key metric highlights).
 - **Candidate Isolation**: Evaluation rubrics, model prompts, and internal moderator notes are strictly isolated from candidate-facing queries and endpoints.
 - **Attempt Ceiling**: The 3-attempt ceiling per test registration is strictly enforced and compensated only on terminal system failures.
+- **Institute & Academic Domain Scope**: This platform belongs to **I Zone Coaching Classes** (`Izone`), Chhatrapati Sambhajinagar — covering **Jr. KG to Class XII (CBSE, ICSE, State Board)**, **Foundation (VI–X)**, **NEET-UG**, **JEE (Main & Advanced)**, **NTSE & Olympiads**, **UGC NET**, and **English Grammar / Spoken English** (`I Zone Training Academy`), conducting **online free and paid test series** and distributing **free and paid question papers**. Never add UPSC, State PCS, Judicial Services, or SSC government exam copy (`docs/company/izone-company-profile.md`, `docs/company/platform-overview.md`).
 - **Evidence Before Assertion**: Never state that code is working or verified without executing the actual test/build command and providing real command output.
 
 ---

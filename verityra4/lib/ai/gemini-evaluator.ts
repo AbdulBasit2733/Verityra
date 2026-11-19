@@ -3,6 +3,7 @@ import {
   aiEvaluationResponseSchema,
   AiEvaluationResult,
 } from "./evaluation-schema"
+import { BRAND_CONFIG } from "../brand"
 
 export const DEFAULT_GEMINI_MODEL = "gemini-3.8-flash"
 const CURRENT_FREE_FALLBACK_GEMINI_MODEL = "gemini-3.5-flash-lite"
@@ -67,7 +68,7 @@ export async function evaluateAnswerSheetWithGemini(
     })
 
     const systemPrompt = `
-You are Verityra's expert academic evaluator. Your mission is to impartially, rigorously, and constructively evaluate the student's handwritten answer sheet against the provided question rubric and private evaluation instructions.
+You are ${BRAND_CONFIG.evaluatorPersona}. Your mission is to impartially, rigorously, and constructively evaluate the student's handwritten answer sheet against the provided question rubric and private evaluation instructions.
 
 STRICT EVALUATION PRINCIPLES:
 1. Adhere strictly to the Private Evaluation Instructions and Marking Rubric provided below.

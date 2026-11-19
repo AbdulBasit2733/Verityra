@@ -24,6 +24,7 @@ import {
   NavItem,
 } from "@/components/portal/desktop/portal-desktop-layout"
 import { PortalMobileLayout } from "@/components/portal/mobile/portal-mobile-layout"
+import { BRAND_CONFIG } from "@/lib/brand"
 
 const DesktopCommandPalette = dynamic(
   () =>
@@ -175,7 +176,9 @@ export function PortalShell({
   const displayEmail =
     userEmail ||
     session?.user?.email ||
-    (role === "ADMIN" ? "admin@verityra.com" : "candidate@verityra.com")
+    (role === "ADMIN"
+      ? BRAND_CONFIG.defaultAdminEmail
+      : BRAND_CONFIG.defaultCandidateEmail)
 
   function isItemActive(item: NavItem) {
     if (item.exact) {

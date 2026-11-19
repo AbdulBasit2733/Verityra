@@ -20,7 +20,7 @@ function AccordionItem({ className, ...props }: AccordionPrimitive.Item.Props) {
     <AccordionPrimitive.Item
       data-slot="accordion-item"
       className={cn(
-        "group/item data-[open]:shadow-card-hover rounded-2xl border border-slate-200/80 bg-white px-4 shadow-card transition-all duration-200 hover:border-blue-200 data-[open]:border-[#2A6AED]/50 sm:px-6",
+        "group/item data-[open]:shadow-sm rounded-md border border-slate-200/80 bg-white px-4 shadow-none transition-colors duration-200 hover:border-blue-200 data-[open]:border-[#2A6AED]/50 sm:px-6",
         className
       )}
       {...props}
@@ -44,7 +44,7 @@ function AccordionTrigger({
         {...props}
       >
         {children}
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 transition-all duration-200 group-hover/trigger:bg-[#EFF6FF] group-hover/trigger:text-[#2A6AED] group-data-[panel-open]/trigger:rotate-180 group-data-[panel-open]/trigger:bg-[#2A6AED] group-data-[panel-open]/trigger:text-white">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-sm bg-slate-100 text-slate-500 transition-[transform,background-color,color] duration-200 group-hover/trigger:bg-[#EFF6FF] group-hover/trigger:text-[#2A6AED] group-data-[panel-open]/trigger:rotate-180 group-data-[panel-open]/trigger:bg-[#2A6AED] group-data-[panel-open]/trigger:text-white">
           <ChevronDownIcon className="h-4 w-4 transition-transform duration-200" />
         </span>
       </AccordionPrimitive.Trigger>

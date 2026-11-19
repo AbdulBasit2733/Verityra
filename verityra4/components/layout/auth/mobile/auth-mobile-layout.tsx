@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { ArrowLeft, BookOpen, ShieldCheck } from "lucide-react"
+import { BRAND_CONFIG } from "@/lib/brand"
 
 export interface AuthMobileLayoutProps {
   title: string
@@ -22,13 +23,13 @@ export function AuthMobileLayout({
         <Link
           href="/"
           className="group inline-flex min-h-11 items-center gap-2.5 rounded-lg pr-2 focus-visible:ring-2 focus-visible:ring-[#2A6AED] focus-visible:outline-none"
-          aria-label="Verityra home"
+          aria-label={`${BRAND_CONFIG.name} home`}
         >
           <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#2A6AED] text-white shadow-md shadow-blue-600/20 transition-colors group-hover:bg-[#1E55C7]">
             <BookOpen aria-hidden="true" className="h-5 w-5" />
           </span>
           <span className="font-heading text-xl font-extrabold tracking-[-0.05em] text-slate-950 dark:text-white">
-            Verityra
+            {BRAND_CONFIG.name}
           </span>
         </Link>
         <Link

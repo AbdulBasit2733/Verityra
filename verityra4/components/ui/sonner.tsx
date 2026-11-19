@@ -114,7 +114,7 @@ export function Toaster({
           <div
             key={item.id}
             className={cn(
-              "pointer-events-auto flex animate-in items-start justify-between gap-3 rounded-xl border border-border bg-popover p-3.5 text-popover-foreground shadow-xl transition-all duration-200 fade-in slide-in-from-bottom-2",
+              "pointer-events-auto flex animate-in items-start justify-between gap-3 rounded-md border border-border bg-popover p-3.5 text-popover-foreground shadow-sm transition-[opacity,transform] duration-200 fade-in slide-in-from-bottom-2",
               item.variant === "error" &&
                 "border-red-300 dark:border-red-800/70",
               item.variant === "success" &&
@@ -139,7 +139,7 @@ export function Toaster({
             <button
               type="button"
               onClick={() => dismissToast(item.id)}
-              className="shrink-0 rounded-lg p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="shrink-0 rounded-sm p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               aria-label="Dismiss notification"
             >
               <X className="h-3.5 w-3.5" />

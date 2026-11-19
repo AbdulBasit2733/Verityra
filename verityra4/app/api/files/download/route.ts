@@ -5,6 +5,7 @@ import { prisma, isDatabaseConnected } from "@/lib/prisma"
 import { getSupabase } from "@/lib/supabase"
 import fs from "fs"
 import path from "path"
+import { BRAND_CONFIG } from "@/lib/brand"
 
 const LOCAL_STORAGE_DIR = path.join(process.cwd(), "uploads")
 const SAMPLES_DIR = path.join(process.cwd(), "public", "samples")
@@ -18,7 +19,7 @@ function generateFallbackPdf(
     "BT",
     "/F1 15 Tf",
     "50 740 Td",
-    "(VERITYRA EXAMINATION PLATFORM) Tj",
+    `(${BRAND_CONFIG.name.toUpperCase().replace(/[()\\]/g, "")} EXAMINATION PLATFORM) Tj`,
     "/F1 11 Tf",
     "0 -22 Td",
     `(${title.replace(/[()\\]/g, "")}) Tj`,
@@ -370,7 +371,7 @@ export async function GET(req: NextRequest) {
         const category = fileType.toUpperCase()
         fileBuffer = generateFallbackPdf(
           title,
-          `Verityra ${category} Document`,
+          `${BRAND_CONFIG.name} ${category} Document`,
           [
             "Official examination material prepared for authorized candidate usage.",
             "Ensure answers are numbered clearly and written within designated margins.",

@@ -23,6 +23,7 @@ import {
   Trophy,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { BRAND_CONFIG } from "@/lib/brand"
 import { NavItem } from "../desktop/portal-desktop-layout"
 
 export interface PortalMobileLayoutProps {
@@ -59,14 +60,16 @@ export function PortalMobileLayout({
     userName || (role === "ADMIN" ? "Administrator" : "Candidate")
   const displayEmail =
     userEmail ||
-    (role === "ADMIN" ? "admin@verityra.com" : "candidate@verityra.com")
+    (role === "ADMIN"
+      ? BRAND_CONFIG.defaultAdminEmail
+      : BRAND_CONFIG.defaultCandidateEmail)
   const initials =
     displayName
       .split(" ")
       .map((part) => part[0])
       .join("")
       .slice(0, 2)
-      .toUpperCase() || "VT"
+      .toUpperCase() || BRAND_CONFIG.monogram
 
   // Primary bottom dock navigation destinations
   const dockNavItems =
@@ -115,11 +118,11 @@ export function PortalMobileLayout({
             className="flex min-w-0 items-center gap-2"
           >
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary text-sm font-extrabold text-primary-foreground shadow-xs">
-              V
+              {BRAND_CONFIG.initials}
             </div>
             <div className="min-w-0 truncate">
               <span className="block truncate font-heading text-sm leading-tight font-bold tracking-tight text-slate-900 dark:text-white">
-                Verityra
+                {BRAND_CONFIG.name}
               </span>
               <span className="block text-[10px] leading-none font-semibold tracking-wider text-[#2A6AED] uppercase dark:text-blue-400">
                 {role === "ADMIN" ? "Admin" : "Candidate"}
@@ -191,11 +194,11 @@ export function PortalMobileLayout({
                   className="flex items-center gap-2.5"
                 >
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#2A6AED] text-base font-extrabold text-white shadow-xs">
-                    V
+                    {BRAND_CONFIG.initials}
                   </div>
                   <div>
                     <span className="block font-heading text-sm leading-tight font-bold text-slate-900 dark:text-white">
-                      Verityra
+                      {BRAND_CONFIG.name}
                     </span>
                     <span className="text-[10px] font-bold tracking-wider text-[#2A6AED] uppercase dark:text-blue-400">
                       {role === "ADMIN" ? "Admin Suite" : "Candidate Suite"}

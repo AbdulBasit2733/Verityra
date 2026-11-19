@@ -4,6 +4,7 @@ import {
   TestCatalogClient,
   TestCatalogItem,
 } from "@/components/test-catalog-client"
+import { BRAND_CONFIG } from "@/lib/brand"
 
 export const revalidate = 300
 
@@ -43,46 +44,60 @@ export default async function TestsCatalogPage() {
   if (testSeriesList.length === 0) {
     testSeriesList = [
       {
-        id: "demo-upsc-mains-1",
-        title: "UPSC Civil Services General Studies Paper I Mock",
-        slug: "upsc-gs-1",
+        id: "demo-neet-ug-biology",
+        title: "NEET-UG Biology & Chemistry Full-Syllabus Mock Series",
+        slug: "neet-ug-biology-chemistry-mock",
         description:
-          "Standard 20-question mock simulating real CSE Mains examination. Focus on Indian Heritage, History, Geography, and Society.",
+          "Free full-length NTA-pattern medical entrance diagnostic test covering Human Physiology, Genetics, Organic Chemistry, and Chemical Bonding.",
         price: 0,
-        maxMarks: 250,
+        maxMarks: 360,
         durationMinutes: 180,
         maxAttempts: 3,
         studentInstructions:
-          "Write answers using black/blue ballpoint pen. Maintain margin constraints. Clearly label Question numbers.",
+          "Write structured solutions clearly within margins. Label question numbers and balance all chemical equations.",
         createdAt: new Date().toISOString(),
       },
       {
-        id: "demo-state-psc-essay",
-        title: "State PSC Advanced Essay & Analytical Writing",
-        slug: "state-psc-essay",
+        id: "demo-jee-main-pcm",
+        title: "JEE Main Physics & Mathematics Diagnostic Test Series",
+        slug: "jee-main-physics-maths-diagnostic",
         description:
-          "In-depth essay module assessing thematic depth, structural flow, coherence, and analytical rigor under 3-hour examination format.",
+          "Step-by-step problem-solving test series covering Mechanics, Electromagnetism, Calculus, and Coordinate Geometry for JEE Main & Advanced.",
         price: 49900, // INR 499.00
-        maxMarks: 150,
+        maxMarks: 300,
         durationMinutes: 180,
         maxAttempts: 3,
         studentInstructions:
-          "Choose two themes. Word limit: 1000 words per essay. Strict presentation guidelines apply.",
+          "Show all intermediate derivations and final numerical units clearly. Maintain clean margins on both sides.",
         createdAt: new Date(Date.now() - 86400000).toISOString(),
       },
       {
-        id: "demo-judiciary-paper",
-        title: "Judicial Services Criminal & Civil Law Practice Paper",
-        slug: "judiciary-law-practice",
+        id: "demo-foundation-olympiad",
+        title: "Foundation (Class VIII–X) NTSE & Science Olympiad Series",
+        slug: "foundation-ntse-science-olympiad",
         description:
-          "Problem-based procedural law questions evaluating case-law synthesis, factual framing, and statutory citation accuracy.",
-        price: 69900, // INR 699.00
-        maxMarks: 200,
-        durationMinutes: 180,
+          "Analytical aptitude, Science Olympiad, and NTSE Stage-I/II foundation series for Class VI–X CBSE, ICSE, and State Board learners.",
+        price: 29900, // INR 299.00
+        maxMarks: 100,
+        durationMinutes: 120,
         maxAttempts: 3,
         studentInstructions:
-          "Handwrite precise legal solutions. Cite relevant sections of IPC/CrPC/CPC wherever applicable.",
+          "Show logical reasoning steps for MAT questions and neat labeled diagrams for Science problems.",
         createdAt: new Date(Date.now() - 172800000).toISOString(),
+      },
+      {
+        id: "demo-english-grammar",
+        title: "English Grammar, Comprehension & Composition Mastery Series",
+        slug: "english-grammar-composition-mastery",
+        description:
+          "Free grammar and writing practice series covering Tenses, Clauses, Transformation of Sentences, Formal Letters, and Unseen Comprehension.",
+        price: 0,
+        maxMarks: 100,
+        durationMinutes: 90,
+        maxAttempts: 3,
+        studentInstructions:
+          "Write complete sentences in neat handwriting and respect word limits on composition tasks.",
+        createdAt: new Date(Date.now() - 259200000).toISOString(),
       },
       {
         id: "demo-class-10-maths",
@@ -180,15 +195,16 @@ export default async function TestsCatalogPage() {
         <div className="mx-auto max-w-7xl space-y-8 px-4 sm:px-6 lg:px-8">
           <div className="space-y-3">
             <Badge className="border border-blue-200 bg-blue-50 px-3.5 py-1 text-xs font-bold text-[#2A6AED] dark:border-blue-900 dark:bg-blue-950/60 dark:text-blue-400">
-              Official Examination Catalog
+              {BRAND_CONFIG.instituteName} · Online Test Portal
             </Badge>
             <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl dark:text-slate-100">
-              Subjective Test Series Catalog
+              Free &amp; Paid Online Test Series
             </h1>
             <p className="max-w-2xl text-sm leading-relaxed text-slate-600 sm:text-base dark:text-slate-400">
-              Explore official examination papers, download standardized margin
-              templates, review detailed guidelines, and practice with 3
-              dedicated attempts.
+              Browse online test series for CBSE, ICSE &amp; State Board (Jr.
+              KG–XII), NEET-UG, JEE (Main &amp; Advanced), NTSE &amp; Olympiads,
+              UGC NET, and English Grammar — practice with structured booklets
+              and 3 dedicated attempts.
             </p>
           </div>
 

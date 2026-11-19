@@ -28,12 +28,30 @@ export function useTestCatalogState(items: TestCatalogItem[]) {
         (pricingFilter === "FREE" ? item.price === 0 : item.price > 0)
       const matchesCategory =
         categoryFilter === "ALL" ||
-        (categoryFilter === "UPSC" &&
-          (categoryText.includes("upsc") || categoryText.includes("civil"))) ||
-        (categoryFilter === "STATE_PCS" &&
-          (categoryText.includes("state") || categoryText.includes("pcs"))) ||
-        (categoryFilter === "JUDICIARY" &&
-          (categoryText.includes("judic") || categoryText.includes("law")))
+        (categoryFilter === "SCHOOL_BOARDS" &&
+          (categoryText.includes("cbse") ||
+            categoryText.includes("icse") ||
+            categoryText.includes("isc") ||
+            categoryText.includes("state board") ||
+            categoryText.includes("class ") ||
+            categoryText.includes("board") ||
+            categoryText.includes("kg") ||
+            categoryText.includes("primary"))) ||
+        (categoryFilter === "NEET" &&
+          (categoryText.includes("neet") ||
+            categoryText.includes("biology") ||
+            categoryText.includes("medical"))) ||
+        (categoryFilter === "JEE" &&
+          (categoryText.includes("jee") || categoryText.includes("iit"))) ||
+        (categoryFilter === "FOUNDATION_OLYMPIADS" &&
+          (categoryText.includes("foundation") ||
+            categoryText.includes("olympiad") ||
+            categoryText.includes("ntse"))) ||
+        (categoryFilter === "UGC_NET_ENGLISH" &&
+          (categoryText.includes("ugc") ||
+            categoryText.includes("net") ||
+            categoryText.includes("english") ||
+            categoryText.includes("grammar")))
       return matchesSearch && matchesPrice && matchesCategory
     })
     return result.sort((a, b) => {

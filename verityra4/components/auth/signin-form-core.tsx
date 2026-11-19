@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Eye, EyeOff, Loader2, ArrowRight } from "lucide-react"
 import { resolvePostLoginTarget } from "@/lib/auth-guard"
+import { BRAND_CONFIG } from "@/lib/brand"
 
 export interface SignInFormCoreProps {
   isMobile?: boolean
@@ -98,7 +99,7 @@ export function SignInFormCore({ isMobile }: SignInFormCoreProps) {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="candidate@verityra.com"
+            placeholder={BRAND_CONFIG.defaultCandidateEmail}
             disabled={loading}
             className="auth-control h-11 bg-transparent text-sm"
           />

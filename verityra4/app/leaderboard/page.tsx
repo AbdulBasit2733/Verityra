@@ -1,6 +1,7 @@
 import { getCachedLeaderboard } from "@/lib/cache"
 import { LeaderboardClient } from "@/components/leaderboard-client"
 import { Trophy } from "lucide-react"
+import { BRAND_CONFIG } from "@/lib/brand"
 
 // Enable ISR with 5-minute revalidation (matches cache TTL)
 export const revalidate = 300
@@ -27,7 +28,7 @@ export default async function LeaderboardPage() {
           <header className="flex flex-col items-center justify-center space-y-4">
             <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/[0.07] px-3.5 py-2 text-xs font-bold tracking-[0.14em] text-primary uppercase">
               <Trophy className="h-4 w-4" aria-hidden />
-              Verityra rankings
+              {BRAND_CONFIG.name} rankings
             </div>
             <h1 className="text-center font-heading text-4xl font-extrabold tracking-[-0.04em] text-foreground sm:text-6xl">
               Progress worth putting on record.

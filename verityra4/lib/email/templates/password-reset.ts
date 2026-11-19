@@ -1,4 +1,5 @@
 import type { RenderedEmailTemplate } from "../types"
+import { BRAND_CONFIG } from "../../brand"
 import { escapeHtml, renderBaseEmailLayout } from "./base-layout"
 
 export interface PasswordResetTemplateProps {
@@ -13,12 +14,13 @@ export function renderPasswordResetEmail({
   expiresInMinutes = 60,
 }: PasswordResetTemplateProps): RenderedEmailTemplate {
   const safeName = name ? escapeHtml(name) : "Candidate"
-  const subject = "Reset your Verityra password"
+  const safeBrand = escapeHtml(BRAND_CONFIG.name)
+  const subject = `Reset your ${BRAND_CONFIG.name} password`
 
   const bodyHtml = `
     <p style="margin:0 0 14px 0;">Hello <strong>${safeName}</strong>,</p>
     <p style="margin:0 0 14px 0;">
-      We received a request to reset the password for your Verityra candidate account. Click the button below to choose a new password:
+      We received a request to reset the password for your ${safeBrand} candidate account. Click the button below to choose a new password:
     </p>
     <div style="margin:18px 0;padding:12px 16px;border-radius:12px;background-color:#FFFBEB;border:1px solid #FDE68A;color:#92400E;font-size:13px;">
       <strong>Security Notice:</strong> This password reset link is valid for <strong>${expiresInMinutes} minutes</strong> and can only be used once.
@@ -26,7 +28,7 @@ export function renderPasswordResetEmail({
   `
 
   const html = renderBaseEmailLayout({
-    preheader: `Reset your Verityra password (valid for ${expiresInMinutes} minutes).`,
+    preheader: `Reset your ${BRAND_CONFIG.name} password (valid for ${expiresInMinutes} minutes).`,
     badgeText: "Account Security",
     heading: "Reset your password",
     bodyHtml,
@@ -39,7 +41,7 @@ export function renderPasswordResetEmail({
   const text = [
     `Hello ${name || "Candidate"},`,
     "",
-    "We received a request to reset the password for your Verityra account.",
+    `We received a request to reset the password for your ${BRAND_CONFIG.name} account.`,
     `Reset your password using the link below (valid for ${expiresInMinutes} minutes):`,
     resetUrl,
     "",

@@ -46,10 +46,18 @@ export function TestCatalogDesktop({ items }: { items: TestCatalogItem[] }) {
                   <SelectValue placeholder="All exams" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ALL">All examination streams</SelectItem>
-                  <SelectItem value="UPSC">UPSC Civil Services</SelectItem>
-                  <SelectItem value="STATE_PCS">State PCS Mains</SelectItem>
-                  <SelectItem value="JUDICIARY">Judicial Services</SelectItem>
+                  <SelectItem value="ALL">All exam streams</SelectItem>
+                  <SelectItem value="SCHOOL_BOARDS">
+                    CBSE / ICSE / State Board
+                  </SelectItem>
+                  <SelectItem value="NEET">NEET-UG</SelectItem>
+                  <SelectItem value="JEE">JEE (Main &amp; Adv)</SelectItem>
+                  <SelectItem value="FOUNDATION_OLYMPIADS">
+                    Foundation &amp; Olympiads
+                  </SelectItem>
+                  <SelectItem value="UGC_NET_ENGLISH">
+                    UGC NET &amp; English
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -17,6 +17,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, ArrowLeft, CheckCircle2 } from "lucide-react"
 import { requestPasswordResetAction } from "@/actions/auth-actions"
 import { AuthPageFrame } from "@/components/layout/auth/auth-page-frame"
+import { BRAND_CONFIG } from "@/lib/brand"
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("")
@@ -60,10 +61,10 @@ export default function ForgotPasswordPage() {
           className="group mb-6 inline-flex items-center justify-center gap-3"
         >
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#2A6AED] to-[#1D4ED8] text-2xl font-black text-white shadow-lg shadow-blue-500/25 transition-transform group-hover:scale-105">
-            V
+            {BRAND_CONFIG.initials}
           </div>
           <span className="font-heading text-3xl font-black tracking-tight text-slate-900 transition-colors group-hover:text-[#2A6AED] dark:text-white">
-            Verityra
+            {BRAND_CONFIG.name}
           </span>
         </Link>
         <h2 className="text-center text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl dark:text-white">

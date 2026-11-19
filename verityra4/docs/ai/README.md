@@ -19,6 +19,8 @@ git diff --check
 
 ## Reference index
 
+- `../company/izone-company-profile.md`: I Zone Coaching Classes profile, location, timings, courses, and exclusions.
+- `../company/platform-overview.md`: Izone online test series & question paper platform scope and architecture.
 - `feature-boundaries.md`: authorization and business invariants.
 - `debugging-runbook.md`: reproduce, diagnose, repair, and verify.
 - `ui-ux-playbook.md`: visual and accessibility requirements.

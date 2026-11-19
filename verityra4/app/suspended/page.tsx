@@ -5,6 +5,7 @@ import { signOut } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Ban, LogOut } from "lucide-react"
 import { AuthPageFrame } from "@/components/layout/auth/auth-page-frame"
+import { BRAND_CONFIG, getSupportMailto } from "@/lib/brand"
 
 export default function SuspendedPage() {
   return (
@@ -33,10 +34,10 @@ export default function SuspendedPage() {
             If you believe this suspension is in error or wish to appeal, please
             contact the examination controller desk at{" "}
             <a
-              href="mailto:support@verityra.com"
+              href={getSupportMailto()}
               className="font-semibold text-[#2A6AED] underline"
             >
-              support@verityra.com
+              {BRAND_CONFIG.supportEmail}
             </a>
             .
           </p>

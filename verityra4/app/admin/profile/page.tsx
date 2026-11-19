@@ -1,6 +1,7 @@
 import { requireAdmin } from "@/lib/auth-guard"
 import { getAdminProfileAction } from "@/actions/auth-actions"
 import { AdminProfileClient } from "@/components/admin/profile/admin-profile-client"
+import { BRAND_CONFIG } from "@/lib/brand"
 
 export const dynamic = "force-dynamic"
 
@@ -13,7 +14,7 @@ export default async function AdminProfilePage() {
       ? profileResult.data
       : {
           name: user.name || "Administrator",
-          email: user.email || "admin@verityra.com",
+          email: user.email || BRAND_CONFIG.defaultAdminEmail,
           role: "ADMIN",
           phoneNumber: "",
           bio: "",

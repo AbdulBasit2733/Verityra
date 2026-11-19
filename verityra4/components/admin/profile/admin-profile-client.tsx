@@ -12,6 +12,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { useConfirm } from "@/components/providers/confirm-dialog-provider"
 import { useGlobalError } from "@/components/providers/error-dialog-provider"
 import { toast } from "@/components/ui/sonner"
+import { BRAND_CONFIG } from "@/lib/brand"
 import {
   Loader2,
   User,
@@ -61,7 +62,7 @@ export function AdminProfileClient({ initialData }: AdminProfileProps) {
   const [savingPassword, setSavingPassword] = React.useState(false)
 
   const displayName = name || initialData.name || "Administrator"
-  const displayEmail = initialData.email || "admin@verityra.com"
+  const displayEmail = initialData.email || BRAND_CONFIG.defaultAdminEmail
   const initials =
     displayName
       .split(" ")
@@ -331,7 +332,7 @@ export function AdminProfileClient({ initialData }: AdminProfileProps) {
                 id="adminBio"
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
-                placeholder="Controller of Examinations, Lead Evaluator for Public Administration, UPSC GS Paper I Reviewer..."
+                placeholder="Academic Director, Senior Science Faculty, Board & NEET/JEE Test Evaluator..."
                 rows={4}
                 className="rounded-lg border-slate-200 bg-white text-xs sm:text-sm"
               />
@@ -488,7 +489,7 @@ export function AdminProfileClient({ initialData }: AdminProfileProps) {
               Core Platform Business Invariants
             </h3>
             <p className="text-xs text-[#64748B]">
-              Every administrative action is bound by Verityra&apos;s
+              Every administrative action is bound by {BRAND_CONFIG.name}&apos;s
               architectural and domain invariants.
             </p>
           </div>

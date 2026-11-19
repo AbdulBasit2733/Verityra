@@ -767,9 +767,8 @@ export function ExamWorkspaceTimer({
             </SheetTitle>
 
             <SheetDescription className="text-xs leading-relaxed text-muted-foreground">
-              Authentic UPSC CSE subjective examination simulation with
-              real-time countdown, phase progression, and document scanning
-              buffer.
+              Authentic timed subjective examination simulation with real-time
+              countdown, phase progression, and document scanning buffer.
             </SheetDescription>
           </SheetHeader>
 
@@ -1022,7 +1021,7 @@ export function ExamWorkspaceTimer({
               </div>
             )}
 
-            {/* UPSC Booklet & Margin Guidelines */}
+            {/* Exam Booklet & Margin Guidelines */}
             <div className="space-y-1.5 rounded-xl border border-border/80 bg-muted/30 p-3.5 text-xs">
               <p className="font-bold text-foreground">
                 Exam Writing Directives:

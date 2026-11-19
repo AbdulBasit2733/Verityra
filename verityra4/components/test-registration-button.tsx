@@ -16,6 +16,7 @@ import {
   createRazorpayOrderAction,
   verifyPaymentAndRegisterAction,
 } from "@/actions/registration-actions"
+import { BRAND_CONFIG } from "@/lib/brand"
 
 declare global {
   interface Window {
@@ -229,7 +230,7 @@ export function TestRegistrationButton({
           key: keyId,
           amount,
           currency,
-          name: "Verityra",
+          name: BRAND_CONFIG.name,
           description: testTitle,
           order_id: orderId,
           prefill: {

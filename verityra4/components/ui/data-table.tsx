@@ -300,7 +300,7 @@ export function DataTable<T>({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-xl border border-border bg-card shadow-card",
+        "overflow-hidden rounded-md border border-border bg-card shadow-none",
         className
       )}
     >
@@ -309,7 +309,7 @@ export function DataTable<T>({
           Row 1: Search input + Column Selector + Toolbar Actions
           Row 2: Dropdown filters + Date Picker + Reset Filters
       ========================================================================= */}
-      <div className="space-y-3 border-b border-border bg-card p-4 sm:p-5">
+      <div className="space-y-3 border-b border-border p-4 sm:p-5">
         {/* Tier 1: Search & Right Tools */}
         <div className="flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-center">
           <div className="relative max-w-2xl flex-1">
@@ -321,7 +321,7 @@ export function DataTable<T>({
                 setCurrentPage(1)
               }}
               placeholder={searchPlaceholder}
-              className="h-10 rounded-lg border-border bg-muted/50 pr-9 pl-10 text-xs shadow-none focus-visible:border-primary focus-visible:ring-primary/20 sm:text-sm"
+              className="h-10 rounded-md border-border bg-muted/50 pr-9 pl-10 text-xs shadow-none focus-visible:border-primary focus-visible:ring-primary/20 sm:text-sm"
             />
             {searchQuery && (
               <button
@@ -340,7 +340,7 @@ export function DataTable<T>({
 
           <div className="flex shrink-0 items-center justify-between gap-2 sm:justify-end">
             {/* View Mode Switcher: [ ▦ Grid | ▤ Table ] */}
-            <div className="inline-flex items-center rounded-xl border border-slate-200 bg-slate-100/70 p-0.5 shadow-2xs dark:border-slate-800 dark:bg-slate-950/70">
+            <div className="inline-flex items-center rounded-md border border-slate-200 bg-slate-100/70 p-0.5 shadow-2xs dark:border-slate-800 dark:bg-slate-950/70">
               <button
                 type="button"
                 onClick={() =>
@@ -348,7 +348,7 @@ export function DataTable<T>({
                 }
                 title="Grid Card View (Default on Mobile)"
                 className={cn(
-                  "inline-flex h-8 cursor-pointer items-center justify-center rounded-lg px-2.5 text-xs font-semibold transition-all",
+                  "inline-flex h-8 cursor-pointer items-center justify-center rounded-sm px-2.5 text-xs font-semibold transition-colors",
                   viewMode === "grid"
                     ? "!bg-white !text-[#2A6AED] !shadow-2xs dark:!bg-slate-800 dark:!text-blue-400"
                     : viewMode === "auto"
@@ -366,7 +366,7 @@ export function DataTable<T>({
                 }
                 title="Table List View (Default on Desktop)"
                 className={cn(
-                  "inline-flex h-8 cursor-pointer items-center justify-center rounded-lg px-2.5 text-xs font-semibold transition-all",
+                  "inline-flex h-8 cursor-pointer items-center justify-center rounded-sm px-2.5 text-xs font-semibold transition-colors",
                   viewMode === "table"
                     ? "!bg-white !text-[#2A6AED] !shadow-2xs dark:!bg-slate-800 dark:!text-blue-400"
                     : viewMode === "auto"
@@ -381,7 +381,7 @@ export function DataTable<T>({
 
             {/* Columns (N/N) Dropdown Selector */}
             <DropdownMenu>
-              <DropdownMenuTrigger className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 text-xs font-semibold text-foreground shadow-none transition-colors outline-none hover:bg-muted sm:h-10 sm:gap-2 sm:px-3.5">
+              <DropdownMenuTrigger className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-xs font-semibold text-foreground shadow-none transition-colors outline-none hover:bg-muted sm:h-10 sm:gap-2 sm:px-3.5">
                 <SlidersHorizontal className="h-3.5 w-3.5 text-slate-500" />
                 <span className="hidden sm:inline">
                   Columns ({visibleColumns.length}/{columns.length})
@@ -391,7 +391,7 @@ export function DataTable<T>({
                 </span>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-52">
-                <DropdownMenuLabel className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
+                <DropdownMenuLabel className="text-[11px] font-bold text-slate-400">
                   Toggle Columns
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
@@ -436,10 +436,10 @@ export function DataTable<T>({
                 <DropdownMenu key={filter.id}>
                   <DropdownMenuTrigger
                     className={cn(
-                      "inline-flex h-9 cursor-pointer items-center gap-2 rounded-xl border px-3 text-xs font-semibold shadow-2xs transition-colors outline-none",
+                      "inline-flex h-9 cursor-pointer items-center gap-2 rounded-md border px-3 text-xs font-semibold shadow-2xs transition-colors outline-none",
                       isFiltered
                         ? "border-primary/30 bg-secondary text-secondary-foreground"
-                        : "border-border bg-card text-foreground hover:bg-muted"
+                        : "border-border bg-background text-foreground hover:bg-muted"
                     )}
                   >
                     <FilterIcon className="h-3.5 w-3.5 shrink-0 opacity-70" />
@@ -451,7 +451,7 @@ export function DataTable<T>({
                     )}
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start" className="w-56">
-                    <DropdownMenuLabel className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
+                    <DropdownMenuLabel className="text-[11px] font-bold text-slate-400">
                       Filter by {filter.label}
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />

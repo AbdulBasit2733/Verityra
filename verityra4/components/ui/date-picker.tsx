@@ -145,7 +145,7 @@ export function DateFilterPicker({
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger
           className={cn(
-            "inline-flex h-9 cursor-pointer items-center gap-2 rounded-lg border px-3 text-xs font-semibold transition-colors outline-none",
+            "inline-flex h-9 cursor-pointer items-center gap-2 rounded-md border px-3 text-xs font-semibold transition-colors outline-none",
             isActive
               ? "border-blue-200 bg-[#EFF6FF] text-[#2A6AED]"
               : "border-slate-200/90 bg-white text-slate-700 hover:bg-slate-50"
@@ -178,7 +178,7 @@ export function DateFilterPicker({
                   setOpen(false)
                 }}
                 className={cn(
-                  "h-7 cursor-pointer rounded-lg px-2.5 text-left text-[11px] font-semibold transition-colors",
+                  "h-7 cursor-pointer rounded-sm px-2.5 text-left text-[11px] font-semibold transition-colors",
                   value.preset === preset.id
                     ? "bg-[#2A6AED] text-white"
                     : "bg-slate-50 text-slate-700 hover:bg-slate-100"
@@ -194,7 +194,7 @@ export function DateFilterPicker({
             <button
               type="button"
               onClick={handlePrevMonth}
-              className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50"
+              className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-sm border border-slate-200 text-slate-600 hover:bg-slate-50"
               aria-label="Previous month"
             >
               <ChevronLeft className="h-3.5 w-3.5" />
@@ -205,7 +205,7 @@ export function DateFilterPicker({
             <button
               type="button"
               onClick={handleNextMonth}
-              className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50"
+              className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-sm border border-slate-200 text-slate-600 hover:bg-slate-50"
               aria-label="Next month"
             >
               <ChevronRight className="h-3.5 w-3.5" />
@@ -240,7 +240,7 @@ export function DateFilterPicker({
                   type="button"
                   onClick={() => selectSpecificDay(day)}
                   className={cn(
-                    "mx-auto flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-xs font-medium transition-colors",
+                    "mx-auto flex h-7 w-7 cursor-pointer items-center justify-center rounded-sm text-xs font-medium transition-colors",
                     isSelected
                       ? "bg-[#2A6AED] font-bold text-white"
                       : "text-slate-700 hover:bg-[#EFF6FF] hover:text-[#2A6AED]"
@@ -258,7 +258,7 @@ export function DateFilterPicker({
         <button
           type="button"
           onClick={() => onChange({ preset: "ALL", selectedDate: null })}
-          className="flex h-9 w-8 cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-400 hover:text-slate-700"
+          className="flex h-9 w-8 cursor-pointer items-center justify-center rounded-md border border-slate-200 bg-white text-slate-400 hover:text-slate-700"
           aria-label="Clear date filter"
         >
           <X className="h-3.5 w-3.5" />

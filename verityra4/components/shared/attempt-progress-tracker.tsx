@@ -88,7 +88,7 @@ export function AttemptProgressTracker({
             <div className="flex flex-col items-center gap-1">
               <div
                 className={cn(
-                  "flex items-center justify-center rounded-full transition-all",
+                  "flex items-center justify-center rounded-sm transition-colors",
                   state === "completed" &&
                     "h-8 w-8 bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300",
                   state === "available" &&

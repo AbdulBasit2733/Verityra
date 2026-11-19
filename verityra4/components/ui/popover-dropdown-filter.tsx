@@ -70,7 +70,7 @@ export function PopoverDropdownFilter({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
         className={cn(
-          "inline-flex h-10 cursor-pointer items-center justify-between gap-2 rounded-xl border px-3 text-xs font-semibold shadow-xs transition-all outline-none select-none",
+          "inline-flex h-10 cursor-pointer items-center justify-between gap-2 rounded-md border px-3 text-xs font-semibold shadow-xs transition-colors outline-none select-none",
           isActive
             ? "border-[#BFD5FA] bg-[#EFF6FF] text-[#145DEB] hover:bg-[#E4F0FF]"
             : "border-[#DCE7FA] bg-white text-[#071B3A] hover:border-[#BFD5FA] hover:bg-[#F1F6FF]",
@@ -106,7 +106,7 @@ export function PopoverDropdownFilter({
                 }
               }}
               title={`Clear ${title} filter`}
-              className="flex h-4 w-4 items-center justify-center rounded-full text-[#145DEB] transition-colors hover:bg-blue-200/60"
+              className="flex h-4 w-4 items-center justify-center rounded-sm text-[#145DEB] transition-colors hover:bg-blue-200/60"
             >
               <X className="h-3 w-3" />
             </span>
@@ -120,7 +120,7 @@ export function PopoverDropdownFilter({
         align="start"
         sideOffset={6}
         className={cn(
-          "rounded-2xl border-[#DCE7FA] bg-white p-2 shadow-xl",
+          "rounded-md border-[#DCE7FA] bg-white p-2 shadow-sm",
           width
         )}
       >
@@ -132,7 +132,7 @@ export function PopoverDropdownFilter({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={searchPlaceholder}
-            className="h-8 w-full rounded-lg border border-[#DCE7FA] bg-[#F1F6FF]/60 pr-7 pl-8 text-xs text-[#071B3A] outline-none placeholder:text-slate-400 focus:border-[#145DEB]"
+            className="h-8 w-full rounded-md border border-[#DCE7FA] bg-[#F1F6FF]/60 pr-7 pl-8 text-xs text-[#071B3A] outline-none placeholder:text-slate-400 focus:border-[#145DEB]"
           />
           {search && (
             <button
@@ -153,7 +153,7 @@ export function PopoverDropdownFilter({
               type="button"
               onClick={() => handleSelectOption("ALL")}
               className={cn(
-                "flex w-full cursor-pointer items-center justify-between rounded-lg px-2.5 py-2 text-left transition-colors",
+                "flex w-full cursor-pointer items-center justify-between rounded-sm px-2.5 py-2 text-left transition-colors",
                 selectedValue === "ALL" || !selectedValue
                   ? "bg-[#EFF6FF] font-bold text-[#145DEB]"
                   : "text-slate-700 hover:bg-[#F1F6FF]"
@@ -177,7 +177,7 @@ export function PopoverDropdownFilter({
                   type="button"
                   onClick={() => handleSelectOption(option.value)}
                   className={cn(
-                    "group flex w-full cursor-pointer items-center justify-between rounded-lg px-2.5 py-2 text-left transition-colors",
+                    "group flex w-full cursor-pointer items-center justify-between rounded-sm px-2.5 py-2 text-left transition-colors",
                     isSelected
                       ? "bg-[#EFF6FF] font-bold text-[#145DEB]"
                       : "text-slate-700 hover:bg-[#F1F6FF]"

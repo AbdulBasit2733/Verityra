@@ -57,7 +57,7 @@ function PaginationLink({
       data-slot="pagination-link"
       data-active={isActive}
       className={cn(
-        "inline-flex h-8 min-w-8 cursor-pointer items-center justify-center rounded-lg px-2.5 text-xs font-semibold transition-colors outline-none select-none disabled:pointer-events-none disabled:opacity-50",
+        "inline-flex h-8 min-w-8 cursor-pointer items-center justify-center rounded-sm px-2.5 text-xs font-semibold transition-colors outline-none select-none disabled:pointer-events-none disabled:opacity-50",
         isActive
           ? "bg-primary text-primary-foreground shadow-2xs"
           : "border border-border bg-card text-foreground hover:bg-muted hover:text-foreground",
@@ -191,7 +191,7 @@ export function GlobalPagination({
             >
               <SelectTrigger
                 size="sm"
-                className="h-8 rounded-lg border-slate-200 bg-white px-2.5 text-xs dark:border-slate-800 dark:bg-slate-900"
+                className="h-8 rounded-md border-slate-200 bg-white px-2.5 text-xs dark:border-slate-800 dark:bg-slate-900"
               >
                 <SelectValue />
               </SelectTrigger>
@@ -215,7 +215,7 @@ export function GlobalPagination({
           size="sm"
           disabled={currentPage <= 1}
           onClick={() => onPageChange(Math.max(1, currentPage - 1))}
-          className="h-8 rounded-lg border-slate-200 px-3 text-xs font-semibold dark:border-slate-800"
+          className="h-8 rounded-md border-slate-200 px-3 text-xs font-semibold dark:border-slate-800"
         >
           <ChevronLeft className="mr-1 h-3.5 w-3.5" />
           Previous
@@ -233,7 +233,7 @@ export function GlobalPagination({
           onClick={() =>
             onPageChange(Math.min(safeTotalPages, currentPage + 1))
           }
-          className="h-8 rounded-lg border-slate-200 px-3 text-xs font-semibold dark:border-slate-800"
+          className="h-8 rounded-md border-slate-200 px-3 text-xs font-semibold dark:border-slate-800"
         >
           Next
           <ChevronRight className="ml-1 h-3.5 w-3.5" />

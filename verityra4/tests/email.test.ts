@@ -11,6 +11,7 @@ import {
   renderVerifyEmail,
 } from "../lib/email"
 import { checkRateLimit } from "../lib/rate-limit"
+import { BRAND_CONFIG } from "../lib/brand"
 
 export function runEmailTests() {
   const suite = new TestSuite(
@@ -42,7 +43,11 @@ export function runEmailTests() {
         expiresInMinutes: 60,
       })
 
-      assert.equal(rendered.subject, "Reset your Verityra password")
+      assert.equal(
+        rendered.subject,
+        `Reset your ${BRAND_CONFIG.name} password`
+      )
+      assert.ok(rendered.html.includes(BRAND_CONFIG.name))
       assert.ok(rendered.html.includes(resetUrl))
       assert.ok(rendered.html.includes("Aarav Sharma"))
       assert.ok(rendered.html.includes("#2A6AED"))
@@ -63,6 +68,8 @@ export function runEmailTests() {
       })
 
       assert.ok(rendered.subject.includes("Verify your email address"))
+      assert.ok(rendered.subject.includes(BRAND_CONFIG.name))
+      assert.ok(rendered.html.includes(BRAND_CONFIG.name))
       assert.ok(rendered.html.includes("Priya &lt;Admin&gt;"))
       assert.ok(!rendered.html.includes("Priya <Admin>"))
       assert.ok(rendered.html.includes("24 hours"))
@@ -80,6 +87,8 @@ export function runEmailTests() {
       })
 
       assert.ok(rendered.subject.includes("Security Alert"))
+      assert.ok(rendered.subject.includes(BRAND_CONFIG.name))
+      assert.ok(rendered.html.includes(BRAND_CONFIG.name))
       assert.ok(rendered.html.includes(signInUrl))
       assert.ok(rendered.text.includes(signInUrl))
     }

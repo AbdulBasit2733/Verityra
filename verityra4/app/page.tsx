@@ -1,5 +1,6 @@
 import { ExamPathsSection } from "@/components/landing/exam-paths-section"
 import { HeroSection } from "@/components/landing/hero-section"
+import { InstituteHighlightsSection } from "@/components/landing/institute-highlights-section"
 import { PreparationSection } from "@/components/landing/preparation-section"
 import { ProgressSection } from "@/components/landing/progress-section"
 
@@ -12,6 +13,7 @@ export default function HomePage() {
         <HeroSection />
         <PreparationSection />
         <ExamPathsSection />
+        <InstituteHighlightsSection />
         <ProgressSection />
       </main>
     </div>
