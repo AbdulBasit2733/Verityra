@@ -59,13 +59,13 @@ export function EvaluationQuestionCard({
         />
       </div>
       {question.missingConcepts && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+        <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
           <p className="font-semibold">Missing concepts</p>
           <p className="mt-1">{question.missingConcepts}</p>
         </div>
       )}
       {(!question.isLegible || question.isUncertain) && (
-        <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+        <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
           <AlertTriangle
             className="mt-0.5 h-4 w-4 shrink-0"
             aria-hidden="true"
@@ -113,7 +113,7 @@ function FeedbackBlock({
 }) {
   return (
     <div className="space-y-1.5">
-      <p className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-muted-foreground uppercase">
+      <p className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground">
         <Icon className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
         {label}
       </p>

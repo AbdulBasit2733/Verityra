@@ -11,7 +11,7 @@ export default async function LeaderboardPage() {
 
   return (
     <main className="min-h-screen bg-background">
-      <div className="relative overflow-hidden bg-[radial-gradient(circle_at_88%_0%,rgb(42_106_237/0.14),transparent_34%)]">
+      <div className="relative overflow-x-clip bg-[radial-gradient(circle_at_88%_0%,rgb(42_106_237/0.14),transparent_34%)]">
         <div
           aria-hidden
           className="pointer-events-none absolute top-12 -right-24 h-72 w-72 rounded-full border border-primary/10 bg-primary/[0.04]"
@@ -26,7 +26,7 @@ export default async function LeaderboardPage() {
         />
         <div className="ui-page relative space-y-10 py-8 sm:space-y-12 sm:py-12 lg:py-16">
           <header className="flex flex-col items-center justify-center space-y-4">
-            <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/[0.07] px-3.5 py-2 text-xs font-bold tracking-[0.14em] text-primary uppercase">
+            <div className="inline-flex items-center gap-2 rounded-sm border border-primary/20 bg-primary/[0.07] px-3 py-1.5 text-xs font-semibold text-primary">
               <Trophy className="h-4 w-4" aria-hidden />
               {BRAND_CONFIG.name} rankings
             </div>

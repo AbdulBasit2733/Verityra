@@ -33,10 +33,10 @@ function Progress({
       <div
         data-slot="progress-indicator"
         className={cn(
-          "h-full rounded-full bg-[#2A6AED] transition-[width] duration-300",
+          "h-full w-full origin-left rounded-full bg-[#2A6AED] motion-safe:transition-transform motion-reduce:transition-none duration-300",
           indicatorClassName
         )}
-        style={{ width: `${percentage}%` }}
+        style={{ transform: `scaleX(${percentage / 100})` }}
       />
     </div>
   )

@@ -17,7 +17,7 @@ export default function AdminPaymentsLoading() {
         {Array.from({ length: 4 }).map((_, i) => (
           <div
             key={i}
-            className="space-y-2 rounded-xl border border-border/60 bg-card p-4"
+            className="space-y-2 rounded-md border border-border/60 bg-card p-4"
           >
             <Skeleton className="h-4 w-24" />
             <Skeleton className="h-7 w-20" />
@@ -26,7 +26,7 @@ export default function AdminPaymentsLoading() {
       </div>
 
       {/* Table skeleton */}
-      <div className="overflow-hidden rounded-xl border border-border/80 bg-card">
+      <div className="overflow-hidden rounded-md border border-border/80 bg-card">
         <div className="flex h-12 items-center justify-between border-b border-border bg-slate-50/80 px-6">
           <Skeleton className="h-4 w-28" />
           <Skeleton className="h-4 w-24" />
@@ -44,7 +44,7 @@ export default function AdminPaymentsLoading() {
                 <Skeleton className="h-3 w-48" />
               </div>
               <Skeleton className="h-5 w-20" />
-              <Skeleton className="h-6 w-24 rounded-full" />
+              <Skeleton className="h-6 w-24 rounded-sm" />
               <Skeleton className="h-8 w-16" />
             </div>
           ))}

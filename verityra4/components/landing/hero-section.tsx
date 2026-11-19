@@ -182,11 +182,11 @@ export function HeroSection() {
           <figcaption className="mt-2.5 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600">
             <span className="inline-flex items-center gap-1.5 font-semibold text-slate-800">
               <PenLine aria-hidden="true" className="h-3.5 w-3.5 text-[#2A6AED]" />
-              Free &amp; Paid Test Series · Online exams &amp; question papers
+              Free &amp; Paid Test Series, Online Exams &amp; Question Papers
             </span>
             <span className="inline-flex items-center gap-1.5 font-semibold text-slate-700">
               <CheckCircle2 aria-hidden="true" className="h-3.5 w-3.5 text-emerald-600" />
-              {BRAND_CONFIG.contact.rating}★ Rated Institute · Chhatrapati Sambhajinagar
+              {BRAND_CONFIG.contact.rating}★ Rated Institute, Chhatrapati Sambhajinagar
             </span>
           </figcaption>
         </figure>

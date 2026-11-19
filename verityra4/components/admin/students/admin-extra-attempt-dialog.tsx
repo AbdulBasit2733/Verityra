@@ -88,11 +88,11 @@ export function AdminExtraAttemptDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger className="inline-flex h-8 cursor-pointer items-center justify-center rounded-lg border border-amber-300 bg-white px-3 text-xs font-semibold text-amber-800 transition-colors outline-none hover:bg-amber-50">
+      <DialogTrigger className="inline-flex h-8 cursor-pointer items-center justify-center rounded-md border border-amber-300 bg-white px-3 text-xs font-semibold text-amber-800 transition-colors outline-none hover:bg-amber-50">
         <PlusCircle className="mr-1 h-3.5 w-3.5" />
         Override Limit
       </DialogTrigger>
-      <DialogContent className="rounded-2xl border-slate-200 bg-white p-6 shadow-2xl sm:max-w-md">
+      <DialogContent className="rounded-md border-slate-200 bg-white p-6 shadow-sm sm:max-w-md">
         <form onSubmit={handleGrant}>
           <DialogHeader className="space-y-2">
             <DialogTitle className="flex items-center gap-2 text-base font-bold text-[#0F172A]">
@@ -121,7 +121,7 @@ export function AdminExtraAttemptDialog({
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="e.g. Approved re-submission due to verified scanner blur on attempt 2"
-              className="h-10 rounded-lg border-slate-200 bg-white text-xs sm:text-sm"
+              className="h-10 rounded-md border-slate-200 bg-white text-xs sm:text-sm"
             />
           </div>
 
@@ -131,7 +131,7 @@ export function AdminExtraAttemptDialog({
               variant="outline"
               size="sm"
               onClick={() => setOpen(false)}
-              className="h-9 rounded-lg border-slate-200 px-4 text-slate-700"
+              className="h-9 rounded-md border-slate-200 px-4 text-slate-700"
             >
               Cancel
             </Button>
@@ -139,7 +139,7 @@ export function AdminExtraAttemptDialog({
               type="submit"
               size="sm"
               disabled={loading || !reason.trim()}
-              className="h-9 rounded-lg bg-amber-600 px-4 font-semibold text-white hover:bg-amber-700"
+              className="h-9 rounded-md bg-amber-600 px-4 font-semibold text-white hover:bg-amber-700"
             >
               {loading ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

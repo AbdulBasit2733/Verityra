@@ -229,7 +229,7 @@ export function DesktopCommandPalette({
 
   return (
     <CommandDialog open={open} onOpenChange={onOpenChange}>
-      <Command className="rounded-xl border border-border shadow-lg">
+      <Command className="rounded-md border border-border shadow-sm">
         <div className="flex items-center border-b border-border px-3">
           <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
           <CommandInput
@@ -240,9 +240,9 @@ export function DesktopCommandPalette({
             }
             value={searchQuery}
             onValueChange={setSearchQuery}
-            className="flex h-12 w-full rounded-lg bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex h-12 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
           />
-          <kbd className="pointer-events-none ml-auto hidden h-6 items-center gap-1 rounded border border-border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 select-none sm:flex">
+          <kbd className="pointer-events-none ml-auto hidden h-6 items-center gap-1 rounded-sm border border-border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 select-none sm:flex">
             ESC
           </kbd>
         </div>
@@ -262,9 +262,9 @@ export function DesktopCommandPalette({
                       key={command.href}
                       value={command.label}
                       onSelect={() => handleSelect(command.href)}
-                      className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm aria-selected:bg-accent aria-selected:text-accent-foreground"
+                      className="flex cursor-pointer items-center gap-3 rounded-sm px-3 py-2.5 text-sm aria-selected:bg-accent aria-selected:text-accent-foreground"
                     >
-                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-sm bg-muted">
                         <Icon className="h-4 w-4 text-muted-foreground" />
                       </div>
                       <div className="flex-1">

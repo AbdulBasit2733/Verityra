@@ -194,7 +194,7 @@ export function AdminTestDocumentForms({
             <Input
               value={paperTitle}
               onChange={(e) => setPaperTitle(e.target.value)}
-              className="mt-1 h-10 rounded-lg border-slate-200 bg-white text-xs sm:text-sm"
+              className="mt-1 h-10 rounded-md border-slate-200 bg-white text-xs sm:text-sm"
             />
           </div>
 
@@ -206,7 +206,7 @@ export function AdminTestDocumentForms({
               type="file"
               accept=".pdf,image/jpeg,image/png,image/webp"
               onChange={(e) => setPaperFile(e.target.files?.[0] || null)}
-              className="mt-1 h-10 rounded-lg border-slate-200 bg-white text-xs sm:text-sm"
+              className="mt-1 h-10 rounded-md border-slate-200 bg-white text-xs sm:text-sm"
             />
           </div>
 
@@ -219,7 +219,7 @@ export function AdminTestDocumentForms({
               onChange={(e) => setRubricContent(e.target.value)}
               placeholder="Question 1 (10 marks): key points... Question 2 (15 marks): concepts..."
               rows={3}
-              className="mt-1 rounded-lg border-slate-200 bg-white text-xs sm:text-sm"
+              className="mt-1 rounded-md border-slate-200 bg-white text-xs sm:text-sm"
             />
           </div>
 
@@ -227,7 +227,7 @@ export function AdminTestDocumentForms({
             type="button"
             onClick={handlePaperUpload}
             disabled={!paperFile || paperLoading}
-            className="h-10 w-full rounded-lg bg-[#2A6AED] text-xs font-semibold text-white hover:bg-[#1E55C7] sm:text-sm"
+            className="h-10 w-full rounded-md bg-[#2A6AED] text-xs font-semibold text-white hover:bg-[#1E55C7] sm:text-sm"
           >
             {paperLoading ? (
               <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
@@ -263,7 +263,7 @@ export function AdminTestDocumentForms({
             <Input
               value={templateTitle}
               onChange={(e) => setTemplateTitle(e.target.value)}
-              className="mt-1 h-10 rounded-lg border-slate-200 bg-white text-xs sm:text-sm"
+              className="mt-1 h-10 rounded-md border-slate-200 bg-white text-xs sm:text-sm"
             />
           </div>
 
@@ -275,7 +275,7 @@ export function AdminTestDocumentForms({
               type="file"
               accept=".pdf,image/png,image/jpeg,image/webp"
               onChange={(e) => setTemplateFile(e.target.files?.[0] || null)}
-              className="mt-1 h-10 rounded-lg border-slate-200 bg-white text-xs sm:text-sm"
+              className="mt-1 h-10 rounded-md border-slate-200 bg-white text-xs sm:text-sm"
             />
           </div>
 
@@ -285,7 +285,7 @@ export function AdminTestDocumentForms({
               id="templateRequired"
               checked={templateRequired}
               onChange={(e) => setTemplateRequired(e.target.checked)}
-              className="rounded border-slate-300 text-[#2A6AED] focus:ring-[#2A6AED]"
+              className="rounded-sm border-slate-300 text-[#2A6AED] focus:ring-[#2A6AED]"
             />
             <Label
               htmlFor="templateRequired"
@@ -299,7 +299,7 @@ export function AdminTestDocumentForms({
             type="button"
             onClick={handleTemplateUpload}
             disabled={!templateFile || templateLoading}
-            className="h-10 w-full rounded-lg bg-[#2A6AED] text-xs font-semibold text-white hover:bg-[#1E55C7] sm:text-sm"
+            className="h-10 w-full rounded-md bg-[#2A6AED] text-xs font-semibold text-white hover:bg-[#1E55C7] sm:text-sm"
           >
             {templateLoading ? (
               <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
@@ -343,7 +343,7 @@ function AttachedDocumentList({
   template?: boolean
 }) {
   return (
-    <section className="space-y-3 rounded-xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+    <section className="space-y-3 rounded-md border border-slate-200/80 bg-white p-5 shadow-none dark:border-slate-800 dark:bg-slate-900">
       <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
         {title}
       </h3>
@@ -485,7 +485,7 @@ export function AdminPublishToggles({
         onClick={handleTogglePublish}
         disabled={pubLoading}
         variant={isPublished ? "outline" : "default"}
-        className={`h-9 rounded-lg px-3.5 text-xs font-semibold ${
+        className={`h-9 rounded-md px-3.5 text-xs font-semibold ${
           isPublished
             ? "border-amber-300 text-amber-800 hover:bg-amber-50"
             : "bg-emerald-600 text-white hover:bg-emerald-700"
@@ -503,7 +503,7 @@ export function AdminPublishToggles({
         onClick={handleToggleResults}
         disabled={resLoading}
         variant="outline"
-        className={`h-9 rounded-lg px-3.5 text-xs font-semibold ${
+        className={`h-9 rounded-md px-3.5 text-xs font-semibold ${
           resultsPublished
             ? "border-purple-300 text-purple-700 hover:bg-purple-50"
             : "border-[#2A6AED] text-[#2A6AED] hover:bg-blue-50/50"

@@ -39,15 +39,15 @@ function PodiumCard({ entry }: { entry: LeaderboardEntry }) {
   return (
     <li
       className={cn(
-        "relative flex min-h-56 flex-col justify-between overflow-hidden rounded-2xl border p-5 transition-transform duration-200 hover:-translate-y-1 sm:p-6",
+        "relative flex min-h-56 flex-col justify-between overflow-hidden rounded-md border p-5 transition-colors duration-200 sm:p-6",
         first
           ? "ui-ink-surface shadow-panel border-white/10"
-          : "border-border bg-card shadow-card",
+          : "border-border bg-card shadow-none",
         order
       )}
     >
       {first && (
-        <div className="absolute top-4 right-4 rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold tracking-[0.14em] text-blue-200 uppercase">
+        <div className="absolute top-4 right-4 rounded-sm bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-blue-200">
           Top rank
         </div>
       )}

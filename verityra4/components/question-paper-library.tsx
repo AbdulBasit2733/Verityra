@@ -192,18 +192,17 @@ export function QuestionPaperLibrary({
       {/* 2-Column Catalog Workspace */}
       <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[250px_minmax(0,1fr)]">
         {/* Left Sticky Filter Sidebar */}
-        <aside className="sticky top-24 hidden space-y-5 lg:block">
+        <aside className="sticky top-24 hidden space-y-4 lg:block">
           <div>
-            <p className="text-[11px] font-bold tracking-[0.16em] text-slate-500 uppercase">
+            <p className="text-xs font-semibold text-slate-500">
               Document Library
             </p>
-            <h2 className="mt-1 font-heading text-lg font-bold text-[#071B3A]">
+            <h2 className="mt-0.5 font-heading text-lg font-bold text-[#071B3A]">
               Filter Catalog
             </h2>
           </div>
 
-          <Card className="border-[#DCE7FA] bg-white shadow-xs">
-            <CardContent className="space-y-4 p-4">
+          <div className="space-y-4 border-t border-[#DCE7FA] pt-4">
               {/* Unified Popover Filters in Sidebar */}
               <div className="space-y-1.5">
                 <PopoverDropdownFilter
@@ -212,7 +211,7 @@ export function QuestionPaperLibrary({
                   options={streamOptions}
                   selectedValue={streamFilter}
                   onSelect={setStreamFilter}
-                  searchPlaceholder="Search SSC, CBSE, NEET, JEE..."
+                  searchPlaceholder="Search CBSE, NEET, JEE..."
                   allLabel="All Examination Streams"
                   className="w-full"
                 />
@@ -250,7 +249,7 @@ export function QuestionPaperLibrary({
 
               {/* Stream Quick Links List */}
               <div className="border-t border-[#DCE7FA] pt-3">
-                <p className="mb-2 text-[11px] font-bold tracking-wider text-slate-400 uppercase">
+                <p className="mb-2 text-xs font-semibold text-slate-500">
                   Popular Streams
                 </p>
                 <div className="flex flex-col gap-1">
@@ -276,7 +275,7 @@ export function QuestionPaperLibrary({
                         onClick={() =>
                           setStreamFilter(isSelected ? "ALL" : stream)
                         }
-                        className={`flex cursor-pointer items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-xs font-medium transition-colors ${
+                        className={`flex cursor-pointer items-center justify-between rounded-sm px-2.5 py-1.5 text-left text-xs font-medium transition-colors ${
                           isSelected
                             ? "bg-[#EFF6FF] font-bold text-[#145DEB]"
                             : "text-slate-600 hover:bg-[#F1F6FF] hover:text-[#071B3A]"
@@ -319,8 +318,7 @@ export function QuestionPaperLibrary({
                   <RotateCcw className="mr-1.5 h-3.5 w-3.5" /> Reset all filters
                 </Button>
               )}
-            </CardContent>
-          </Card>
+          </div>
         </aside>
 
         {/* Right Main Catalog Content */}
@@ -382,7 +380,7 @@ export function QuestionPaperLibrary({
                 options={streamOptions}
                 selectedValue={streamFilter}
                 onSelect={setStreamFilter}
-                searchPlaceholder="Search SSC, CBSE, NEET, JEE..."
+                searchPlaceholder="Search CBSE, NEET, JEE..."
                 allLabel="All Streams"
               />
 
@@ -449,15 +447,15 @@ export function QuestionPaperLibrary({
               {paginatedPapers.map((paper) => (
                 <Card
                   key={paper.id}
-                  className="flex h-full flex-col border-[#DCE7FA] bg-white shadow-xs transition-all duration-200 hover:-translate-y-1 hover:shadow-md"
+                  className="flex h-full flex-col border-[#DCE7FA] bg-white shadow-none transition-colors hover:border-[#2A6AED]"
                 >
                   <CardHeader className="gap-2.5 p-5 pb-3">
                     <div className="flex items-start justify-between gap-2">
-                      <Badge className="rounded-full border border-[#BFD5FA]/60 bg-[#F1F6FF] text-[10px] font-bold tracking-wide text-[#145DEB] uppercase">
+                      <Badge className="rounded-sm border border-[#BFD5FA]/80 bg-[#F1F6FF] text-[11px] font-semibold text-[#145DEB]">
                         {paper.category}
                       </Badge>
                       {paper.year && (
-                        <span className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-500">
+                        <span className="rounded-sm bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-500">
                           {paper.year}
                         </span>
                       )}
@@ -473,7 +471,7 @@ export function QuestionPaperLibrary({
                   </CardHeader>
 
                   <CardContent className="mt-auto px-5 py-3">
-                    <div className="grid grid-cols-2 gap-2.5 rounded-xl border border-[#DCE7FA]/70 bg-[#F1F6FF]/50 p-2.5 text-xs text-slate-600">
+                    <div className="grid grid-cols-2 gap-2.5 border-t border-[#DCE7FA]/80 pt-3 text-xs text-slate-600">
                       <span className="flex items-center gap-1.5 font-semibold text-[#071B3A]">
                         <Award className="h-3.5 w-3.5 text-[#145DEB]" />{" "}
                         {paper.maxMarks} Marks
@@ -492,14 +490,14 @@ export function QuestionPaperLibrary({
                     </div>
                   </CardContent>
 
-                  <CardFooter className="flex flex-col gap-2 rounded-b-xl border-t border-[#DCE7FA] bg-slate-50/40 p-4">
+                  <CardFooter className="flex flex-col gap-2 rounded-b-md border-t border-[#DCE7FA] p-4">
                     <div className="flex w-full gap-2">
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
                         onClick={() => setPreviewPaper(paper)}
-                        className="flex-1 rounded-xl border-[#DCE7FA] text-xs font-semibold text-[#145DEB] hover:bg-[#F1F6FF]"
+                        className="flex-1 rounded-md border-[#DCE7FA] text-xs font-semibold text-[#145DEB] hover:bg-[#F1F6FF]"
                       >
                         <Eye className="mr-1.5 h-3.5 w-3.5" /> Preview
                       </Button>
@@ -511,7 +509,7 @@ export function QuestionPaperLibrary({
                       >
                         <Button
                           size="sm"
-                          className="w-full rounded-xl bg-[#145DEB] text-xs font-semibold text-white shadow-xs hover:bg-[#0F4DC7]"
+                          className="w-full rounded-md bg-[#145DEB] text-xs font-semibold text-white shadow-xs hover:bg-[#0F4DC7]"
                         >
                           <Download className="mr-1.5 h-3.5 w-3.5" /> Download
                         </Button>
@@ -529,7 +527,7 @@ export function QuestionPaperLibrary({
               ))}
             </div>
           ) : (
-            <div className="rounded-2xl border border-dashed border-[#DCE7FA] bg-white p-12 text-center">
+            <div className="rounded-md border border-dashed border-[#DCE7FA] bg-white p-12 text-center">
               <Search className="mx-auto mb-3 h-10 w-10 text-slate-300" />
               <h3 className="text-base font-bold text-[#071B3A]">
                 No matching question papers
@@ -541,7 +539,7 @@ export function QuestionPaperLibrary({
               <Button
                 variant="outline"
                 size="sm"
-                className="mt-4 rounded-xl border-[#DCE7FA] text-xs font-semibold"
+                className="mt-4 rounded-md border-[#DCE7FA] text-xs font-semibold"
                 onClick={handleResetFilters}
               >
                 Reset all filters

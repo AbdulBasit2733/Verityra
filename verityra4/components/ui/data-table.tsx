@@ -501,7 +501,7 @@ export function DataTable<T>({
                 variant="ghost"
                 size="sm"
                 onClick={resetAllFilters}
-                className="h-9 rounded-xl px-2.5 text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-slate-100"
+                className="h-9 rounded-md px-2.5 text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-slate-100"
               >
                 <RotateCcw className="mr-1 h-3.5 w-3.5" />
                 Reset
@@ -542,7 +542,7 @@ export function DataTable<T>({
                 variant="outline"
                 size="sm"
                 onClick={resetAllFilters}
-                className="mt-2 h-8 rounded-lg px-3 text-xs font-semibold"
+                className="mt-2 h-8 rounded-md px-3 text-xs font-semibold"
               >
                 <RotateCcw className="mr-1.5 h-3 w-3" />
                 Clear all filters
@@ -580,12 +580,12 @@ export function DataTable<T>({
               return (
                 <div
                   key={keyExtractor(row)}
-                  className="space-y-3 rounded-xl border border-border bg-card p-4 shadow-none"
+                  className="space-y-3 rounded-md border border-border bg-background p-4 shadow-none"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-2">
                       {showSerialNumber && (
-                        <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-[11px] font-bold text-slate-500 dark:bg-slate-800">
+                        <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-sm bg-slate-100 text-[11px] font-bold text-slate-500 dark:bg-slate-800">
                           #{serialNumber}
                         </span>
                       )}
@@ -653,7 +653,7 @@ export function DataTable<T>({
             <TableRow className="border-b border-border bg-muted/50 hover:bg-muted/70">
               {/* Sr. Column Header matching reference screenshots */}
               {showSerialNumber && (
-                <TableHead className="h-11 w-14 px-4 text-center text-[11px] font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
+                <TableHead className="h-11 w-14 px-4 text-center text-[11px] font-bold text-slate-500 dark:text-slate-400">
                   Sr.
                 </TableHead>
               )}
@@ -663,7 +663,7 @@ export function DataTable<T>({
                   <TableHead
                     key={col.id}
                     className={cn(
-                      "h-11 px-4 text-[11px] font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400",
+                      "h-11 px-4 text-[11px] font-bold text-slate-500 dark:text-slate-400",
                       col.headerClassName
                     )}
                   >
@@ -672,7 +672,7 @@ export function DataTable<T>({
                         type="button"
                         onClick={() => handleSort(col.id)}
                         className={cn(
-                          "inline-flex cursor-pointer items-center gap-1.5 tracking-wider uppercase transition-colors select-none hover:text-slate-900 dark:hover:text-slate-100",
+                          "inline-flex cursor-pointer items-center gap-1.5 transition-colors select-none hover:text-slate-900 dark:hover:text-slate-100",
                           isSorted &&
                             "font-bold text-[#2A6AED] dark:text-blue-400"
                         )}
@@ -716,7 +716,7 @@ export function DataTable<T>({
                         variant="outline"
                         size="sm"
                         onClick={resetAllFilters}
-                        className="mt-2 h-8 rounded-lg px-3 text-xs font-semibold"
+                        className="mt-2 h-8 rounded-md px-3 text-xs font-semibold"
                       >
                         <RotateCcw className="mr-1.5 h-3 w-3" />
                         Clear all filters
@@ -766,7 +766,7 @@ export function DataTable<T>({
       {/* =========================================================================
           GLOBAL PAGINATION FOOTER
       ========================================================================= */}
-      <div className="border-t border-border bg-card px-4 py-3.5 sm:px-5">
+      <div className="border-t border-border px-4 py-3.5 sm:px-5">
         <GlobalPagination
           currentPage={currentPage}
           totalPages={Math.max(1, Math.ceil(sortedData.length / pageSize))}

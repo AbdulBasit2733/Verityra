@@ -97,17 +97,17 @@ export function PortalMobileLayout({
         ]
 
   return (
-    <div className="flex min-h-screen w-full flex-col overflow-x-hidden bg-background text-foreground lg:hidden">
+    <div className="flex min-h-screen w-full flex-col overflow-x-clip bg-background text-foreground lg:hidden">
       {/* =========================================================
           1. MOBILE & TABLET STICKY TOPBAR (Screens S & M: < 1024px)
       ========================================================= */}
-      <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-border bg-card/95 px-4 backdrop-blur-md sm:px-6">
+      <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-border bg-card px-4 sm:px-6">
         {/* Left: Drawer Toggle Button & Brand Icon */}
         <div className="flex min-w-0 items-center gap-2.5">
           <button
             type="button"
             onClick={() => setDrawerOpen(true)}
-            className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border bg-card text-foreground shadow-2xs transition-colors hover:bg-muted"
+            className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-md border border-border bg-background text-foreground shadow-2xs transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none"
             aria-label="Open navigation menu"
           >
             <Menu className="h-5 w-5" />
@@ -115,16 +115,16 @@ export function PortalMobileLayout({
 
           <Link
             href={role === "ADMIN" ? "/admin" : "/student/dashboard"}
-            className="flex min-w-0 items-center gap-2"
+            className="flex min-w-0 items-center gap-2 rounded-md focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none"
           >
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary text-sm font-extrabold text-primary-foreground shadow-xs">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary text-sm font-extrabold text-primary-foreground shadow-xs">
               {BRAND_CONFIG.initials}
             </div>
             <div className="min-w-0 truncate">
               <span className="block truncate font-heading text-sm leading-tight font-bold tracking-tight text-slate-900 dark:text-white">
                 {BRAND_CONFIG.name}
               </span>
-              <span className="block text-[10px] leading-none font-semibold tracking-wider text-[#2A6AED] uppercase dark:text-blue-400">
+              <span className="block text-[10px] leading-none font-semibold text-[#2A6AED] dark:text-blue-400">
                 {role === "ADMIN" ? "Admin" : "Candidate"}
               </span>
             </div>
@@ -137,7 +137,7 @@ export function PortalMobileLayout({
           <button
             type="button"
             onClick={() => setCommandPaletteOpen(true)}
-            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-2xs transition-colors hover:bg-slate-50 active:scale-95 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 shadow-2xs transition-colors hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
             aria-label="Open search command palette"
           >
             <Search className="h-4 w-4" />
@@ -152,7 +152,7 @@ export function PortalMobileLayout({
                   "All evaluation queues and security audits are up to date.",
               })
             }}
-            className="relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-2xs transition-colors hover:bg-slate-50 active:scale-95 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+            className="relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 shadow-2xs transition-colors hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
             aria-label="View notifications"
           >
             <Bell className="h-4 w-4" />
@@ -177,30 +177,30 @@ export function PortalMobileLayout({
       ========================================================= */}
       {drawerOpen && (
         <div className="fixed inset-0 z-50 flex">
-          {/* Backdrop Blur */}
+          {/* Backdrop */}
           <div
-            className="animate-fade-in fixed inset-0 bg-slate-950/60 backdrop-blur-xs transition-opacity"
+            className="motion-safe:animate-fade-in fixed inset-0 bg-slate-950/60 transition-opacity motion-reduce:transition-none"
             onClick={() => setDrawerOpen(false)}
           />
 
           {/* Drawer Panel */}
-          <div className="animate-slide-in-left relative z-10 flex h-full w-[300px] max-w-[85vw] flex-col justify-between border-r border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+          <div className="motion-safe:animate-slide-in-left relative z-10 flex h-full w-[300px] max-w-[85vw] flex-col justify-between border-r border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div>
               {/* Drawer Top Header */}
               <div className="flex h-16 items-center justify-between border-b border-slate-200/80 px-4 dark:border-slate-800">
                 <Link
                   href={role === "ADMIN" ? "/admin" : "/student/dashboard"}
                   onClick={() => setDrawerOpen(false)}
-                  className="flex items-center gap-2.5"
+                  className="flex items-center gap-2.5 rounded-md focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none"
                 >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#2A6AED] text-base font-extrabold text-white shadow-xs">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-md bg-[#2A6AED] text-base font-extrabold text-white shadow-xs">
                     {BRAND_CONFIG.initials}
                   </div>
                   <div>
                     <span className="block font-heading text-sm leading-tight font-bold text-slate-900 dark:text-white">
                       {BRAND_CONFIG.name}
                     </span>
-                    <span className="text-[10px] font-bold tracking-wider text-[#2A6AED] uppercase dark:text-blue-400">
+                    <span className="text-[10px] font-bold text-[#2A6AED] dark:text-blue-400">
                       {role === "ADMIN" ? "Admin Suite" : "Candidate Suite"}
                     </span>
                   </div>
@@ -208,7 +208,7 @@ export function PortalMobileLayout({
                 <button
                   type="button"
                   onClick={() => setDrawerOpen(false)}
-                  className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
+                  className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none dark:hover:bg-slate-800"
                   aria-label="Close navigation menu"
                 >
                   <X className="h-5 w-5" />
@@ -217,7 +217,7 @@ export function PortalMobileLayout({
 
               {/* Drawer Navigation Links */}
               <div className="space-y-1 p-3.5">
-                <p className="px-3 py-1.5 text-[10px] font-bold tracking-wider text-slate-400 uppercase dark:text-slate-500">
+                <p className="px-3 py-1.5 text-[11px] font-semibold text-slate-400 dark:text-slate-500">
                   Navigation
                 </p>
                 {navItems.map((item) => {
@@ -229,7 +229,7 @@ export function PortalMobileLayout({
                       href={item.href}
                       onClick={() => setDrawerOpen(false)}
                       className={cn(
-                        "flex min-h-[44px] items-center justify-between rounded-lg px-3.5 py-2.5 text-xs font-bold transition-colors",
+                        "flex min-h-[44px] items-center justify-between rounded-md px-3.5 py-2.5 text-xs font-bold transition-colors",
                         active
                           ? "bg-primary text-primary-foreground shadow-xs"
                           : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800/80"
@@ -253,7 +253,7 @@ export function PortalMobileLayout({
               </div>
 
               {/* Security Pill */}
-              <div className="mx-3 flex items-center gap-2 rounded-xl border border-slate-200/70 bg-slate-50 px-4 py-2 text-[11px] text-slate-500 dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-400">
+              <div className="mx-3 flex items-center gap-2 rounded-sm border border-slate-200/70 bg-slate-50 px-4 py-2 text-[11px] text-slate-500 dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-400">
                 <ShieldCheck className="h-4 w-4 shrink-0 text-[#2A6AED] dark:text-blue-400" />
                 <span>
                   {role === "ADMIN"
@@ -288,7 +288,7 @@ export function PortalMobileLayout({
                 <Link
                   href="/"
                   onClick={() => setDrawerOpen(false)}
-                  className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2 text-[11px] font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                  className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-slate-200 bg-white px-2 text-[11px] font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
                 >
                   <ExternalLink className="h-3.5 w-3.5" />
                   Public Site
@@ -296,7 +296,7 @@ export function PortalMobileLayout({
                 <button
                   type="button"
                   onClick={handleSignOut}
-                  className="inline-flex h-9 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-2 text-[11px] font-semibold text-red-600 dark:border-red-900 dark:bg-red-950/40 dark:text-red-400"
+                  className="inline-flex h-9 cursor-pointer items-center justify-center gap-1.5 rounded-md border border-red-200 bg-red-50 px-2 text-[11px] font-semibold text-red-600 dark:border-red-900 dark:bg-red-950/40 dark:text-red-400"
                 >
                   <LogOut className="h-3.5 w-3.5" />
                   Sign Out
@@ -320,7 +320,7 @@ export function PortalMobileLayout({
       ========================================================= */}
       <nav
         aria-label="Mobile Bottom Navigation"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200/80 bg-white/95 px-3 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-lg shadow-slate-900/5 backdrop-blur-lg sm:px-6 dark:border-slate-800 dark:bg-slate-900/95"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200/80 bg-white px-3 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-sm sm:px-6 dark:border-slate-800 dark:bg-slate-900"
       >
         <div className="mx-auto flex max-w-md items-center justify-around">
           {dockNavItems.map((item) => {
@@ -333,15 +333,15 @@ export function PortalMobileLayout({
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex min-h-[48px] min-w-[56px] cursor-pointer flex-col items-center justify-center gap-0.5 rounded-lg px-3 py-1 text-center transition-colors",
+                  "flex min-h-[48px] min-w-[56px] cursor-pointer flex-col items-center justify-center gap-0.5 rounded-md px-3 py-1 text-center transition-colors",
                   active
-                    ? "bg-[#2A6AED] font-bold text-white shadow-sm"
+                    ? "bg-[#2A6AED] font-bold text-white shadow-xs"
                     : "font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
                 )}
               >
                 <div
                   className={cn(
-                    "flex h-7 w-7 items-center justify-center rounded-lg transition-colors",
+                    "flex h-7 w-7 items-center justify-center rounded-sm transition-colors",
                     active ? "bg-white/15 text-white" : ""
                   )}
                 >

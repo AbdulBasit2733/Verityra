@@ -38,7 +38,7 @@ export function DownloadResourceGroup({
     <section className="space-y-3">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-lg font-bold text-foreground">{group.testTitle}</h2>
-        <span className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+        <span className="text-xs font-semibold text-muted-foreground">
           {group.resources.length} files
         </span>
       </div>

@@ -145,7 +145,7 @@ export function AdminTestSeriesClient({
       sortAccessor: (t) => t.price,
       cell: (t) =>
         t.price === 0 ? (
-          <Badge className="rounded-full border-0 bg-emerald-600 px-2 py-0.5 text-[10px] font-bold text-white">
+          <Badge className="rounded-sm border-0 bg-emerald-600 px-2 py-0.5 text-[10px] font-bold text-white">
             FREE
           </Badge>
         ) : (
@@ -164,8 +164,8 @@ export function AdminTestSeriesClient({
           variant="outline"
           className={
             t.status === "PUBLISHED"
-              ? "rounded-full border-emerald-200 bg-emerald-50 text-[11px] font-semibold text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-400"
-              : "rounded-full border-slate-200 bg-slate-50 text-[11px] font-semibold text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400"
+              ? "rounded-sm border-emerald-200 bg-emerald-50 text-[11px] font-semibold text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-400"
+              : "rounded-sm border-slate-200 bg-slate-50 text-[11px] font-semibold text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400"
           }
         >
           {t.status}
@@ -324,7 +324,7 @@ export function AdminTestSeriesClient({
         subtitle="Viewing: All Online Test Series & Evaluation Rubrics"
       >
         <Link href="/admin/test-series/new">
-          <Button className="h-10 rounded-xl bg-[#2A6AED] px-4 text-xs font-semibold text-white shadow-xs hover:bg-[#1E55C7] sm:text-sm">
+          <Button className="h-10 rounded-md bg-[#2A6AED] px-4 text-xs font-semibold text-white shadow-xs hover:bg-[#1E55C7] sm:text-sm">
             <Plus className="mr-1.5 h-4 w-4" />
             Create Test Series
           </Button>
@@ -385,21 +385,21 @@ export function AdminTestSeriesClient({
           return (
             <div
               key={t.id}
-              className="flex flex-col justify-between gap-4 rounded-xl border border-border bg-card p-4 shadow-none transition-colors hover:border-primary/40 sm:p-5"
+              className="flex flex-col justify-between gap-4 rounded-md border border-border bg-background p-4 shadow-none transition-colors hover:border-primary/40 sm:p-5"
             >
               <div className="space-y-3">
                 {/* Header: SN + Status + Price */}
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-slate-100 text-[11px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-sm bg-slate-100 text-[11px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-400">
                       #{sn}
                     </span>
                     <Badge
                       variant="outline"
                       className={
                         isPublished
-                          ? "rounded-full border-emerald-200 bg-emerald-50 text-[10px] font-semibold text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-400"
-                          : "rounded-full border-slate-200 bg-slate-50 text-[10px] font-semibold text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400"
+                          ? "rounded-sm border-emerald-200 bg-emerald-50 text-[10px] font-semibold text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-400"
+                          : "rounded-sm border-slate-200 bg-slate-50 text-[10px] font-semibold text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400"
                       }
                     >
                       {t.status}
@@ -407,7 +407,7 @@ export function AdminTestSeriesClient({
                   </div>
 
                   {t.price === 0 ? (
-                    <Badge className="rounded-full border-0 bg-emerald-600 px-2 py-0.5 text-[10px] font-bold text-white">
+                    <Badge className="rounded-sm border-0 bg-emerald-600 px-2 py-0.5 text-[10px] font-bold text-white">
                       FREE
                     </Badge>
                   ) : (
@@ -431,7 +431,7 @@ export function AdminTestSeriesClient({
                 </div>
 
                 {/* Metrics Stats */}
-                <div className="grid grid-cols-3 gap-2 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-center dark:border-slate-800/80 dark:bg-slate-950">
+                <div className="grid grid-cols-3 gap-2 border-y border-slate-100 py-2 text-center dark:border-slate-800/80">
                   <div>
                     <span className="block text-[10px] font-medium text-slate-400">
                       Marks
@@ -472,7 +472,7 @@ export function AdminTestSeriesClient({
                   disabled={isLoading}
                   onClick={() => handleTogglePublish(t)}
                   className={cn(
-                    "h-8 flex-1 rounded-lg border-slate-200 px-2 text-xs font-semibold shadow-2xs dark:border-slate-800",
+                    "h-8 flex-1 rounded-md border-slate-200 px-2 text-xs font-semibold shadow-2xs dark:border-slate-800",
                     isPublished
                       ? "text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950/40"
                       : "text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
@@ -497,7 +497,7 @@ export function AdminTestSeriesClient({
                   <Button
                     size="sm"
                     variant="outline"
-                    className="h-8 rounded-lg border-slate-200 px-3 text-xs font-semibold text-[#2A6AED] shadow-2xs hover:bg-blue-50 dark:border-slate-800 dark:text-blue-400 dark:hover:bg-blue-950"
+                    className="h-8 rounded-md border-slate-200 px-3 text-xs font-semibold text-[#2A6AED] shadow-2xs hover:bg-blue-50 dark:border-slate-800 dark:text-blue-400 dark:hover:bg-blue-950"
                   >
                     <Edit className="mr-1 h-3.5 w-3.5" />
                     Manage
@@ -509,7 +509,7 @@ export function AdminTestSeriesClient({
                     size="sm"
                     variant="ghost"
                     title="Preview candidate view in new tab"
-                    className="h-8 w-8 rounded-lg p-0 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                    className="h-8 w-8 rounded-md p-0 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
                   >
                     <ExternalLink className="h-3.5 w-3.5" />
                   </Button>

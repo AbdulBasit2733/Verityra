@@ -6,7 +6,7 @@ export default function StudentPurchasesLoading() {
       {/* Header */}
       <div className="flex flex-col gap-4 pb-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3.5">
-          <Skeleton className="h-11 w-11 rounded-xl sm:h-12 sm:w-12" />
+          <Skeleton className="h-11 w-11 rounded-md sm:h-12 sm:w-12" />
           <div className="space-y-1.5">
             <Skeleton className="h-7 w-36" />
             <Skeleton className="h-4 w-80" />
@@ -19,11 +19,11 @@ export default function StudentPurchasesLoading() {
         {Array.from({ length: 3 }).map((_, i) => (
           <div
             key={i}
-            className="space-y-3 rounded-2xl border border-border bg-card p-5 shadow-xs"
+            className="space-y-3 rounded-md border border-border bg-card p-5 shadow-xs"
           >
             <div className="flex items-center justify-between">
               <Skeleton className="h-4 w-32" />
-              <Skeleton className="h-9 w-9 rounded-xl" />
+              <Skeleton className="h-9 w-9 rounded-sm" />
             </div>
             <Skeleton className="h-7 w-24" />
             <Skeleton className="h-3.5 w-36" />
@@ -32,12 +32,12 @@ export default function StudentPurchasesLoading() {
       </div>
 
       {/* Table Skeleton */}
-      <div className="space-y-4 rounded-xl border border-border bg-card p-6 shadow-xs">
+      <div className="space-y-4 rounded-md border border-border bg-card p-6 shadow-xs">
         <div className="flex flex-col justify-between gap-3 sm:flex-row">
-          <Skeleton className="h-10 w-72 rounded-xl" />
+          <Skeleton className="h-10 w-72 rounded-md" />
           <div className="flex gap-2">
-            <Skeleton className="h-10 w-32 rounded-xl" />
-            <Skeleton className="h-10 w-32 rounded-xl" />
+            <Skeleton className="h-10 w-32 rounded-md" />
+            <Skeleton className="h-10 w-32 rounded-md" />
           </div>
         </div>
         <div className="space-y-3 pt-2">
@@ -51,9 +51,9 @@ export default function StudentPurchasesLoading() {
                 <Skeleton className="h-3 w-32" />
               </div>
               <Skeleton className="mr-4 h-4 w-24" />
-              <Skeleton className="mr-4 h-6 w-20 rounded-full" />
+              <Skeleton className="mr-4 h-6 w-20 rounded-sm" />
               <Skeleton className="mr-4 hidden h-4 w-28 md:block" />
-              <Skeleton className="h-9 w-24 rounded-lg" />
+              <Skeleton className="h-9 w-24 rounded-md" />
             </div>
           ))}
         </div>

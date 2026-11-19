@@ -32,8 +32,7 @@ export function TestCatalogDesktop({ items }: { items: TestCatalogItem[] }) {
             Find your next paper
           </h2>
         </div>
-        <Card className="shadow-sm">
-          <CardContent className="space-y-5 p-5">
+        <div className="space-y-5 border-t border-border pt-5">
             <div className="space-y-2">
               <Label className="text-xs font-bold">Exam stream</Label>
               <Select
@@ -109,8 +108,7 @@ export function TestCatalogDesktop({ items }: { items: TestCatalogItem[] }) {
                 <RotateCcw className="h-3.5 w-3.5" /> Reset filters
               </Button>
             )}
-          </CardContent>
-        </Card>
+        </div>
       </aside>
       <section className="min-w-0 space-y-5">
         <div className="flex flex-col gap-4 border-b border-border pb-5 xl:flex-row xl:items-center xl:justify-between">

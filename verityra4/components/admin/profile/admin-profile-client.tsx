@@ -201,7 +201,7 @@ export function AdminProfileClient({ initialData }: AdminProfileProps) {
           <Button
             variant="outline"
             size="sm"
-            className="h-10 rounded-xl border-slate-200 px-3.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800"
+            className="h-10 rounded-md border-slate-200 px-3.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800"
           >
             <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
             Back to Admin Overview
@@ -270,7 +270,7 @@ export function AdminProfileClient({ initialData }: AdminProfileProps) {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Administrator Name"
-                  className="h-10 rounded-lg border-slate-200 bg-white text-xs sm:text-sm"
+                  className="h-10 rounded-md border-slate-200 bg-white text-xs sm:text-sm"
                 />
               </div>
 
@@ -285,7 +285,7 @@ export function AdminProfileClient({ initialData }: AdminProfileProps) {
                   id="adminEmail"
                   disabled
                   value={displayEmail}
-                  className="h-10 cursor-not-allowed rounded-lg border-slate-200 bg-slate-50 text-xs text-slate-500 sm:text-sm"
+                  className="h-10 cursor-not-allowed rounded-md border-slate-200 bg-slate-50 text-xs text-slate-500 sm:text-sm"
                 />
               </div>
 
@@ -300,7 +300,7 @@ export function AdminProfileClient({ initialData }: AdminProfileProps) {
                   id="adminRole"
                   disabled
                   value="Role.ADMIN — Full Governance Authority"
-                  className="h-10 cursor-not-allowed rounded-lg border-slate-200 bg-slate-50 text-xs text-slate-500 sm:text-sm"
+                  className="h-10 cursor-not-allowed rounded-md border-slate-200 bg-slate-50 text-xs text-slate-500 sm:text-sm"
                 />
               </div>
 
@@ -316,7 +316,7 @@ export function AdminProfileClient({ initialData }: AdminProfileProps) {
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
                   placeholder="+91 11 2345 6789"
-                  className="h-10 rounded-lg border-slate-200 bg-white text-xs sm:text-sm"
+                  className="h-10 rounded-md border-slate-200 bg-white text-xs sm:text-sm"
                 />
               </div>
             </div>
@@ -334,7 +334,7 @@ export function AdminProfileClient({ initialData }: AdminProfileProps) {
                 onChange={(e) => setBio(e.target.value)}
                 placeholder="Academic Director, Senior Science Faculty, Board & NEET/JEE Test Evaluator..."
                 rows={4}
-                className="rounded-lg border-slate-200 bg-white text-xs sm:text-sm"
+                className="rounded-md border-slate-200 bg-white text-xs sm:text-sm"
               />
             </div>
 
@@ -351,7 +351,7 @@ export function AdminProfileClient({ initialData }: AdminProfileProps) {
               <Button
                 type="submit"
                 disabled={savingProfile}
-                className="h-10 w-full rounded-lg bg-[#2A6AED] px-6 text-xs font-semibold text-white shadow-xs hover:bg-[#1E55C7] sm:w-auto sm:text-sm"
+                className="h-10 w-full rounded-md bg-[#2A6AED] px-6 text-xs font-semibold text-white shadow-xs hover:bg-[#1E55C7] sm:w-auto sm:text-sm"
               >
                 {savingProfile ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -392,7 +392,7 @@ export function AdminProfileClient({ initialData }: AdminProfileProps) {
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   placeholder="••••••••••••"
-                  className="h-10 rounded-lg border-slate-200 bg-white text-xs sm:text-sm"
+                  className="h-10 rounded-md border-slate-200 bg-white text-xs sm:text-sm"
                 />
               </div>
 
@@ -410,7 +410,7 @@ export function AdminProfileClient({ initialData }: AdminProfileProps) {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="At least 8 characters"
-                  className="h-10 rounded-lg border-slate-200 bg-white text-xs sm:text-sm"
+                  className="h-10 rounded-md border-slate-200 bg-white text-xs sm:text-sm"
                 />
               </div>
 
@@ -428,14 +428,14 @@ export function AdminProfileClient({ initialData }: AdminProfileProps) {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Repeat new password"
-                  className="h-10 rounded-lg border-slate-200 bg-white text-xs sm:text-sm"
+                  className="h-10 rounded-md border-slate-200 bg-white text-xs sm:text-sm"
                 />
               </div>
             </div>
 
             {/* Password Requirement Indicators */}
-            <div className="space-y-1.5 rounded-xl border border-slate-200 bg-slate-50 p-3.5 text-xs text-slate-600">
-              <p className="text-[11px] font-bold tracking-wider text-slate-800 uppercase">
+            <div className="space-y-1.5 border-t border-slate-200 pt-3.5 text-xs text-slate-600">
+              <p className="text-[11px] font-bold text-slate-800">
                 Password Security Criteria
               </p>
               <div className="grid grid-cols-1 gap-1.5 text-[11px] sm:grid-cols-2">
@@ -469,7 +469,7 @@ export function AdminProfileClient({ initialData }: AdminProfileProps) {
             <Button
               type="submit"
               disabled={savingPassword}
-              className="h-10 w-full rounded-lg bg-[#2A6AED] px-6 text-xs font-semibold text-white shadow-xs hover:bg-[#1E55C7] sm:w-auto sm:text-sm"
+              className="h-10 w-full rounded-md bg-[#2A6AED] px-6 text-xs font-semibold text-white shadow-xs hover:bg-[#1E55C7] sm:w-auto sm:text-sm"
             >
               {savingPassword ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -494,8 +494,8 @@ export function AdminProfileClient({ initialData }: AdminProfileProps) {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div className="space-y-1.5 rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+          <div className="grid grid-cols-1 gap-x-6 gap-y-4 border-t border-slate-200 pt-4 md:grid-cols-2">
+            <div className="space-y-1.5 border-b border-slate-100 pb-4">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-900 sm:text-sm">
                   1. Strict Three-Attempt Limit
@@ -511,7 +511,7 @@ export function AdminProfileClient({ initialData }: AdminProfileProps) {
               </p>
             </div>
 
-            <div className="space-y-1.5 rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+            <div className="space-y-1.5 border-b border-slate-100 pb-4">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-900 sm:text-sm">
                   2. Instruction Isolation
@@ -526,7 +526,7 @@ export function AdminProfileClient({ initialData }: AdminProfileProps) {
               </p>
             </div>
 
-            <div className="space-y-1.5 rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+            <div className="space-y-1.5 border-b border-slate-100 pb-4 md:border-b-0 md:pb-0">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-900 sm:text-sm">
                   3. Zero-AI Marketing Policy
@@ -542,7 +542,7 @@ export function AdminProfileClient({ initialData }: AdminProfileProps) {
               </p>
             </div>
 
-            <div className="space-y-1.5 rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+            <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-900 sm:text-sm">
                   4. Immutable Audit Trail
@@ -562,7 +562,7 @@ export function AdminProfileClient({ initialData }: AdminProfileProps) {
             <Link href="/admin/test-series">
               <Button
                 variant="outline"
-                className="h-9 gap-1.5 rounded-lg text-xs"
+                className="h-9 gap-1.5 rounded-md text-xs"
               >
                 <BookOpen className="h-3.5 w-3.5" />
                 Manage Test Series
@@ -571,7 +571,7 @@ export function AdminProfileClient({ initialData }: AdminProfileProps) {
             <Link href="/admin/submissions">
               <Button
                 variant="outline"
-                className="h-9 gap-1.5 rounded-lg text-xs"
+                className="h-9 gap-1.5 rounded-md text-xs"
               >
                 <FileCheck2 className="h-3.5 w-3.5" />
                 Review Submissions
@@ -580,7 +580,7 @@ export function AdminProfileClient({ initialData }: AdminProfileProps) {
             <Link href="/admin">
               <Button
                 variant="outline"
-                className="h-9 gap-1.5 rounded-lg text-xs"
+                className="h-9 gap-1.5 rounded-md text-xs"
               >
                 <ExternalLink className="h-3.5 w-3.5" />
                 View Audit Trail

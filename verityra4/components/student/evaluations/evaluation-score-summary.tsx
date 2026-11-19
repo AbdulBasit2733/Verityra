@@ -33,7 +33,7 @@ export function EvaluationScoreSummary({
             <div className="space-y-5">
               <div className="flex items-end justify-between gap-4">
                 <div>
-                  <p className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
+                  <p className="text-xs font-bold text-muted-foreground">
                     Total score
                   </p>
                   <p className="mt-1 font-heading text-5xl font-extrabold tracking-tight text-primary">
@@ -68,8 +68,8 @@ export function EvaluationScoreSummary({
                   )}
                 </span>
               </div>
-              <div className="rounded-xl bg-muted/60 p-4">
-                <p className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
+              <div className="border-t border-border pt-4">
+                <p className="text-xs font-bold text-muted-foreground">
                   Overall feedback
                 </p>
                 <p className="mt-2 text-sm leading-6 text-foreground">

@@ -93,7 +93,7 @@ export function MobileBottomNav() {
 
       {/* Fixed Bottom Navigation */}
       <nav
-        className="fixed right-0 bottom-0 left-0 z-50 border-t border-slate-200 bg-white/95 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/95"
+        className="fixed right-0 bottom-0 left-0 z-50 border-t border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
         style={{
           paddingBottom: "env(safe-area-inset-bottom, 0px)",
         }}
@@ -108,9 +108,9 @@ export function MobileBottomNav() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex min-h-[56px] min-w-[64px] flex-col items-center justify-center gap-1 rounded-xl px-4 py-2 transition-all duration-200",
+                  "flex min-h-[56px] min-w-[64px] flex-col items-center justify-center gap-1 rounded-md px-4 py-2 transition-colors duration-150",
                   active
-                    ? "bg-[#2A6AED] text-white shadow-sm"
+                    ? "bg-[#2A6AED] text-white shadow-xs"
                     : "text-slate-600 active:bg-slate-100 dark:text-slate-400 dark:active:bg-slate-800"
                 )}
                 aria-current={active ? "page" : undefined}
@@ -123,7 +123,7 @@ export function MobileBottomNav() {
                 />
                 <span
                   className={cn(
-                    "text-[10px] font-bold tracking-wider uppercase transition-colors",
+                    "text-[11px] font-semibold transition-colors",
                     active ? "text-white" : "text-slate-600 dark:text-slate-400"
                   )}
                 >

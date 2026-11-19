@@ -24,11 +24,8 @@ export function HeroCockpitPreview() {
 
   return (
     <div className="relative mx-auto w-full max-w-5xl">
-      {/* Ambient background glow */}
-      <div className="pointer-events-none absolute -inset-1 rounded-3xl bg-gradient-to-r from-blue-600 to-indigo-600 opacity-15 blur-2xl dark:opacity-25" />
-
       {/* Main Cockpit Frame */}
-      <div className="glass-card relative overflow-hidden rounded-2xl border border-slate-200/90 bg-white/95 shadow-2xl sm:rounded-3xl dark:border-slate-800 dark:bg-slate-950/90">
+      <div className="relative overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
         {/* macOS / Web App Window Chrome */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/90">
           {/* Window Traffic Lights */}
@@ -50,12 +47,12 @@ export function HeroCockpitPreview() {
           </div>
 
           {/* Interactive Inspection Mode Pills */}
-          <div className="flex items-center gap-1 rounded-xl border border-slate-300/40 bg-slate-200/60 p-0.5 text-xs font-medium dark:border-slate-700/60 dark:bg-slate-800/80">
+          <div className="flex items-center gap-1 rounded-md border border-slate-300/40 bg-slate-200/60 p-0.5 text-xs font-medium dark:border-slate-700/60 dark:bg-slate-800/80">
             <button
               type="button"
               onClick={() => setActiveLayer("rubric")}
               className={cn(
-                "inline-flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1 transition-all",
+                "inline-flex cursor-pointer items-center gap-1 rounded-sm px-2.5 py-1 transition-colors",
                 activeLayer === "rubric"
                   ? "bg-white font-semibold text-[#2A6AED] shadow-xs dark:bg-slate-900 dark:text-blue-400"
                   : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
@@ -68,7 +65,7 @@ export function HeroCockpitPreview() {
               type="button"
               onClick={() => setActiveLayer("margin")}
               className={cn(
-                "inline-flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1 transition-all",
+                "inline-flex cursor-pointer items-center gap-1 rounded-sm px-2.5 py-1 transition-colors",
                 activeLayer === "margin"
                   ? "bg-white font-semibold text-[#2A6AED] shadow-xs dark:bg-slate-900 dark:text-blue-400"
                   : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
@@ -81,7 +78,7 @@ export function HeroCockpitPreview() {
               type="button"
               onClick={() => setActiveLayer("model")}
               className={cn(
-                "inline-flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1 transition-all",
+                "inline-flex cursor-pointer items-center gap-1 rounded-sm px-2.5 py-1 transition-colors",
                 activeLayer === "model"
                   ? "bg-white font-semibold text-[#2A6AED] shadow-xs dark:bg-slate-900 dark:text-blue-400"
                   : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
@@ -108,13 +105,13 @@ export function HeroCockpitPreview() {
         <div className="grid grid-cols-1 divide-y divide-slate-200/80 lg:grid-cols-12 lg:divide-x lg:divide-y-0 dark:divide-slate-800">
           {/* Left Canvas (7 cols): Scanned Handwritten Answer Sheet with Optical Guidelines */}
           <div className="relative bg-slate-50/50 p-4 sm:p-6 lg:col-span-7 dark:bg-slate-900/40">
-            <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <div className="relative overflow-hidden rounded-md border border-slate-200 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-950">
               {/* Margin Visualizer Overlay */}
               {activeLayer === "margin" && (
                 <div className="pointer-events-none absolute inset-0 z-10">
                   {/* Left 25mm boundary guide */}
                   <div className="absolute top-0 bottom-0 left-6 flex w-px flex-col justify-between border-r-2 border-dashed border-rose-500/80 py-2 pl-1">
-                    <span className="rounded bg-rose-500 px-1 font-mono text-[9px] font-bold text-white">
+                    <span className="rounded-sm bg-rose-500 px-1 font-mono text-[9px] font-bold text-white">
                       25mm Left Bound (Compliant)
                     </span>
                     <span className="bg-white/90 px-1 font-mono text-[9px] font-semibold text-rose-500 dark:bg-slate-900">
@@ -123,7 +120,7 @@ export function HeroCockpitPreview() {
                   </div>
                   {/* Right 20mm boundary guide */}
                   <div className="absolute top-0 right-6 bottom-0 flex w-px flex-col items-end justify-between border-l-2 border-dashed border-rose-500/80 py-2 pr-1">
-                    <span className="rounded bg-rose-500 px-1 font-mono text-[9px] font-bold text-white">
+                    <span className="rounded-sm bg-rose-500 px-1 font-mono text-[9px] font-bold text-white">
                       20mm Right Bound
                     </span>
                     <span className="bg-white/90 px-1 font-mono text-[9px] font-semibold text-rose-500 dark:bg-slate-900">
@@ -150,7 +147,7 @@ export function HeroCockpitPreview() {
               </div>
 
               {/* Question Box */}
-              <div className="mb-3 rounded-lg border border-blue-200/70 bg-blue-50/70 p-2.5 text-xs leading-relaxed font-semibold text-slate-800 dark:border-blue-900/50 dark:bg-blue-950/40 dark:text-slate-200">
+              <div className="mb-3 rounded-sm border border-blue-200/70 bg-blue-50/70 p-2.5 text-xs leading-relaxed font-semibold text-slate-800 dark:border-blue-900/50 dark:bg-blue-950/40 dark:text-slate-200">
                 Elucidate the impact of Indian monsoon spatial fluctuations on
                 the agrarian economy and food price inflation.
               </div>
@@ -158,7 +155,7 @@ export function HeroCockpitPreview() {
               {/* Simulated Authentic Handwritten Content */}
               <div className="space-y-3 border-l border-rose-200/50 pr-4 pl-4 font-serif text-xs leading-relaxed text-slate-700 italic sm:pr-6 sm:pl-6 sm:text-[13px] dark:border-rose-900/30 dark:text-slate-300">
                 <p>
-                  <span className="block font-sans text-[10px] font-bold tracking-wider text-[#2A6AED] uppercase not-italic dark:text-blue-400">
+                  <span className="block font-sans text-[11px] font-bold text-[#2A6AED] not-italic dark:text-blue-400">
                     1. Macro-Agrarian Impact:
                   </span>
                   With over 55% of India&apos;s net sown area remaining
@@ -178,7 +175,7 @@ export function HeroCockpitPreview() {
                 </p>
 
                 <p>
-                  <span className="block font-sans text-[10px] font-bold tracking-wider text-[#2A6AED] uppercase not-italic dark:text-blue-400">
+                  <span className="block font-sans text-[10px] font-bold text-[#2A6AED] not-italic dark:text-blue-400">
                     2. Institutional Policy Citations:
                   </span>
                   As highlighted in the{" "}
@@ -230,7 +227,7 @@ export function HeroCockpitPreview() {
               {/* Score Header */}
               <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
                 <div>
-                  <span className="font-mono text-[10px] font-bold tracking-wider text-[#2A6AED] uppercase dark:text-blue-400">
+                  <span className="font-mono text-[11px] font-bold text-[#2A6AED] dark:text-blue-400">
                     Evaluation Result
                   </span>
                   <h4 className="text-sm font-bold text-slate-900 dark:text-white">
@@ -296,7 +293,7 @@ export function HeroCockpitPreview() {
               </div>
 
               {/* Real-time Evaluator Note */}
-              <div className="mt-4 space-y-1.5 rounded-xl border border-slate-200/70 bg-slate-50 p-3 text-xs dark:border-slate-800 dark:bg-slate-900">
+              <div className="mt-4 space-y-1.5 rounded-md border border-slate-200/70 bg-slate-50 p-3 text-xs dark:border-slate-800 dark:bg-slate-900">
                 <div className="flex items-center gap-1.5 text-[11px] font-semibold text-[#2A6AED] dark:text-blue-400">
                   <Sparkles className="h-3 w-3" />
                   <span>Senior Evaluator Recommendation:</span>

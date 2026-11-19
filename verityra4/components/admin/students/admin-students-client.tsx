@@ -89,8 +89,8 @@ export function AdminStudentsClient({
                 variant="outline"
                 className={
                   isExhausted
-                    ? "rounded-full border-red-200 bg-red-50 px-2 py-0 text-[10px] font-semibold text-red-700 dark:border-red-900 dark:bg-red-950/50 dark:text-red-400"
-                    : "rounded-full border-blue-200 bg-blue-50 px-2 py-0 text-[10px] font-semibold text-[#2A6AED] dark:border-blue-900 dark:bg-blue-950/50 dark:text-blue-400"
+                    ? "rounded-sm border-red-200 bg-red-50 px-2 py-0 text-[10px] font-semibold text-red-700 dark:border-red-900 dark:bg-red-950/50 dark:text-red-400"
+                    : "rounded-sm border-blue-200 bg-blue-50 px-2 py-0 text-[10px] font-semibold text-[#2A6AED] dark:border-blue-900 dark:bg-blue-950/50 dark:text-blue-400"
                 }
               >
                 {isExhausted ? "Exhausted" : "Active"}
@@ -116,7 +116,7 @@ export function AdminStudentsClient({
             {r.maxAttempts} allowed
           </span>
           {r.maxAttempts > 3 && (
-            <Badge className="rounded-full border-0 bg-amber-100 text-[10px] font-bold text-amber-800 dark:bg-amber-950/80 dark:text-amber-300">
+            <Badge className="rounded-sm border-0 bg-amber-100 text-[10px] font-bold text-amber-800 dark:bg-amber-950/80 dark:text-amber-300">
               Overridden
             </Badge>
           )}
@@ -249,11 +249,11 @@ export function AdminStudentsClient({
         renderCard={(r, idx, serialNumber) => {
           const isExhausted = r.attemptsUsed >= r.maxAttempts
           return (
-            <div className="flex flex-col justify-between space-y-3 rounded-xl border border-border bg-card p-4 shadow-none sm:p-5">
+            <div className="flex flex-col justify-between space-y-3 rounded-md border border-border bg-background p-4 shadow-none sm:p-5">
               <div className="space-y-2.5">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-[11px] font-bold text-slate-500 dark:bg-slate-800">
+                    <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-sm bg-slate-100 text-[11px] font-bold text-slate-500 dark:bg-slate-800">
                       #{serialNumber}
                     </span>
                     <div>
@@ -287,7 +287,7 @@ export function AdminStudentsClient({
                 </div>
 
                 {/* Progress Strip */}
-                <div className="space-y-1.5 rounded-xl border border-slate-100 bg-slate-50 p-2.5 text-xs dark:border-slate-800 dark:bg-slate-800/60">
+                <div className="space-y-1.5 border-t border-slate-100 pt-2.5 text-xs dark:border-slate-800">
                   <div className="flex items-center justify-between text-xs">
                     <span className="font-bold text-slate-800 dark:text-slate-200">
                       {r.attemptsUsed} / {r.maxAttempts} attempts used

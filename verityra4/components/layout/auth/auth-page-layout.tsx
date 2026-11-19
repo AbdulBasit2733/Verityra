@@ -112,7 +112,7 @@ export function AuthPageLayout({
             <div className="flex items-center gap-2">
               <Link
                 href="/"
-                className="inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold text-slate-700 hover:bg-white/70 hover:text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none dark:text-slate-200"
+                className="inline-flex min-h-11 items-center gap-2 rounded-md px-3 text-sm font-semibold text-slate-700 hover:bg-white hover:text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none dark:text-slate-200"
               >
                 <ArrowLeft aria-hidden="true" className="h-4 w-4" />
                 Home
@@ -146,10 +146,10 @@ function BrandMark({ compact = false }: { compact?: boolean }) {
   return (
     <Link
       href="/"
-      className="group inline-flex min-h-11 items-center gap-2.5 rounded-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+      className="group inline-flex min-h-11 items-center gap-2.5 rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
       aria-label={`${BRAND_CONFIG.name} home`}
     >
-      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-white shadow-md shadow-blue-600/20 transition-colors group-hover:bg-primary/90">
+      <span className="flex h-10 w-10 items-center justify-center rounded-md bg-primary text-white shadow-xs transition-colors group-hover:bg-primary/90">
         <BookOpen aria-hidden="true" className="h-5 w-5" />
       </span>
       <span

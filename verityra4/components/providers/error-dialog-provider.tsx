@@ -75,15 +75,15 @@ export function ErrorDialogProvider({
     <ErrorDialogContext.Provider value={{ showError, clearError }}>
       {children}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="gap-5 rounded-2xl border-red-200 p-6 sm:max-w-md">
+        <DialogContent className="gap-5 rounded-md border-red-200 p-6 sm:max-w-md">
           <DialogHeader className="gap-3">
             <div className="flex items-start gap-3.5">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-red-600">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm border border-red-200 bg-red-50 text-red-600">
                 <AlertOctagon className="h-5 w-5" />
               </div>
               <div className="min-w-0 flex-1 space-y-1.5">
                 <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center rounded-md bg-red-100 px-2 py-0.5 text-[10px] font-bold tracking-wider text-red-700 uppercase">
+                  <span className="inline-flex items-center rounded-sm bg-red-100 px-2 py-0.5 text-[11px] font-bold text-red-700">
                     {error?.code || "Action Blocked"}
                   </span>
                 </div>
@@ -98,7 +98,7 @@ export function ErrorDialogProvider({
           </DialogHeader>
 
           {error?.details && (
-            <div className="rounded-xl border border-slate-200/80 bg-slate-50 p-3 font-mono text-xs break-words text-slate-600">
+            <div className="rounded-md border border-slate-200/80 bg-slate-50 p-3 font-mono text-xs break-words text-slate-600">
               {error.details}
             </div>
           )}
@@ -127,7 +127,7 @@ export function ErrorDialogProvider({
               type="button"
               size="sm"
               onClick={() => setOpen(false)}
-              className="h-9 rounded-lg bg-[#0F172A] px-4 font-semibold text-white hover:bg-slate-800"
+              className="h-9 rounded-md bg-[#0F172A] px-4 font-semibold text-white hover:bg-slate-800"
             >
               Dismiss
             </Button>

@@ -77,7 +77,7 @@ export function SignInFormCore({ isMobile }: SignInFormCoreProps) {
         <Alert
           variant="destructive"
           role="alert"
-          className="rounded-lg py-3 text-xs sm:text-sm"
+          className="rounded-md py-3 text-xs sm:text-sm"
         >
           <AlertDescription>{error}</AlertDescription>
         </Alert>
@@ -136,7 +136,7 @@ export function SignInFormCore({ isMobile }: SignInFormCoreProps) {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute top-1/2 right-2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 hover:bg-blue-50 hover:text-[#1E55C7] dark:hover:bg-blue-950/50 dark:hover:text-blue-200"
+              className="absolute top-1/2 right-2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-md text-slate-500 hover:bg-blue-50 hover:text-[#1E55C7] dark:hover:bg-blue-950/50 dark:hover:text-blue-200"
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? (
@@ -151,7 +151,7 @@ export function SignInFormCore({ isMobile }: SignInFormCoreProps) {
         <Button
           type="submit"
           disabled={loading}
-          className="auth-primary-action mt-2 w-full text-xs shadow-md shadow-blue-500/20 sm:text-sm"
+          className="auth-primary-action mt-2 w-full text-xs shadow-xs sm:text-sm"
         >
           {loading ? (
             <>

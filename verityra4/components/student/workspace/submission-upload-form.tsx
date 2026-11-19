@@ -220,7 +220,7 @@ export function SubmissionUploadForm({
     return (
       <div className="flex flex-col justify-between gap-4 border-y border-red-200 bg-red-50/40 px-5 py-6 sm:flex-row sm:items-center">
         <div className="flex items-start gap-3.5">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-100 text-red-600">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-red-100 text-red-600">
             <Lock className="h-5 w-5" />
           </div>
           <div>
@@ -350,7 +350,7 @@ export function SubmissionUploadForm({
 
       {/* Live AI Evaluation Status Card */}
       {evaluatingState && (
-        <div className="space-y-3 rounded-xl border border-blue-200 bg-blue-50/70 p-4 shadow-2xs dark:border-blue-900/60 dark:bg-blue-950/40">
+        <div className="space-y-3 rounded-md border border-blue-200 bg-blue-50/70 p-4 shadow-2xs dark:border-blue-900/60 dark:bg-blue-950/40">
           <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
             <div className="flex items-center gap-2.5">
               {evaluatingState.status === "COMPLETED" ? (
@@ -406,8 +406,8 @@ export function SubmissionUploadForm({
               <div className="space-y-1.5 pt-1">
                 <div className="h-2 w-full overflow-hidden rounded-full bg-blue-200/70 dark:bg-blue-900/50">
                   <div
-                    className="h-full rounded-full bg-[#2A6AED] transition-all duration-500"
-                    style={{ width: `${evaluatingState.progress}%` }}
+                    className="h-full w-full origin-left rounded-full bg-[#2A6AED] motion-safe:transition-transform motion-reduce:transition-none duration-500"
+                    style={{ transform: `scaleX(${Math.min(100, Math.max(0, evaluatingState.progress)) / 100})` }}
                   />
                 </div>
                 <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
@@ -435,9 +435,9 @@ export function SubmissionUploadForm({
       <form onSubmit={handleSubmit} className="space-y-4">
         <label
           htmlFor="answerSheetFile"
-          className="group flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50/50 p-6 text-center transition-colors hover:border-[#2A6AED] hover:bg-[#EFF6FF]/30 sm:p-8"
+          className="group flex cursor-pointer flex-col items-center justify-center rounded-md border-2 border-dashed border-slate-300 bg-slate-50/50 p-6 text-center transition-colors hover:border-[#2A6AED] hover:bg-[#EFF6FF]/30 sm:p-8"
         >
-          <div className="mb-2.5 flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-[#2A6AED]">
+          <div className="mb-2.5 flex h-11 w-11 items-center justify-center rounded-sm border border-slate-200 bg-white text-[#2A6AED]">
             <FileText className="h-5 w-5" />
           </div>
           <div className="space-y-1">
@@ -475,9 +475,9 @@ export function SubmissionUploadForm({
 
         {/* File Preview Section */}
         {file && (
-          <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">
+          <div className="space-y-3 rounded-md border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">
             <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-950">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-blue-100 dark:bg-blue-950">
                 {file.type === "application/pdf" ? (
                   <FileCheck className="h-5 w-5 text-[#2A6AED]" />
                 ) : (
@@ -510,7 +510,7 @@ export function SubmissionUploadForm({
 
             {/* Image Preview Thumbnail */}
             {previewUrl && file.type.startsWith("image/") && (
-              <div className="overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800">
+              <div className="overflow-hidden rounded-md border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800">
                 <img
                   src={previewUrl}
                   alt="Preview of uploaded file"
@@ -558,7 +558,7 @@ export function SubmissionUploadForm({
                   type="checkbox"
                   checked={previewAcknowledged}
                   onChange={(e) => setPreviewAcknowledged(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 cursor-pointer rounded border-slate-300 text-[#2A6AED] focus:ring-[#2A6AED]"
+                  className="mt-0.5 h-4 w-4 cursor-pointer rounded-sm border-slate-300 text-[#2A6AED] focus:ring-[#2A6AED]"
                 />
                 <span className="text-xs font-medium text-slate-700 transition-colors group-hover:text-[#2A6AED] dark:text-slate-300">
                   I confirm all pages are legible, upright, and complete
@@ -576,7 +576,7 @@ export function SubmissionUploadForm({
           <Button
             type="submit"
             disabled={!file || loading || !previewAcknowledged}
-            className="h-10 w-full shrink-0 rounded-lg bg-[#2A6AED] px-6 text-xs font-semibold text-white hover:bg-[#1E55C7] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:text-sm"
+            className="h-10 w-full shrink-0 rounded-md bg-[#2A6AED] px-6 text-xs font-semibold text-white hover:bg-[#1E55C7] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:text-sm"
           >
             {loading ? (
               <>

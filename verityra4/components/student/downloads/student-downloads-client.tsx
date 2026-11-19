@@ -66,7 +66,7 @@ export function StudentDownloadsClient({
           size="sm"
           variant={activeTab === "ALL" ? "default" : "outline"}
           onClick={() => setActiveTab("ALL")}
-          className={`rounded-full text-xs font-semibold ${
+          className={`rounded-md text-xs font-semibold ${
             activeTab === "ALL"
               ? "bg-[#145DEB] text-white"
               : "border-[#DCE7FA] text-slate-700 hover:bg-[#F1F6FF]"
@@ -81,7 +81,7 @@ export function StudentDownloadsClient({
           size="sm"
           variant={activeTab === "REGISTERED" ? "default" : "outline"}
           onClick={() => setActiveTab("REGISTERED")}
-          className={`rounded-full text-xs font-semibold ${
+          className={`rounded-md text-xs font-semibold ${
             activeTab === "REGISTERED"
               ? "bg-[#145DEB] text-white"
               : "border-[#DCE7FA] text-slate-700 hover:bg-[#F1F6FF]"
@@ -96,7 +96,7 @@ export function StudentDownloadsClient({
           size="sm"
           variant={activeTab === "LIBRARY" ? "default" : "outline"}
           onClick={() => setActiveTab("LIBRARY")}
-          className={`rounded-full text-xs font-semibold ${
+          className={`rounded-md text-xs font-semibold ${
             activeTab === "LIBRARY"
               ? "bg-[#145DEB] text-white"
               : "border-[#DCE7FA] text-slate-700 hover:bg-[#F1F6FF]"

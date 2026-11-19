@@ -29,7 +29,7 @@ export function AdminPdfPreviewModal({
       <DialogContent className="flex max-w-4xl flex-col overflow-hidden border-[#DCE7FA] bg-white p-0 sm:max-h-[90vh]">
         <DialogHeader className="flex flex-row items-center justify-between gap-4 border-b border-[#DCE7FA] bg-[#F1F6FF]/60 p-4 sm:p-5">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#DCE7FA] bg-white text-[#145DEB] shadow-xs">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm border border-[#DCE7FA] bg-white text-[#145DEB] shadow-xs">
               <FileText className="h-5 w-5" />
             </div>
             <div className="min-w-0">
@@ -46,7 +46,7 @@ export function AdminPdfPreviewModal({
               <Button
                 size="sm"
                 variant="outline"
-                className="h-9 gap-1.5 rounded-lg border-[#DCE7FA] text-xs font-semibold"
+                className="h-9 gap-1.5 rounded-md border-[#DCE7FA] text-xs font-semibold"
               >
                 <ExternalLink className="h-3.5 w-3.5 text-[#145DEB]" />
                 <span className="hidden sm:inline">New Tab</span>
@@ -55,7 +55,7 @@ export function AdminPdfPreviewModal({
             <a href={`${fileUrl}&download=1`} download>
               <Button
                 size="sm"
-                className="h-9 gap-1.5 rounded-lg bg-[#145DEB] text-xs font-semibold text-white hover:bg-[#0F4DC7]"
+                className="h-9 gap-1.5 rounded-md bg-[#145DEB] text-xs font-semibold text-white hover:bg-[#0F4DC7]"
               >
                 <Download className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Download</span>

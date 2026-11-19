@@ -17,7 +17,7 @@ export default function AdminLoading() {
         {Array.from({ length: 6 }).map((_, i) => (
           <div
             key={i}
-            className="space-y-2 rounded-xl border border-border/60 bg-card p-4"
+            className="space-y-2 rounded-md border border-border/60 bg-card p-4"
           >
             <Skeleton className="h-4 w-20" />
             <Skeleton className="h-7 w-16" />
@@ -27,7 +27,7 @@ export default function AdminLoading() {
 
       {/* Content tables skeleton */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="space-y-4 rounded-xl border border-border/60 bg-card p-6">
+        <div className="space-y-4 rounded-md border border-border/60 bg-card p-6">
           <Skeleton className="h-6 w-40" />
           <div className="space-y-3">
             {Array.from({ length: 5 }).map((_, i) => (
@@ -39,13 +39,13 @@ export default function AdminLoading() {
                   <Skeleton className="h-4 w-36" />
                   <Skeleton className="h-3 w-24" />
                 </div>
-                <Skeleton className="h-6 w-20 rounded-full" />
+                <Skeleton className="h-6 w-20 rounded-sm" />
               </div>
             ))}
           </div>
         </div>
 
-        <div className="space-y-4 rounded-xl border border-border/60 bg-card p-6">
+        <div className="space-y-4 rounded-md border border-border/60 bg-card p-6">
           <Skeleton className="h-6 w-32" />
           <div className="space-y-3">
             {Array.from({ length: 5 }).map((_, i) => (

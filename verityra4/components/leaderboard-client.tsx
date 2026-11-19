@@ -30,7 +30,7 @@ export function LeaderboardClient({
   if (sorted.length === 0) {
     return (
       <div className="ui-panel-flat mx-auto flex max-w-lg flex-col items-center gap-3 px-6 py-16 text-center">
-        <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--surface-sunken)] text-[var(--brand-sapphire)]">
+        <span className="flex h-12 w-12 items-center justify-center rounded-md bg-[var(--surface-sunken)] text-[var(--brand-sapphire)]">
           <Trophy className="h-6 w-6" aria-hidden />
         </span>
         <p className="text-lg font-bold text-foreground">No rankings yet</p>

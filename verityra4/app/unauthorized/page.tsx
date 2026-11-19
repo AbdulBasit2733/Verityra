@@ -7,7 +7,7 @@ export default function UnauthorizedPage() {
   return (
     <AuthPageFrame className="flex min-h-dvh flex-col items-center justify-center px-4 py-10 sm:px-6 lg:px-8">
       <div className="auth-form-surface w-full max-w-md space-y-6 p-8 text-center sm:p-10">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-amber-200 bg-amber-50 text-amber-600">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-md border border-amber-200 bg-amber-50 text-amber-600">
           <ShieldAlert className="h-8 w-8" />
         </div>
 
@@ -31,7 +31,7 @@ export default function UnauthorizedPage() {
           <Link href="/" className="w-full">
             <Button
               variant="outline"
-              className="h-11 w-full rounded-xl border-border text-sm font-semibold"
+              className="h-11 w-full rounded-md border-border text-sm font-semibold"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Home

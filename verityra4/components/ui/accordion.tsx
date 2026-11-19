@@ -44,8 +44,8 @@ function AccordionTrigger({
         {...props}
       >
         {children}
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-sm bg-slate-100 text-slate-500 transition-[transform,background-color,color] duration-200 group-hover/trigger:bg-[#EFF6FF] group-hover/trigger:text-[#2A6AED] group-data-[panel-open]/trigger:rotate-180 group-data-[panel-open]/trigger:bg-[#2A6AED] group-data-[panel-open]/trigger:text-white">
-          <ChevronDownIcon className="h-4 w-4 transition-transform duration-200" />
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-sm bg-slate-100 text-slate-500 transition-[transform,background-color,color] duration-200 motion-reduce:transition-none group-hover/trigger:bg-[#EFF6FF] group-hover/trigger:text-[#2A6AED] group-data-[panel-open]/trigger:rotate-180 group-data-[panel-open]/trigger:bg-[#2A6AED] group-data-[panel-open]/trigger:text-white">
+          <ChevronDownIcon className="h-4 w-4 motion-safe:transition-transform motion-reduce:transition-none duration-200" />
         </span>
       </AccordionPrimitive.Trigger>
     </AccordionPrimitive.Header>
@@ -60,7 +60,7 @@ function AccordionContent({
   return (
     <AccordionPrimitive.Panel
       data-slot="accordion-content"
-      className="h-[var(--accordion-panel-height)] overflow-hidden text-xs text-slate-600 transition-[height] duration-200 ease-out data-[ending-style]:h-0 data-[starting-style]:h-0 sm:text-[13.5px]"
+      className="h-[var(--accordion-panel-height)] overflow-hidden text-xs text-slate-600 motion-safe:transition-opacity motion-reduce:transition-none duration-200 ease-out data-[ending-style]:h-0 data-[ending-style]:opacity-0 data-[starting-style]:h-0 data-[starting-style]:opacity-0 sm:text-[13.5px]"
       {...props}
     >
       <div

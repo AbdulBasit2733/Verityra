@@ -23,7 +23,7 @@ export function LeaderboardRankCard({
           <div className="flex items-center gap-2.5">
             <span
               aria-label={`Rank ${entry.rank}`}
-              className={`flex h-9 min-w-9 items-center justify-center rounded-xl px-2 text-xs font-black ${winner ? "bg-score-accent text-score-accent-foreground" : podium ? "bg-secondary text-primary" : "bg-muted text-muted-foreground"}`}
+              className={`flex h-9 min-w-9 items-center justify-center rounded-md px-2 text-xs font-black ${winner ? "bg-score-accent text-score-accent-foreground" : podium ? "bg-secondary text-primary" : "bg-muted text-muted-foreground"}`}
             >
               {winner ? (
                 <Trophy className="h-4 w-4" aria-hidden />
@@ -59,7 +59,7 @@ export function LeaderboardRankCard({
       <CardContent className="space-y-3">
         <div className="flex items-end justify-between gap-3">
           <div>
-            <p className="text-[10px] font-bold tracking-[0.14em] text-muted-foreground uppercase">
+            <p className="text-xs font-semibold text-muted-foreground">
               Score
             </p>
             <p className="mt-1 text-xl font-extrabold text-primary tabular-nums">

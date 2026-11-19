@@ -577,22 +577,6 @@ body.dashboard-mode main::-webkit-scrollbar-thumb:hover {
     box-shadow: var(--shadow-panel);
   }
 
-  .shadow-card {
-    box-shadow: none;
-  }
-
-  .dark .shadow-card {
-    box-shadow: none;
-  }
-
-  .shadow-card-hover {
-    box-shadow: var(--shadow-panel);
-  }
-
-  .dark .shadow-card-hover {
-    box-shadow: var(--shadow-panel);
-  }
-
   .shadow-mockup {
     box-shadow: var(--shadow-panel);
   }

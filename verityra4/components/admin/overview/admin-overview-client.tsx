@@ -153,7 +153,7 @@ function Panel({
   return (
     <section
       className={cn(
-        "rounded-2xl border border-border bg-card p-5 shadow-card sm:p-6",
+        "rounded-md border border-border bg-card p-5 shadow-none sm:p-6",
         className
       )}
     >
@@ -188,7 +188,7 @@ function Segmented<T extends string | number>({
     <div
       role="group"
       aria-label={label}
-      className="inline-flex rounded-lg border border-border bg-muted p-0.5"
+      className="inline-flex rounded-md border border-border bg-muted p-0.5"
     >
       {options.map((o) => (
         <button
@@ -197,7 +197,7 @@ function Segmented<T extends string | number>({
           aria-pressed={o.value === value}
           onClick={() => onChange(o.value)}
           className={cn(
-            "min-h-0 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors",
+            "min-h-0 rounded-sm px-3 py-1.5 text-xs font-semibold transition-colors",
             o.value === value
               ? "bg-card text-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground"
@@ -212,7 +212,7 @@ function Segmented<T extends string | number>({
 
 function Empty({ text = "No data yet" }: { text?: string }) {
   return (
-    <div className="flex h-40 items-center justify-center rounded-xl border border-dashed border-border text-xs text-muted-foreground">
+    <div className="flex h-40 items-center justify-center rounded-md border border-dashed border-border text-xs text-muted-foreground">
       {text}
     </div>
   )
@@ -427,7 +427,7 @@ function AreaChart({
       </svg>
       {hover !== null && (
         <div
-          className="pointer-events-none absolute top-1 z-10 -translate-x-1/2 rounded-lg border border-border bg-popover px-3 py-2 text-xs shadow-lg"
+          className="pointer-events-none absolute top-1 z-10 -translate-x-1/2 rounded-sm border border-border bg-popover px-3 py-2 text-xs shadow-sm"
           style={{
             left: `${Math.min(88, Math.max(12, (x(hover) / W) * 100))}%`,
           }}
@@ -675,7 +675,7 @@ function StatCard({
 }) {
   const up = (change ?? 0) >= 0
   return (
-    <div className="flex flex-col justify-between rounded-2xl border border-border bg-card p-5 shadow-card">
+    <div className="flex flex-col justify-between rounded-md border border-border bg-card p-5 shadow-none">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-xs font-semibold text-muted-foreground">{label}</p>
@@ -684,7 +684,7 @@ function StatCard({
           </p>
         </div>
         <span
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm"
           style={{
             background: `color-mix(in srgb, ${color} 14%, transparent)`,
             color,
@@ -841,7 +841,7 @@ export function AdminOverviewClient({
           ]}
         />
         <Link href="/admin/test-series/new">
-          <Button className="h-10 rounded-xl bg-[#2A6AED] px-4 text-xs font-semibold text-white hover:bg-[#1E55C7] sm:text-sm">
+          <Button className="h-10 rounded-md bg-[#2A6AED] px-4 text-xs font-semibold text-white hover:bg-[#1E55C7] sm:text-sm">
             <Plus className="mr-1.5 h-4 w-4" />
             Create test series
           </Button>
@@ -849,7 +849,7 @@ export function AdminOverviewClient({
       </PageHeader>
 
       {isDemo && (
-        <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs font-medium text-amber-800">
+        <p className="rounded-md border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs font-medium text-amber-800">
           Database not connected — showing sample data.
         </p>
       )}
@@ -860,7 +860,7 @@ export function AdminOverviewClient({
             <Link
               key={x.label}
               href={x.href}
-              className="group inline-flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-2.5 text-xs shadow-card transition-colors hover:border-[#2A6AED]"
+              className="group inline-flex items-center gap-3 rounded-md border border-border bg-card px-4 py-2.5 text-xs shadow-none transition-colors hover:border-[#2A6AED]"
             >
               <AlertTriangle
                 aria-hidden="true"
@@ -1005,7 +1005,7 @@ export function AdminOverviewClient({
           title="Quality at a glance"
           subtitle="Average score and attempt usage"
         >
-          <div className="flex items-center gap-4 rounded-xl bg-muted/60 p-4">
+          <div className="flex items-center gap-4 pt-1">
             <div className="relative">
               <Ring value={a.totals.avgScore} />
               <span className="absolute inset-0 flex items-center justify-center text-xs font-extrabold text-foreground">

@@ -43,7 +43,7 @@ const SubmissionUploadForm = dynamic(
     ),
   {
     loading: () => (
-      <div className="rounded-2xl border border-border bg-card p-8 text-center text-xs text-muted-foreground shadow-xs">
+      <div className="rounded-md border border-border bg-card p-8 text-center text-xs text-muted-foreground shadow-none">
         Loading submission upload interface...
       </div>
     ),
@@ -252,7 +252,7 @@ export function StudentWorkspaceClient({
           className: "whitespace-normal min-w-[240px]",
           cell: (q) =>
             q.missingConcepts ? (
-              <p className="rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs leading-relaxed text-amber-900 dark:border-amber-900 dark:bg-amber-950/60 dark:text-amber-300">
+              <p className="rounded-sm border border-amber-200 bg-amber-50 p-2.5 text-xs leading-relaxed text-amber-900 dark:border-amber-900 dark:bg-amber-950/60 dark:text-amber-300">
                 {q.missingConcepts}
               </p>
             ) : (
@@ -271,14 +271,14 @@ export function StudentWorkspaceClient({
             q.isLegible ? (
               <Badge
                 variant="outline"
-                className="rounded-full border-emerald-200 bg-emerald-50 text-[10px] font-semibold text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-400"
+                className="rounded-sm border-emerald-200 bg-emerald-50 text-[10px] font-semibold text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-400"
               >
                 Clear
               </Badge>
             ) : (
               <Badge
                 variant="outline"
-                className="rounded-full border-amber-200 bg-amber-50 text-[10px] font-semibold text-amber-700 dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-400"
+                className="rounded-sm border-amber-200 bg-amber-50 text-[10px] font-semibold text-amber-700 dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-400"
               >
                 Unclear
               </Badge>
@@ -325,7 +325,7 @@ export function StudentWorkspaceClient({
       {/* 1. UNIFIED EXECUTIVE HEADER & SUMMARY BADGES */}
       <div className="flex flex-col gap-4 pb-1 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 items-start gap-3.5 sm:items-center">
-          <div className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-xs sm:mt-0 sm:h-12 sm:w-12">
+          <div className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-sm bg-primary text-primary-foreground shadow-xs sm:mt-0 sm:h-12 sm:w-12">
             <BookOpen className="h-6 w-6 sm:h-7 sm:w-7" />
           </div>
           <div className="min-w-0 space-y-1.5">
@@ -405,7 +405,7 @@ export function StudentWorkspaceClient({
               <Button
                 variant="outline"
                 size="sm"
-                className="h-9 gap-1.5 rounded-xl border-slate-200 px-3 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800"
+                className="h-9 gap-1.5 rounded-md border-slate-200 px-3 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800"
               >
                 <Download className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Download</span> Paper
@@ -416,7 +416,7 @@ export function StudentWorkspaceClient({
             <Button
               variant="outline"
               size="sm"
-              className="h-9 gap-1.5 rounded-xl border-slate-200 px-3 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800"
+              className="h-9 gap-1.5 rounded-md border-slate-200 px-3 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Back to</span> Dashboard
@@ -426,11 +426,11 @@ export function StudentWorkspaceClient({
       </div>
 
       {/* 2. PRIORITY ACTION & ATTEMPT HUB: Combines attempt navigation & timer sheet trigger */}
-      <div className="rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-xs sm:p-4 dark:border-slate-800 dark:bg-slate-900">
+      <div className="rounded-md border border-slate-200/80 bg-white p-3.5 shadow-none sm:p-4 dark:border-slate-800 dark:bg-slate-900">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           {/* Attempt Selector Pills */}
           <div className="no-scrollbar flex max-w-full flex-nowrap items-center gap-2 overflow-x-auto scroll-smooth py-0.5">
-            <span className="mr-1 shrink-0 text-xs font-bold tracking-wider text-slate-400 uppercase dark:text-slate-500">
+            <span className="mr-1 shrink-0 text-xs font-bold text-slate-400 dark:text-slate-500">
               Attempt:
             </span>
             {Array.from({ length: maxAttempts }, (_, i) => i + 1).map(
@@ -451,7 +451,7 @@ export function StudentWorkspaceClient({
                     disabled={!isAvailable && !sub}
                     onClick={() => setSelectedAttemptNumber(attemptNumber)}
                     className={cn(
-                      "h-8 shrink-0 gap-1.5 rounded-lg px-3 text-xs font-bold transition-all",
+                      "h-8 shrink-0 gap-1.5 rounded-md px-3 text-xs font-bold transition-colors",
                       isSelected
                         ? "bg-[#2A6AED] text-white shadow-2xs hover:bg-[#1E55C7]"
                         : isEvaluated
@@ -517,7 +517,7 @@ export function StudentWorkspaceClient({
                 size="sm"
                 variant="outline"
                 onClick={() => setActiveTab("upload")}
-                className="h-9 gap-1.5 rounded-xl border-slate-200 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800"
+                className="h-9 gap-1.5 rounded-md border-slate-200 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800"
               >
                 <UploadCloud className="h-3.5 w-3.5 text-[#2A6AED]" />
                 <span className="hidden sm:inline">Submit</span> Booklet
@@ -576,7 +576,7 @@ export function StudentWorkspaceClient({
         {/* TAB 1: EVALUATIONS & ITEMIZED QUESTION DATATABLE */}
         <TabsContent value="evaluations" className="space-y-6 pt-1">
           {submissions.length === 0 ? (
-            <div className="space-y-2 rounded-2xl border border-slate-200/80 bg-white p-8 text-center dark:border-slate-800 dark:bg-slate-900">
+            <div className="space-y-2 rounded-md border border-slate-200/80 bg-white p-8 text-center dark:border-slate-800 dark:bg-slate-900">
               <p className="text-sm font-bold text-slate-900 dark:text-slate-100">
                 No handwritten attempts submitted yet
               </p>
@@ -641,9 +641,9 @@ export function StudentWorkspaceClient({
               {activeSubmission?.evaluation ? (
                 <div className="space-y-5">
                   {/* Score & Articulation Summary Bar */}
-                  <div className="grid grid-cols-1 divide-y divide-slate-200 overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs lg:grid-cols-12 lg:divide-x lg:divide-y-0 dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">
+                  <div className="grid grid-cols-1 divide-y divide-slate-200 overflow-hidden rounded-md border border-slate-200/80 bg-white shadow-none lg:grid-cols-12 lg:divide-x lg:divide-y-0 dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">
                     <div className="flex flex-col justify-center bg-slate-50/60 p-5 lg:col-span-4 dark:bg-slate-950/60">
-                      <span className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
+                      <span className="text-[11px] font-bold text-slate-400">
                         Attempt #{activeSubmission.attemptNumber} Final Score
                       </span>
                       <div className="mt-1 flex items-baseline gap-2.5">
@@ -657,14 +657,14 @@ export function StudentWorkspaceClient({
                             activeSubmission.evaluation.maxMarks}{" "}
                           marks
                         </span>
-                        <Badge className="rounded-full border-0 bg-emerald-100 text-[11px] font-bold text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300">
+                        <Badge className="rounded-sm border-0 bg-emerald-100 text-[11px] font-bold text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300">
                           {activeSubmission.evaluation.percentage}%
                         </Badge>
                       </div>
                     </div>
 
                     <div className="flex flex-col justify-center p-5 lg:col-span-8">
-                      <span className="mb-1 block text-[11px] font-bold tracking-wider text-slate-400 uppercase">
+                      <span className="mb-1 block text-[11px] font-bold text-slate-400">
                         Overall Evaluator Articulation Summary
                       </span>
                       <p className="text-xs leading-relaxed text-slate-800 sm:text-sm dark:text-slate-200">
@@ -674,7 +674,7 @@ export function StudentWorkspaceClient({
                   </div>
 
                   {activeSubmission.evaluation.legibilityWarning && (
-                    <div className="flex items-center gap-2.5 rounded-xl border border-amber-200 bg-amber-50/70 px-4 py-3 text-xs text-amber-900 shadow-2xs sm:text-sm dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300">
+                    <div className="flex items-center gap-2.5 rounded-md border border-amber-200 bg-amber-50/70 px-4 py-3 text-xs text-amber-900 shadow-2xs sm:text-sm dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300">
                       <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
                       <span>
                         Legibility Notice: Portions of your handwritten script
@@ -685,7 +685,7 @@ export function StudentWorkspaceClient({
                   )}
 
                   {(activeSubmission.evaluationRuns?.length || 0) > 0 && (
-                    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
+                    <div className="flex flex-wrap items-center gap-2 rounded-md border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
                       <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
                         Evaluation runs:
                       </span>
@@ -738,10 +738,10 @@ export function StudentWorkspaceClient({
                             ? Math.round((q.marksAwarded / q.maxMarks) * 100)
                             : 0
                         return (
-                          <div className="space-y-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-2xs sm:p-5 dark:border-slate-800 dark:bg-slate-900/90">
+                          <div className="space-y-3 rounded-md border border-border bg-background p-4 shadow-none sm:p-5">
                             <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5 dark:border-slate-800/80">
                               <div className="flex items-center gap-2">
-                                <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-blue-50 text-[11px] font-bold text-[#2A6AED] dark:bg-blue-950/60 dark:text-blue-400">
+                                <span className="inline-flex h-6 w-6 items-center justify-center rounded-sm bg-blue-50 text-[11px] font-bold text-[#2A6AED] dark:bg-blue-950/60 dark:text-blue-400">
                                   {q.questionNumber}
                                 </span>
                                 <span className="text-sm font-extrabold text-[#2A6AED] dark:text-blue-400">
@@ -763,8 +763,8 @@ export function StudentWorkspaceClient({
                                 variant="outline"
                                 className={
                                   q.isLegible
-                                    ? "rounded-full border-emerald-200 bg-emerald-50 text-[10px] font-semibold text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-400"
-                                    : "rounded-full border-amber-200 bg-amber-50 text-[10px] font-semibold text-amber-700 dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-400"
+                                    ? "rounded-sm border-emerald-200 bg-emerald-50 text-[10px] font-semibold text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-400"
+                                    : "rounded-sm border-amber-200 bg-amber-50 text-[10px] font-semibold text-amber-700 dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-400"
                                 }
                               >
                                 {q.isLegible ? "Clear Script" : "Unclear"}
@@ -772,7 +772,7 @@ export function StudentWorkspaceClient({
                             </div>
 
                             <div className="space-y-1">
-                              <span className="block text-[11px] font-bold tracking-wider text-slate-400 uppercase">
+                              <span className="block text-[11px] font-bold text-slate-400">
                                 Rubric Feedback
                               </span>
                               <p className="text-xs leading-relaxed text-slate-800 sm:text-sm dark:text-slate-200">
@@ -781,27 +781,27 @@ export function StudentWorkspaceClient({
                             </div>
 
                             {q.strengths && (
-                              <p className="rounded-lg bg-emerald-50 p-2 text-xs text-emerald-800">
+                              <p className="rounded-sm bg-emerald-50 p-2 text-xs text-emerald-800">
                                 Strengths: {q.strengths}
                               </p>
                             )}
                             {q.examinerExpectation && (
-                              <p className="rounded-lg bg-blue-50 p-2 text-xs text-blue-800">
+                              <p className="rounded-sm bg-blue-50 p-2 text-xs text-blue-800">
                                 Examiner expected: {q.examinerExpectation}
                               </p>
                             )}
                             {q.improvementAdvice && (
-                              <p className="rounded-lg bg-indigo-50 p-2 text-xs text-indigo-800">
+                              <p className="rounded-sm bg-indigo-50 p-2 text-xs text-indigo-800">
                                 How to improve: {q.improvementAdvice}
                               </p>
                             )}
 
                             {q.missingConcepts && (
                               <div className="pt-1">
-                                <span className="mb-1 block text-[10px] font-bold tracking-wider text-amber-700 uppercase dark:text-amber-400">
+                                <span className="mb-1 block text-[11px] font-bold text-amber-700 dark:text-amber-400">
                                   Improvement & Omissions
                                 </span>
-                                <p className="rounded-xl border border-amber-200 bg-amber-50 p-2.5 text-xs leading-relaxed text-amber-900 dark:border-amber-900 dark:bg-amber-950/60 dark:text-amber-300">
+                                <p className="rounded-md border border-amber-200 bg-amber-50 p-2.5 text-xs leading-relaxed text-amber-900 dark:border-amber-900 dark:bg-amber-950/60 dark:text-amber-300">
                                   {q.missingConcepts}
                                 </p>
                               </div>
@@ -815,7 +815,7 @@ export function StudentWorkspaceClient({
                   </div>
                 </div>
               ) : (
-                <div className="rounded-2xl border border-slate-200/80 bg-white p-8 text-center text-xs text-slate-500 shadow-xs sm:text-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
+                <div className="rounded-md border border-slate-200/80 bg-white p-8 text-center text-xs text-slate-500 shadow-none sm:text-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
                   Evaluation for Attempt #{activeSubmission?.attemptNumber} is
                   currently in progress.
                 </div>
@@ -839,7 +839,7 @@ export function StudentWorkspaceClient({
         <TabsContent value="resources" className="space-y-6 pt-1">
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {/* 1. Official Question Paper Downloads */}
-            <div className="flex flex-col justify-between space-y-4 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex flex-col justify-between space-y-4 rounded-md border border-slate-200/80 bg-white p-5 shadow-none dark:border-slate-800 dark:bg-slate-900">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-slate-100">
@@ -880,7 +880,7 @@ export function StudentWorkspaceClient({
                           href={paper.fileUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 text-[11px] font-semibold text-slate-700 shadow-2xs transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                          className="inline-flex h-8 items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 text-[11px] font-semibold text-slate-700 shadow-2xs transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                         >
                           <Eye className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
                           Preview
@@ -890,7 +890,7 @@ export function StudentWorkspaceClient({
                           download
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#2A6AED] px-3 text-[11px] font-semibold text-white shadow-2xs transition-colors hover:bg-[#1E55C7]"
+                          className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[#2A6AED] px-3 text-[11px] font-semibold text-white shadow-2xs transition-colors hover:bg-[#1E55C7]"
                         >
                           <Download className="h-3.5 w-3.5" />
                           Download
@@ -903,7 +903,7 @@ export function StudentWorkspaceClient({
             </div>
 
             {/* 2. Prescribed Margin Template Downloads */}
-            <div className="flex flex-col justify-between space-y-4 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex flex-col justify-between space-y-4 rounded-md border border-slate-200/80 bg-white p-5 shadow-none dark:border-slate-800 dark:bg-slate-900">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-slate-100">
@@ -944,7 +944,7 @@ export function StudentWorkspaceClient({
                           href={tpl.fileUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 text-[11px] font-semibold text-slate-700 shadow-2xs transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                          className="inline-flex h-8 items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 text-[11px] font-semibold text-slate-700 shadow-2xs transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                         >
                           <Eye className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
                           Preview
@@ -954,7 +954,7 @@ export function StudentWorkspaceClient({
                           download
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 text-[11px] font-semibold text-slate-800 shadow-2xs transition-colors hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+                          className="inline-flex h-8 items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 text-[11px] font-semibold text-slate-800 shadow-2xs transition-colors hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
                         >
                           <Printer className="h-3.5 w-3.5 text-[#2A6AED] dark:text-blue-400" />
                           Print / Save
@@ -967,7 +967,7 @@ export function StudentWorkspaceClient({
             </div>
 
             {/* 3. Benchmark Sample Answer Sheet */}
-            <div className="flex flex-col justify-between space-y-4 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex flex-col justify-between space-y-4 rounded-md border border-slate-200/80 bg-white p-5 shadow-none dark:border-slate-800 dark:bg-slate-900">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-slate-100">
@@ -1001,7 +1001,7 @@ export function StudentWorkspaceClient({
                       href="/api/files/download?file=submissions/demo/sample-attempt.pdf"
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 text-[11px] font-semibold text-slate-700 shadow-2xs transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                      className="inline-flex h-8 items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 text-[11px] font-semibold text-slate-700 shadow-2xs transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                     >
                       <Eye className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
                       Preview
@@ -1011,7 +1011,7 @@ export function StudentWorkspaceClient({
                       download
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#2A6AED] px-3 text-[11px] font-semibold text-white shadow-2xs transition-colors hover:bg-[#1E55C7]"
+                      className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[#2A6AED] px-3 text-[11px] font-semibold text-white shadow-2xs transition-colors hover:bg-[#1E55C7]"
                     >
                       <Download className="h-3.5 w-3.5" />
                       Download
@@ -1025,7 +1025,7 @@ export function StudentWorkspaceClient({
           <Separator className="bg-slate-200 dark:bg-slate-800" />
 
           {/* Candidate Instructions */}
-          <div className="space-y-2 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+          <div className="space-y-2 rounded-md border border-slate-200/80 bg-white p-5 shadow-none dark:border-slate-800 dark:bg-slate-900">
             <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-slate-100">
               <Info className="h-4 w-4 text-[#2A6AED] dark:text-blue-400" />
               Candidate Examination Instructions

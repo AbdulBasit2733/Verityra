@@ -173,7 +173,7 @@ export function AdminTestSeriesEditor({
               value={values.title}
               onChange={(e) => set("title", e.target.value)}
               placeholder="e.g. Class 12 CBSE Physics Pre-Board Mock Series 2026"
-              className="h-10 rounded-lg"
+              className="h-10 rounded-md"
             />
           </div>
           <div className="space-y-1.5">
@@ -190,7 +190,7 @@ export function AdminTestSeriesEditor({
               onChange={(e) => set("description", e.target.value)}
               placeholder="Topics, eligibility, question count, and examination format..."
               rows={4}
-              className="rounded-lg"
+              className="rounded-md"
             />
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -203,7 +203,7 @@ export function AdminTestSeriesEditor({
                 required
                 value={values.price}
                 onChange={(e) => set("price", Number(e.target.value))}
-                className="h-10 rounded-lg"
+                className="h-10 rounded-md"
               />
               <span className="text-[11px] text-slate-500">
                 0 = Free enrollment
@@ -218,7 +218,7 @@ export function AdminTestSeriesEditor({
                 required
                 value={values.maxMarks}
                 onChange={(e) => set("maxMarks", Number(e.target.value))}
-                className="h-10 rounded-lg"
+                className="h-10 rounded-md"
               />
             </Field>
             <Field label="Duration (Minutes)" htmlFor="durationMinutes">
@@ -229,7 +229,7 @@ export function AdminTestSeriesEditor({
                 required
                 value={values.durationMinutes}
                 onChange={(e) => set("durationMinutes", Number(e.target.value))}
-                className="h-10 rounded-lg"
+                className="h-10 rounded-md"
               />
             </Field>
             <Field label="Maximum Attempts" htmlFor="maxAttempts">
@@ -241,7 +241,7 @@ export function AdminTestSeriesEditor({
                 required
                 value={values.maxAttempts}
                 onChange={(e) => set("maxAttempts", Number(e.target.value))}
-                className="h-10 rounded-lg"
+                className="h-10 rounded-md"
               />
               <span className="text-[11px] font-semibold text-blue-600">
                 Maximum allowed: 3
@@ -252,7 +252,7 @@ export function AdminTestSeriesEditor({
 
         <TabsContent value="instructions" className="space-y-5 pt-1">
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <div className="flex flex-col justify-between space-y-1.5 rounded-xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex flex-col justify-between space-y-1.5 rounded-md border border-slate-200/80 bg-white p-5 shadow-none dark:border-slate-800 dark:bg-slate-900">
               <div className="space-y-1.5">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <Label
@@ -261,7 +261,7 @@ export function AdminTestSeriesEditor({
                   >
                     Student-Facing Instructions
                   </Label>
-                  <span className="rounded bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-[#2A6AED] uppercase dark:bg-blue-950/60 dark:text-blue-300">
+                  <span className="rounded-sm bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-[#2A6AED] dark:bg-blue-950/60 dark:text-blue-300">
                     Visible to candidates
                   </span>
                 </div>
@@ -276,11 +276,11 @@ export function AdminTestSeriesEditor({
                 value={values.studentInstructions}
                 onChange={(e) => set("studentInstructions", e.target.value)}
                 rows={10}
-                className="mt-3 rounded-lg leading-relaxed"
+                className="mt-3 rounded-md leading-relaxed"
               />
             </div>
 
-            <div className="flex flex-col justify-between space-y-2 rounded-xl border border-amber-200/80 bg-amber-50/40 p-5 shadow-xs dark:border-amber-900/60 dark:bg-amber-950/20">
+            <div className="flex flex-col justify-between space-y-2 rounded-md border border-amber-200/80 bg-amber-50/40 p-5 shadow-none dark:border-amber-900/60 dark:bg-amber-950/20">
               <div className="space-y-1.5">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <Label
@@ -290,7 +290,7 @@ export function AdminTestSeriesEditor({
                     <ShieldAlert className="h-4 w-4 text-amber-600" /> Private
                     Evaluation Instructions
                   </Label>
-                  <span className="rounded bg-amber-200/80 px-2 py-0.5 text-[10px] font-bold text-amber-900 uppercase dark:bg-amber-900/60 dark:text-amber-200">
+                  <span className="rounded-sm bg-amber-200/80 px-2 py-0.5 text-[10px] font-bold text-amber-900 dark:bg-amber-900/60 dark:text-amber-200">
                     Admin only
                   </span>
                 </div>
@@ -307,7 +307,7 @@ export function AdminTestSeriesEditor({
                   set("privateEvaluationInstructions", e.target.value)
                 }
                 rows={10}
-                className="mt-3 rounded-lg bg-white font-mono text-xs leading-relaxed dark:bg-slate-900"
+                className="mt-3 rounded-md bg-white font-mono text-xs leading-relaxed dark:bg-slate-900"
               />
             </div>
           </div>
@@ -317,7 +317,7 @@ export function AdminTestSeriesEditor({
           {testSeriesId && documents ? (
             documents
           ) : (
-            <div className="border border-dashed border-slate-300 bg-slate-50/60 p-8 text-center">
+            <div className="rounded-md border border-dashed border-slate-300 bg-slate-50/60 p-8 text-center">
               <UploadCloud className="mx-auto mb-3 h-8 w-8 text-slate-400" />
               <h3 className="text-sm font-bold text-slate-900">
                 Save the series first
@@ -337,14 +337,14 @@ export function AdminTestSeriesEditor({
           type="button"
           variant="outline"
           onClick={() => router.push("/admin/test-series")}
-          className="h-10 rounded-lg"
+          className="h-10 rounded-md"
         >
           Cancel
         </Button>
         <Button
           type="submit"
           disabled={loading}
-          className="h-10 rounded-lg bg-[#2A6AED] px-6 font-semibold text-white hover:bg-[#1E55C7]"
+          className="h-10 rounded-md bg-[#2A6AED] px-6 font-semibold text-white hover:bg-[#1E55C7]"
         >
           {loading ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />

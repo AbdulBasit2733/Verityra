@@ -210,7 +210,7 @@ export function AdminQuestionPapersClient({
       >
         <Button
           onClick={() => setAddModalOpen(true)}
-          className="h-10 rounded-xl bg-[#145DEB] px-4 text-xs font-semibold text-white shadow-sm hover:bg-[#0F4DC7]"
+          className="h-10 rounded-md bg-[#145DEB] px-4 text-xs font-semibold text-white shadow-sm hover:bg-[#0F4DC7]"
         >
           <Plus className="mr-1.5 h-4 w-4" /> Add Question Paper
         </Button>
@@ -245,7 +245,7 @@ export function AdminQuestionPapersClient({
       </div>
 
       {/* Filter and Search Bar using PopoverDropdownFilter */}
-      <div className="flex flex-col gap-3 rounded-2xl border border-[#DCE7FA] bg-white p-4 shadow-xs sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 rounded-md border border-[#DCE7FA] bg-white p-4 shadow-xs sm:flex-row sm:items-center sm:justify-between">
         <div className="relative max-w-md flex-1">
           <Search className="absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <Input
@@ -283,7 +283,7 @@ export function AdminQuestionPapersClient({
       </div>
 
       {/* Data Table */}
-      <div className="overflow-hidden rounded-2xl border border-[#DCE7FA] bg-white shadow-xs">
+      <div className="overflow-hidden rounded-md border border-[#DCE7FA] bg-white shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs sm:text-sm">
             <thead className="border-b border-[#DCE7FA] bg-[#F1F6FF]/70 font-semibold text-slate-600">
@@ -305,7 +305,7 @@ export function AdminQuestionPapersClient({
                   >
                     <td className="px-4 py-4 sm:px-6">
                       <div className="flex items-start gap-3">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#BFD5FA]/60 bg-[#F1F6FF] text-[#145DEB]">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm border border-[#BFD5FA]/60 bg-[#F1F6FF] text-[#145DEB]">
                           <FileText className="h-4 w-4" />
                         </div>
                         <div className="min-w-0">
@@ -323,7 +323,7 @@ export function AdminQuestionPapersClient({
                     <td className="px-3 py-4">
                       <Badge
                         variant="secondary"
-                        className="rounded-full border border-[#BFD5FA]/50 bg-[#F1F6FF] text-[11px] font-semibold text-[#145DEB]"
+                        className="rounded-sm border border-[#BFD5FA]/50 bg-[#F1F6FF] text-[11px] font-semibold text-[#145DEB]"
                       >
                         {paper.category}
                       </Badge>

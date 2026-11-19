@@ -59,7 +59,7 @@ export function RankChip({
   className?: string
 }) {
   const base =
-    "inline-flex h-8 min-w-8 items-center justify-center rounded-lg px-2 text-sm font-extrabold tabular-nums"
+    "inline-flex h-8 min-w-8 items-center justify-center rounded-sm px-2 text-sm font-extrabold tabular-nums"
   if (rank === 1) {
     return (
       <span

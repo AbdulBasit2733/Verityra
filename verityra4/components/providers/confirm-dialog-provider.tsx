@@ -86,16 +86,16 @@ export function ConfirmDialogProvider({
           }
         }}
       >
-        <DialogContent className="gap-5 rounded-2xl p-6 sm:max-w-md">
+        <DialogContent className="gap-5 rounded-md p-6 sm:max-w-md">
           <DialogHeader className="gap-3">
             <div className="flex items-start gap-3.5">
               <div
                 className={
                   variant === "destructive"
-                    ? "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-red-600"
+                    ? "flex h-10 w-10 shrink-0 items-center justify-center rounded-sm border border-red-200 bg-red-50 text-red-600"
                     : variant === "warning"
-                      ? "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-amber-200 bg-amber-50 text-amber-600"
-                      : "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#DBEAFE] bg-[#EFF6FF] text-[#2A6AED]"
+                      ? "flex h-10 w-10 shrink-0 items-center justify-center rounded-sm border border-amber-200 bg-amber-50 text-amber-600"
+                      : "flex h-10 w-10 shrink-0 items-center justify-center rounded-sm border border-[#DBEAFE] bg-[#EFF6FF] text-[#2A6AED]"
                 }
               >
                 {variant === "destructive" ? (
@@ -108,7 +108,7 @@ export function ConfirmDialogProvider({
               </div>
               <div className="min-w-0 flex-1 space-y-1.5">
                 {options.badgeText && (
-                  <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold tracking-wider text-slate-600 uppercase">
+                  <span className="inline-flex items-center rounded-sm bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-600">
                     {options.badgeText}
                   </span>
                 )}
@@ -128,7 +128,7 @@ export function ConfirmDialogProvider({
               variant="outline"
               size="sm"
               onClick={() => handleClose(false)}
-              className="h-9 rounded-lg border-slate-200 px-4 font-semibold text-slate-700"
+              className="h-9 rounded-md border-slate-200 px-4 font-semibold text-slate-700"
             >
               {options.cancelText || "Cancel"}
             </Button>
@@ -139,10 +139,10 @@ export function ConfirmDialogProvider({
               onClick={() => handleClose(true)}
               className={
                 variant === "destructive"
-                  ? "h-9 rounded-lg bg-red-600 px-4 font-semibold text-white hover:bg-red-700"
+                  ? "h-9 rounded-md bg-red-600 px-4 font-semibold text-white hover:bg-red-700"
                   : variant === "warning"
-                    ? "h-9 rounded-lg bg-amber-600 px-4 font-semibold text-white hover:bg-amber-700"
-                    : "h-9 rounded-lg bg-[#2A6AED] px-4 font-semibold text-white hover:bg-[#1E55C7]"
+                    ? "h-9 rounded-md bg-amber-600 px-4 font-semibold text-white hover:bg-amber-700"
+                    : "h-9 rounded-md bg-[#2A6AED] px-4 font-semibold text-white hover:bg-[#1E55C7]"
               }
             >
               <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />

@@ -76,7 +76,7 @@ export function PreparationSection() {
             </h2>
             <p className="mt-4 max-w-xl text-base leading-7 text-slate-600">
               Built by {BRAND_CONFIG.instituteName} to pair classroom guidance
-              with structured written testing — access free or paid question
+              with structured written testing: access free or paid question
               papers, write under real exam timing, and improve with every
               attempt.
             </p>

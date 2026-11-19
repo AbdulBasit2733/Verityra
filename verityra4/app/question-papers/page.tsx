@@ -59,16 +59,16 @@ export default async function QuestionPapersPage() {
     <div className="flex min-h-screen flex-col bg-[#F1F6FF]/60">
       <main className="flex-1">
         {/* Modernized Hero Header Section */}
-        <section className="relative overflow-hidden border-b border-[#DCE7FA] bg-gradient-to-br from-white via-[#F1F6FF] to-[#E4F0FF] px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
+        <section className="relative overflow-x-clip border-b border-[#DCE7FA] bg-gradient-to-br from-white via-[#F1F6FF] to-[#E4F0FF] px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
           <div className="relative mx-auto max-w-7xl">
             <div className="flex flex-wrap items-center gap-2">
-              <Badge className="rounded-full border border-[#BFD5FA] bg-white px-3 py-1 text-xs font-semibold text-[#145DEB] shadow-xs">
+              <Badge className="rounded-sm border border-[#BFD5FA] bg-white px-3 py-1 text-xs font-semibold text-[#145DEB] shadow-xs">
                 <FileText className="mr-1.5 h-3.5 w-3.5" /> Public Question
                 Paper Repository
               </Badge>
               <Badge
                 variant="outline"
-                className="rounded-full border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700"
+                className="rounded-sm border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700"
               >
                 Free Instant Download
               </Badge>
@@ -91,10 +91,10 @@ export default async function QuestionPapersPage() {
               </div>
 
               {/* Quick Metrics Bar */}
-              <div className="flex flex-wrap gap-4 sm:justify-end lg:col-span-4">
-                <div className="flex items-center gap-3 rounded-2xl border border-[#DCE7FA] bg-white/90 px-4 py-3 shadow-xs">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#F1F6FF] text-[#145DEB]">
-                    <FileText className="h-5 w-5" />
+              <div className="grid grid-cols-2 divide-x divide-[#DCE7FA] rounded-md border border-[#DCE7FA] bg-white lg:col-span-4">
+                <div className="flex items-center gap-3 px-4 py-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-[#F1F6FF] text-[#145DEB]">
+                    <FileText className="h-4.5 w-4.5" />
                   </div>
                   <div>
                     <p className="text-xl leading-none font-black text-[#071B3A]">
@@ -106,9 +106,9 @@ export default async function QuestionPapersPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 rounded-2xl border border-[#DCE7FA] bg-white/90 px-4 py-3 shadow-xs">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-                    <Download className="h-5 w-5" />
+                <div className="flex items-center gap-3 px-4 py-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-emerald-50 text-emerald-600">
+                    <Download className="h-4.5 w-4.5" />
                   </div>
                   <div>
                     <p className="text-xl leading-none font-black text-[#071B3A]">

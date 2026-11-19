@@ -31,7 +31,7 @@ export function ThemeToggle({
     return (
       <div
         className={cn(
-          "inline-flex items-center gap-1 rounded-xl border border-border bg-muted/50 p-1",
+          "inline-flex items-center gap-1 rounded-md border border-border bg-muted/50 p-1",
           className
         )}
         role="group"
@@ -41,7 +41,7 @@ export function ThemeToggle({
           type="button"
           onClick={() => setTheme("light")}
           className={cn(
-            "inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all",
+            "inline-flex cursor-pointer items-center gap-1.5 rounded-sm px-2.5 py-1 text-xs font-semibold transition-colors",
             activeTheme === "light"
               ? "bg-card text-foreground shadow-2xs"
               : "text-muted-foreground hover:text-foreground"
@@ -54,7 +54,7 @@ export function ThemeToggle({
           type="button"
           onClick={() => setTheme("dark")}
           className={cn(
-            "inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all",
+            "inline-flex cursor-pointer items-center gap-1.5 rounded-sm px-2.5 py-1 text-xs font-semibold transition-colors",
             activeTheme === "dark"
               ? "bg-card text-foreground shadow-2xs"
               : "text-muted-foreground hover:text-foreground"
@@ -67,7 +67,7 @@ export function ThemeToggle({
           type="button"
           onClick={() => setTheme("system")}
           className={cn(
-            "inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all",
+            "inline-flex cursor-pointer items-center gap-1.5 rounded-sm px-2.5 py-1 text-xs font-semibold transition-colors",
             activeTheme === "system"
               ? "bg-card text-foreground shadow-2xs"
               : "text-muted-foreground hover:text-foreground"
@@ -91,7 +91,7 @@ export function ThemeToggle({
             size="icon-sm"
             aria-label="Toggle color theme"
             className={cn(
-              "h-9 w-9 shrink-0 rounded-lg border-border bg-card text-foreground transition-colors hover:bg-secondary hover:text-brand",
+              "h-9 w-9 shrink-0 rounded-md border-border bg-card text-foreground transition-colors hover:bg-secondary hover:text-brand",
               className
             )}
           />
@@ -104,10 +104,10 @@ export function ThemeToggle({
         )}
         <span className="sr-only">Toggle theme</span>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-40 rounded-xl p-1.5">
+      <DropdownMenuContent align="end" className="w-40 rounded-md p-1.5">
         <DropdownMenuItem
           onClick={() => setTheme("light")}
-          className="flex cursor-pointer items-center justify-between rounded-lg px-2.5 py-2 text-xs font-semibold"
+          className="flex cursor-pointer items-center justify-between rounded-sm px-2.5 py-2 text-xs font-semibold"
         >
           <span className="flex items-center gap-2">
             <Sun className="h-3.5 w-3.5 text-amber-500" />
@@ -119,7 +119,7 @@ export function ThemeToggle({
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => setTheme("dark")}
-          className="flex cursor-pointer items-center justify-between rounded-lg px-2.5 py-2 text-xs font-semibold"
+          className="flex cursor-pointer items-center justify-between rounded-sm px-2.5 py-2 text-xs font-semibold"
         >
           <span className="flex items-center gap-2">
             <Moon className="h-3.5 w-3.5 text-[#60A5FA]" />
@@ -131,7 +131,7 @@ export function ThemeToggle({
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => setTheme("system")}
-          className="flex cursor-pointer items-center justify-between rounded-lg px-2.5 py-2 text-xs font-semibold"
+          className="flex cursor-pointer items-center justify-between rounded-sm px-2.5 py-2 text-xs font-semibold"
         >
           <span className="flex items-center gap-2">
             <Laptop className="h-3.5 w-3.5 text-muted-foreground" />

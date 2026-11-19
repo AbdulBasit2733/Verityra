@@ -282,10 +282,10 @@ export function FormattedDate({
   includeTime?: boolean
   className?: string
 }) {
-  if (!date) return <span className="text-xs text-slate-400">—</span>
+  if (!date) return <span className="text-xs text-slate-400">-</span>
   const parsed = new Date(date)
   if (isNaN(parsed.getTime()))
-    return <span className="text-xs text-slate-400">—</span>
+    return <span className="text-xs text-slate-400">-</span>
 
   const formattedDate = formatDate(parsed)
   const formattedTime = formatTime(parsed)

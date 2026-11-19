@@ -190,13 +190,13 @@ export function InteractiveRubricShowcase() {
   const current = attemptsData[selectedAttempt]
 
   return (
-    <div className="overflow-hidden rounded-3xl border border-slate-200/90 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-900">
+    <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
       {/* Top Bar with Attempt Cycler */}
       <div className="flex flex-col gap-4 border-b border-slate-200/80 bg-slate-50 px-4 py-4 sm:px-6 md:flex-row md:items-center md:justify-between dark:border-slate-800 dark:bg-slate-950/80">
         <div>
           <div className="flex items-center gap-2">
             <span className="flex h-2 w-2 animate-pulse rounded-full bg-[#2A6AED]" />
-            <span className="text-[11px] font-semibold tracking-wider text-[#2A6AED] uppercase dark:text-blue-400">
+            <span className="text-xs font-semibold text-[#2A6AED] dark:text-blue-400">
               Interactive Evaluation Engine
             </span>
           </div>
@@ -206,14 +206,14 @@ export function InteractiveRubricShowcase() {
         </div>
 
         {/* 3-Attempt Switcher Tabs */}
-        <div className="inline-flex items-center self-start rounded-xl border border-slate-300/50 bg-slate-200/70 p-1 md:self-auto dark:border-slate-700/60 dark:bg-slate-800">
+        <div className="inline-flex items-center self-start rounded-md border border-slate-300/50 bg-slate-200/70 p-1 md:self-auto dark:border-slate-700/60 dark:bg-slate-800">
           {([1, 2, 3] as const).map((num) => (
             <button
               key={num}
               type="button"
               onClick={() => setSelectedAttempt(num)}
               className={cn(
-                "flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all",
+                "flex cursor-pointer items-center gap-1.5 rounded-sm px-3 py-1.5 text-xs font-semibold transition-colors",
                 selectedAttempt === num
                   ? "bg-white text-[#2A6AED] shadow-xs dark:bg-slate-900 dark:text-blue-400"
                   : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
@@ -222,7 +222,7 @@ export function InteractiveRubricShowcase() {
               <RotateCcw className="h-3 w-3" />
               <span>Attempt {num}</span>
               {num === 2 && (
-                <span className="py-0.2 hidden rounded bg-amber-100 px-1 text-[9px] font-bold text-amber-800 sm:inline-block dark:bg-amber-950/80 dark:text-amber-300">
+                <span className="py-0.2 hidden rounded-sm bg-amber-100 px-1 text-[9px] font-bold text-amber-800 sm:inline-block dark:bg-amber-950/80 dark:text-amber-300">
                   Surge
                 </span>
               )}
@@ -235,7 +235,7 @@ export function InteractiveRubricShowcase() {
       <div className="grid grid-cols-1 items-start gap-6 p-4 sm:p-6 lg:grid-cols-12 lg:gap-8 lg:p-8">
         {/* Left Column: Attempt Diagnostic Summary (4 cols) */}
         <div className="space-y-4 lg:col-span-4">
-          <div className="space-y-4 rounded-2xl border border-slate-200/80 bg-slate-50/80 p-5 dark:border-slate-800 dark:bg-slate-950/60">
+          <div className="space-y-4 rounded-md border border-slate-200/80 bg-slate-50/80 p-5 dark:border-slate-800 dark:bg-slate-950/60">
             <div className="flex items-center justify-between">
               <Badge
                 className={cn(
@@ -259,7 +259,7 @@ export function InteractiveRubricShowcase() {
               </span>
               <span
                 className={cn(
-                  "ml-auto inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold",
+                  "ml-auto inline-flex items-center gap-1 rounded-sm px-2 py-0.5 text-xs font-bold",
                   current.percentage >= 80
                     ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
                     : current.percentage >= 60
@@ -306,7 +306,7 @@ export function InteractiveRubricShowcase() {
           </div>
 
           {/* Quick Notice Card */}
-          <div className="flex items-start gap-2.5 rounded-xl border border-blue-200/70 bg-[#EFF6FF]/70 p-3.5 text-xs text-slate-700 dark:border-blue-900/40 dark:bg-blue-950/30 dark:text-slate-300">
+          <div className="flex items-start gap-2.5 rounded-md border border-blue-200/70 bg-[#EFF6FF]/70 p-3.5 text-xs text-slate-700 dark:border-blue-900/40 dark:bg-blue-950/30 dark:text-slate-300">
             <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-[#2A6AED] dark:text-blue-400" />
             <p className="leading-snug">
               Notice how the candidate rectifies missing citations between
@@ -327,7 +327,7 @@ export function InteractiveRubricShowcase() {
               type="button"
               onClick={() => setActiveTab("rubrics")}
               className={cn(
-                "inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all",
+                "inline-flex cursor-pointer items-center gap-1.5 rounded-sm px-3 py-1.5 text-xs font-semibold transition-colors",
                 activeTab === "rubrics"
                   ? "border border-blue-200/80 bg-[#EFF6FF] text-[#2A6AED] dark:border-blue-800 dark:bg-blue-950/60 dark:text-blue-400"
                   : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
@@ -340,7 +340,7 @@ export function InteractiveRubricShowcase() {
               type="button"
               onClick={() => setActiveTab("margins")}
               className={cn(
-                "inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all",
+                "inline-flex cursor-pointer items-center gap-1.5 rounded-sm px-3 py-1.5 text-xs font-semibold transition-colors",
                 activeTab === "margins"
                   ? "border border-blue-200/80 bg-[#EFF6FF] text-[#2A6AED] dark:border-blue-800 dark:bg-blue-950/60 dark:text-blue-400"
                   : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
@@ -353,7 +353,7 @@ export function InteractiveRubricShowcase() {
               type="button"
               onClick={() => setActiveTab("comment")}
               className={cn(
-                "inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all",
+                "inline-flex cursor-pointer items-center gap-1.5 rounded-sm px-3 py-1.5 text-xs font-semibold transition-colors",
                 activeTab === "comment"
                   ? "border border-blue-200/80 bg-[#EFF6FF] text-[#2A6AED] dark:border-blue-800 dark:bg-blue-950/60 dark:text-blue-400"
                   : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
@@ -372,7 +372,7 @@ export function InteractiveRubricShowcase() {
                 return (
                   <div
                     key={idx}
-                    className="space-y-2 rounded-xl border border-slate-200/70 bg-slate-50/60 p-4 transition-colors hover:border-blue-300 dark:border-slate-800/80 dark:bg-slate-950/40 dark:hover:border-blue-700/60"
+                    className="space-y-2 rounded-md border border-slate-200/70 bg-slate-50/60 p-4 transition-colors hover:border-blue-300 dark:border-slate-800/80 dark:bg-slate-950/40 dark:hover:border-blue-700/60"
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="text-xs font-semibold text-slate-900 sm:text-sm dark:text-slate-100">
@@ -409,10 +409,10 @@ export function InteractiveRubricShowcase() {
 
           {/* TAB 2: Margin Scanner Simulator */}
           {activeTab === "margins" && (
-            <div className="animate-fade-up space-y-4 rounded-xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-950/60">
+            <div className="animate-fade-up space-y-4 rounded-md border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-950/60">
               <div className="flex items-center justify-between border-b border-slate-200 pb-3 dark:border-slate-800">
                 <div className="flex items-center gap-2">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-sm bg-emerald-100 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400">
                     <CheckCircle2 className="h-4 w-4" />
                   </div>
                   <div>
@@ -431,7 +431,7 @@ export function InteractiveRubricShowcase() {
               </div>
 
               {/* Simulated Sheet Spec */}
-              <div className="space-y-2 rounded-lg border border-slate-200 bg-white p-3.5 font-mono text-xs dark:border-slate-800 dark:bg-slate-900/90">
+              <div className="space-y-2 rounded-md border border-slate-200 bg-white p-3.5 font-mono text-xs dark:border-slate-800 dark:bg-slate-900/90">
                 <div className="flex justify-between text-slate-600 dark:text-slate-400">
                   <span>LEFT MARGIN THRESHOLD:</span>
                   <span className="font-bold text-emerald-600 dark:text-emerald-400">
@@ -468,10 +468,10 @@ export function InteractiveRubricShowcase() {
 
           {/* TAB 3: Examiner Synthesis */}
           {activeTab === "comment" && (
-            <div className="animate-fade-up space-y-3 rounded-xl border border-blue-200/70 bg-gradient-to-br from-[#EFF6FF]/60 via-white to-white p-5 dark:border-blue-900/40 dark:from-blue-950/20 dark:via-slate-900 dark:to-slate-900">
+            <div className="animate-fade-up space-y-3 rounded-md border border-blue-200/70 bg-gradient-to-br from-[#EFF6FF]/60 via-white to-white p-5 dark:border-blue-900/40 dark:from-blue-950/20 dark:via-slate-900 dark:to-slate-900">
               <div className="flex items-center gap-2">
                 <FileText className="h-4 w-4 text-[#2A6AED] dark:text-blue-400" />
-                <h4 className="text-xs font-bold tracking-wider text-slate-900 uppercase dark:text-white">
+                <h4 className="text-xs font-bold text-slate-900 dark:text-white">
                   Senior Evaluator Summary & Recommendations
                 </h4>
               </div>

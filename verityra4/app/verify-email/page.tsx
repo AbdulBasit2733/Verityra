@@ -109,7 +109,7 @@ function VerifyEmailContent() {
   return (
     <Card className="auth-form-surface p-2 sm:p-4">
       <CardHeader className="space-y-1.5 pb-6">
-        <div className="mb-2 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-[#2A6AED]">
+        <div className="mb-2 inline-flex h-11 w-11 items-center justify-center rounded-md bg-blue-50 text-[#2A6AED]">
           <MailCheck className="h-5 w-5" />
         </div>
         <CardTitle className="text-2xl font-black text-slate-900 dark:text-white">
@@ -133,7 +133,7 @@ function VerifyEmailContent() {
 
         {status === "verified" && (
           <div className="space-y-5">
-            <Alert className="rounded-2xl border-emerald-500 bg-emerald-50 py-4 text-sm text-emerald-800">
+            <Alert className="rounded-md border-emerald-500 bg-emerald-50 py-4 text-sm text-emerald-800">
               <CheckCircle2 className="mr-2 h-4 w-4 text-emerald-600" />
               <AlertDescription className="font-semibold">
                 {message ||
@@ -142,14 +142,14 @@ function VerifyEmailContent() {
             </Alert>
             <div className="flex flex-col gap-3 sm:flex-row">
               <Link href="/student/dashboard" className="w-full">
-                <Button className="h-11 w-full rounded-xl bg-[#2A6AED] font-bold text-white hover:bg-[#1E55C7]">
+                <Button className="h-11 w-full rounded-md bg-[#2A6AED] font-bold text-white hover:bg-[#1E55C7]">
                   Continue to Student Dashboard
                 </Button>
               </Link>
               <Link href="/signin" className="w-full">
                 <Button
                   variant="outline"
-                  className="h-11 w-full rounded-xl border-slate-200 font-semibold"
+                  className="h-11 w-full rounded-md border-slate-200 font-semibold"
                 >
                   Sign In
                 </Button>
@@ -161,21 +161,21 @@ function VerifyEmailContent() {
         {(status === "error" || status === "idle") && (
           <div className="space-y-5">
             {status === "error" && message && (
-              <Alert variant="destructive" className="rounded-xl py-3 text-sm">
+              <Alert variant="destructive" className="rounded-md py-3 text-sm">
                 <ShieldAlert className="mr-2 h-4 w-4" />
                 <AlertDescription>{message}</AlertDescription>
               </Alert>
             )}
 
             {resendFeedback && (
-              <Alert className="rounded-xl border-emerald-500 bg-emerald-50 py-3 text-sm text-emerald-800">
+              <Alert className="rounded-md border-emerald-500 bg-emerald-50 py-3 text-sm text-emerald-800">
                 <CheckCircle2 className="mr-2 h-4 w-4 text-emerald-600" />
                 <AlertDescription>{resendFeedback}</AlertDescription>
               </Alert>
             )}
 
             {devVerificationUrl && (
-              <div className="space-y-1.5 rounded-2xl border border-blue-200 bg-blue-50/80 p-4 text-xs">
+              <div className="space-y-1.5 rounded-md border border-blue-200 bg-blue-50/80 p-4 text-xs">
                 <p className="font-bold text-[#2A6AED]">
                   Development Verification Link:
                 </p>
@@ -205,7 +205,7 @@ function VerifyEmailContent() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="candidate@example.com"
-                    className="h-11 rounded-xl"
+                    className="h-11 rounded-md"
                   />
                 </div>
               </div>
@@ -213,7 +213,7 @@ function VerifyEmailContent() {
               <Button
                 type="submit"
                 disabled={resendLoading}
-                className="h-11 w-full rounded-xl bg-[#2A6AED] font-bold text-white hover:bg-[#1E55C7]"
+                className="h-11 w-full rounded-md bg-[#2A6AED] font-bold text-white hover:bg-[#1E55C7]"
               >
                 {resendLoading ? (
                   <>
@@ -253,7 +253,7 @@ export default function VerifyEmailPage() {
           href="/"
           className="group mb-6 inline-flex items-center justify-center gap-3"
         >
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#2A6AED] to-[#1D4ED8] text-2xl font-black text-white shadow-lg shadow-blue-500/25 transition-transform group-hover:scale-105">
+          <div className="flex h-12 w-12 items-center justify-center rounded-md bg-gradient-to-br from-[#2A6AED] to-[#1D4ED8] text-2xl font-black text-white shadow-sm">
             {BRAND_CONFIG.initials}
           </div>
           <span className="font-heading text-3xl font-black tracking-tight text-slate-900 transition-colors group-hover:text-[#2A6AED] dark:text-white">

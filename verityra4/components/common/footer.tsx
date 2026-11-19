@@ -168,7 +168,7 @@ export function Footer({
           {/* 1. Brand & Security Badges (Full width on mobile S/M/L, 5 cols on desktop) */}
           <div className="col-span-2 space-y-3.5 md:col-span-5">
             <Link href="/" className="group inline-flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#2A6AED] text-sm font-bold text-white shadow-md shadow-blue-500/20 transition-colors group-hover:bg-[#1E55C7] min-[375px]:h-9 min-[375px]:w-9 min-[375px]:text-base">
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[#2A6AED] text-sm font-bold text-white shadow-sm transition-colors group-hover:bg-[#1E55C7] min-[375px]:h-9 min-[375px]:w-9 min-[375px]:text-base">
                 {BRAND_CONFIG.initials}
               </div>
               <span className="font-heading text-base font-bold tracking-tight text-white min-[375px]:text-lg sm:text-xl">
@@ -178,7 +178,7 @@ export function Footer({
 
             <p className="max-w-md text-[11.5px] leading-relaxed text-slate-400 min-[375px]:text-xs sm:text-[13px]">
               Online free &amp; paid test series and question papers by{" "}
-              {BRAND_CONFIG.instituteName}, Chhatrapati Sambhajinagar — from Jr.
+              {BRAND_CONFIG.instituteName}, Chhatrapati Sambhajinagar: from Jr.
               KG–XII school boards to NEET-UG, JEE, Olympiads, NTSE, UGC NET &amp;
               English Grammar.
             </p>
@@ -190,13 +190,13 @@ export function Footer({
               <span>{BRAND_CONFIG.contact.address}</span>
             </p>
 
-            {/* Security Pill Badges - Responsive for 320px, 375px, 425px */}
+            {/* Security Badges - Responsive for 320px, 375px, 425px */}
             <div className="grid grid-cols-1 items-stretch gap-2 pt-1 min-[390px]:flex min-[390px]:flex-wrap min-[390px]:items-center">
-              <div className="inline-flex items-center gap-1.5 rounded-lg border border-slate-800/90 bg-slate-900/90 px-2.5 py-1.5 text-[10.5px] text-slate-300 min-[375px]:text-[11px]">
+              <div className="inline-flex items-center gap-1.5 rounded-sm border border-slate-800/90 bg-slate-900/90 px-2.5 py-1.5 text-[10.5px] text-slate-300 min-[375px]:text-[11px]">
                 <Lock className="h-3 w-3 shrink-0 text-[#2A6AED]" />
                 <span className="truncate">256-Bit Encrypted Uploads</span>
               </div>
-              <div className="inline-flex items-center gap-1.5 rounded-lg border border-slate-800/90 bg-slate-900/90 px-2.5 py-1.5 text-[10.5px] text-slate-300 min-[375px]:text-[11px]">
+              <div className="inline-flex items-center gap-1.5 rounded-sm border border-slate-800/90 bg-slate-900/90 px-2.5 py-1.5 text-[10.5px] text-slate-300 min-[375px]:text-[11px]">
                 <ShieldCheck className="h-3 w-3 shrink-0 text-emerald-400" />
                 <span className="truncate">Strict 3-Attempt Isolation</span>
               </div>
@@ -205,7 +205,7 @@ export function Footer({
 
           {/* 2. Platform Links (1 col on Mobile S/M/L, 2 cols on desktop) */}
           <div className="col-span-1 space-y-2.5 sm:space-y-3 md:col-span-2">
-            <h4 className="text-[11px] font-bold tracking-wider text-white uppercase min-[375px]:text-xs">
+            <h4 className="text-xs font-bold text-white">
               Platform
             </h4>
             <ul className="space-y-2 text-[11.5px] text-slate-400 min-[375px]:text-xs sm:space-y-2.5 sm:text-[13px]">
@@ -246,7 +246,7 @@ export function Footer({
 
           {/* 3. Candidate Portal Links (1 col on Mobile S/M/L, 2 cols on desktop) */}
           <div className="col-span-1 space-y-2.5 sm:space-y-3 md:col-span-2">
-            <h4 className="text-[11px] font-bold tracking-wider text-white uppercase min-[375px]:text-xs">
+            <h4 className="text-xs font-bold text-white">
               Candidates
             </h4>
             <ul className="space-y-2 text-[11.5px] text-slate-400 min-[375px]:text-xs sm:space-y-2.5 sm:text-[13px]">
@@ -287,7 +287,7 @@ export function Footer({
 
           {/* 4. Trust & Security (Full width 2-col card/section on Mobile S/M/L, 3 cols on desktop) */}
           <div className="col-span-2 space-y-2.5 border-t border-slate-800/60 pt-2 sm:space-y-3 md:col-span-3 md:border-t-0 md:pt-0">
-            <h4 className="text-[11px] font-bold tracking-wider text-white uppercase min-[375px]:text-xs">
+            <h4 className="text-xs font-bold text-white">
               Trust & Security
             </h4>
             <ul className="space-y-2 text-[11.5px] text-slate-400 min-[375px]:text-xs sm:space-y-2.5 sm:text-[13px]">
@@ -298,7 +298,6 @@ export function Footer({
                 >
                   Privacy Policy & Data Vault
                 </Link>
-                <span className="text-slate-700 md:hidden">•</span>
                 <Link
                   href="/terms"
                   className="inline-block py-0.5 transition-colors hover:text-white md:block"
@@ -309,7 +308,7 @@ export function Footer({
               <li className="pt-0.5 flex flex-wrap gap-2">
                 <a
                   href={BRAND_CONFIG.contact.phoneHref}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-800/80 bg-slate-900/70 px-2.5 py-1.5 text-[11px] text-slate-300 transition-colors hover:text-white min-[375px]:text-xs"
+                  className="inline-flex items-center gap-1.5 rounded-md border border-slate-800/80 bg-slate-900/70 px-2.5 py-1.5 text-[11px] text-slate-300 transition-colors hover:text-white min-[375px]:text-xs"
                 >
                   <Phone className="h-3 w-3 shrink-0 text-[#2A6AED]" />
                   <span className="font-medium">
@@ -318,7 +317,7 @@ export function Footer({
                 </a>
                 <a
                   href={getSupportMailto()}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-800/80 bg-slate-900/70 px-2.5 py-1.5 text-[11px] text-slate-300 transition-colors hover:text-white min-[375px]:text-xs"
+                  className="inline-flex items-center gap-1.5 rounded-md border border-slate-800/80 bg-slate-900/70 px-2.5 py-1.5 text-[11px] text-slate-300 transition-colors hover:text-white min-[375px]:text-xs"
                 >
                   <Mail className="h-3 w-3 shrink-0 text-[#2A6AED]" />
                   <span className="font-medium">{BRAND_CONFIG.supportEmail}</span>
@@ -352,14 +351,12 @@ export function Footer({
             >
               Privacy Notice
             </Link>
-            <span className="text-slate-700 sm:hidden">•</span>
             <Link
               href="/terms"
               className="transition-colors hover:text-slate-300"
             >
               Terms of Service
             </Link>
-            <span className="text-slate-700 sm:hidden">•</span>
             <Link
               href="/contact"
               className="transition-colors hover:text-slate-300"

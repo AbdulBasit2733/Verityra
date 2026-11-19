@@ -140,8 +140,8 @@ export function SubmissionStatusBadge({
         {progress > 0 && progress < 100 && (
           <div className="h-1 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
             <div
-              className="h-full bg-blue-500 transition-all duration-300 dark:bg-blue-400"
-              style={{ width: `${progress}%` }}
+              className="h-full w-full origin-left bg-blue-500 motion-safe:transition-transform motion-reduce:transition-none duration-300 dark:bg-blue-400"
+              style={{ transform: `scaleX(${Math.min(100, Math.max(0, progress)) / 100})` }}
             />
           </div>
         )}

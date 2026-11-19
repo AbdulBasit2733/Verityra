@@ -16,7 +16,7 @@ export default function AdminSubmissionsLoading() {
       </div>
 
       {/* Filter toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border/60 bg-card p-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-md border border-border/60 bg-card p-4">
         <Skeleton className="h-10 w-72" />
         <div className="flex gap-2">
           <Skeleton className="h-10 w-32" />
@@ -25,7 +25,7 @@ export default function AdminSubmissionsLoading() {
       </div>
 
       {/* Submissions table skeleton */}
-      <div className="overflow-hidden rounded-xl border border-border/80 bg-card">
+      <div className="overflow-hidden rounded-md border border-border/80 bg-card">
         <div className="flex h-12 items-center justify-between border-b border-border bg-slate-50/80 px-6">
           <Skeleton className="h-4 w-32" />
           <Skeleton className="h-4 w-24" />
@@ -43,7 +43,7 @@ export default function AdminSubmissionsLoading() {
                 <Skeleton className="h-3 w-32" />
               </div>
               <Skeleton className="h-4 w-28" />
-              <Skeleton className="h-6 w-24 rounded-full" />
+              <Skeleton className="h-6 w-24 rounded-sm" />
               <Skeleton className="h-8 w-20" />
             </div>
           ))}

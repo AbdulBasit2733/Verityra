@@ -473,7 +473,7 @@ export function ExamWorkspaceTimer({
               type="button"
               size="sm"
               onClick={() => setIsSheetOpen(true)}
-              className="h-9 gap-1.5 rounded-xl bg-primary px-3.5 text-xs font-bold text-primary-foreground shadow-2xs hover:bg-hover-accent"
+              className="h-9 gap-1.5 rounded-md bg-primary px-3.5 text-xs font-bold text-primary-foreground shadow-2xs hover:bg-hover-accent"
             >
               <Timer className="h-3.5 w-3.5" />
               <span>Exam Timer</span>
@@ -485,7 +485,7 @@ export function ExamWorkspaceTimer({
               size="sm"
               onClick={() => setIsSheetOpen(true)}
               className={cn(
-                "h-9 gap-2 rounded-xl border px-3 text-xs font-bold shadow-2xs transition-colors",
+                "h-9 gap-2 rounded-md border px-3 text-xs font-bold shadow-2xs transition-colors",
                 urgency.cardBorder
               )}
             >
@@ -514,7 +514,7 @@ export function ExamWorkspaceTimer({
         <div
           ref={containerRef}
           className={cn(
-            "relative overflow-hidden rounded-2xl border p-4 shadow-xs transition-all duration-300 sm:p-5",
+            "relative overflow-x-clip rounded-md border p-4 shadow-xs transition-colors duration-300 sm:p-5",
             urgency.cardBorder,
             className
           )}
@@ -524,7 +524,7 @@ export function ExamWorkspaceTimer({
             <div className="flex items-center gap-3.5">
               <span
                 className={cn(
-                  "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors",
+                  "flex h-10 w-10 shrink-0 items-center justify-center rounded-sm transition-colors",
                   phase === "IDLE"
                     ? "bg-primary/10 text-primary"
                     : phase === "OVERTIME"
@@ -595,7 +595,7 @@ export function ExamWorkspaceTimer({
                     variant="outline"
                     size="sm"
                     onClick={() => setIsSheetOpen(true)}
-                    className="rounded-xl border-border text-xs font-semibold hover:bg-muted"
+                    className="rounded-md border-border text-xs font-semibold hover:bg-muted"
                   >
                     View Timer Info
                   </Button>
@@ -603,7 +603,7 @@ export function ExamWorkspaceTimer({
                     type="button"
                     size="sm"
                     onClick={handleStart}
-                    className="gap-1.5 rounded-xl bg-primary px-4 text-xs font-bold text-primary-foreground shadow-xs hover:bg-hover-accent"
+                    className="gap-1.5 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground shadow-xs hover:bg-hover-accent"
                   >
                     <Play className="h-3.5 w-3.5 fill-current" />
                     Start Exam Timer
@@ -615,7 +615,7 @@ export function ExamWorkspaceTimer({
                   <div
                     suppressHydrationWarning
                     className={cn(
-                      "hidden rounded-xl border border-border/80 bg-background/80 px-3 py-1.5 font-mono text-sm font-extrabold sm:block",
+                      "hidden rounded-md border border-border/80 bg-background/80 px-3 py-1.5 font-mono text-sm font-extrabold sm:block",
                       urgency.clockColor
                     )}
                   >
@@ -626,7 +626,7 @@ export function ExamWorkspaceTimer({
                     type="button"
                     size="sm"
                     onClick={() => setIsSheetOpen(true)}
-                    className="gap-1.5 rounded-xl bg-primary px-4 text-xs font-bold text-primary-foreground shadow-xs hover:bg-hover-accent"
+                    className="gap-1.5 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground shadow-xs hover:bg-hover-accent"
                   >
                     <Timer className="h-3.5 w-3.5" />
                     Open Timer Drawer
@@ -645,18 +645,18 @@ export function ExamWorkspaceTimer({
           role="region"
           aria-label="Floating Exam Timer Pill"
           className={cn(
-            "fixed right-5 bottom-5 z-40 animate-in transition-all duration-300 slide-in-from-bottom-5",
+            "fixed right-5 bottom-5 z-40 animate-in transition-colors duration-300 slide-in-from-bottom-5",
             isMinimized ? "w-auto" : "w-[92vw] max-w-sm"
           )}
         >
-          <div className="rounded-2xl border border-primary/20 bg-background/95 p-3 shadow-xl backdrop-blur-md dark:bg-slate-900/95">
+          <div className="rounded-md border border-primary/20 bg-background p-3 shadow-sm dark:bg-slate-900">
             <div className="flex items-center justify-between gap-3">
               <button
                 type="button"
                 onClick={() => setIsSheetOpen(true)}
                 className="flex items-center gap-2.5 text-left transition-opacity hover:opacity-90"
               >
-                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <span className="flex h-8 w-8 items-center justify-center rounded-sm bg-primary/10 text-primary">
                   <Timer className="h-4 w-4" />
                 </span>
                 <div>
@@ -694,7 +694,7 @@ export function ExamWorkspaceTimer({
                   type="button"
                   size="sm"
                   onClick={() => setIsSheetOpen(true)}
-                  className="h-8 gap-1 rounded-lg px-2.5 text-xs font-bold"
+                  className="h-8 gap-1 rounded-md px-2.5 text-xs font-bold"
                 >
                   Sheet
                   <ArrowRight className="h-3 w-3" />
@@ -708,7 +708,7 @@ export function ExamWorkspaceTimer({
                   aria-label={
                     isMinimized ? "Expand mini pill" : "Minimize mini pill"
                   }
-                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground hover:text-foreground"
+                  className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-background text-muted-foreground hover:text-foreground"
                 >
                   {isMinimized ? (
                     <Maximize2 className="h-3.5 w-3.5" />
@@ -777,7 +777,7 @@ export function ExamWorkspaceTimer({
             {/* Urgency Stage Alert Box */}
             <div
               className={cn(
-                "rounded-xl border p-3.5 text-xs transition-colors",
+                "rounded-md border p-3.5 text-xs transition-colors",
                 phase === "OVERTIME"
                   ? "border-destructive/40 bg-destructive/10 text-destructive"
                   : phase === "BUFFER"
@@ -807,8 +807,8 @@ export function ExamWorkspaceTimer({
             </div>
 
             {/* Giant Digital Time Readout */}
-            <div className="flex flex-col items-center justify-center rounded-2xl border border-border/80 bg-card p-6 text-center shadow-xs">
-              <span className="text-[11px] font-bold tracking-widest text-muted-foreground uppercase">
+            <div className="flex flex-col items-center justify-center rounded-md border border-border/80 bg-card p-6 text-center shadow-none">
+              <span className="text-[11px] font-bold text-muted-foreground">
                 {phase === "BUFFER" || phase === "OVERTIME"
                   ? "Upload Buffer Remaining"
                   : "Writing Time Remaining"}
@@ -860,7 +860,7 @@ export function ExamWorkspaceTimer({
             </div>
 
             {/* Progress Bar & Phase Milestones */}
-            <div className="space-y-3 rounded-xl border border-border/80 bg-card p-4 shadow-xs">
+            <div className="space-y-3 rounded-md border border-border/80 bg-card p-4 shadow-none">
               <div className="flex justify-between text-xs font-semibold">
                 <span className="text-muted-foreground">Exam Progression</span>
                 <span className="font-mono text-foreground">
@@ -870,15 +870,15 @@ export function ExamWorkspaceTimer({
               <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                 <div
                   className={cn(
-                    "h-full rounded-full transition-all duration-500",
+                    "h-full w-full origin-left rounded-full motion-safe:transition-transform motion-reduce:transition-none duration-500",
                     urgency.progressColor
                   )}
-                  style={{ width: `${progressPercent}%` }}
+                  style={{ transform: `scaleX(${Math.min(100, Math.max(0, progressPercent)) / 100})` }}
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-2 pt-2 text-xs">
-                <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-background p-2">
+                <div className="flex items-center gap-2 rounded-md border border-border/60 bg-background p-2">
                   <span
                     className={cn(
                       "h-2 w-2 rounded-full",
@@ -897,7 +897,7 @@ export function ExamWorkspaceTimer({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-background p-2">
+                <div className="flex items-center gap-2 rounded-md border border-border/60 bg-background p-2">
                   <span
                     className={cn(
                       "h-2 w-2 rounded-full",
@@ -919,7 +919,7 @@ export function ExamWorkspaceTimer({
             </div>
 
             {/* Mode & Sound Utilities */}
-            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/80 bg-card p-3 shadow-xs">
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border/80 bg-card p-3 shadow-none">
               <div className="flex items-center gap-2">
                 <button
                   type="button"
@@ -931,7 +931,7 @@ export function ExamWorkspaceTimer({
                       : "Practice Mode (Allows Pause/Resume)"
                   }
                   className={cn(
-                    "inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-semibold transition-colors",
+                    "inline-flex h-8 items-center gap-1.5 rounded-md border px-2.5 text-xs font-semibold transition-colors",
                     timerState.mode === "STRICT"
                       ? "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300"
                       : "border-border bg-background text-muted-foreground hover:text-foreground"
@@ -959,7 +959,7 @@ export function ExamWorkspaceTimer({
                       : "Enable audio chimes"
                   }
                   className={cn(
-                    "flex h-8 w-8 items-center justify-center rounded-lg border transition-colors",
+                    "flex h-8 w-8 items-center justify-center rounded-md border transition-colors",
                     timerState.soundEnabled
                       ? "border-primary/30 bg-primary/10 text-primary"
                       : "border-border bg-background text-muted-foreground hover:text-foreground"
@@ -979,7 +979,7 @@ export function ExamWorkspaceTimer({
                   onClick={() => setShowConfirmReset(true)}
                   title="Reset exam timer"
                   aria-label="Reset exam timer"
-                  className="flex h-8 items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 text-xs text-muted-foreground transition-colors hover:border-destructive hover:text-destructive"
+                  className="flex h-8 items-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-xs text-muted-foreground transition-colors hover:border-destructive hover:text-destructive"
                 >
                   <RotateCcw className="h-3.5 w-3.5" />
                   <span>Reset</span>
@@ -989,7 +989,7 @@ export function ExamWorkspaceTimer({
 
             {/* Reset Confirmation Overlay */}
             {showConfirmReset && (
-              <div className="animate-in rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-center fade-in-50">
+              <div className="animate-in rounded-md border border-destructive/40 bg-destructive/10 p-4 text-center fade-in-50">
                 <AlertCircle className="mx-auto mb-2 h-8 w-8 text-destructive" />
                 <h4 className="text-sm font-bold text-foreground">
                   Reset Exam Timer?
@@ -1022,7 +1022,7 @@ export function ExamWorkspaceTimer({
             )}
 
             {/* Exam Booklet & Margin Guidelines */}
-            <div className="space-y-1.5 rounded-xl border border-border/80 bg-muted/30 p-3.5 text-xs">
+            <div className="space-y-1.5 border-t border-border/80 pt-3.5 text-xs">
               <p className="font-bold text-foreground">
                 Exam Writing Directives:
               </p>
@@ -1046,7 +1046,7 @@ export function ExamWorkspaceTimer({
               <Button
                 type="button"
                 onClick={handleStart}
-                className="w-full gap-2 rounded-xl bg-primary py-5 text-sm font-bold text-primary-foreground shadow-sm hover:bg-hover-accent"
+                className="w-full gap-2 rounded-md bg-primary py-5 text-sm font-bold text-primary-foreground shadow-sm hover:bg-hover-accent"
               >
                 <Play className="h-4 w-4 fill-current" />
                 Start Exam Timer Now
@@ -1055,7 +1055,7 @@ export function ExamWorkspaceTimer({
               <Button
                 type="button"
                 onClick={handleResume}
-                className="w-full gap-2 rounded-xl bg-primary py-5 text-sm font-bold text-primary-foreground shadow-sm hover:bg-hover-accent"
+                className="w-full gap-2 rounded-md bg-primary py-5 text-sm font-bold text-primary-foreground shadow-sm hover:bg-hover-accent"
               >
                 <Play className="h-4 w-4 fill-current" />
                 Resume Exam Timer
@@ -1067,7 +1067,7 @@ export function ExamWorkspaceTimer({
                     type="button"
                     variant="outline"
                     onClick={handlePause}
-                    className="flex-1 gap-1.5 rounded-xl border-border text-xs font-semibold hover:border-primary"
+                    className="flex-1 gap-1.5 rounded-md border-border text-xs font-semibold hover:border-primary"
                   >
                     <Pause className="h-3.5 w-3.5" />
                     Pause Timer
@@ -1077,7 +1077,7 @@ export function ExamWorkspaceTimer({
                   <Button
                     type="button"
                     onClick={handleFinishWriting}
-                    className="flex-1 gap-1.5 rounded-xl bg-primary text-xs font-bold text-primary-foreground shadow-sm hover:bg-hover-accent"
+                    className="flex-1 gap-1.5 rounded-md bg-primary text-xs font-bold text-primary-foreground shadow-sm hover:bg-hover-accent"
                   >
                     <CheckCircle2 className="h-4 w-4" />
                     Done Writing — Upload Booklet

@@ -77,7 +77,7 @@ export function StudentEvaluationDetailClient({
                   changes for your next handwritten attempt.
                 </AlertDescription>
               </Alert>
-              <div className="rounded-2xl border border-border bg-card p-5">
+              <div className="rounded-md border border-border bg-card p-5">
                 <p className="text-sm leading-7 text-muted-foreground">
                   Your evaluation is organized around clarity, structure,
                   completeness, reasoning, and presentation. Review the feedback
@@ -128,7 +128,7 @@ export function StudentEvaluationDetailClient({
               </div>
             </TabsContent>
             <TabsContent value="improvement" className="mt-5 space-y-4">
-              <div className="rounded-2xl border border-border bg-card p-5">
+              <div className="rounded-md border border-border bg-card p-5">
                 <p className="text-sm leading-7 text-muted-foreground">
                   Prioritize the improvement advice attached to questions with
                   the largest mark gaps. Revisit the expected structure,
@@ -138,12 +138,9 @@ export function StudentEvaluationDetailClient({
               </div>
               <Separator />
               {questions.length ? (
-                <div className="space-y-4">
+                <div className="divide-y divide-border border-y border-border">
                   {questions.map((question) => (
-                    <div
-                      key={question.id}
-                      className="rounded-2xl border border-border bg-card p-5"
-                    >
+                    <div key={question.id} className="py-4">
                       <div className="flex items-center justify-between gap-3">
                         <p className="font-bold text-foreground">
                           {question.questionNumber}
@@ -171,7 +168,7 @@ export function StudentEvaluationDetailClient({
 
 function EmptyQuestions() {
   return (
-    <div className="rounded-2xl border border-dashed border-border bg-card p-8 text-center text-sm text-muted-foreground">
+    <div className="rounded-md border border-dashed border-border bg-card p-8 text-center text-sm text-muted-foreground">
       Question-level feedback is not available for this evaluation yet.
     </div>
   )

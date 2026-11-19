@@ -154,7 +154,7 @@ export function LeaderboardDesktop({
             className="px-4 py-2 text-xs font-semibold sm:text-sm"
           >
             Rankings table{" "}
-            <span className="ml-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] text-primary">
+            <span className="ml-1 rounded-sm bg-primary/10 px-1.5 py-0.5 text-[10px] text-primary">
               {rankings.length}
             </span>
           </TabsTrigger>
@@ -167,46 +167,40 @@ export function LeaderboardDesktop({
               <PodiumEntry entry={top[2]} rank="third" />
             </div>
           )}
-          <div className="grid grid-cols-3 gap-4">
-            <Card>
-              <CardContent className="flex items-center gap-3 p-4">
-                <Award className="h-5 w-5 text-primary" />
-                <div>
-                  <p className="text-xs text-muted-foreground">
-                    Ranked submissions
-                  </p>
-                  <p className="text-lg font-bold">{rankings.length}</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="flex items-center gap-3 p-4">
-                <BadgeCheck className="h-5 w-5 text-emerald-700 dark:text-emerald-400" />
-                <div>
-                  <p className="text-xs text-muted-foreground">Top score</p>
-                  <p className="text-lg font-bold">
-                    {rankings[0]?.percentage?.toFixed(1) || "0.0"}%
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="flex items-center gap-3 p-4">
-                <Clock className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="text-xs text-muted-foreground">
-                    Latest submission
-                  </p>
-                  <p className="text-sm font-bold">
-                    {rankings[0] ? (
-                      <FormattedDate date={rankings[0].submittedAt} />
-                    ) : (
-                      "—"
-                    )}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="grid grid-cols-3 divide-x divide-border border-y border-border bg-card">
+            <div className="flex items-center gap-3 p-4">
+              <Award className="h-5 w-5 text-primary" />
+              <div>
+                <p className="text-xs text-muted-foreground">
+                  Ranked submissions
+                </p>
+                <p className="text-lg font-bold">{rankings.length}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 p-4">
+              <BadgeCheck className="h-5 w-5 text-emerald-700 dark:text-emerald-400" />
+              <div>
+                <p className="text-xs text-muted-foreground">Top score</p>
+                <p className="text-lg font-bold">
+                  {rankings[0]?.percentage?.toFixed(1) || "0.0"}%
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 p-4">
+              <Clock className="h-5 w-5 text-muted-foreground" />
+              <div>
+                <p className="text-xs text-muted-foreground">
+                  Latest submission
+                </p>
+                <p className="text-sm font-bold">
+                  {rankings[0] ? (
+                    <FormattedDate date={rankings[0].submittedAt} />
+                  ) : (
+                    "—"
+                  )}
+                </p>
+              </div>
+            </div>
           </div>
         </TabsContent>
         <TabsContent value="rankings" className="pt-1">
@@ -255,16 +249,16 @@ function PodiumEntry({
       : "border-amber-300 bg-amber-50 text-amber-950 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
   return (
     <Card
-      className={`${first ? "border-2 border-primary shadow-xl shadow-blue-500/10 md:-translate-y-2.5" : "shadow-sm"} relative text-center`}
+      className={`${first ? "border-2 border-primary shadow-sm md:-translate-y-2.5" : "shadow-none"} relative text-center`}
     >
       {first && (
-        <div className="absolute -top-3.5 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-primary px-4 py-1 text-[11px] font-bold tracking-wider text-primary-foreground uppercase shadow-md">
+        <div className="absolute -top-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-sm bg-primary px-3 py-1 text-xs font-bold text-primary-foreground shadow-xs">
           <Trophy className="h-3.5 w-3.5" /> Top rank
         </div>
       )}
       <CardContent className="space-y-3 p-7 sm:p-8">
         <div
-          className={`mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border text-xl font-black ${medalClass} ${first ? "mt-2 h-16 w-16 text-2xl" : ""}`}
+          className={`mx-auto flex h-14 w-14 items-center justify-center rounded-md border text-xl font-black ${medalClass} ${first ? "mt-2 h-16 w-16 text-2xl" : ""}`}
         >
           {number <= 3 ? <Medal className="h-6 w-6" /> : number}
         </div>

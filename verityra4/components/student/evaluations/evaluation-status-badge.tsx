@@ -47,7 +47,7 @@ export function EvaluationStatusBadge({ status }: { status: string }) {
   return (
     <Badge
       variant="outline"
-      className={`gap-1.5 rounded-full text-[11px] font-semibold capitalize ${config.className}`}
+      className={`gap-1.5 rounded-sm text-[11px] font-semibold capitalize ${config.className}`}
     >
       <Icon className="h-3.5 w-3.5" aria-hidden="true" />
       {config.label}

@@ -28,7 +28,7 @@ export function AuthDesktopLayout({
   const isSignUp = mode === "signup"
 
   return (
-    <div className="hidden min-h-dvh w-full overflow-hidden bg-background text-foreground lg:grid lg:grid-cols-[1.02fr_0.98fr]">
+    <div className="hidden min-h-dvh w-full overflow-x-clip bg-background text-foreground lg:grid lg:grid-cols-[1.02fr_0.98fr]">
       <section className="auth-stage relative flex min-h-dvh flex-col justify-between overflow-hidden border-r border-border px-10 py-8 xl:px-16">
         <div className="auth-wave" aria-hidden="true" />
 
@@ -38,7 +38,7 @@ export function AuthDesktopLayout({
             className="group inline-flex items-center gap-3"
             aria-label={`${BRAND_CONFIG.name} home`}
           >
-            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#2A6AED] text-white shadow-md shadow-blue-600/20 transition-colors group-hover:bg-[#1E55C7]">
+            <span className="flex h-11 w-11 items-center justify-center rounded-md bg-[#2A6AED] text-white shadow-xs transition-colors group-hover:bg-[#1E55C7]">
               <BookOpen aria-hidden="true" className="h-6 w-6" />
             </span>
             <span className="font-heading text-2xl font-extrabold tracking-[-0.05em] text-slate-950 dark:text-white">
@@ -47,14 +47,14 @@ export function AuthDesktopLayout({
           </Link>
           <Link
             href="/"
-            className="inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-white/70 hover:text-[#1E55C7] focus-visible:ring-2 focus-visible:ring-[#2A6AED] focus-visible:outline-none dark:text-slate-300 dark:hover:bg-slate-900/50 dark:hover:text-blue-200"
+            className="inline-flex min-h-11 items-center gap-2 rounded-md px-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-white hover:text-[#1E55C7] focus-visible:ring-2 focus-visible:ring-[#2A6AED] focus-visible:outline-none dark:text-slate-300 dark:hover:bg-slate-900/50 dark:hover:text-blue-200"
           >
             <ArrowLeft aria-hidden="true" className="h-4 w-4" /> Back to home
           </Link>
         </div>
 
         <div className="relative z-10 my-auto max-w-xl py-12">
-          <p className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50/80 px-3.5 py-2 text-xs font-bold tracking-[0.12em] text-[#1E55C7] uppercase dark:border-blue-900 dark:bg-blue-950/60 dark:text-blue-200">
+          <p className="inline-flex items-center gap-2 rounded-sm border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-[#1E55C7] dark:border-blue-900 dark:bg-blue-950/60 dark:text-blue-200">
             <span
               className="h-2 w-2 rounded-full bg-[#2A6AED]"
               aria-hidden="true"
@@ -77,7 +77,7 @@ export function AuthDesktopLayout({
             stronger.
           </p>
 
-          <div className="mt-9 grid max-w-lg grid-cols-3 gap-3">
+          <div className="mt-9 grid max-w-lg grid-cols-3 divide-x divide-blue-200/80 border-y border-blue-200/80 dark:divide-slate-700 dark:border-slate-700">
             {[
               { icon: FileText, label: "Margin booklets" },
               { icon: PenLine, label: "Handwritten practice" },
@@ -85,10 +85,10 @@ export function AuthDesktopLayout({
             ].map(({ icon: Icon, label }) => (
               <div
                 key={label}
-                className="rounded-xl border border-white/80 bg-white/65 p-4 shadow-sm backdrop-blur-sm dark:border-slate-700/70 dark:bg-slate-900/50"
+                className="px-4 py-4 first:pl-0 last:pr-0"
               >
                 <Icon aria-hidden="true" className="h-5 w-5 text-[#2A6AED]" />
-                <p className="mt-3 text-sm leading-5 font-bold text-slate-800 dark:text-slate-100">
+                <p className="mt-2.5 text-sm leading-5 font-bold text-slate-800 dark:text-slate-100">
                   {label}
                 </p>
               </div>

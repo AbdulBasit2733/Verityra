@@ -134,7 +134,7 @@ export function TestRegistrationButton({
         onClick={() =>
           router.push(`/signin?callbackUrl=/tests/${testSeriesId}`)
         }
-        className="h-12 w-full rounded-xl bg-primary text-sm font-semibold text-primary-foreground hover:bg-hover-accent"
+        className="h-12 w-full rounded-md bg-primary text-sm font-semibold text-primary-foreground hover:bg-hover-accent"
       >
         Sign In to Register
         <ArrowRight className="ml-2 h-4 w-4" />
@@ -145,13 +145,13 @@ export function TestRegistrationButton({
   if (isRegistered) {
     return (
       <div className="space-y-3">
-        <div className="flex items-center gap-2.5 rounded-xl border border-chart-3/30 bg-chart-3/10 p-3.5 text-xs font-semibold text-foreground">
+        <div className="flex items-center gap-2.5 rounded-md border border-chart-3/30 bg-chart-3/10 p-3.5 text-xs font-semibold text-foreground">
           <CheckCircle2 className="h-4 w-4 shrink-0 text-chart-3" />
           <span>You have active access to this test series.</span>
         </div>
         <Button
           onClick={() => router.push(`/student/tests/${testSeriesId}`)}
-          className="h-12 w-full rounded-xl bg-primary text-sm font-semibold text-primary-foreground hover:bg-hover-accent"
+          className="h-12 w-full rounded-md bg-primary text-sm font-semibold text-primary-foreground hover:bg-hover-accent"
         >
           Go To Test
           <ArrowRight className="ml-2 h-4 w-4" />
@@ -310,13 +310,13 @@ export function TestRegistrationButton({
   return (
     <div className="space-y-4">
       {error && (
-        <Alert variant="destructive" className="rounded-xl py-3 text-sm">
+        <Alert variant="destructive" className="rounded-md py-3 text-sm">
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
       {success && (
-        <Alert className="rounded-xl border-chart-3/50 bg-chart-3/10 py-3 text-sm text-foreground">
+        <Alert className="rounded-md border-chart-3/50 bg-chart-3/10 py-3 text-sm text-foreground">
           <CheckCircle2 className="mr-2 h-4 w-4 text-chart-3" />
           <AlertDescription>{success}</AlertDescription>
         </Alert>
@@ -326,7 +326,7 @@ export function TestRegistrationButton({
         <Button
           onClick={handleFreeRegistration}
           disabled={loading}
-          className="h-12 w-full rounded-xl bg-primary text-sm font-semibold text-primary-foreground hover:bg-hover-accent"
+          className="h-12 w-full rounded-md bg-primary text-sm font-semibold text-primary-foreground hover:bg-hover-accent"
         >
           {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
           Register for Free Test
@@ -335,7 +335,7 @@ export function TestRegistrationButton({
         <Button
           onClick={handlePaidCheckout}
           disabled={loading}
-          className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-primary-foreground hover:bg-hover-accent"
+          className="flex h-12 w-full items-center justify-center gap-2 rounded-md bg-primary text-sm font-semibold text-primary-foreground hover:bg-hover-accent"
         >
           {loading ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -24,21 +24,21 @@ export function TestCatalogCard({
       className={
         compact
           ? "gap-4 py-4 shadow-none"
-          : "h-full gap-5 shadow-sm hover:-translate-y-0.5 hover:shadow-md"
+          : "h-full gap-5 shadow-none transition-colors hover:border-[#2A6AED]"
       }
     >
       <CardHeader className={compact ? "gap-1.5" : "gap-3"}>
         <div className="flex items-start justify-between gap-3">
           <Badge
             variant="secondary"
-            className="rounded-full text-[10px] font-bold tracking-wide uppercase"
+            className="rounded-sm text-[11px] font-semibold"
           >
             {item.durationMinutes} min
           </Badge>
           {isFree ? (
             <Badge
               variant="success"
-              className="rounded-full text-[10px] font-bold"
+              className="rounded-sm text-[10px] font-bold"
             >
               Free
             </Badge>

@@ -159,7 +159,7 @@ export function AdminRefundDialog({
     return (
       <Badge
         variant="outline"
-        className="rounded-full border-purple-200 bg-purple-50 px-2 py-0.5 text-[11px] font-semibold text-purple-700 dark:border-purple-900 dark:bg-purple-950/50 dark:text-purple-400"
+        className="rounded-sm border-purple-200 bg-purple-50 px-2 py-0.5 text-[11px] font-semibold text-purple-700 dark:border-purple-900 dark:bg-purple-950/50 dark:text-purple-400"
       >
         Refunded (₹{payment.amountRefundedInRupees})
       </Badge>
@@ -205,7 +205,7 @@ export function AdminRefundDialog({
           </Tooltip>
         </TooltipProvider>
       ) : (
-        <DialogTrigger className="inline-flex h-8 cursor-pointer items-center justify-center rounded-lg border border-amber-200/80 bg-amber-50/50 px-2.5 text-xs font-semibold text-amber-700 shadow-2xs transition-colors outline-none hover:bg-amber-100/70 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-400 dark:hover:bg-amber-900/50">
+        <DialogTrigger className="inline-flex h-8 cursor-pointer items-center justify-center rounded-md border border-amber-200/80 bg-amber-50/50 px-2.5 text-xs font-semibold text-amber-700 shadow-2xs transition-colors outline-none hover:bg-amber-100/70 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-400 dark:hover:bg-amber-900/50">
           <RotateCcw className="mr-1 h-3.5 w-3.5" />
           Refund
           {isEligibleWindow ? (
@@ -233,7 +233,7 @@ export function AdminRefundDialog({
 
         <form onSubmit={handleRefund} className="space-y-4 py-2">
           {/* Summary Box */}
-          <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 text-xs dark:border-slate-800 dark:bg-slate-950/60">
+          <div className="space-y-2 rounded-md border border-slate-200 bg-slate-50/70 p-3.5 text-xs dark:border-slate-800 dark:bg-slate-950/60">
             <div className="flex items-center justify-between">
               <span className="text-slate-500 dark:text-slate-400">
                 Candidate:
@@ -277,7 +277,7 @@ export function AdminRefundDialog({
 
           {/* Attempt Warning Alert */}
           {hasUsedAttempts && (
-            <div className="space-y-2 rounded-xl border border-amber-200 bg-amber-50/70 p-3.5 text-xs text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300">
+            <div className="space-y-2 rounded-md border border-amber-200 bg-amber-50/70 p-3.5 text-xs text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300">
               <div className="flex items-start gap-2">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
                 <div className="space-y-1">
@@ -310,7 +310,7 @@ export function AdminRefundDialog({
 
           {/* Expired Policy Override Alert */}
           {!isEligibleWindow && (
-            <div className="space-y-2 rounded-xl border border-rose-200 bg-rose-50/70 p-3.5 text-xs text-rose-900 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300">
+            <div className="space-y-2 rounded-md border border-rose-200 bg-rose-50/70 p-3.5 text-xs text-rose-900 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300">
               <div className="flex items-start gap-2">
                 <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400" />
                 <div className="space-y-1">
@@ -352,7 +352,7 @@ export function AdminRefundDialog({
             >
               <SelectTrigger
                 id="reason"
-                className="h-10 rounded-xl border-slate-200 bg-white text-xs dark:border-slate-800 dark:bg-slate-900"
+                className="h-10 rounded-md border-slate-200 bg-white text-xs dark:border-slate-800 dark:bg-slate-900"
               >
                 <SelectValue placeholder="Select refund category" />
               </SelectTrigger>
@@ -406,7 +406,7 @@ export function AdminRefundDialog({
               value={adminNotes}
               onChange={(e) => setAdminNotes(e.target.value)}
               placeholder="e.g. Student submitted written ticket #892 within 4 days of enrollment. Bank verification confirmed."
-              className="rounded-xl border-slate-200 bg-white text-xs dark:border-slate-800 dark:bg-slate-900"
+              className="rounded-md border-slate-200 bg-white text-xs dark:border-slate-800 dark:bg-slate-900"
             />
           </div>
 
@@ -417,7 +417,7 @@ export function AdminRefundDialog({
               size="sm"
               onClick={() => setOpen(false)}
               disabled={loading}
-              className="h-9 rounded-xl px-4 text-xs font-semibold"
+              className="h-9 rounded-md px-4 text-xs font-semibold"
             >
               Cancel
             </Button>
@@ -425,7 +425,7 @@ export function AdminRefundDialog({
               type="submit"
               size="sm"
               disabled={loading}
-              className="h-9 rounded-xl bg-red-600 px-4 text-xs font-semibold text-white shadow-xs hover:bg-red-700"
+              className="h-9 rounded-md bg-red-600 px-4 text-xs font-semibold text-white shadow-xs hover:bg-red-700"
             >
               {loading ? (
                 <>

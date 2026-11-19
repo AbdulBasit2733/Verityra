@@ -93,7 +93,7 @@ export function AdminPaymentLedgerSheet({
           </Tooltip>
         </TooltipProvider>
       ) : (
-        <DialogTrigger className="inline-flex h-8 cursor-pointer items-center justify-center rounded-lg border border-slate-200 px-2.5 text-xs font-semibold text-slate-700 shadow-2xs transition-colors outline-none hover:text-[#2A6AED] dark:border-slate-800 dark:text-slate-300 dark:hover:text-blue-400">
+        <DialogTrigger className="inline-flex h-8 cursor-pointer items-center justify-center rounded-md border border-slate-200 px-2.5 text-xs font-semibold text-slate-700 shadow-2xs transition-colors outline-none hover:text-[#2A6AED] dark:border-slate-800 dark:text-slate-300 dark:hover:text-blue-400">
           <History className="mr-1 h-3.5 w-3.5" />
           Ledger
         </DialogTrigger>
@@ -111,7 +111,7 @@ export function AdminPaymentLedgerSheet({
         </DialogHeader>
 
         {/* Transaction Meta Card */}
-        <div className="space-y-1.5 rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 text-xs dark:border-slate-800 dark:bg-slate-950/60">
+        <div className="space-y-1.5 rounded-md border border-slate-200 bg-slate-50/70 p-3.5 text-xs dark:border-slate-800 dark:bg-slate-950/60">
           <div className="grid grid-cols-2 gap-2">
             <div>
               <span className="block text-[11px] text-slate-400">
@@ -154,7 +154,7 @@ export function AdminPaymentLedgerSheet({
               Loading transaction history...
             </div>
           ) : logs.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-slate-200 p-6 text-center text-xs text-slate-400 dark:border-slate-800">
+            <div className="rounded-md border border-dashed border-slate-200 p-6 text-center text-xs text-slate-400 dark:border-slate-800">
               No historical ledger events recorded yet.
             </div>
           ) : (
@@ -163,7 +163,7 @@ export function AdminPaymentLedgerSheet({
               return (
                 <div
                   key={log.id}
-                  className="space-y-2 rounded-xl border border-slate-200/80 bg-white p-3.5 text-xs shadow-2xs dark:border-slate-800 dark:bg-slate-900"
+                  className="space-y-2 rounded-md border border-slate-200/80 bg-white p-3.5 text-xs shadow-2xs dark:border-slate-800 dark:bg-slate-900"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
@@ -217,7 +217,7 @@ export function AdminPaymentLedgerSheet({
                       </button>
 
                       {isExpanded && (
-                        <pre className="mt-2 max-h-48 overflow-x-auto rounded-lg border border-slate-800 bg-slate-950 p-2.5 font-mono text-[11px] leading-tight whitespace-pre-wrap text-slate-200">
+                        <pre className="mt-2 max-h-48 overflow-x-auto rounded-md border border-slate-800 bg-slate-950 p-2.5 font-mono text-[11px] leading-tight whitespace-pre-wrap text-slate-200">
                           {(() => {
                             try {
                               return JSON.stringify(

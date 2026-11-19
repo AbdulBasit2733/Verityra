@@ -122,7 +122,7 @@ export default async function AdminSubmissionReviewPage({
           <Button
             variant="outline"
             size="sm"
-            className="h-10 rounded-lg px-3.5 text-xs font-semibold"
+            className="h-10 rounded-md px-3.5 text-xs font-semibold"
           >
             <ArrowLeft className="mr-1.5 h-3.5 w-3.5" /> Back to submissions
           </Button>
@@ -132,7 +132,7 @@ export default async function AdminSubmissionReviewPage({
       <section className="border-y border-border bg-card px-4 py-4 sm:px-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex min-w-0 items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-primary/10 text-primary">
               <UserRound className="h-5 w-5" />
             </div>
             <div className="min-w-0">
@@ -161,7 +161,7 @@ export default async function AdminSubmissionReviewPage({
               href={fileUrl}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-semibold text-foreground hover:bg-muted"
+              className="inline-flex h-9 items-center gap-1.5 rounded-md border border-border px-3 text-xs font-semibold text-foreground hover:bg-muted"
             >
               <FileText className="h-3.5 w-3.5" /> Open answer sheet{" "}
               <ExternalLink className="h-3 w-3" />
@@ -222,7 +222,7 @@ export default async function AdminSubmissionReviewPage({
               )}
             </section>
             <section className="border border-border bg-card p-4">
-              <p className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+              <p className="text-xs font-semibold text-muted-foreground">
                 Current score
               </p>
               <p className="mt-1 text-3xl font-extrabold text-primary">
@@ -253,7 +253,7 @@ export default async function AdminSubmissionReviewPage({
               href={fileUrl}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-semibold"
+              className="inline-flex h-9 items-center gap-1.5 rounded-md border border-border px-3 text-xs font-semibold"
             >
               <FileText className="h-3.5 w-3.5" /> Open answer sheet
             </a>

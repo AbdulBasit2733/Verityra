@@ -207,7 +207,7 @@ export function StudentProfileClient({ initialData }: StudentProfileProps) {
           <Button
             variant="outline"
             size="sm"
-            className="h-10 rounded-xl border-slate-200 px-3.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800"
+            className="h-10 rounded-md border-slate-200 px-3.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800"
           >
             <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
             Back to Dashboard
@@ -274,7 +274,7 @@ export function StudentProfileClient({ initialData }: StudentProfileProps) {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Candidate Name"
-                  className="h-10 rounded-lg border-slate-200 bg-white text-xs sm:text-sm"
+                  className="h-10 rounded-md border-slate-200 bg-white text-xs sm:text-sm"
                 />
               </div>
 
@@ -289,7 +289,7 @@ export function StudentProfileClient({ initialData }: StudentProfileProps) {
                   id="email"
                   disabled
                   value={displayEmail}
-                  className="h-10 cursor-not-allowed rounded-lg border-slate-200 bg-slate-50 text-xs text-slate-500 sm:text-sm"
+                  className="h-10 cursor-not-allowed rounded-md border-slate-200 bg-slate-50 text-xs text-slate-500 sm:text-sm"
                 />
               </div>
 
@@ -305,7 +305,7 @@ export function StudentProfileClient({ initialData }: StudentProfileProps) {
                   value={targetExam}
                   onChange={(e) => setTargetExam(e.target.value)}
                   placeholder="e.g. CBSE Class 10, NEET-UG, JEE Main, Olympiads, English Grammar"
-                  className="h-10 rounded-lg border-slate-200 bg-white text-xs sm:text-sm"
+                  className="h-10 rounded-md border-slate-200 bg-white text-xs sm:text-sm"
                 />
               </div>
 
@@ -321,7 +321,7 @@ export function StudentProfileClient({ initialData }: StudentProfileProps) {
                   value={educationLevel}
                   onChange={(e) => setEducationLevel(e.target.value)}
                   placeholder="e.g. B.Tech, B.A. LL.B, M.A."
-                  className="h-10 rounded-lg border-slate-200 bg-white text-xs sm:text-sm"
+                  className="h-10 rounded-md border-slate-200 bg-white text-xs sm:text-sm"
                 />
               </div>
 
@@ -337,7 +337,7 @@ export function StudentProfileClient({ initialData }: StudentProfileProps) {
                   value={institution}
                   onChange={(e) => setInstitution(e.target.value)}
                   placeholder="e.g. Delhi University, National Law School"
-                  className="h-10 rounded-lg border-slate-200 bg-white text-xs sm:text-sm"
+                  className="h-10 rounded-md border-slate-200 bg-white text-xs sm:text-sm"
                 />
               </div>
 
@@ -353,7 +353,7 @@ export function StudentProfileClient({ initialData }: StudentProfileProps) {
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
                   placeholder="+91 98765 43210"
-                  className="h-10 rounded-lg border-slate-200 bg-white text-xs sm:text-sm"
+                  className="h-10 rounded-md border-slate-200 bg-white text-xs sm:text-sm"
                 />
               </div>
             </div>
@@ -368,7 +368,7 @@ export function StudentProfileClient({ initialData }: StudentProfileProps) {
                 onChange={(e) => setBio(e.target.value)}
                 placeholder="Optional subjects, focus syllabus areas, and answer-writing stamina goals..."
                 rows={4}
-                className="rounded-lg border-slate-200 bg-white text-xs sm:text-sm"
+                className="rounded-md border-slate-200 bg-white text-xs sm:text-sm"
               />
             </div>
 
@@ -385,7 +385,7 @@ export function StudentProfileClient({ initialData }: StudentProfileProps) {
               <Button
                 type="submit"
                 disabled={savingProfile}
-                className="h-10 w-full rounded-lg bg-[#2A6AED] px-6 text-xs font-semibold text-white shadow-xs hover:bg-[#1E55C7] sm:w-auto sm:text-sm"
+                className="h-10 w-full rounded-md bg-[#2A6AED] px-6 text-xs font-semibold text-white shadow-xs hover:bg-[#1E55C7] sm:w-auto sm:text-sm"
               >
                 {savingProfile ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -426,7 +426,7 @@ export function StudentProfileClient({ initialData }: StudentProfileProps) {
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   placeholder="••••••••••••"
-                  className="h-10 rounded-lg border-slate-200 bg-white text-xs sm:text-sm"
+                  className="h-10 rounded-md border-slate-200 bg-white text-xs sm:text-sm"
                 />
               </div>
 
@@ -444,7 +444,7 @@ export function StudentProfileClient({ initialData }: StudentProfileProps) {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="At least 8 characters"
-                  className="h-10 rounded-lg border-slate-200 bg-white text-xs sm:text-sm"
+                  className="h-10 rounded-md border-slate-200 bg-white text-xs sm:text-sm"
                 />
               </div>
 
@@ -462,14 +462,14 @@ export function StudentProfileClient({ initialData }: StudentProfileProps) {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Repeat new password"
-                  className="h-10 rounded-lg border-slate-200 bg-white text-xs sm:text-sm"
+                  className="h-10 rounded-md border-slate-200 bg-white text-xs sm:text-sm"
                 />
               </div>
             </div>
 
             {/* Password Requirement Indicators */}
-            <div className="space-y-1.5 rounded-xl border border-slate-200 bg-slate-50 p-3.5 text-xs text-slate-600">
-              <p className="text-[11px] font-bold tracking-wider text-slate-800 uppercase">
+            <div className="space-y-1.5 border-t border-slate-200 pt-3.5 text-xs text-slate-600">
+              <p className="text-[11px] font-bold text-slate-800">
                 Password Requirements
               </p>
               <div className="grid grid-cols-1 gap-1.5 text-[11px] sm:grid-cols-2">
@@ -503,7 +503,7 @@ export function StudentProfileClient({ initialData }: StudentProfileProps) {
             <Button
               type="submit"
               disabled={savingPassword}
-              className="h-10 w-full rounded-lg bg-[#2A6AED] px-6 text-xs font-semibold text-white shadow-xs hover:bg-[#1E55C7] sm:w-auto sm:text-sm"
+              className="h-10 w-full rounded-md bg-[#2A6AED] px-6 text-xs font-semibold text-white shadow-xs hover:bg-[#1E55C7] sm:w-auto sm:text-sm"
             >
               {savingPassword ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -528,8 +528,8 @@ export function StudentProfileClient({ initialData }: StudentProfileProps) {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+          <div className="grid grid-cols-1 divide-y divide-slate-200 border-y border-slate-200 md:grid-cols-3 md:divide-x md:divide-y-0">
+            <div className="space-y-2 py-4 md:pr-4">
               <Badge className="border border-blue-200 bg-[#EFF6FF] text-[10px] font-bold text-[#2A6AED]">
                 Attempt 1
               </Badge>
@@ -543,7 +543,7 @@ export function StudentProfileClient({ initialData }: StudentProfileProps) {
               </p>
             </div>
 
-            <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+            <div className="space-y-2 py-4 md:px-4">
               <Badge className="border border-blue-200 bg-[#EFF6FF] text-[10px] font-bold text-[#2A6AED]">
                 Attempt 2
               </Badge>
@@ -557,7 +557,7 @@ export function StudentProfileClient({ initialData }: StudentProfileProps) {
               </p>
             </div>
 
-            <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+            <div className="space-y-2 py-4 md:pl-4">
               <Badge className="border border-blue-200 bg-[#EFF6FF] text-[10px] font-bold text-[#2A6AED]">
                 Attempt 3
               </Badge>
@@ -572,7 +572,7 @@ export function StudentProfileClient({ initialData }: StudentProfileProps) {
             </div>
           </div>
 
-          <div className="rounded-xl border border-blue-200/80 bg-[#EFF6FF]/60 p-4 text-xs leading-relaxed text-[#1E55C7]">
+          <div className="rounded-md border border-blue-200/80 bg-[#EFF6FF]/60 p-4 text-xs leading-relaxed text-[#1E55C7]">
             <p className="font-bold">Atomic Protection Guarantee:</p>
             <p className="mt-1 text-slate-600">
               Network drops or invalid uploads before final server confirmation

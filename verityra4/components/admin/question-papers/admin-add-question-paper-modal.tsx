@@ -159,7 +159,7 @@ export function AdminAddQuestionPaperModal({
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto border-[#DCE7FA] bg-white">
         <DialogHeader className="border-b border-[#DCE7FA] pb-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#BFD5FA] bg-[#F1F6FF] text-[#145DEB]">
+            <div className="flex h-10 w-10 items-center justify-center rounded-sm border border-[#BFD5FA] bg-[#F1F6FF] text-[#145DEB]">
               <UploadCloud className="h-5 w-5" />
             </div>
             <div>
@@ -319,7 +319,7 @@ export function AdminAddQuestionPaperModal({
               }}
               onDragLeave={() => setIsDragging(false)}
               onDrop={handleDrop}
-              className={`cursor-pointer rounded-xl border-2 border-dashed p-5 text-center transition-colors ${
+              className={`cursor-pointer rounded-md border-2 border-dashed p-5 text-center transition-colors ${
                 isDragging
                   ? "border-[#145DEB] bg-[#F1F6FF]"
                   : file
@@ -339,7 +339,7 @@ export function AdminAddQuestionPaperModal({
               />
               {file ? (
                 <div className="flex items-center justify-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-sm bg-emerald-100 text-emerald-600">
                     <CheckCircle2 className="h-5 w-5" />
                   </div>
                   <div className="text-left">
@@ -367,7 +367,7 @@ export function AdminAddQuestionPaperModal({
           </div>
 
           {/* Published Toggle */}
-          <div className="flex items-center justify-between rounded-xl border border-[#DCE7FA] bg-[#F1F6FF]/40 p-3.5">
+          <div className="flex items-center justify-between border-t border-slate-200/80 pt-3.5">
             <div>
               <p className="text-sm font-bold text-[#071B3A]">
                 Publish to Public Library

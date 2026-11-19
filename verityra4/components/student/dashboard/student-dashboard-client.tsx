@@ -272,7 +272,7 @@ export function StudentDashboardClient({
           cell: (s) => (
             <Badge
               variant="outline"
-              className="rounded-full border-blue-200 bg-blue-50 text-[11px] font-semibold text-[#2A6AED] dark:border-blue-900 dark:bg-blue-950/50 dark:text-blue-400"
+              className="rounded-sm border-blue-200 bg-blue-50 text-[11px] font-semibold text-[#2A6AED] dark:border-blue-900 dark:bg-blue-950/50 dark:text-blue-400"
             >
               Attempt #{s.attemptNumber} of 3
             </Badge>
@@ -325,7 +325,7 @@ export function StudentDashboardClient({
               <Button
                 size="sm"
                 variant="outline"
-                className="h-8 rounded-lg border-slate-200 px-3 text-xs font-semibold text-slate-700 shadow-2xs hover:text-[#2A6AED] dark:border-slate-800 dark:text-slate-300 dark:hover:text-blue-400"
+                className="h-8 rounded-md border-slate-200 px-3 text-xs font-semibold text-slate-700 shadow-2xs hover:text-[#2A6AED] dark:border-slate-800 dark:text-slate-300 dark:hover:text-blue-400"
               >
                 View Breakdown
               </Button>
@@ -388,7 +388,7 @@ export function StudentDashboardClient({
         subtitle="Viewing: Your Enrolled Test Series & 3-Attempt Progression"
       >
         <Link href="/tests">
-          <Button className="h-10 rounded-xl bg-[#2A6AED] px-4 text-xs font-semibold text-white shadow-xs hover:bg-[#1E55C7] sm:text-sm">
+          <Button className="h-10 rounded-md bg-[#2A6AED] px-4 text-xs font-semibold text-white shadow-xs hover:bg-[#1E55C7] sm:text-sm">
             <Compass className="mr-1.5 h-4 w-4" />
             Explore Test Catalog
           </Button>
@@ -396,7 +396,7 @@ export function StudentDashboardClient({
       </PageHeader>
 
       {!isEmailVerified && (
-        <div className="flex flex-col justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50/80 p-4 text-sm sm:flex-row sm:items-center dark:border-amber-900/50 dark:bg-amber-950/30">
+        <div className="flex flex-col justify-between gap-3 rounded-md border border-amber-200 bg-amber-50/80 p-4 text-sm sm:flex-row sm:items-center dark:border-amber-900/50 dark:bg-amber-950/30">
           <div className="flex items-start gap-3 sm:items-center">
             <MailWarning className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 sm:mt-0 dark:text-amber-400" />
             <div>
@@ -415,7 +415,7 @@ export function StudentDashboardClient({
             variant="outline"
             disabled={resendingVerify}
             onClick={handleResendVerification}
-            className="h-9 shrink-0 rounded-xl border-amber-300 bg-white px-3.5 text-xs font-bold text-slate-900 hover:bg-amber-50"
+            className="h-9 shrink-0 rounded-md border-amber-300 bg-white px-3.5 text-xs font-bold text-slate-900 hover:bg-amber-50"
           >
             {resendingVerify ? (
               <>
@@ -520,11 +520,11 @@ export function StudentDashboardClient({
               renderCard={(r, idx, serialNumber) => {
                 const left = Math.max(0, r.maxAttempts - r.attemptsUsed)
                 return (
-                  <div className="flex flex-col justify-between space-y-3.5 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-2xs sm:p-5 dark:border-slate-800 dark:bg-slate-900/90">
+                  <div className="flex flex-col justify-between space-y-3.5 rounded-md border border-border bg-background p-4 shadow-none sm:p-5">
                     <div className="space-y-2">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-2">
-                          <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-[11px] font-bold text-slate-500 dark:bg-slate-800">
+                          <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-sm bg-slate-100 text-[11px] font-bold text-slate-500 dark:bg-slate-800">
                             #{serialNumber}
                           </span>
                           <Link
@@ -583,7 +583,7 @@ export function StudentDashboardClient({
 
                       {/* Score display */}
                       {r.latestScore !== null ? (
-                        <div className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 p-2.5 text-xs dark:border-slate-800 dark:bg-slate-800/60">
+                        <div className="flex items-center justify-between border-t border-slate-100 pt-2.5 text-xs dark:border-slate-800">
                           <span className="font-medium text-slate-500">
                             Latest Evaluation:
                           </span>
@@ -597,7 +597,7 @@ export function StudentDashboardClient({
                           </div>
                         </div>
                       ) : (
-                        <div className="rounded-xl bg-slate-50/60 p-2 text-center text-xs text-slate-400 italic dark:bg-slate-800/30">
+                        <div className="border-t border-slate-100 pt-2 text-center text-xs text-slate-400 italic dark:border-slate-800">
                           No handwritten attempt submitted yet
                         </div>
                       )}
@@ -607,7 +607,7 @@ export function StudentDashboardClient({
                       href={`/student/tests/${r.testSeriesId}`}
                       className="block w-full pt-1"
                     >
-                      <Button className="h-10 w-full rounded-xl bg-[#2A6AED] text-xs font-semibold text-white shadow-2xs hover:bg-[#1E55C7]">
+                      <Button className="h-10 w-full rounded-md bg-[#2A6AED] text-xs font-semibold text-white shadow-2xs hover:bg-[#1E55C7]">
                         Open Examination Workspace
                       </Button>
                     </Link>
@@ -641,11 +641,11 @@ export function StudentDashboardClient({
             defaultPageSize={10}
             showSerialNumber={true}
             renderCard={(s, idx, serialNumber) => (
-              <div className="flex flex-col justify-between space-y-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-2xs sm:p-5 dark:border-slate-800 dark:bg-slate-900/90">
+              <div className="flex flex-col justify-between space-y-3 rounded-md border border-border bg-background p-4 shadow-none sm:p-5">
                 <div className="space-y-2">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2">
-                      <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-[11px] font-bold text-slate-500 dark:bg-slate-800">
+                      <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-sm bg-slate-100 text-[11px] font-bold text-slate-500 dark:bg-slate-800">
                         #{serialNumber}
                       </span>
                       <Link
@@ -675,7 +675,7 @@ export function StudentDashboardClient({
                   </div>
 
                   {s.totalMarksAwarded !== null && s.maxMarks && (
-                    <div className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 p-2.5 text-xs dark:border-slate-800 dark:bg-slate-800/60">
+                    <div className="flex items-center justify-between border-t border-slate-100 pt-2.5 text-xs dark:border-slate-800">
                       <span className="font-medium text-slate-500">
                         Awarded Score:
                       </span>
@@ -699,7 +699,7 @@ export function StudentDashboardClient({
                 >
                   <Button
                     variant="outline"
-                    className="h-9 w-full rounded-xl border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800"
+                    className="h-9 w-full rounded-md border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800"
                   >
                     View Evaluation & Rubric
                   </Button>

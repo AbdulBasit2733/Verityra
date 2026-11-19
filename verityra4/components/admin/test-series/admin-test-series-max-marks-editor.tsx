@@ -81,8 +81,8 @@ export function AdminTestSeriesMaxMarksEditor({
         variant="outline"
         className={
           compact
-            ? "h-8 rounded-lg px-2.5 text-xs"
-            : "h-9 rounded-lg px-3 text-xs"
+            ? "h-8 rounded-md px-2.5 text-xs"
+            : "h-9 rounded-md px-3 text-xs"
         }
         onClick={() => setEditing(true)}
       >
@@ -104,7 +104,7 @@ export function AdminTestSeriesMaxMarksEditor({
         max={10000}
         value={maxMarks}
         onChange={(event) => setMaxMarks(event.target.value)}
-        className="h-8 w-24 rounded-lg text-xs"
+        className="h-8 w-24 rounded-md text-xs"
         disabled={loading}
       />
       <IconActionButton

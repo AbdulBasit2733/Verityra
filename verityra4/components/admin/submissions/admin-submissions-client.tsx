@@ -124,8 +124,8 @@ export function AdminSubmissionEvaluationTrigger({
       variant={compact ? "outline" : "default"}
       className={
         compact
-          ? "h-8 rounded-lg border-amber-200 px-3 text-xs font-semibold text-amber-800 hover:bg-amber-50"
-          : "h-10 rounded-xl bg-[#2A6AED] px-4 text-white hover:bg-[#1E55C7]"
+          ? "h-8 rounded-md border-amber-200 px-3 text-xs font-semibold text-amber-800 hover:bg-amber-50"
+          : "h-10 rounded-md bg-[#2A6AED] px-4 text-white hover:bg-[#1E55C7]"
       }
       disabled={loading}
       onClick={handleEvaluate}
@@ -205,7 +205,7 @@ export function AdminSubmissionsClient({
       cell: (s) => (
         <Badge
           variant="outline"
-          className="rounded-full border-blue-200 bg-blue-50 text-[11px] font-semibold text-[#2A6AED] dark:border-blue-900 dark:bg-blue-950/50 dark:text-blue-400"
+          className="rounded-sm border-blue-200 bg-blue-50 text-[11px] font-semibold text-[#2A6AED] dark:border-blue-900 dark:bg-blue-950/50 dark:text-blue-400"
         >
           Attempt #{s.attemptNumber} of 3
         </Badge>
@@ -225,7 +225,7 @@ export function AdminSubmissionsClient({
                 ? "warning"
                 : "info"
           }
-          className="rounded-full text-[11px] font-semibold"
+          className="rounded-sm text-[11px] font-semibold"
         >
           {s.status === "COMPLETED"
             ? "Completed"
@@ -256,7 +256,7 @@ export function AdminSubmissionsClient({
       sortAccessor: (s) => (s.uncertaintyFlag ? 1 : 0),
       cell: (s) =>
         s.uncertaintyFlag ? (
-          <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-800 dark:border-amber-900 dark:bg-amber-950/60 dark:text-amber-300">
+          <span className="inline-flex items-center gap-1 rounded-sm border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-800 dark:border-amber-900 dark:bg-amber-950/60 dark:text-amber-300">
             <AlertTriangle className="h-3 w-3" /> Flagged
           </span>
         ) : (
@@ -439,18 +439,18 @@ export function AdminSubmissionsClient({
         renderCard={(s, _index, sn) => (
           <div
             key={s.id}
-            className="flex flex-col justify-between gap-4 rounded-xl border border-border bg-card p-4 shadow-none transition-colors hover:border-primary/40 sm:p-5"
+            className="flex flex-col justify-between gap-4 rounded-md border border-border bg-background p-4 shadow-none transition-colors hover:border-primary/40 sm:p-5"
           >
             <div className="space-y-3">
               {/* Card Header: SN + Attempt + Status */}
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-slate-100 text-[11px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-sm bg-slate-100 text-[11px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-400">
                     #{sn}
                   </span>
                   <Badge
                     variant="outline"
-                    className="rounded-full border-blue-200 bg-blue-50 text-[10px] font-semibold text-[#2A6AED] dark:border-blue-900 dark:bg-blue-950/50 dark:text-blue-400"
+                    className="rounded-sm border-blue-200 bg-blue-50 text-[10px] font-semibold text-[#2A6AED] dark:border-blue-900 dark:bg-blue-950/50 dark:text-blue-400"
                   >
                     Attempt #{s.attemptNumber} of 3
                   </Badge>
@@ -460,10 +460,10 @@ export function AdminSubmissionsClient({
                   variant="outline"
                   className={
                     s.status === "COMPLETED"
-                      ? "rounded-full border-emerald-200 bg-emerald-50 text-[10px] font-semibold text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-400"
+                      ? "rounded-sm border-emerald-200 bg-emerald-50 text-[10px] font-semibold text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-400"
                       : s.status === "REVIEW_REQUIRED"
-                        ? "rounded-full border-amber-200 bg-amber-50 text-[10px] font-semibold text-amber-700 dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-400"
-                        : "rounded-full border-blue-200 bg-blue-50 text-[10px] font-semibold text-blue-700 dark:border-blue-900 dark:bg-blue-950/50 dark:text-blue-400"
+                        ? "rounded-sm border-amber-200 bg-amber-50 text-[10px] font-semibold text-amber-700 dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-400"
+                        : "rounded-sm border-blue-200 bg-blue-50 text-[10px] font-semibold text-blue-700 dark:border-blue-900 dark:bg-blue-950/50 dark:text-blue-400"
                   }
                 >
                   {s.status === "COMPLETED"
@@ -485,7 +485,7 @@ export function AdminSubmissionsClient({
               </div>
 
               {/* Test Series Title */}
-              <div className="rounded-xl border border-slate-100 bg-slate-50 p-2.5 dark:border-slate-800/80 dark:bg-slate-950">
+              <div className="border-t border-slate-100 pt-2.5 dark:border-slate-800">
                 <div className="mb-0.5 flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
                   <FileText className="h-3 w-3" />
                   <span>Test Series</span>
@@ -496,7 +496,7 @@ export function AdminSubmissionsClient({
               </div>
 
               {/* Marks & Uncertainty Flag */}
-              <div className="flex items-center justify-between border-t border-slate-100 pt-1 text-xs dark:border-slate-800">
+              <div className="flex items-center justify-between border-t border-slate-100 pt-2 text-xs dark:border-slate-800">
                 <div>
                   <span className="block text-[11px] text-slate-500 dark:text-slate-400">
                     Awarded Marks
@@ -515,7 +515,7 @@ export function AdminSubmissionsClient({
                     Confidence
                   </span>
                   {s.uncertaintyFlag ? (
-                    <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-800 dark:border-amber-900 dark:bg-amber-950/60 dark:text-amber-300">
+                    <span className="inline-flex items-center gap-1 rounded-sm border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-800 dark:border-amber-900 dark:bg-amber-950/60 dark:text-amber-300">
                       <AlertTriangle className="h-3 w-3" /> Flagged
                     </span>
                   ) : (
@@ -554,7 +554,7 @@ export function AdminSubmissionsClient({
                   rel="noreferrer"
                   download
                   title="Download booklet"
-                  className="inline-flex h-8 items-center justify-center gap-1 rounded-lg border border-slate-200 px-2.5 text-xs font-semibold text-slate-600 transition-colors hover:bg-blue-50 hover:text-[#2A6AED] dark:border-slate-800 dark:text-slate-300 dark:hover:bg-blue-950"
+                  className="inline-flex h-8 items-center justify-center gap-1 rounded-md border border-slate-200 px-2.5 text-xs font-semibold text-slate-600 transition-colors hover:bg-blue-50 hover:text-[#2A6AED] dark:border-slate-800 dark:text-slate-300 dark:hover:bg-blue-950"
                 >
                   <Download className="h-3.5 w-3.5" />
                   PDF
@@ -563,7 +563,7 @@ export function AdminSubmissionsClient({
               <Link href={`/admin/submissions/${s.id}`} className="flex-1">
                 <Button
                   size="sm"
-                  className="h-8 w-full rounded-lg bg-primary px-3 text-xs font-semibold text-primary-foreground shadow-none hover:bg-primary/90"
+                  className="h-8 w-full rounded-md bg-primary px-3 text-xs font-semibold text-primary-foreground shadow-none hover:bg-primary/90"
                 >
                   <Edit className="mr-1 h-3.5 w-3.5" />
                   Review Score

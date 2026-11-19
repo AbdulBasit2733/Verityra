@@ -149,8 +149,8 @@ export default async function TestDetailsPage({
               </div>
             </div>
             <aside className="order-first lg:fixed lg:top-1/2 lg:right-8 lg:z-20 lg:order-last lg:w-[410px] lg:-translate-y-1/2 xl:right-[max(2rem,calc((100vw-80rem)/2))]">
-              <div className="max-h-[calc(100vh-2rem)] [scrollbar-width:none] overflow-y-auto rounded-2xl border-2 border-primary/30 bg-card p-6 shadow-xl shadow-primary/5 sm:p-7 [&::-webkit-scrollbar]:hidden">
-                <p className="text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
+              <div className="max-h-[calc(100vh-2rem)] [scrollbar-width:none] overflow-y-auto rounded-md border-2 border-primary/30 bg-card p-6 shadow-sm sm:p-7 [&::-webkit-scrollbar]:hidden">
+                <p className="text-xs font-semibold text-muted-foreground">
                   Enrollment
                 </p>
                 <div className="mt-4 flex items-end justify-between gap-4">
@@ -197,7 +197,7 @@ export default async function TestDetailsPage({
           </div>
         </section>
         <div className="mx-auto grid max-w-7xl gap-10 px-4 py-8 sm:px-6 lg:grid-cols-[minmax(0,1fr)_410px] lg:px-8 lg:py-10">
-          <div className="min-w-0 rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-8">
+          <div className="min-w-0 rounded-md border border-border bg-card p-5 shadow-none sm:p-8">
             <section className="border-b border-border pb-10">
               <h2 className="text-2xl font-semibold tracking-tight">
                 What you will practice
@@ -210,7 +210,7 @@ export default async function TestDetailsPage({
             </section>
             <section className="border-b border-border py-10">
               <div className="flex items-start gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary text-primary">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-secondary text-primary">
                   <FileText className="h-4 w-4" />
                 </div>
                 <div>
@@ -226,7 +226,7 @@ export default async function TestDetailsPage({
               <div className="mt-6 border-l-2 border-primary/35 pl-5 text-sm leading-7 whitespace-pre-line text-foreground/80">
                 {testSeries.studentInstructions}
               </div>
-              <div className="mt-6 flex items-start gap-3 rounded-xl border border-score-accent/30 bg-score-accent/10 px-4 py-3 text-sm">
+              <div className="mt-6 flex items-start gap-3 rounded-md border border-score-accent/30 bg-score-accent/10 px-4 py-3 text-sm">
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-score-accent" />
                 <p>
                   <span className="font-semibold">Attempt policy:</span> You can
@@ -238,7 +238,7 @@ export default async function TestDetailsPage({
             {testSeries.templates && testSeries.templates.length > 0 && (
               <section className="pt-10">
                 <div className="flex items-start gap-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary text-primary">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-secondary text-primary">
                     <Download className="h-4 w-4" />
                   </div>
                   <div>
@@ -275,7 +275,7 @@ export default async function TestDetailsPage({
                               href={fileUrl}
                               target="_blank"
                               rel="noreferrer"
-                              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-3 text-xs font-semibold text-foreground transition-colors hover:bg-muted"
+                              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-border bg-card px-3 text-xs font-semibold text-foreground transition-colors hover:bg-muted"
                             >
                               <Eye className="h-3.5 w-3.5" />
                               Preview
@@ -285,7 +285,7 @@ export default async function TestDetailsPage({
                               target="_blank"
                               rel="noreferrer"
                               download
-                              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-primary px-3.5 text-xs font-semibold text-primary-foreground shadow-2xs transition-colors hover:bg-hover-accent"
+                              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md bg-primary px-3.5 text-xs font-semibold text-primary-foreground shadow-2xs transition-colors hover:bg-hover-accent"
                             >
                               <Download className="h-3.5 w-3.5" />
                               Download

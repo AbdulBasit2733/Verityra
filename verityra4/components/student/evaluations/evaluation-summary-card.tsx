@@ -17,11 +17,11 @@ export function EvaluationSummaryCard({
     evaluation.maxMarks !== null &&
     evaluation.percentage !== null
   return (
-    <Card className="hover:shadow-card-hover h-full transition-shadow">
+    <Card className="h-full transition-colors hover:border-primary/40">
       <CardHeader className="gap-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-start gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-secondary text-primary">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-secondary text-primary">
               <FileCheck2 className="h-5 w-5" aria-hidden="true" />
             </span>
             <div className="min-w-0">
@@ -37,9 +37,9 @@ export function EvaluationSummaryCard({
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex items-end justify-between gap-4 rounded-xl bg-muted/60 p-4">
+        <div className="flex items-end justify-between gap-4 border-y border-border py-3">
           <div>
-            <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+            <p className="text-xs font-semibold text-muted-foreground">
               Result
             </p>
             <p className="mt-1 text-2xl font-extrabold text-primary tabular-nums">

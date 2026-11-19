@@ -5,7 +5,7 @@ export default function TestsCatalogLoading() {
     <div className="mx-auto max-w-7xl space-y-8 px-4 py-12 sm:px-6 lg:px-8">
       {/* Header */}
       <div className="space-y-3">
-        <Skeleton className="h-6 w-48 rounded-full" />
+        <Skeleton className="h-6 w-48 rounded-sm" />
         <Skeleton className="h-10 w-96" />
         <Skeleton className="h-4 w-full max-w-2xl" />
       </div>
@@ -13,7 +13,7 @@ export default function TestsCatalogLoading() {
       {/* Filter tabs */}
       <div className="flex gap-2">
         {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-10 w-28 rounded-xl" />
+          <Skeleton key={i} className="h-10 w-28 rounded-md" />
         ))}
       </div>
 
@@ -22,11 +22,11 @@ export default function TestsCatalogLoading() {
         {Array.from({ length: 6 }).map((_, i) => (
           <div
             key={i}
-            className="flex flex-col justify-between space-y-6 rounded-3xl border border-border/80 bg-card p-6"
+            className="flex flex-col justify-between space-y-6 rounded-md border border-border/80 bg-card p-6"
           >
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <Skeleton className="h-6 w-24 rounded-full" />
+                <Skeleton className="h-6 w-24 rounded-sm" />
                 <Skeleton className="h-6 w-16" />
               </div>
               <Skeleton className="h-6 w-full" />
@@ -39,7 +39,7 @@ export default function TestsCatalogLoading() {
                 <Skeleton className="h-4 w-20" />
                 <Skeleton className="h-4 w-20" />
               </div>
-              <Skeleton className="h-11 w-full rounded-xl" />
+              <Skeleton className="h-11 w-full rounded-md" />
             </div>
           </div>
         ))}
