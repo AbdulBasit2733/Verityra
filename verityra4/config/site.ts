@@ -35,6 +35,8 @@ export interface SiteContact {
 export interface SiteConfig {
   /** Primary display name (e.g. "i ZONE") */
   readonly name: string
+  /** Official brand logo asset path in /public (e.g. "/izone-logo.png") */
+  readonly logo: string
   /** Official coaching institute name */
   readonly instituteName: string
   /** Affiliated spoken-English training wing */
@@ -93,6 +95,7 @@ export interface SiteConfigOverrides {
   brandName?: string
   appName?: string
   supportEmail?: string
+  logo?: string
 }
 
 export type BrandConfigOverrides = SiteConfigOverrides
@@ -123,6 +126,7 @@ const instituteContact: SiteContact = Object.freeze({
  */
 export const siteConfig: SiteConfig = Object.freeze({
   name: "i ZONE",
+  logo: "/izone-logo.png",
   instituteName: "I Zone Coaching Classes",
   trainingAcademyName: "I Zone Training Academy",
   shortName: "i ZONE",
@@ -213,6 +217,7 @@ export function createSiteConfig(overrides?: SiteConfigOverrides): SiteConfig {
 
   const resolvedSupportEmail =
     overrides.supportEmail?.trim() || (isDefaultIzone ? siteConfig.supportEmail : `support@${slug}.com`)
+  const resolvedLogo = overrides.logo?.trim() || siteConfig.logo
 
   const customInitials =
     resolvedName.charAt(0).toUpperCase() || siteConfig.initials
@@ -223,6 +228,7 @@ export function createSiteConfig(overrides?: SiteConfigOverrides): SiteConfig {
   return Object.freeze({
     ...siteConfig,
     name: resolvedName,
+    logo: resolvedLogo,
     instituteName: isDefaultIzone ? siteConfig.instituteName : resolvedName,
     trainingAcademyName: isDefaultIzone
       ? siteConfig.trainingAcademyName

@@ -27,6 +27,7 @@ export function runBrandTests() {
 
       // Primary identity
       assert.equal(siteConfig.name, "i ZONE")
+      assert.equal(siteConfig.logo, "/izone-logo.png")
       assert.equal(siteConfig.shortName, "i ZONE")
       assert.equal(siteConfig.instituteName, "I Zone Coaching Classes")
       assert.equal(siteConfig.trainingAcademyName, "I Zone Training Academy")

@@ -1,12 +1,12 @@
 "use client"
 
+import Image from "next/image"
 import Link from "next/link"
 import { useState } from "react"
 import { usePathname } from "next/navigation"
 import { useSession, signOut } from "next-auth/react"
 import {
   ArrowRight,
-  BookOpen,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -59,17 +59,17 @@ export function Navbar({
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-5 sm:h-[72px] sm:gap-6 sm:px-8 lg:h-[76px] lg:px-10">
         <Link
           href="/"
-          className="group flex shrink-0 items-center gap-2.5"
+          className="group flex shrink-0 items-center"
           aria-label={`${BRAND_CONFIG.name} home`}
         >
-          <span className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-md bg-[#2A6AED] text-xl font-black text-white shadow-xs transition-colors group-hover:bg-[#1E55C7]">
-            <BookOpen aria-hidden="true" className="h-5 w-5" />
-          </span>
-          <span
-            className={`font-heading text-[1.65rem] font-extrabold tracking-[-0.05em] transition-colors group-hover:text-[#2A6AED] ${isLightAppearance ? "text-slate-950" : "text-slate-950 dark:text-white"}`}
-          >
-            {BRAND_CONFIG.name}
-          </span>
+          <Image
+            src={BRAND_CONFIG.logo}
+            alt={BRAND_CONFIG.name}
+            width={2172}
+            height={724}
+            priority
+            className="h-9 w-auto object-contain sm:h-10"
+          />
         </Link>
 
         <nav

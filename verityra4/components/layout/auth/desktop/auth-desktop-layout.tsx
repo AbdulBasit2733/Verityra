@@ -1,9 +1,9 @@
 "use client"
 
+import Image from "next/image"
 import Link from "next/link"
 import {
   ArrowLeft,
-  BookOpen,
   Check,
   FileText,
   PenLine,
@@ -35,15 +35,17 @@ export function AuthDesktopLayout({
         <div className="relative z-10 flex items-center justify-between">
           <Link
             href="/"
-            className="group inline-flex items-center gap-3"
+            className="group inline-flex items-center"
             aria-label={`${BRAND_CONFIG.name} home`}
           >
-            <span className="flex h-11 w-11 items-center justify-center rounded-md bg-[#2A6AED] text-white shadow-xs transition-colors group-hover:bg-[#1E55C7]">
-              <BookOpen aria-hidden="true" className="h-6 w-6" />
-            </span>
-            <span className="font-heading text-2xl font-extrabold tracking-[-0.05em] text-slate-950 dark:text-white">
-              {BRAND_CONFIG.name}
-            </span>
+            <Image
+              src={BRAND_CONFIG.logo}
+              alt={BRAND_CONFIG.name}
+              width={2172}
+              height={724}
+              priority
+              className="h-10 w-auto object-contain"
+            />
           </Link>
           <Link
             href="/"

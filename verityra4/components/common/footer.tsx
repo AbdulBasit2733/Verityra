@@ -1,3 +1,4 @@
+import Image from "next/image"
 import Link from "next/link"
 import { ShieldCheck, Lock, Mail, Phone, MapPin } from "lucide-react"
 import {
@@ -19,14 +20,16 @@ export function Footer({
             <div>
               <Link
                 href="/"
-                className="inline-flex min-h-11 items-center gap-2.5 rounded-md focus-visible:ring-2 focus-visible:ring-[#2A6AED] focus-visible:outline-none"
+                aria-label={`${BRAND_CONFIG.name} home`}
+                className="inline-flex items-center rounded-md focus-visible:ring-2 focus-visible:ring-[#2A6AED] focus-visible:outline-none"
               >
-                <span className="flex h-9 w-9 items-center justify-center rounded-md bg-[#2A6AED] font-bold text-white">
-                  {BRAND_CONFIG.initials}
-                </span>
-                <span className="font-heading text-xl font-extrabold tracking-tight text-slate-950">
-                  {BRAND_CONFIG.name}
-                </span>
+                <Image
+                  src={BRAND_CONFIG.logo}
+                  alt={BRAND_CONFIG.name}
+                  width={2172}
+                  height={724}
+                  className="h-9 w-auto object-contain sm:h-10"
+                />
               </Link>
               <p className="mt-3 max-w-sm text-sm leading-6 text-slate-600">
                 Online free &amp; paid test series and question papers by{" "}
@@ -167,13 +170,18 @@ export function Footer({
         <div className="grid grid-cols-2 gap-x-4 gap-y-8 pb-8 min-[375px]:gap-x-6 min-[375px]:pb-10 sm:gap-8 sm:pb-12 md:grid-cols-12 lg:gap-10">
           {/* 1. Brand & Security Badges (Full width on mobile S/M/L, 5 cols on desktop) */}
           <div className="col-span-2 space-y-3.5 md:col-span-5">
-            <Link href="/" className="group inline-flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[#2A6AED] text-sm font-bold text-white shadow-sm transition-colors group-hover:bg-[#1E55C7] min-[375px]:h-9 min-[375px]:w-9 min-[375px]:text-base">
-                {BRAND_CONFIG.initials}
-              </div>
-              <span className="font-heading text-base font-bold tracking-tight text-white min-[375px]:text-lg sm:text-xl">
-                {BRAND_CONFIG.name}
-              </span>
+            <Link
+              href="/"
+              aria-label={`${BRAND_CONFIG.name} home`}
+              className="group inline-flex items-center rounded-md bg-white px-2.5 py-1.5 shadow-xs"
+            >
+              <Image
+                src={BRAND_CONFIG.logo}
+                alt={BRAND_CONFIG.name}
+                width={2172}
+                height={724}
+                className="h-7 w-auto object-contain sm:h-8"
+              />
             </Link>
 
             <p className="max-w-md text-[11.5px] leading-relaxed text-slate-400 min-[375px]:text-xs sm:text-[13px]">

@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -122,30 +123,26 @@ export function PortalDesktopLayout({
         <div
           className={cn(
             "flex h-16 items-center border-b border-border",
-            sidebarCollapsed ? "justify-center px-2" : "justify-between px-5"
+            sidebarCollapsed ? "justify-center px-1.5" : "justify-between px-5"
           )}
         >
           <Link
             href={role === "ADMIN" ? "/admin" : "/student/dashboard"}
-            className={cn(
-              "group flex items-center",
-              sidebarCollapsed ? "gap-0" : "gap-2.5"
-            )}
+            className="group flex items-center"
+            aria-label={`${BRAND_CONFIG.name} dashboard`}
             title={sidebarCollapsed ? BRAND_CONFIG.name : undefined}
           >
-            <div className="flex h-9 w-9 items-center justify-center rounded-md bg-[#2A6AED] text-base font-extrabold text-white shadow-xs">
-              {BRAND_CONFIG.initials}
-            </div>
-            {!sidebarCollapsed && (
-              <div className="flex flex-col">
-                <span className="font-heading text-base leading-none font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
-                  {BRAND_CONFIG.name}
-                </span>
-                <span className="mt-1 text-[10px] font-bold text-[#2A6AED] dark:text-blue-400">
-                  {role === "ADMIN" ? "Admin Suite" : "Candidate Suite"}
-                </span>
-              </div>
-            )}
+            <Image
+              src={BRAND_CONFIG.logo}
+              alt={BRAND_CONFIG.name}
+              width={2172}
+              height={724}
+              priority
+              className={cn(
+                "w-auto object-contain transition-all",
+                sidebarCollapsed ? "h-4" : "h-8"
+              )}
+            />
           </Link>
           {!sidebarCollapsed && (
             <div className="flex h-6 w-6 items-center justify-center rounded-sm bg-slate-100 text-slate-400 dark:bg-slate-800">

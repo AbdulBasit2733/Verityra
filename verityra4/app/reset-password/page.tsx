@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, Suspense } from "react"
+import Image from "next/image"
 import Link from "next/link"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -177,14 +178,17 @@ export default function ResetPasswordPage() {
       <div className="text-center sm:mx-auto sm:w-full sm:max-w-md">
         <Link
           href="/"
-          className="group mb-6 inline-flex items-center justify-center gap-3"
+          aria-label={`${BRAND_CONFIG.name} home`}
+          className="group mb-6 inline-flex items-center justify-center"
         >
-          <div className="flex h-12 w-12 items-center justify-center rounded-md bg-gradient-to-br from-[#2A6AED] to-[#1D4ED8] text-2xl font-black text-white shadow-sm">
-            {BRAND_CONFIG.initials}
-          </div>
-          <span className="font-heading text-3xl font-black tracking-tight text-slate-900 transition-colors group-hover:text-[#2A6AED] dark:text-white">
-            {BRAND_CONFIG.name}
-          </span>
+          <Image
+            src={BRAND_CONFIG.logo}
+            alt={BRAND_CONFIG.name}
+            width={2172}
+            height={724}
+            priority
+            className="h-11 w-auto object-contain"
+          />
         </Link>
         <h2 className="text-center text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl dark:text-white">
           Create a new password

@@ -1,7 +1,8 @@
 "use client"
 
+import Image from "next/image"
 import Link from "next/link"
-import { ArrowLeft, BookOpen, ShieldCheck } from "lucide-react"
+import { ArrowLeft, ShieldCheck } from "lucide-react"
 import { BRAND_CONFIG } from "@/lib/brand"
 
 export interface AuthMobileLayoutProps {
@@ -22,15 +23,17 @@ export function AuthMobileLayout({
       <div className="mx-auto flex w-full max-w-xl items-center justify-between">
         <Link
           href="/"
-          className="group inline-flex min-h-11 items-center gap-2.5 rounded-md pr-2 focus-visible:ring-2 focus-visible:ring-[#2A6AED] focus-visible:outline-none"
+          className="group inline-flex min-h-11 items-center rounded-md pr-2 focus-visible:ring-2 focus-visible:ring-[#2A6AED] focus-visible:outline-none"
           aria-label={`${BRAND_CONFIG.name} home`}
         >
-          <span className="flex h-10 w-10 items-center justify-center rounded-md bg-[#2A6AED] text-white shadow-xs transition-colors group-hover:bg-[#1E55C7]">
-            <BookOpen aria-hidden="true" className="h-5 w-5" />
-          </span>
-          <span className="font-heading text-xl font-extrabold tracking-[-0.05em] text-slate-950 dark:text-white">
-            {BRAND_CONFIG.name}
-          </span>
+          <Image
+            src={BRAND_CONFIG.logo}
+            alt={BRAND_CONFIG.name}
+            width={2172}
+            height={724}
+            priority
+            className="h-8 w-auto object-contain"
+          />
         </Link>
         <Link
           href="/"

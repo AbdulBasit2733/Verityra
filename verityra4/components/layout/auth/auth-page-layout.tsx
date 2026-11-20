@@ -1,7 +1,7 @@
+import Image from "next/image"
 import Link from "next/link"
 import {
   ArrowLeft,
-  BookOpen,
   Check,
   FileText,
   PenLine,
@@ -146,17 +146,17 @@ function BrandMark({ compact = false }: { compact?: boolean }) {
   return (
     <Link
       href="/"
-      className="group inline-flex min-h-11 items-center gap-2.5 rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+      className="group inline-flex min-h-11 items-center rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
       aria-label={`${BRAND_CONFIG.name} home`}
     >
-      <span className="flex h-10 w-10 items-center justify-center rounded-md bg-primary text-white shadow-xs transition-colors group-hover:bg-primary/90">
-        <BookOpen aria-hidden="true" className="h-5 w-5" />
-      </span>
-      <span
-        className={`font-heading font-extrabold tracking-[-0.05em] text-slate-950 dark:text-white ${compact ? "text-xl" : "text-2xl"}`}
-      >
-        {BRAND_CONFIG.name}
-      </span>
+      <Image
+        src={BRAND_CONFIG.logo}
+        alt={BRAND_CONFIG.name}
+        width={2172}
+        height={724}
+        priority
+        className={`w-auto object-contain ${compact ? "h-8" : "h-10"}`}
+      />
     </Link>
   )
 }

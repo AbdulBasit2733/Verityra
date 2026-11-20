@@ -1,8 +1,8 @@
 "use client"
 
 import * as React from "react"
+import Image from "next/image"
 import Link from "next/link"
-import { Badge } from "@/components/ui/badge"
 import { toast } from "@/components/ui/sonner"
 import {
   Menu,
@@ -115,19 +115,17 @@ export function PortalMobileLayout({
 
           <Link
             href={role === "ADMIN" ? "/admin" : "/student/dashboard"}
-            className="flex min-w-0 items-center gap-2 rounded-md focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none"
+            aria-label={`${BRAND_CONFIG.name} dashboard`}
+            className="flex min-w-0 items-center rounded-md focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none"
           >
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary text-sm font-extrabold text-primary-foreground shadow-xs">
-              {BRAND_CONFIG.initials}
-            </div>
-            <div className="min-w-0 truncate">
-              <span className="block truncate font-heading text-sm leading-tight font-bold tracking-tight text-slate-900 dark:text-white">
-                {BRAND_CONFIG.name}
-              </span>
-              <span className="block text-[10px] leading-none font-semibold text-[#2A6AED] dark:text-blue-400">
-                {role === "ADMIN" ? "Admin" : "Candidate"}
-              </span>
-            </div>
+            <Image
+              src={BRAND_CONFIG.logo}
+              alt={BRAND_CONFIG.name}
+              width={2172}
+              height={724}
+              priority
+              className="h-8 w-auto object-contain"
+            />
           </Link>
         </div>
 
@@ -191,19 +189,16 @@ export function PortalMobileLayout({
                 <Link
                   href={role === "ADMIN" ? "/admin" : "/student/dashboard"}
                   onClick={() => setDrawerOpen(false)}
-                  className="flex items-center gap-2.5 rounded-md focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none"
+                  aria-label={`${BRAND_CONFIG.name} dashboard`}
+                  className="flex items-center rounded-md focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none"
                 >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-md bg-[#2A6AED] text-base font-extrabold text-white shadow-xs">
-                    {BRAND_CONFIG.initials}
-                  </div>
-                  <div>
-                    <span className="block font-heading text-sm leading-tight font-bold text-slate-900 dark:text-white">
-                      {BRAND_CONFIG.name}
-                    </span>
-                    <span className="text-[10px] font-bold text-[#2A6AED] dark:text-blue-400">
-                      {role === "ADMIN" ? "Admin Suite" : "Candidate Suite"}
-                    </span>
-                  </div>
+                  <Image
+                    src={BRAND_CONFIG.logo}
+                    alt={BRAND_CONFIG.name}
+                    width={2172}
+                    height={724}
+                    className="h-8 w-auto object-contain"
+                  />
                 </Link>
                 <button
                   type="button"
