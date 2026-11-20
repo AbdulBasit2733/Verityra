@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Toggle } from "@/components/ui/toggle"
+import { cn } from "@/lib/utils"
 import { useConfirm } from "@/components/providers/confirm-dialog-provider"
 import { useGlobalError } from "@/components/providers/error-dialog-provider"
 import { toast } from "@/components/ui/sonner"
@@ -480,42 +482,52 @@ export function AdminPublishToggles({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2.5">
-      <Button
-        onClick={handleTogglePublish}
+    <div className="flex flex-wrap items-center gap-2">
+      <Toggle
+        variant="outline"
+        size="sm"
+        pressed={isPublished}
         disabled={pubLoading}
-        variant={isPublished ? "outline" : "default"}
-        className={`h-9 rounded-md px-3.5 text-xs font-semibold ${
+        onClick={handleTogglePublish}
+        aria-label="Toggle test series catalog publication"
+        className={cn(
+          "h-8 rounded-md px-2.5 text-xs font-semibold transition-all",
           isPublished
-            ? "border-amber-300 text-amber-800 hover:bg-amber-50"
-            : "bg-emerald-600 text-white hover:bg-emerald-700"
-        }`}
+            ? "border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 hover:text-white aria-pressed:bg-emerald-600 aria-pressed:text-white"
+            : "border-slate-300 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"
+        )}
       >
         {pubLoading ? (
           <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
         ) : (
           <Globe className="mr-1.5 h-3.5 w-3.5" />
         )}
-        {isPublished ? "Unpublish Series" : "Publish to Catalog"}
-      </Button>
+        <span>{isPublished ? "Unpublish" : "Publish to Catalog"}</span>
+      </Toggle>
 
-      <Button
-        onClick={handleToggleResults}
-        disabled={resLoading}
+      <Toggle
         variant="outline"
-        className={`h-9 rounded-md px-3.5 text-xs font-semibold ${
+        size="sm"
+        pressed={resultsPublished}
+        disabled={resLoading}
+        onClick={handleToggleResults}
+        aria-label="Toggle leaderboard visibility"
+        className={cn(
+          "h-8 rounded-md px-2.5 text-xs font-semibold transition-all",
           resultsPublished
-            ? "border-purple-300 text-purple-700 hover:bg-purple-50"
+            ? "border-purple-600 bg-purple-600 text-white hover:bg-purple-700 hover:text-white aria-pressed:bg-purple-600 aria-pressed:text-white"
             : "border-[#2A6AED] text-[#2A6AED] hover:bg-blue-50/50"
-        }`}
+        )}
       >
         {resLoading ? (
           <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
         ) : (
           <EyeOff className="mr-1.5 h-3.5 w-3.5" />
         )}
-        {resultsPublished ? "Hide Leaderboard" : "Publish Leaderboard"}
-      </Button>
+        <span>
+          {resultsPublished ? "Hide Leaderboard" : "Publish Leaderboard"}
+        </span>
+      </Toggle>
     </div>
   )
 }

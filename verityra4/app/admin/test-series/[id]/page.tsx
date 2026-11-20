@@ -117,33 +117,33 @@ export default async function AdminTestSeriesDetailPage({
         subtitle={`Edit configuration · ${testSeries.slug} · ${testSeries.status}`}
         showRefresh={false}
       >
-        <Link href="/admin/test-series">
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-10 rounded-md px-3.5 text-xs font-semibold"
-          >
-            <ArrowLeft className="mr-1.5 h-3.5 w-3.5" /> Back to Catalog
-          </Button>
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <AdminPublishToggles
+            testSeriesId={testSeries.id}
+            isPublished={testSeries.isPublished}
+            resultsPublished={testSeries.resultsPublished}
+          />
+          <Link href="/admin/test-series">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 rounded-md px-3 text-xs font-semibold"
+            >
+              <ArrowLeft className="mr-1.5 h-3.5 w-3.5" /> Back to Catalog
+            </Button>
+          </Link>
+        </div>
       </PageHeader>
 
-      <div className="flex flex-col gap-4 border border-slate-200/80 bg-white p-5 shadow-xs sm:flex-row sm:items-center sm:justify-between dark:border-slate-800 dark:bg-slate-900">
-        <div className="flex flex-wrap items-center gap-2.5">
-          <Badge variant="outline" className="text-xs font-semibold">
-            {testSeries.status}
+      <div className="flex flex-wrap items-center gap-2.5">
+        <Badge variant="outline" className="text-xs font-semibold">
+          {testSeries.status}
+        </Badge>
+        {testSeries.resultsPublished && (
+          <Badge className="bg-purple-600 text-xs font-semibold text-white">
+            Results Live
           </Badge>
-          {testSeries.resultsPublished && (
-            <Badge className="bg-purple-600 text-xs font-semibold text-white">
-              Results Live
-            </Badge>
-          )}
-        </div>
-        <AdminPublishToggles
-          testSeriesId={testSeries.id}
-          isPublished={testSeries.isPublished}
-          resultsPublished={testSeries.resultsPublished}
-        />
+        )}
       </div>
 
       <AdminTestSeriesEditor
