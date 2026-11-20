@@ -1,6 +1,11 @@
 import assert from "node:assert/strict"
 import { TestSuite } from "./test-utils"
 import {
+  siteConfig,
+  getSiteTitle,
+  createSiteConfig,
+} from "../config/site"
+import {
   BRAND_CONFIG,
   createBrandConfig,
   getBrandTitle,
@@ -9,57 +14,80 @@ import {
 } from "../lib/brand"
 
 export function runBrandTests() {
-  const suite = new TestSuite("Module: Centralized Brand Configuration")
+  const suite = new TestSuite("Module: Centralized Brand & Site Configuration")
   console.log(`\n==================================================`)
   console.log(`[TEST SUITE] ${suite.name}`)
   console.log(`==================================================`)
 
   suite.test(
-    "Defaults: BRAND_CONFIG provides Izone identity, initials, and emails",
+    "Defaults: siteConfig and BRAND_CONFIG provide i ZONE identity, initials, and emails",
     () => {
-      assert.equal(BRAND_CONFIG.name, "Izone")
-      assert.equal(BRAND_CONFIG.shortName, "Izone")
-      assert.equal(BRAND_CONFIG.instituteName, "I Zone Coaching Classes")
-      assert.equal(BRAND_CONFIG.trainingAcademyName, "I Zone Training Academy")
-      assert.equal(BRAND_CONFIG.initials, "I")
-      assert.equal(BRAND_CONFIG.monogram, "IZ")
-      assert.equal(BRAND_CONFIG.companyName, "I Zone Coaching Classes")
-      assert.equal(BRAND_CONFIG.supportEmail, "support@izone.com")
-      assert.equal(BRAND_CONFIG.defaultAdminEmail, "admin@izone.com")
-      assert.equal(BRAND_CONFIG.defaultCandidateEmail, "candidate@izone.com")
-      assert.equal(BRAND_CONFIG.domain, "izone.com")
-      assert.equal(BRAND_CONFIG.appDomain, "izone.app")
-      assert.equal(
-        BRAND_CONFIG.sidebarStorageKey,
-        "izone-sidebar-collapsed"
-      )
-      assert.equal(
-        BRAND_CONFIG.legacySidebarStorageKey,
-        "verityra-sidebar-collapsed"
-      )
-      assert.ok(BRAND_CONFIG.securityLabel.includes("Izone"))
-      assert.ok(BRAND_CONFIG.platformLabel.includes("Izone"))
-      assert.ok(BRAND_CONFIG.evaluatorPersona.includes("Izone"))
-      assert.equal(BRAND_CONFIG.contact.phone, "+91 98604 47370")
-      assert.equal(BRAND_CONFIG.contact.phoneHref, "tel:+919860447370")
-      assert.equal(BRAND_CONFIG.contact.rating, "4.8")
+      // Re-export parity
+      assert.strictEqual(BRAND_CONFIG, siteConfig)
+
+      // Primary identity
+      assert.equal(siteConfig.name, "i ZONE")
+      assert.equal(siteConfig.shortName, "i ZONE")
+      assert.equal(siteConfig.instituteName, "I Zone Coaching Classes")
+      assert.equal(siteConfig.trainingAcademyName, "I Zone Training Academy")
+      assert.equal(siteConfig.initials, "I")
+      assert.equal(siteConfig.monogram, "IZ")
+      assert.equal(siteConfig.companyName, "I Zone Coaching Classes")
+
+      // Contact & location
+      assert.equal(siteConfig.contact.phone, "+91 98604 47370")
+      assert.equal(siteConfig.contact.phoneHref, "tel:+919860447370")
+      assert.equal(siteConfig.contact.rating, "4.8")
       assert.ok(
-        BRAND_CONFIG.contact.address.includes("Chhatrapati Sambhajinagar")
+        siteConfig.contact.address.includes("Chhatrapati Sambhajinagar")
       )
       assert.equal(
-        BRAND_CONFIG.contact.weekdayHours,
+        siteConfig.contact.weekdayHours,
         "Mon–Sat: 3:00 PM – 9:00 PM"
       )
-      assert.equal(BRAND_CONFIG.contact.sundayHours, "Sun: 8:00 AM – 2:00 PM")
-      assert.equal(Object.isFrozen(BRAND_CONFIG.contact), true)
-      assert.equal(Object.isFrozen(BRAND_CONFIG), true)
+      assert.equal(siteConfig.contact.sundayHours, "Sun: 8:00 AM – 2:00 PM")
+      assert.equal(siteConfig.links.phone, "tel:+919860447370")
+      assert.equal(
+        siteConfig.links.justdial,
+        siteConfig.contact.justdialUrl
+      )
+      assert.equal(
+        siteConfig.links.trainingAcademy,
+        siteConfig.contact.trainingAcademyUrl
+      )
+
+      // Domains & Emails
+      assert.equal(siteConfig.supportEmail, "support@izone.com")
+      assert.equal(siteConfig.defaultAdminEmail, "admin@izone.com")
+      assert.equal(siteConfig.defaultCandidateEmail, "candidate@izone.com")
+      assert.equal(siteConfig.domain, "izone.com")
+      assert.equal(siteConfig.appDomain, "izone.app")
+
+      // Storage keys & labels
+      assert.equal(siteConfig.sidebarStorageKey, "izone-sidebar-collapsed")
+      assert.equal(
+        siteConfig.legacySidebarStorageKey,
+        "verityra-sidebar-collapsed"
+      )
+      assert.ok(siteConfig.securityLabel.includes("i ZONE"))
+      assert.ok(siteConfig.platformLabel.includes("i ZONE"))
+      assert.ok(siteConfig.evaluatorPersona.includes("i ZONE"))
+
+      // Immutability
+      assert.equal(Object.isFrozen(siteConfig.contact), true)
+      assert.equal(Object.isFrozen(siteConfig.links), true)
+      assert.equal(Object.isFrozen(siteConfig), true)
     }
   )
 
   suite.test(
-    "Factory: createBrandConfig derives properties cleanly from custom brandName",
+    "Factory: createSiteConfig derives properties cleanly from custom brandName",
     () => {
-      const custom = createBrandConfig({ brandName: "Acme Prep" })
+      // Calling with no overrides returns immutable static config
+      assert.strictEqual(createSiteConfig(), siteConfig)
+      assert.strictEqual(createBrandConfig(), siteConfig)
+
+      const custom = createSiteConfig({ brandName: "Acme Prep" })
       assert.equal(custom.name, "Acme Prep")
       assert.equal(custom.shortName, "Acme Prep")
       assert.equal(custom.initials, "A")
@@ -86,7 +114,8 @@ export function runBrandTests() {
         brandName: "   ",
         appName: "  ",
       })
-      assert.equal(blankFallback.name, "Izone")
+      assert.equal(blankFallback.name, "i ZONE")
+      assert.equal(blankFallback.companyName, "I Zone Coaching Classes")
 
       const appNameFallback = createBrandConfig({
         brandName: "   ",
@@ -97,19 +126,22 @@ export function runBrandTests() {
       assert.equal(appNameFallback.monogram, "NO")
 
       const emailOverride = createBrandConfig({
-        brandName: "Izone",
+        brandName: "i ZONE",
         supportEmail: " helpdesk@custom.org ",
       })
       assert.equal(emailOverride.supportEmail, "helpdesk@custom.org")
     }
   )
 
-  suite.test("Helpers: getBrandTitle formats default and page titles", () => {
-    assert.equal(getBrandTitle(), BRAND_CONFIG.title)
-    assert.equal(getBrandTitle("Sign In"), "Sign In | Izone")
-    assert.equal(getBrandTitle("Admin Dashboard"), "Admin Dashboard | Izone")
+  suite.test("Helpers: getSiteTitle and getBrandTitle format default and page titles", () => {
+    assert.equal(getSiteTitle(), siteConfig.title)
+    assert.equal(getBrandTitle(), siteConfig.title)
+    assert.equal(getSiteTitle("Sign In"), "Sign In | i ZONE")
+    assert.equal(getBrandTitle("Sign In"), "Sign In | i ZONE")
+    assert.equal(getBrandTitle("Admin Dashboard"), "Admin Dashboard | i ZONE")
 
     const custom = createBrandConfig({ brandName: "Acme" })
+    assert.equal(getSiteTitle(undefined, custom), custom.title)
     assert.equal(getBrandTitle(undefined, custom), custom.title)
     assert.equal(getBrandTitle("Overview", custom), "Overview | Acme")
   })
