@@ -11,6 +11,8 @@ export interface QuestionPaperItem {
   fileSizeBytes?: number | null
   isPublished: boolean
   downloadsCount: number
+  testSeriesId?: string | null
+  testSeriesTitle?: string | null
   createdAt: string
   updatedAt?: string
 }

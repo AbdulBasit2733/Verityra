@@ -17,6 +17,10 @@ import {
   FileText,
   Download,
   ClipboardList,
+  FileUp,
+  BookOpenCheck,
+  GraduationCap,
+  Building2,
 } from "lucide-react"
 import dynamic from "next/dynamic"
 import {
@@ -40,36 +44,67 @@ const adminNavItems: NavItem[] = [
     href: "/admin",
     icon: LayoutDashboard,
     exact: true,
+    section: "Oversight & Grading",
   },
   {
-    label: "Test Series",
-    href: "/admin/test-series",
-    icon: BookOpen,
-  },
-  {
-    label: "Question Papers",
-    href: "/admin/question-papers",
-    icon: FileText,
-  },
-  {
-    label: "Submissions & Reviews",
+    label: "Submissions Queue",
     href: "/admin/submissions",
     icon: FileCheck2,
+    section: "Oversight & Grading",
+  },
+  {
+    label: "Test Series & Bundles",
+    href: "/admin/test-series",
+    icon: BookOpen,
+    section: "Academic Management",
+  },
+  {
+    label: "Subject Tests",
+    href: "/admin/tests",
+    icon: FileText,
+    section: "Academic Management",
+  },
+  {
+    label: "Question Paper Bank",
+    href: "/admin/question-papers",
+    icon: FileUp,
+    section: "Academic Management",
+  },
+  {
+    label: "Subject Master",
+    href: "/admin/masters/subjects",
+    icon: BookOpenCheck,
+    section: "Academic Masters",
+  },
+  {
+    label: "Standard Master",
+    href: "/admin/masters/standards",
+    icon: GraduationCap,
+    section: "Academic Masters",
+  },
+  {
+    label: "Board Master",
+    href: "/admin/masters/boards",
+    icon: Building2,
+    section: "Academic Masters",
   },
   {
     label: "Candidates & Overrides",
     href: "/admin/students",
     icon: Users,
+    section: "Students & Revenue",
   },
   {
     label: "Payments & Financials",
     href: "/admin/payments",
     icon: CreditCard,
+    section: "Students & Revenue",
   },
   {
     label: "Profile & Settings",
     href: "/admin/profile",
     icon: User,
+    section: "System",
   },
 ]
 
@@ -79,46 +114,55 @@ const studentNavItems: NavItem[] = [
     href: "/student/dashboard",
     icon: LayoutDashboard,
     exact: true,
+    section: "Learning & Tests",
   },
   {
     label: "My Tests",
     href: "/student/tests",
     icon: BookOpen,
+    section: "Learning & Tests",
   },
   {
     label: "My Evaluations",
     href: "/student/evaluations",
     icon: ClipboardList,
-  },
-  {
-    label: "Question Papers",
-    href: "/question-papers",
-    icon: FileText,
-  },
-  {
-    label: "Downloads",
-    href: "/student/downloads",
-    icon: Download,
-  },
-  {
-    label: "Purchases",
-    href: "/student/purchases",
-    icon: CreditCard,
-  },
-  {
-    label: "Profile & Settings",
-    href: "/student/profile",
-    icon: User,
+    section: "Learning & Tests",
   },
   {
     label: "Explore Test Catalog",
     href: "/tests",
     icon: Compass,
+    section: "Explore & Practice",
+  },
+  {
+    label: "Question Paper Bank",
+    href: "/question-papers",
+    icon: FileText,
+    section: "Explore & Practice",
+  },
+  {
+    label: "Downloads & Offline",
+    href: "/student/downloads",
+    icon: Download,
+    section: "Explore & Practice",
   },
   {
     label: "Live Leaderboard",
     href: "/leaderboard",
     icon: Trophy,
+    section: "Explore & Practice",
+  },
+  {
+    label: "Purchases & Invoices",
+    href: "/student/purchases",
+    icon: CreditCard,
+    section: "Account & Billing",
+  },
+  {
+    label: "Profile & Class",
+    href: "/student/profile",
+    icon: User,
+    section: "Account & Billing",
   },
 ]
 

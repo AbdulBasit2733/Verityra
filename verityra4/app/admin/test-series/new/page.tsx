@@ -2,15 +2,25 @@ import Link from "next/link"
 import { ArrowLeft, BookOpen } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { PageHeader } from "@/components/ui/page-header"
-import { AdminTestSeriesEditor } from "@/components/admin/test-series/admin-test-series-editor"
+import { requireAdmin } from "@/lib/auth-guard"
+import { getMastersOverviewAction } from "@/actions/master-actions"
+import { AdminCreateTestSeriesBundleForm } from "@/components/admin/test-series/admin-create-test-series-bundle-form"
 
-export default function CreateTestSeriesPage() {
+export const dynamic = "force-dynamic"
+
+export default async function CreateTestSeriesPage() {
+  await requireAdmin("/admin/test-series/new")
+
+  const mastersRes = await getMastersOverviewAction()
+  const standards = mastersRes.success && mastersRes.data ? mastersRes.data.standards : []
+  const boards = mastersRes.success && mastersRes.data ? mastersRes.data.boards : []
+
   return (
     <div className="w-full space-y-6">
       <PageHeader
         icon={BookOpen}
-        title="Create Test Series"
-        subtitle="Set examination details, candidate instructions, and upload documents in one consistent workflow."
+        title="Create Test Series Bundle Master"
+        subtitle="Initialize the master batch container for an academic program. Subject tests (Mathematics, Science, etc.) are added from the Subject Tests screen."
         showRefresh={false}
       >
         <Link href="/admin/test-series">
@@ -23,7 +33,11 @@ export default function CreateTestSeriesPage() {
           </Button>
         </Link>
       </PageHeader>
-      <AdminTestSeriesEditor />
+
+      <AdminCreateTestSeriesBundleForm
+        availableStandards={standards}
+        availableBoards={boards}
+      />
     </div>
   )
 }

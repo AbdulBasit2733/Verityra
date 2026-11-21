@@ -50,7 +50,7 @@ export default async function StudentPurchasesPage() {
       id: payment.id,
       testSeriesId: payment.testSeriesId,
       testTitle:
-        payment.registration?.testSeries.title ||
+        payment.registration?.testSeries?.title ||
         testSeriesTitleMap.get(payment.testSeriesId) ||
         "Paid test series",
       amount: payment.amount,

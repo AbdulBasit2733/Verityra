@@ -6,6 +6,7 @@ import {
   WorkspaceSubmissionItem,
 } from "@/components/student/workspace/student-workspace-client"
 import { normalizePrivateFileUrl } from "@/lib/supabase"
+import { checkStudentTestAccess, getTestAccessStatus } from "@/lib/test-access"
 
 export const dynamic = "force-dynamic"
 
@@ -21,107 +22,245 @@ export default async function StudentTestWorkspacePage({
   let testSeries: any = null
 
   try {
-    registration = await prisma.testRegistration.findFirst({
-      where: {
-        userId: user.id,
-        OR: [{ testSeriesId: id }, { testSeries: { slug: id } }],
-      },
-      select: {
-        id: true,
-        attemptsUsed: true,
-        maxAttempts: true,
+    // 1. Check if ID matches a single subject Test
+    const subjectTest = await prisma.test.findFirst({
+      where: { OR: [{ id }, { slug: id }] },
+      include: {
         testSeries: {
           select: {
             id: true,
             title: true,
-            maxMarks: true,
-            durationMinutes: true,
             studentInstructions: true,
-            papers: {
-              select: {
-                id: true,
-                title: true,
-                fileUrl: true,
-              },
-            },
-            templates: {
-              select: {
-                id: true,
-                title: true,
-                fileUrl: true,
-              },
-            },
+            papers: { select: { id: true, title: true, fileUrl: true } },
+            templates: { select: { id: true, title: true, fileUrl: true } },
           },
-        },
-        submissions: {
-          select: {
-            id: true,
-            attemptNumber: true,
-            status: true,
-            fileUrl: true,
-            submittedAt: true,
-            evaluation: {
-              select: {
-                id: true,
-                totalMarksAwarded: true,
-                maxMarks: true,
-                percentage: true,
-                generalFeedback: true,
-                legibilityWarning: true,
-                uncertaintyFlag: true,
-                questions: {
-                  orderBy: { questionNumber: "asc" },
-                  select: {
-                    id: true,
-                    questionNumber: true,
-                    maxMarks: true,
-                    marksAwarded: true,
-                    feedback: true,
-                    missingConcepts: true,
-                    scoreBand: true,
-                    scoreExplanation: true,
-                    strengths: true,
-                    examinerExpectation: true,
-                    improvementAdvice: true,
-                    isLegible: true,
-                  },
-                },
-              },
-            },
-            evaluationRuns: {
-              orderBy: { runNumber: "asc" },
-              select: {
-                id: true,
-                runNumber: true,
-                trigger: true,
-                status: true,
-                totalMarksAwarded: true,
-                maxMarks: true,
-                questions: {
-                  orderBy: { questionNumber: "asc" },
-                  select: {
-                    id: true,
-                    questionNumber: true,
-                    maxMarks: true,
-                    marksAwarded: true,
-                    scoreExplanation: true,
-                    missingConcepts: true,
-                    strengths: true,
-                    examinerExpectation: true,
-                    improvementAdvice: true,
-                    isLegible: true,
-                  },
-                },
-              },
-            },
-          },
-          orderBy: { attemptNumber: "desc" },
         },
       },
     })
 
-    if (registration) {
-      testSeries = registration.testSeries
+    if (subjectTest) {
+      const hasAccess = await checkStudentTestAccess(user.id, subjectTest.id)
+      if (!hasAccess) {
+        redirect(`/tests/${subjectTest.testSeriesId}`)
+      }
+
+      registration = await prisma.testRegistration.findFirst({
+        where: {
+          userId: user.id,
+          OR: [
+            { testId: subjectTest.id },
+            { testSeriesId: subjectTest.testSeriesId },
+          ],
+        },
+        select: {
+          id: true,
+          attemptsUsed: true,
+          maxAttempts: true,
+          submissions: {
+            where: {
+              OR: [
+                { testId: subjectTest.id },
+                ...(subjectTest.testSeriesId ? [{ testSeriesId: subjectTest.testSeriesId }] : []),
+              ],
+            },
+            select: {
+              id: true,
+              attemptNumber: true,
+              status: true,
+              fileUrl: true,
+              submittedAt: true,
+              evaluation: {
+                select: {
+                  id: true,
+                  totalMarksAwarded: true,
+                  maxMarks: true,
+                  percentage: true,
+                  generalFeedback: true,
+                  legibilityWarning: true,
+                  uncertaintyFlag: true,
+                  questions: {
+                    orderBy: { questionNumber: "asc" },
+                    select: {
+                      id: true,
+                      questionNumber: true,
+                      maxMarks: true,
+                      marksAwarded: true,
+                      feedback: true,
+                      missingConcepts: true,
+                      scoreBand: true,
+                      scoreExplanation: true,
+                      strengths: true,
+                      examinerExpectation: true,
+                      improvementAdvice: true,
+                      isLegible: true,
+                    },
+                  },
+                },
+              },
+              evaluationRuns: {
+                orderBy: { runNumber: "asc" },
+                select: {
+                  id: true,
+                  runNumber: true,
+                  trigger: true,
+                  status: true,
+                  totalMarksAwarded: true,
+                  maxMarks: true,
+                  questions: {
+                    orderBy: { questionNumber: "asc" },
+                    select: {
+                      id: true,
+                      questionNumber: true,
+                      maxMarks: true,
+                      marksAwarded: true,
+                      scoreExplanation: true,
+                      missingConcepts: true,
+                      strengths: true,
+                      examinerExpectation: true,
+                      improvementAdvice: true,
+                      isLegible: true,
+                    },
+                  },
+                },
+              },
+            },
+            orderBy: { attemptNumber: "desc" },
+          },
+        },
+      })
+
+      testSeries = {
+        id: subjectTest.id,
+        title: `${subjectTest.subject}: ${subjectTest.title}`,
+        maxMarks: subjectTest.maxMarks,
+        durationMinutes: subjectTest.durationMinutes,
+        studentInstructions:
+          subjectTest.studentInstructions ||
+          subjectTest.testSeries?.studentInstructions ||
+          "1. Number all responses clearly inside the left margin.\n2. Scan all pages upright into a single clear PDF before uploading.",
+        papers: subjectTest.questionPaperUrl
+          ? [
+              {
+                id: `paper-${subjectTest.id}`,
+                title: `${subjectTest.title} Question Paper`,
+                fileUrl: subjectTest.questionPaperUrl,
+              },
+            ]
+          : subjectTest.testSeries?.papers || [],
+        templates: subjectTest.answerSheetUrl
+          ? [
+              {
+                id: `template-${subjectTest.id}`,
+                title: "Prescribed Answer Sheet Template",
+                fileUrl: subjectTest.answerSheetUrl,
+              },
+            ]
+          : subjectTest.testSeries?.templates || [],
+      }
+    } else {
+      // 2. Query for TestSeries registration
+      registration = await prisma.testRegistration.findFirst({
+        where: {
+          userId: user.id,
+          OR: [{ testSeriesId: id }, { testSeries: { slug: id } }],
+        },
+        select: {
+          id: true,
+          attemptsUsed: true,
+          maxAttempts: true,
+          testSeries: {
+            select: {
+              id: true,
+              title: true,
+              maxMarks: true,
+              durationMinutes: true,
+              studentInstructions: true,
+              papers: {
+                select: {
+                  id: true,
+                  title: true,
+                  fileUrl: true,
+                },
+              },
+              templates: {
+                select: {
+                  id: true,
+                  title: true,
+                  fileUrl: true,
+                },
+              },
+            },
+          },
+          submissions: {
+            select: {
+              id: true,
+              attemptNumber: true,
+              status: true,
+              fileUrl: true,
+              submittedAt: true,
+              evaluation: {
+                select: {
+                  id: true,
+                  totalMarksAwarded: true,
+                  maxMarks: true,
+                  percentage: true,
+                  generalFeedback: true,
+                  legibilityWarning: true,
+                  uncertaintyFlag: true,
+                  questions: {
+                    orderBy: { questionNumber: "asc" },
+                    select: {
+                      id: true,
+                      questionNumber: true,
+                      maxMarks: true,
+                      marksAwarded: true,
+                      feedback: true,
+                      missingConcepts: true,
+                      scoreBand: true,
+                      scoreExplanation: true,
+                      strengths: true,
+                      examinerExpectation: true,
+                      improvementAdvice: true,
+                      isLegible: true,
+                    },
+                  },
+                },
+              },
+              evaluationRuns: {
+                orderBy: { runNumber: "asc" },
+                select: {
+                  id: true,
+                  runNumber: true,
+                  trigger: true,
+                  status: true,
+                  totalMarksAwarded: true,
+                  maxMarks: true,
+                  questions: {
+                    orderBy: { questionNumber: "asc" },
+                    select: {
+                      id: true,
+                      questionNumber: true,
+                      maxMarks: true,
+                      marksAwarded: true,
+                      scoreExplanation: true,
+                      missingConcepts: true,
+                      strengths: true,
+                      examinerExpectation: true,
+                      improvementAdvice: true,
+                      isLegible: true,
+                    },
+                  },
+                },
+              },
+            },
+            orderBy: { attemptNumber: "desc" },
+          },
+        },
+      })
+
+      if (registration) {
+        testSeries = registration.testSeries
+      }
     }
   } catch (error) {
     console.error("[StudentTestWorkspacePage] Database query error:", error)

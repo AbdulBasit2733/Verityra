@@ -38,12 +38,18 @@ export interface AdminTestSeriesRow {
   title: string
   slug: string
   price: number
+  bundlePrice?: number | null
+  type?: string
+  standard?: string | null
+  stream?: string | null
+  badge?: string | null
   status: string
   maxMarks: number
   maxAttempts: number
   registrationsCount: number
   papersCount: number
   templatesCount: number
+  testsCount?: number
   createdAt: string
 }
 
@@ -125,7 +131,31 @@ export function AdminTestSeriesClient({
       sortAccessor: (t) => t.title,
       searchAccessor: (t) => `${t.title} ${t.slug} ${t.status}`,
       cell: (t) => (
-        <div className="max-w-xs space-y-0.5 whitespace-normal">
+        <div className="max-w-xs space-y-1 whitespace-normal">
+          <div className="flex flex-wrap items-center gap-1.5">
+            {t.standard && (
+              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold">
+                {t.standard.startsWith("Class") ? t.standard : `Class ${t.standard}`}
+              </Badge>
+            )}
+            <Badge
+              variant="outline"
+              className={
+                t.type === "BUNDLE"
+                  ? "text-[10px] px-1.5 py-0 border-blue-200 dark:border-blue-900 bg-blue-50/50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 font-semibold"
+                  : "text-[10px] px-1.5 py-0 border-purple-200 dark:border-purple-900 bg-purple-50/50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300 font-semibold"
+              }
+            >
+              {t.type === "BUNDLE"
+                ? `Bundle (${t.testsCount || 0} Tests)`
+                : "Single Test"}
+            </Badge>
+            {t.badge && (
+              <Badge className="text-[9px] px-1 py-0 bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 font-bold">
+                {t.badge}
+              </Badge>
+            )}
+          </div>
           <Link
             href={`/admin/test-series/${t.id}`}
             className="block leading-snug font-bold text-slate-900 transition-colors hover:text-[#2A6AED] dark:text-slate-100 dark:hover:text-blue-400"
@@ -286,6 +316,28 @@ export function AdminTestSeriesClient({
   ]
 
   const filters: DataTableFilter<AdminTestSeriesRow>[] = [
+    {
+      id: "format",
+      label: "Series Format",
+      accessor: (t) => t.type || "BUNDLE",
+      options: [
+        { label: "All Formats", value: "ALL" },
+        { label: "All-Subject Bundles", value: "BUNDLE" },
+        { label: "Single Subject Tests", value: "SINGLE_TEST" },
+      ],
+    },
+    {
+      id: "standard",
+      label: "Class / Standard",
+      accessor: (t) => t.standard || "OTHER",
+      options: [
+        { label: "Class 10th", value: "10th" },
+        { label: "Class 11th", value: "11th" },
+        { label: "Class 12th", value: "12th" },
+        { label: "NEET", value: "NEET" },
+        { label: "JEE", value: "JEE" },
+      ],
+    },
     {
       id: "status",
       label: "Publication Status",

@@ -3,7 +3,7 @@
 import { getCurrentUser, resolvePersistedAdminActor } from "@/lib/auth-guard"
 import { prisma, isDatabaseConnected } from "@/lib/prisma"
 import { uploadPrivateFile } from "@/lib/supabase"
-import { Role, TestSeriesStatus } from "@prisma/client"
+import { Role, TestSeriesStatus, TestSeriesType } from "@prisma/client"
 import { revalidatePath } from "next/cache"
 import {
   invalidateTestCatalogCache,
@@ -43,16 +43,22 @@ function slugify(text: string): string {
 
 export type CreateTestSeriesInput = {
   title: string
-  description: string
-  price: number // in INR (e.g. 499)
-  maxMarks: number
+  description?: string
+  academicYear?: string // e.g. "2025 Batch"
+  price?: number // in INR (e.g. 499)
+  maxMarks?: number
   maxAttempts?: number
   durationMinutes?: number
   startDate?: string
   endDate?: string
-  studentInstructions: string
-  privateEvaluationInstructions: string
+  studentInstructions?: string
+  privateEvaluationInstructions?: string
   status?: TestSeriesStatus
+  type?: TestSeriesType
+  standard?: string
+  stream?: string
+  bundlePrice?: number // in INR (e.g. 299)
+  badge?: string
 }
 
 /**
@@ -66,15 +72,10 @@ export async function createTestSeriesAction(
     return { success: false, error: "Unauthorized. Admin privileges required." }
   }
 
-  if (
-    !input.title ||
-    !input.description ||
-    !input.studentInstructions ||
-    !input.privateEvaluationInstructions
-  ) {
+  if (!input.title?.trim()) {
     return {
       success: false,
-      error: "Please fill in all required fields including instructions.",
+      error: "Test series title is required.",
     }
   }
 
@@ -82,6 +83,7 @@ export async function createTestSeriesAction(
   const priceInPaise = Math.round((input.price || 0) * 100)
   const maxAttempts =
     input.maxAttempts && input.maxAttempts > 0 ? input.maxAttempts : 3
+  const academicYear = input.academicYear?.trim() || "2025"
 
   const dbConnected = await isDatabaseConnected()
   if (!dbConnected) {
@@ -102,19 +104,49 @@ export async function createTestSeriesAction(
   const actor = await resolvePersistedAdminActor(sessionUser)
   if (!actor.success) return { success: false, error: actor.error }
 
+  // Batch Uniqueness Enforcement: One series per Standard + Stream + Academic Batch
+  if (input.standard && input.stream) {
+    const existingSeries = await prisma.testSeries.findFirst({
+      where: {
+        standard: input.standard,
+        stream: input.stream,
+        academicYear,
+      },
+      select: { id: true, title: true },
+    })
+
+    if (existingSeries) {
+      return {
+        success: false,
+        error: `A Test Series bundle for "${input.standard}" (${input.stream}) ${academicYear} Batch already exists ("${existingSeries.title}"). Each academic batch can only be created once.`,
+      }
+    }
+  }
+
+  const bundlePriceInPaise =
+    input.bundlePrice !== undefined && input.bundlePrice !== null
+      ? Math.round(input.bundlePrice * 100)
+      : null
+
   const created = await prisma.testSeries.create({
     data: {
-      title: input.title,
+      title: input.title.trim(),
       slug,
-      description: input.description,
+      description: input.description?.trim() || "",
       price: priceInPaise,
+      bundlePrice: bundlePriceInPaise ?? undefined,
+      type: input.type || "BUNDLE",
+      standard: input.standard || undefined,
+      stream: input.stream || undefined,
+      badge: input.badge || undefined,
+      academicYear,
       maxMarks: input.maxMarks || 100,
       maxAttempts,
       durationMinutes: input.durationMinutes || 180,
       startDate: input.startDate ? new Date(input.startDate) : null,
       endDate: input.endDate ? new Date(input.endDate) : null,
-      studentInstructions: input.studentInstructions,
-      privateEvaluationInstructions: input.privateEvaluationInstructions,
+      studentInstructions: input.studentInstructions || "",
+      privateEvaluationInstructions: input.privateEvaluationInstructions || "",
       status: input.status || TestSeriesStatus.DRAFT,
       isPublished: input.status === TestSeriesStatus.PUBLISHED,
     },
@@ -203,6 +235,14 @@ export async function updateTestSeriesAction(
     dataToUpdate.isPublished = input.isPublished
   if (input.resultsPublished !== undefined)
     dataToUpdate.resultsPublished = input.resultsPublished
+  if (input.type) dataToUpdate.type = input.type
+  if (input.standard !== undefined) dataToUpdate.standard = input.standard || null
+  if (input.stream !== undefined) dataToUpdate.stream = input.stream || null
+  if (input.badge !== undefined) dataToUpdate.badge = input.badge || null
+  if (input.bundlePrice !== undefined) {
+    dataToUpdate.bundlePrice =
+      input.bundlePrice !== null ? Math.round(input.bundlePrice * 100) : null
+  }
   if (input.startDate) dataToUpdate.startDate = new Date(input.startDate)
   if (input.endDate) dataToUpdate.endDate = new Date(input.endDate)
 
@@ -651,4 +691,425 @@ export async function archiveTestSeriesAction(
   revalidatePath("/admin/test-series")
   revalidatePath(`/admin/test-series/${testSeriesId}`)
   return { success: true, message: "Test series archived successfully." }
+}
+
+export type CreateSubjectTestInput = {
+  testSeriesId?: string | null
+  title: string
+  subject: string
+  subjectId?: string | null
+  description?: string
+  price: number // in INR (0 = free / bundle-only)
+  isStandalone?: boolean
+  maxMarks?: number
+  durationMinutes?: number
+  maxAttempts?: number
+  questionPaperUrl?: string
+  answerSheetUrl?: string
+  modelAnswerUrl?: string
+  studentInstructions?: string
+  privateEvaluationInstructions?: string
+  order?: number
+  status?: TestSeriesStatus
+  isPublished?: boolean
+}
+
+export type UpdateSubjectTestInput = Partial<CreateSubjectTestInput>
+
+/**
+ * Server Action: Create Subject Test (ADMIN ONLY)
+ * Can be attached to a Test Series bundle or standalone.
+ */
+export async function createSubjectTestAction(
+  input: CreateSubjectTestInput
+): Promise<ActionResult<{ id: string }>> {
+  const sessionUser = await getCurrentUser()
+  if (!sessionUser || sessionUser.role !== Role.ADMIN) {
+    return { success: false, error: "Unauthorized. Admin privileges required." }
+  }
+
+  if (!input.title?.trim() || !input.subject?.trim()) {
+    return { success: false, error: "Test title and subject are required." }
+  }
+
+  const dbConnected = await isDatabaseConnected()
+  if (!dbConnected) {
+    if (process.env.NODE_ENV === "production") {
+      return { success: false, error: "Database temporarily unavailable." }
+    }
+    return {
+      success: true,
+      message: "Subject test created (Dev Mode).",
+      data: { id: "dev-subject-test-" + Date.now() },
+    }
+  }
+
+  const actor = await resolvePersistedAdminActor(sessionUser)
+  if (!actor.success) return { success: false, error: actor.error }
+
+  const slug = `${slugify(input.title)}-${Date.now().toString(36)}`
+  const priceInPaise = Math.round((input.price || 0) * 100)
+
+  const createdTest = await prisma.test.create({
+    data: {
+      testSeriesId: input.testSeriesId || null,
+      title: input.title.trim(),
+      slug,
+      subject: input.subject.trim(),
+      subjectId: input.subjectId || null,
+      description: input.description?.trim() || null,
+      price: priceInPaise,
+      isStandalone: input.isStandalone ?? true,
+      maxMarks: input.maxMarks || 100,
+      durationMinutes: input.durationMinutes || 180,
+      maxAttempts: input.maxAttempts || 3,
+      questionPaperUrl: input.questionPaperUrl || null,
+      answerSheetUrl: input.answerSheetUrl || null,
+      modelAnswerUrl: input.modelAnswerUrl || null,
+      studentInstructions: input.studentInstructions || null,
+      privateEvaluationInstructions: input.privateEvaluationInstructions || null,
+      order: input.order || 0,
+      status: input.status || TestSeriesStatus.DRAFT,
+      isPublished: input.isPublished ?? (input.status === TestSeriesStatus.PUBLISHED),
+    },
+  })
+
+  await prisma.auditLog.create({
+    data: {
+      adminId: actor.user.id,
+      action: "SUBJECT_TEST_CREATED",
+      targetType: "Test",
+      targetId: createdTest.id,
+      details: `Created subject test "${createdTest.title}" (${createdTest.subject}) in series ${input.testSeriesId}`,
+    },
+  })
+
+  revalidatePath(`/admin/test-series/${input.testSeriesId}`)
+  revalidatePath("/admin/test-series")
+  revalidatePath("/tests")
+  invalidateTestCatalogCache()
+
+  return {
+    success: true,
+    message: "Subject test created successfully.",
+    data: { id: createdTest.id },
+  }
+}
+
+/**
+ * Server Action: Update Subject Test (ADMIN ONLY)
+ */
+export async function updateSubjectTestAction(
+  id: string,
+  input: UpdateSubjectTestInput
+): Promise<ActionResult> {
+  const sessionUser = await getCurrentUser()
+  if (!sessionUser || sessionUser.role !== Role.ADMIN) {
+    return { success: false, error: "Unauthorized. Admin privileges required." }
+  }
+
+  const dbConnected = await isDatabaseConnected()
+  if (!dbConnected) {
+    if (process.env.NODE_ENV === "production") {
+      return { success: false, error: "Database temporarily unavailable." }
+    }
+    return { success: true, message: "Subject test updated (Dev Mode)." }
+  }
+
+  const actor = await resolvePersistedAdminActor(sessionUser)
+  if (!actor.success) return { success: false, error: actor.error }
+
+  const dataToUpdate: Record<string, unknown> = {}
+  if (input.title) dataToUpdate.title = input.title.trim()
+  if (input.subject) dataToUpdate.subject = input.subject.trim()
+  if (input.description !== undefined) dataToUpdate.description = input.description ? input.description.trim() : null
+  if (input.price !== undefined) dataToUpdate.price = Math.round(input.price * 100)
+  if (input.isStandalone !== undefined) dataToUpdate.isStandalone = input.isStandalone
+  if (input.maxMarks !== undefined) dataToUpdate.maxMarks = input.maxMarks
+  if (input.durationMinutes !== undefined) dataToUpdate.durationMinutes = input.durationMinutes
+  if (input.maxAttempts !== undefined) dataToUpdate.maxAttempts = input.maxAttempts
+  if (input.questionPaperUrl !== undefined) dataToUpdate.questionPaperUrl = input.questionPaperUrl
+  if (input.answerSheetUrl !== undefined) dataToUpdate.answerSheetUrl = input.answerSheetUrl
+  if (input.modelAnswerUrl !== undefined) dataToUpdate.modelAnswerUrl = input.modelAnswerUrl
+  if (input.studentInstructions !== undefined) dataToUpdate.studentInstructions = input.studentInstructions
+  if (input.privateEvaluationInstructions !== undefined) dataToUpdate.privateEvaluationInstructions = input.privateEvaluationInstructions
+  if (input.order !== undefined) dataToUpdate.order = input.order
+  if (input.status) dataToUpdate.status = input.status
+  if (input.isPublished !== undefined) dataToUpdate.isPublished = input.isPublished
+
+  const updated = await prisma.test.update({
+    where: { id },
+    data: dataToUpdate,
+    select: { id: true, testSeriesId: true },
+  })
+
+  await prisma.auditLog.create({
+    data: {
+      adminId: actor.user.id,
+      action: "SUBJECT_TEST_UPDATED",
+      targetType: "Test",
+      targetId: id,
+      details: `Updated subject test details`,
+    },
+  })
+
+  revalidatePath(`/admin/test-series/${updated.testSeriesId}`)
+  revalidatePath("/admin/test-series")
+  revalidatePath("/tests")
+  invalidateTestCatalogCache()
+
+  return { success: true, message: "Subject test updated successfully." }
+}
+
+/**
+ * Server Action: Delete Subject Test (ADMIN ONLY)
+ */
+export async function deleteSubjectTestAction(id: string): Promise<ActionResult> {
+  const sessionUser = await getCurrentUser()
+  if (!sessionUser || sessionUser.role !== Role.ADMIN) {
+    return { success: false, error: "Unauthorized. Admin privileges required." }
+  }
+
+  const dbConnected = await isDatabaseConnected()
+  if (!dbConnected) {
+    return { success: false, error: "Database connection required." }
+  }
+
+  const actor = await resolvePersistedAdminActor(sessionUser)
+  if (!actor.success) return { success: false, error: actor.error }
+
+  const test = await prisma.test.findUnique({
+    where: { id },
+    include: {
+      _count: {
+        select: {
+          submissions: true,
+          registrations: true,
+        },
+      },
+    },
+  })
+
+  if (!test) {
+    return { success: false, error: "Subject test not found." }
+  }
+
+  if (test._count.submissions > 0) {
+    return {
+      success: false,
+      error: `Cannot delete test because students have submitted ${test._count.submissions} exam attempt(s). Set it to Draft or unpublish it instead to preserve audit records.`,
+    }
+  }
+
+  await prisma.test.delete({
+    where: { id },
+  })
+
+  await prisma.auditLog.create({
+    data: {
+      adminId: actor.user.id,
+      action: "SUBJECT_TEST_DELETED",
+      targetType: "Test",
+      targetId: id,
+      details: `Deleted subject test "${test.title}" (${test.subject})`,
+    },
+  })
+
+  revalidatePath(`/admin/test-series/${test.testSeriesId}`)
+  revalidatePath("/admin/test-series")
+  revalidatePath("/tests")
+  invalidateTestCatalogCache()
+
+  return { success: true, message: "Subject test deleted successfully." }
+}
+
+/**
+ * Server Action: Toggle Publish Subject Test (ADMIN ONLY)
+ */
+export async function togglePublishSubjectTestAction(
+  id: string,
+  publish: boolean
+): Promise<ActionResult> {
+  const sessionUser = await getCurrentUser()
+  if (!sessionUser || sessionUser.role !== Role.ADMIN) {
+    return { success: false, error: "Unauthorized. Admin privileges required." }
+  }
+
+  const dbConnected = await isDatabaseConnected()
+  if (!dbConnected && process.env.NODE_ENV === "production") {
+    return { success: false, error: "Database temporarily unavailable." }
+  }
+
+  if (dbConnected) {
+    const actor = await resolvePersistedAdminActor(sessionUser)
+    if (!actor.success) return { success: false, error: actor.error }
+
+    const updated = await prisma.test.update({
+      where: { id },
+      data: {
+        isPublished: publish,
+        status: publish ? TestSeriesStatus.PUBLISHED : TestSeriesStatus.DRAFT,
+      },
+      select: { testSeriesId: true },
+    })
+
+    await prisma.auditLog.create({
+      data: {
+        adminId: actor.user.id,
+        action: publish ? "SUBJECT_TEST_PUBLISHED" : "SUBJECT_TEST_UNPUBLISHED",
+        targetType: "Test",
+        targetId: id,
+        details: `${publish ? "Published" : "Unpublished"} subject test`,
+      },
+    })
+
+    revalidatePath(`/admin/test-series/${updated.testSeriesId}`)
+  }
+
+  revalidatePath("/admin/test-series")
+  revalidatePath("/admin/tests")
+  revalidatePath("/tests")
+  invalidateTestCatalogCache()
+
+  return {
+    success: true,
+    message: `Subject test ${publish ? "published" : "unpublished"} successfully.`,
+  }
+}
+
+export type AdminAllSubjectTestItem = {
+  id: string
+  title: string
+  slug: string
+  subject: string
+  price: number
+  isStandalone: boolean
+  maxMarks: number
+  durationMinutes: number
+  maxAttempts: number
+  questionPaperUrl: string | null
+  answerSheetUrl: string | null
+  modelAnswerUrl: string | null
+  status: TestSeriesStatus
+  isPublished: boolean
+  testSeriesId: string | null
+  testSeriesTitle: string | null
+  testSeriesStandard: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+/**
+ * Server Action: Get all subject tests across all series (ADMIN ONLY)
+ */
+export async function getAllSubjectTestsAction(
+  query?: string
+): Promise<ActionResult<{ tests: AdminAllSubjectTestItem[] }>> {
+  const sessionUser = await getCurrentUser()
+  if (!sessionUser || sessionUser.role !== Role.ADMIN) {
+    return { success: false, error: "Unauthorized. Admin privileges required." }
+  }
+
+  const dbConnected = await isDatabaseConnected()
+  if (!dbConnected) {
+    return {
+      success: true,
+      data: {
+        tests: [
+          {
+            id: "demo-test-math-10",
+            title: "Class 10th CBSE Mathematics Standard Mock 1",
+            slug: "class-10th-cbse-mathematics-standard-mock-1",
+            subject: "Mathematics",
+            price: 99,
+            isStandalone: true,
+            maxMarks: 80,
+            durationMinutes: 180,
+            maxAttempts: 3,
+            questionPaperUrl: "/api/files/download?file=demo-math-10.pdf",
+            answerSheetUrl: null,
+            modelAnswerUrl: null,
+            status: TestSeriesStatus.PUBLISHED,
+            isPublished: true,
+            testSeriesId: "demo-series-10",
+            testSeriesTitle: "Class 10th CBSE Comprehensive Board Mock Series",
+            testSeriesStandard: "10th",
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+          {
+            id: "demo-test-sci-10",
+            title: "Class 10th CBSE Science & Technology Mock 1",
+            slug: "class-10th-cbse-science-technology-mock-1",
+            subject: "Science",
+            price: 99,
+            isStandalone: true,
+            maxMarks: 80,
+            durationMinutes: 180,
+            maxAttempts: 3,
+            questionPaperUrl: "/api/files/download?file=demo-sci-10.pdf",
+            answerSheetUrl: null,
+            modelAnswerUrl: null,
+            status: TestSeriesStatus.PUBLISHED,
+            isPublished: true,
+            testSeriesId: "demo-series-10",
+            testSeriesTitle: "Class 10th CBSE Comprehensive Board Mock Series",
+            testSeriesStandard: "10th",
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+        ],
+      },
+    }
+  }
+
+  try {
+    const q = query?.trim().toLowerCase()
+    const records = await prisma.test.findMany({
+      where: q
+        ? {
+            OR: [
+              { title: { contains: q, mode: "insensitive" } },
+              { subject: { contains: q, mode: "insensitive" } },
+            ],
+          }
+        : undefined,
+      include: {
+        testSeries: {
+          select: { id: true, title: true, standard: true },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    })
+
+    return {
+      success: true,
+      data: {
+        tests: records.map((t) => ({
+          id: t.id,
+          title: t.title,
+          slug: t.slug,
+          subject: t.subject,
+          price: (t.price || 0) / 100,
+          isStandalone: t.isStandalone,
+          maxMarks: t.maxMarks,
+          durationMinutes: t.durationMinutes,
+          maxAttempts: t.maxAttempts,
+          questionPaperUrl: t.questionPaperUrl,
+          answerSheetUrl: t.answerSheetUrl,
+          modelAnswerUrl: t.modelAnswerUrl,
+          status: t.status,
+          isPublished: t.isPublished,
+          testSeriesId: t.testSeriesId,
+          testSeriesTitle: t.testSeries?.title || null,
+          testSeriesStandard: t.testSeries?.standard || null,
+          createdAt: t.createdAt.toISOString(),
+          updatedAt: t.updatedAt.toISOString(),
+        })),
+      },
+    }
+  } catch (err: any) {
+    console.error("[GET ALL SUBJECT TESTS ERROR]", err)
+    return { success: false, error: "Failed to load subject tests." }
+  }
 }

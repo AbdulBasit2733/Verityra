@@ -27,6 +27,14 @@ function safeDocumentName(fileName: string): string {
   )
 }
 
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/[\s_-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+}
+
 export type QuestionPaperData = {
   id: string
   title: string
@@ -40,6 +48,8 @@ export type QuestionPaperData = {
   fileSizeBytes?: number | null
   isPublished: boolean
   downloadsCount: number
+  testSeriesId?: string | null
+  testSeriesTitle?: string | null
   createdAt: string
   updatedAt: string
 }
@@ -71,6 +81,19 @@ export async function uploadQuestionPaperAction(
 
   const paperFileValue = formData.get("paperFile")
   const paperFile = paperFileValue instanceof File ? paperFileValue : null
+
+  const testSeriesIdValue = (formData.get("testSeriesId") as string)?.trim()
+  const testSeriesId =
+    testSeriesIdValue && testSeriesIdValue !== "NONE"
+      ? testSeriesIdValue
+      : null
+  const isStandalone =
+    formData.get("isStandalone") === "true" ||
+    formData.get("isStandalone") === "on"
+  const standalonePriceValue = formData.get("standalonePrice")
+  const standalonePrice = standalonePriceValue
+    ? parseFloat(String(standalonePriceValue))
+    : 0
 
   if (!title) {
     return { success: false, error: "Question paper title is required." }
@@ -107,8 +130,21 @@ export async function uploadQuestionPaperAction(
     )
 
     let createdPaper: any
+    let attachedSeriesTitle: string | null = null
+
     if (dbConnected) {
       const actor = await resolvePersistedAdminActor(sessionUser)
+
+      if (testSeriesId) {
+        const series = await prisma.testSeries.findUnique({
+          where: { id: testSeriesId },
+          select: { id: true, title: true },
+        })
+        if (series) {
+          attachedSeriesTitle = series.title
+        }
+      }
+
       createdPaper = await (prisma as any).questionPaper.create({
         data: {
           title,
@@ -122,8 +158,40 @@ export async function uploadQuestionPaperAction(
           fileSizeBytes: paperFile.size,
           isPublished,
           downloadsCount: 0,
+          testSeriesId: testSeriesId || null,
         },
       })
+
+      // If attached to a test series, also create an active child Test in that series
+      if (testSeriesId && attachedSeriesTitle) {
+        const testSlug = `${slugify(title)}-${Date.now().toString(36)}`
+        const priceInPaise = isStandalone
+          ? Math.round(standalonePrice * 100)
+          : 0
+
+        await prisma.test.create({
+          data: {
+            testSeriesId,
+            title,
+            slug: testSlug,
+            subject: subject || "General",
+            description: description || null,
+            price: priceInPaise,
+            isStandalone,
+            maxMarks: maxMarks || 100,
+            durationMinutes: durationMinutes || 180,
+            maxAttempts: 3,
+            questionPaperUrl: uploadResult.url,
+            isPublished,
+            status: isPublished ? "PUBLISHED" : "DRAFT",
+          },
+        })
+
+        revalidatePath(`/admin/test-series/${testSeriesId}`)
+        revalidatePath("/admin/test-series")
+        revalidatePath("/tests")
+        revalidatePath("/student/tests")
+      }
 
       if (actor.success) {
         await prisma.auditLog
@@ -133,7 +201,11 @@ export async function uploadQuestionPaperAction(
               action: "QUESTION_PAPER_UPLOADED",
               targetType: "QuestionPaper",
               targetId: createdPaper.id,
-              details: `Uploaded standalone question paper "${title}" (${category}, ${subject || "General"})`,
+              details: `Uploaded question paper "${title}" (${category}, ${subject || "General"})${
+                attachedSeriesTitle
+                  ? ` and attached to test series "${attachedSeriesTitle}"`
+                  : ""
+              }`,
             },
           })
           .catch(() => {})
@@ -152,6 +224,7 @@ export async function uploadQuestionPaperAction(
         fileSizeBytes: paperFile.size,
         isPublished,
         downloadsCount: 0,
+        testSeriesId: testSeriesId || null,
         createdAt: new Date(),
         updatedAt: new Date(),
       }
@@ -163,7 +236,11 @@ export async function uploadQuestionPaperAction(
 
     return {
       success: true,
-      message: `Question paper "${title}" uploaded successfully.`,
+      message: `Question paper "${title}" uploaded successfully${
+        attachedSeriesTitle
+          ? ` and attached to "${attachedSeriesTitle}".`
+          : "."
+      }`,
       data: {
         paper: {
           id: createdPaper.id,
@@ -178,6 +255,8 @@ export async function uploadQuestionPaperAction(
           fileSizeBytes: createdPaper.fileSizeBytes,
           isPublished: createdPaper.isPublished,
           downloadsCount: createdPaper.downloadsCount,
+          testSeriesId: createdPaper.testSeriesId,
+          testSeriesTitle: attachedSeriesTitle,
           createdAt: createdPaper.createdAt.toISOString
             ? createdPaper.createdAt.toISOString()
             : new Date().toISOString(),
@@ -310,6 +389,83 @@ export async function togglePublishQuestionPaperAction(
     return {
       success: false,
       error: error?.message || "Failed to update publish state.",
+    }
+  }
+}
+
+export type TestSeriesAttachmentOption = {
+  id: string
+  title: string
+  standard: string | null
+  stream: string | null
+  type: string
+}
+
+/**
+ * Server Action: Get Test Series list for attachment dropdown
+ */
+export async function getTestSeriesForAttachmentAction(): Promise<
+  ActionResult<{ testSeries: TestSeriesAttachmentOption[] }>
+> {
+  const sessionUser = await getCurrentUser()
+  if (!sessionUser || sessionUser.role !== Role.ADMIN) {
+    return { success: false, error: "Unauthorized. Admin privileges required." }
+  }
+
+  const dbConnected = await isDatabaseConnected()
+  if (!dbConnected) {
+    return {
+      success: true,
+      data: {
+        testSeries: [
+          {
+            id: "demo-series-10",
+            title: "Class 10th CBSE Comprehensive Board Mock Series",
+            standard: "10th",
+            stream: "Science & Maths",
+            type: "BUNDLE",
+          },
+          {
+            id: "demo-series-12",
+            title: "Class 12th Senior Secondary Mock Examination",
+            standard: "12th",
+            stream: "Physics & Maths",
+            type: "BUNDLE",
+          },
+        ],
+      },
+    }
+  }
+
+  try {
+    const list = await prisma.testSeries.findMany({
+      select: {
+        id: true,
+        title: true,
+        standard: true,
+        stream: true,
+        type: true,
+      },
+      orderBy: { createdAt: "desc" },
+    })
+
+    return {
+      success: true,
+      data: {
+        testSeries: list.map((item) => ({
+          id: item.id,
+          title: item.title,
+          standard: item.standard,
+          stream: item.stream,
+          type: String(item.type),
+        })),
+      },
+    }
+  } catch (error: any) {
+    console.error("[GET TEST SERIES ATTACHMENT ERROR]", error)
+    return {
+      success: false,
+      error: "Failed to retrieve test series list for attachment.",
     }
   }
 }

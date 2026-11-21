@@ -18,6 +18,11 @@ enum UserStatus {
   SUSPENDED
 }
 
+enum TestSeriesType {
+  SINGLE_TEST
+  BUNDLE
+}
+
 enum TestSeriesStatus {
   DRAFT
   PUBLISHED
@@ -180,21 +185,29 @@ model TestSeries {
   slug                         String            @unique
   description                  String            @db.Text
   price                        Int               @default(0) // in paise (e.g. 49900 = INR 499.00)
+  bundlePrice                  Int               @default(0) // in paise for complete bundle
+  type                         TestSeriesType    @default(SINGLE_TEST)
+  standard                     String            @default("10th")
+  stream                       String?
+  badge                        String?
+  academicYear                 String?           @default("2025")
   status                       TestSeriesStatus  @default(DRAFT)
   startDate                    DateTime?
   endDate                      DateTime?
   maxAttempts                  Int               @default(3)
   maxMarks                     Float             @default(100)
   durationMinutes              Int               @default(180)
-  studentInstructions          String            @db.Text
-  privateEvaluationInstructions String           @db.Text // STRICTLY CONFIDENTIAL
+  studentInstructions          String?           @db.Text
+  privateEvaluationInstructions String?          @db.Text // STRICTLY CONFIDENTIAL
   isPublished                  Boolean           @default(false)
   resultsPublished             Boolean           @default(false)
   createdAt                    DateTime          @default(now())
   updatedAt                    DateTime          @updatedAt
 
+  tests        Test[]
   papers       TestPaper[]
   templates    AnswerSheetTemplate[]
+  questionPapers QuestionPaper[]
   registrations TestRegistration[]
   submissions  Submission[]
 
@@ -205,6 +218,41 @@ model TestSeries {
   @@index([isPublished, createdAt])
   @@index([resultsPublished]) // NEW - for leaderboard filtering
   @@index([resultsPublished, id]) // NEW - covering index for leaderboard
+}
+
+model Test {
+  id                    String            @id @default(cuid())
+  testSeriesId          String?
+  title                 String
+  slug                  String            @unique
+  subject               String            // "Mathematics", "Science", etc.
+  subjectId             String?
+  description           String?           @db.Text
+  price                 Int               @default(0) // in paise (e.g. 9900 = INR 99.00)
+  isStandalone          Boolean           @default(true)
+  maxMarks              Float             @default(80)
+  durationMinutes              Int               @default(180)
+  maxAttempts           Int               @default(3)
+  questionPaperUrl      String?
+  answerSheetUrl        String?
+  modelAnswerUrl        String?
+  studentInstructions   String?           @db.Text
+  privateEvaluationInstructions String?   @db.Text
+  order                 Int               @default(0)
+  status                TestSeriesStatus  @default(DRAFT)
+  isPublished           Boolean           @default(true)
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  testSeries            TestSeries?       @relation(fields: [testSeriesId], references: [id], onDelete: Cascade)
+  registrations         TestRegistration[]
+  submissions           Submission[]
+  payments              Payment[]
+
+  @@index([testSeriesId])
+  @@index([subject])
+  @@index([isPublished])
+  @@index([slug])
 }
 
 model TestPaper {
@@ -243,7 +291,8 @@ model AnswerSheetTemplate {
 model TestRegistration {
   id           String             @id @default(cuid())
   userId       String
-  testSeriesId String
+  testSeriesId String?
+  testId       String?
   status       RegistrationStatus @default(ACTIVE)
   attemptsUsed Int                @default(0)
   maxAttempts  Int                @default(3)
@@ -251,11 +300,14 @@ model TestRegistration {
   updatedAt    DateTime           @updatedAt
 
   user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  testSeries  TestSeries   @relation(fields: [testSeriesId], references: [id], onDelete: Cascade)
+  testSeries  TestSeries?  @relation(fields: [testSeriesId], references: [id], onDelete: Cascade)
+  test        Test?        @relation(fields: [testId], references: [id], onDelete: Cascade)
   submissions Submission[]
   payment     Payment?
 
   @@unique([userId, testSeriesId])
+  @@unique([userId, testId])
+  @@index([testId])
   @@index([userId])
   @@index([testSeriesId])
   @@index([status])
@@ -269,6 +321,7 @@ model Payment {
   userId               String
   registrationId       String?       @unique
   testSeriesId         String
+  testId               String?
   razorpayOrderId      String        @unique
   razorpayPaymentId    String?       @unique
   razorpaySignature    String?
@@ -288,12 +341,14 @@ model Payment {
   registration TestRegistration? @relation(fields: [registrationId], references: [id], onDelete: SetNull)
   refunds      PaymentRefund[]
   logs         PaymentLedger[]
+  test         Test?             @relation(fields: [testId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([userId, createdAt])
   @@index([userId, testSeriesId, status])
   @@index([userId, status, createdAt])
   @@index([testSeriesId])
+  @@index([testId])
   @@index([registrationId])
   @@index([razorpayOrderId])
   @@index([razorpayPaymentId])
@@ -346,6 +401,7 @@ model Submission {
   id            String           @id @default(cuid())
   registrationId String
   testSeriesId  String
+  testId         String?
   userId        String
   attemptNumber Int              // 1, 2, or 3
   fileUrl       String
@@ -359,16 +415,18 @@ model Submission {
   updatedAt     DateTime         @updatedAt
 
   registration TestRegistration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
-  testSeries   TestSeries       @relation(fields: [testSeriesId], references: [id], onDelete: Cascade)
+  testSeries TestSeries @relation(fields: [testSeriesId], references: [id], onDelete: Cascade)
   user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   evaluation   Evaluation?
   evaluationRuns EvaluationRun[]
+  test         Test?            @relation(fields: [testId], references: [id], onDelete: SetNull)
   evaluationJob EvaluationJob?
 
   @@unique([registrationId, attemptNumber]) // Strict attempt atomicity constraint
   @@index([registrationId])
   @@index([userId])
   @@index([testSeriesId])
+  @@index([testId])
   @@index([status])
   @@index([submittedAt]) // NEW - for sorting by submission time
   @@index([testSeriesId, status, submittedAt]) // NEW - composite for admin filtering
@@ -380,7 +438,7 @@ model Evaluation {
   id                 String           @id @default(cuid())
   submissionId       String           @unique
   totalMarksAwarded  Float            @default(0)
-  maxMarks           Float            @default(100)
+  maxMarks                     Float             @default(100)
   percentage         Float            @default(0)
   generalFeedback    String           @db.Text
   legibilityWarning  Boolean          @default(false)
@@ -439,7 +497,7 @@ model EvaluationRun {
   trigger            EvaluationTrigger
   status             EvaluationStatus  @default(PENDING)
   totalMarksAwarded  Float             @default(0)
-  maxMarks           Float             @default(100)
+  maxMarks                     Float             @default(100)
   percentage         Float             @default(0)
   generalFeedback    String            @db.Text
   legibilityWarning  Boolean           @default(false)
@@ -538,19 +596,65 @@ model QuestionPaper {
   title           String
   description     String?  @db.Text
   category        String   // e.g. "School Education", "Competitive", "Civil Services", "State PSC", "General"
-  subject         String?  // e.g. "Mathematics", "Physics", "General Studies"
+  subject               String            // "Mathematics", "Science", etc.
+  subjectId             String?
   year            Int?     // e.g. 2024, 2025, 2026
-  maxMarks        Float    @default(100)
-  durationMinutes Int?     @default(180)
+  maxMarks                     Float             @default(100)
+  durationMinutes              Int               @default(180)
   fileUrl         String
   fileSizeBytes   Int?
   isPublished     Boolean  @default(true)
   downloadsCount  Int      @default(0)
+  testSeriesId    String?
+  testSeries      TestSeries? @relation(fields: [testSeriesId], references: [id], onDelete: SetNull)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
+  @@index([testSeriesId])
   @@index([category])
   @@index([subject])
   @@index([isPublished])
   @@index([createdAt])
+}
+
+
+model SubjectMaster {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  code        String?
+  description String?  @db.Text
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([name])
+  @@index([isActive])
+}
+
+model StandardMaster {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  code        String?
+  order       Int      @default(0)
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([name])
+  @@index([order])
+  @@index([isActive])
+}
+
+model BoardMaster {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  code        String?
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([name])
+  @@index([isActive])
 }

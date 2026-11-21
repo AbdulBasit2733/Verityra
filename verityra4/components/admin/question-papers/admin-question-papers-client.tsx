@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -23,6 +24,7 @@ import {
   Award,
   Layers,
   GraduationCap,
+  FileUp,
 } from "lucide-react"
 import {
   deleteQuestionPaperAction,
@@ -208,12 +210,23 @@ export function AdminQuestionPapersClient({
         subtitle="Manage standalone question papers, board examinations, and competitive practice papers."
         showRefresh
       >
-        <Button
-          onClick={() => setAddModalOpen(true)}
-          className="h-10 rounded-md bg-[#145DEB] px-4 text-xs font-semibold text-white shadow-sm hover:bg-[#0F4DC7]"
-        >
-          <Plus className="mr-1.5 h-4 w-4" /> Add Question Paper
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setAddModalOpen(true)}
+            className="h-10 text-xs font-semibold"
+          >
+            <Plus className="mr-1.5 h-3.5 w-3.5" /> Quick Upload
+          </Button>
+          <Link href="/admin/question-papers/new">
+            <Button
+              className="h-10 rounded-md bg-[#145DEB] px-4 text-xs font-semibold text-white shadow-sm hover:bg-[#0F4DC7]"
+            >
+              <FileUp className="mr-1.5 h-4 w-4" /> Create Question Paper
+            </Button>
+          </Link>
+        </div>
       </PageHeader>
 
       {/* KPI Cards */}
@@ -312,10 +325,18 @@ export function AdminQuestionPapersClient({
                           <p className="line-clamp-1 font-bold text-[#071B3A]">
                             {paper.title}
                           </p>
-                          <p className="mt-0.5 text-xs text-[#64748B]">
-                            {paper.subject || "General"}{" "}
-                            {paper.year ? `· ${paper.year}` : ""}
-                          </p>
+                          <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-[#64748B]">
+                            <span>
+                              {paper.subject || "General"}{" "}
+                              {paper.year ? `· ${paper.year}` : ""}
+                            </span>
+                            {paper.testSeriesTitle && (
+                              <span className="inline-flex items-center gap-1 rounded bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-700 border border-indigo-200/60">
+                                <Layers className="h-2.5 w-2.5" />
+                                {paper.testSeriesTitle}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </td>

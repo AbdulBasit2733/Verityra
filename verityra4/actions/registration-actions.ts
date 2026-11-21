@@ -56,7 +56,7 @@ export async function registerFreeTestAction(
     }
   }
 
-  const testSeries = await prisma.testSeries.findUnique({
+  let testSeries: any = await prisma.testSeries.findUnique({
     where: { id: testSeriesId },
     select: {
       id: true,
@@ -67,59 +67,109 @@ export async function registerFreeTestAction(
     },
   })
 
+  let isSingleTest = false
+  if (!testSeries) {
+    const singleTest = await prisma.test.findUnique({
+      where: { id: testSeriesId },
+      select: {
+        id: true,
+        title: true,
+        price: true,
+        isPublished: true,
+        maxAttempts: true,
+        testSeriesId: true,
+      },
+    })
+    if (singleTest) {
+      testSeries = singleTest
+      isSingleTest = true
+    }
+  }
+
   if (!testSeries || !testSeries.isPublished) {
     return {
       success: false,
-      error: "This test series is not currently available for registration.",
+      error: "This test or test series is not currently available for registration.",
     }
   }
 
   if (testSeries.price > 0) {
     return {
       success: false,
-      error: "This is a paid test series. Payment is required to register.",
+      error: "This is a paid test. Payment is required to register.",
     }
   }
 
   // Check if already registered
-  const existing = await prisma.testRegistration.findUnique({
-    where: {
-      userId_testSeriesId: {
-        userId: user.id,
-        testSeriesId,
-      },
-    },
-  })
+  const existing = isSingleTest
+    ? await prisma.testRegistration.findUnique({
+        where: {
+          userId_testId: {
+            userId: user.id,
+            testId: testSeries.id,
+          },
+        },
+      })
+    : await prisma.testRegistration.findUnique({
+        where: {
+          userId_testSeriesId: {
+            userId: user.id,
+            testSeriesId,
+          },
+        },
+      })
 
   if (existing && existing.status !== RegistrationStatus.CANCELLED) {
     return {
       success: false,
-      error: "You are already registered for this test series.",
+      error: "You are already registered for this test.",
     }
   }
 
   let registration
   try {
-    registration = await prisma.testRegistration.upsert({
-      where: {
-        userId_testSeriesId: {
-          userId: user.id,
-          testSeriesId,
-        },
-      },
-      create: {
-        userId: user.id,
-        testSeriesId,
-        status: RegistrationStatus.ACTIVE,
-        attemptsUsed: 0,
-        maxAttempts: testSeries.maxAttempts,
-      },
-      update: {
-        status: RegistrationStatus.ACTIVE,
-        attemptsUsed: 0,
-        maxAttempts: testSeries.maxAttempts,
-      },
-    })
+    registration = isSingleTest
+      ? await prisma.testRegistration.upsert({
+          where: {
+            userId_testId: {
+              userId: user.id,
+              testId: testSeries.id,
+            },
+          },
+          create: {
+            userId: user.id,
+            testId: testSeries.id,
+            testSeriesId: testSeries.testSeriesId,
+            status: RegistrationStatus.ACTIVE,
+            attemptsUsed: 0,
+            maxAttempts: testSeries.maxAttempts,
+          },
+          update: {
+            status: RegistrationStatus.ACTIVE,
+            attemptsUsed: 0,
+            maxAttempts: testSeries.maxAttempts,
+          },
+        })
+      : await prisma.testRegistration.upsert({
+          where: {
+            userId_testSeriesId: {
+              userId: user.id,
+              testSeriesId,
+            },
+          },
+          create: {
+            userId: user.id,
+            testSeriesId,
+            status: RegistrationStatus.ACTIVE,
+            attemptsUsed: 0,
+            maxAttempts: testSeries.maxAttempts,
+          },
+          update: {
+            status: RegistrationStatus.ACTIVE,
+            attemptsUsed: 0,
+            maxAttempts: testSeries.maxAttempts,
+          },
+        })
   } catch (createErr: any) {
     if (createErr?.code === "P2002") {
       return {
@@ -238,6 +288,31 @@ export async function createRazorpayOrderAction(testSeriesId: string): Promise<
     testSeries = results[0]
     existingReg = results[1]
     recentPending = results[2]
+
+    if (!testSeries) {
+      const singleTest = await prisma.test.findUnique({
+        where: { id: testSeriesId },
+        select: {
+          id: true,
+          title: true,
+          price: true,
+          isPublished: true,
+          maxAttempts: true,
+          testSeriesId: true,
+        },
+      })
+      if (singleTest) {
+        testSeries = {
+          id: singleTest.id,
+          title: singleTest.title,
+          price: singleTest.price,
+          isPublished: singleTest.isPublished,
+          maxAttempts: singleTest.maxAttempts,
+          isSingleTest: true,
+          parentSeriesId: singleTest.testSeriesId,
+        }
+      }
+    }
   } catch (dbErr: any) {
     console.error("[createRazorpayOrderAction] Database fetch error:", dbErr)
     if (process.env.NODE_ENV === "production") {
@@ -347,7 +422,8 @@ export async function createRazorpayOrderAction(testSeriesId: string): Promise<
       const createdPayment = await tx.payment.create({
         data: {
           userId: user.id,
-          testSeriesId: testSeries.id,
+          testSeriesId: testSeries.parentSeriesId || testSeries.id,
+          testId: testSeries.isSingleTest ? testSeries.id : undefined,
           razorpayOrderId,
           amount: testSeries.price,
           currency: "INR",
@@ -495,13 +571,31 @@ export async function verifyPaymentAndRegisterAction(input: {
     }
   }
 
-  const testSeries = await prisma.testSeries.findUnique({
+  let testSeries: any = await prisma.testSeries.findUnique({
     where: { id: input.testSeriesId },
     select: { id: true, title: true, price: true, maxAttempts: true },
   })
 
+  let isSingleTest = false
   if (!testSeries) {
-    return { success: false, error: "Test series not found." }
+    const singleTest = await prisma.test.findUnique({
+      where: { id: input.testSeriesId },
+      select: {
+        id: true,
+        title: true,
+        price: true,
+        maxAttempts: true,
+        testSeriesId: true,
+      },
+    })
+    if (singleTest) {
+      testSeries = singleTest
+      isSingleTest = true
+    }
+  }
+
+  if (!testSeries) {
+    return { success: false, error: "Test or test series not found." }
   }
 
   const payment = await prisma.payment.findUnique({
@@ -510,7 +604,7 @@ export async function verifyPaymentAndRegisterAction(input: {
   if (!payment) return { success: false, error: "Payment order not found." }
   if (
     payment.userId !== user.id ||
-    payment.testSeriesId !== input.testSeriesId
+    (payment.testSeriesId !== input.testSeriesId && payment.testId !== input.testSeriesId)
   ) {
     return {
       success: false,
@@ -600,7 +694,8 @@ export async function verifyPaymentAndRegisterAction(input: {
   const fulfillment = await fulfillCapturedPayment({
     paymentId: payment.id,
     userId: user.id,
-    testSeriesId: input.testSeriesId,
+    testSeriesId: payment.testSeriesId,
+    testId: payment.testId || (isSingleTest ? testSeries.id : undefined),
     razorpayPaymentId: input.razorpayPaymentId,
     razorpaySignature: input.razorpaySignature,
     paymentMethod,

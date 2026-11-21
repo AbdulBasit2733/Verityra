@@ -19,6 +19,8 @@ import {
   GraduationCap,
   BookOpen,
   Calendar,
+  LayoutList,
+  LayoutGrid,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -62,6 +64,7 @@ export function QuestionPaperLibrary({
   >("NEWEST")
   const [currentPage, setCurrentPage] = React.useState(1)
   const [pageSize, setPageSize] = React.useState(9)
+  const [viewMode, setViewMode] = React.useState<"list" | "grid">("list")
 
   // Preview modal state
   const [previewPaper, setPreviewPaper] =
@@ -423,7 +426,7 @@ export function QuestionPaperLibrary({
           </div>
 
           {/* Results Summary Header */}
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h3 className="font-heading text-base font-bold text-[#071B3A]">
                 Available Question Papers
@@ -433,99 +436,229 @@ export function QuestionPaperLibrary({
                 examination documents
               </p>
             </div>
-            <Badge
-              variant="outline"
-              className="hidden gap-1.5 border-[#BFD5FA] bg-white text-[#145DEB] sm:inline-flex"
-            >
-              <CheckCircle className="h-3 w-3" /> Official Papers
-            </Badge>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center rounded-md border border-[#DCE7FA] bg-white p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setViewMode("list")}
+                  className={`flex items-center gap-1 rounded px-2.5 py-1 text-xs font-semibold transition-colors ${
+                    viewMode === "list"
+                      ? "bg-[#145DEB] text-white"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                  title="Compact List View"
+                >
+                  <LayoutList className="h-3.5 w-3.5" />
+                  <span>List</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("grid")}
+                  className={`flex items-center gap-1 rounded px-2.5 py-1 text-xs font-semibold transition-colors ${
+                    viewMode === "grid"
+                      ? "bg-[#145DEB] text-white"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                  title="Grid View"
+                >
+                  <LayoutGrid className="h-3.5 w-3.5" />
+                  <span>Grid</span>
+                </button>
+              </div>
+              <Badge
+                variant="outline"
+                className="hidden gap-1.5 border-[#BFD5FA] bg-white text-[#145DEB] sm:inline-flex"
+              >
+                <CheckCircle className="h-3 w-3" /> Official Papers
+              </Badge>
+            </div>
           </div>
 
-          {/* Cards Grid */}
+          {/* Catalog Items: List or Grid */}
           {paginatedPapers.length > 0 ? (
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-              {paginatedPapers.map((paper) => (
-                <Card
-                  key={paper.id}
-                  className="flex h-full flex-col border-[#DCE7FA] bg-white shadow-none transition-colors hover:border-[#2A6AED]"
-                >
-                  <CardHeader className="gap-2.5 p-5 pb-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <Badge className="rounded-sm border border-[#BFD5FA]/80 bg-[#F1F6FF] text-[11px] font-semibold text-[#145DEB]">
-                        {paper.category}
-                      </Badge>
-                      {paper.year && (
-                        <span className="rounded-sm bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-500">
-                          {paper.year}
-                        </span>
-                      )}
+            viewMode === "list" ? (
+              <div className="divide-y divide-[#DCE7FA] rounded-md border border-[#DCE7FA] bg-white overflow-hidden shadow-xs">
+                {paginatedPapers.map((paper) => (
+                  <div
+                    key={paper.id}
+                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 hover:bg-[#F1F6FF]/30 transition-colors"
+                  >
+                    <div className="flex items-start gap-3.5 min-w-0 flex-1">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-[#BFD5FA]/60 bg-[#F1F6FF] text-[#145DEB]">
+                        <FileText className="h-5 w-5" />
+                      </div>
+                      <div className="min-w-0 space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge className="rounded-sm border border-[#BFD5FA]/80 bg-[#F1F6FF] text-[10px] font-semibold text-[#145DEB]">
+                            {paper.category}
+                          </Badge>
+                          {paper.year && (
+                            <span className="text-[11px] font-semibold text-slate-500">
+                              {paper.year} Examination
+                            </span>
+                          )}
+                          {paper.testSeriesTitle && paper.testSeriesId && (
+                            <Link
+                              href={`/tests/${paper.testSeriesId}`}
+                              className="inline-flex items-center gap-1 rounded bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-700 border border-indigo-200/80 hover:bg-indigo-100 transition-colors"
+                            >
+                              <Layers className="h-3 w-3" />
+                              Included in {paper.testSeriesTitle}
+                            </Link>
+                          )}
+                        </div>
+                        <Link
+                          href={`/question-papers/${paper.id}`}
+                          className="block font-heading text-sm sm:text-base font-bold text-[#071B3A] hover:text-[#145DEB] transition-colors line-clamp-1"
+                        >
+                          {paper.title}
+                        </Link>
+                        <div className="flex flex-wrap items-center gap-3 text-xs text-[#64748B]">
+                          <span>{paper.subject || "General"}</span>
+                          <span>·</span>
+                          <span className="flex items-center gap-1 font-semibold text-slate-700">
+                            <Award className="h-3 w-3 text-[#145DEB]" /> {paper.maxMarks} Marks
+                          </span>
+                          <span>·</span>
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-3 w-3 text-slate-400" />{" "}
+                            {paper.durationMinutes ? `${paper.durationMinutes} Mins` : "PDF Format"}
+                          </span>
+                          {paper.downloadsCount > 0 && (
+                            <>
+                              <span>·</span>
+                              <span className="text-slate-500">{paper.downloadsCount} downloads</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <CardTitle className="mt-1 line-clamp-2 font-heading text-base leading-snug font-bold text-[#071B3A]">
-                      {paper.title}
-                    </CardTitle>
-                    {paper.description && (
-                      <p className="line-clamp-2 text-xs leading-relaxed text-[#64748B]">
-                        {paper.description}
-                      </p>
-                    )}
-                  </CardHeader>
 
-                  <CardContent className="mt-auto px-5 py-3">
-                    <div className="grid grid-cols-2 gap-2.5 border-t border-[#DCE7FA]/80 pt-3 text-xs text-slate-600">
-                      <span className="flex items-center gap-1.5 font-semibold text-[#071B3A]">
-                        <Award className="h-3.5 w-3.5 text-[#145DEB]" />{" "}
-                        {paper.maxMarks} Marks
-                      </span>
-                      {paper.durationMinutes ? (
-                        <span className="flex items-center gap-1.5 text-slate-500">
-                          <Clock className="h-3.5 w-3.5 text-slate-400" />{" "}
-                          {paper.durationMinutes} Mins
-                        </span>
-                      ) : (
-                        <span className="flex items-center gap-1.5 text-slate-500">
-                          <FileText className="h-3.5 w-3.5 text-slate-400" />{" "}
-                          PDF Format
-                        </span>
-                      )}
-                    </div>
-                  </CardContent>
-
-                  <CardFooter className="flex flex-col gap-2 rounded-b-md border-t border-[#DCE7FA] p-4">
-                    <div className="flex w-full gap-2">
+                    <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
                         onClick={() => setPreviewPaper(paper)}
-                        className="flex-1 rounded-md border-[#DCE7FA] text-xs font-semibold text-[#145DEB] hover:bg-[#F1F6FF]"
+                        className="h-8 rounded-md border-[#DCE7FA] text-xs font-semibold text-[#145DEB] hover:bg-[#F1F6FF]"
                       >
-                        <Eye className="mr-1.5 h-3.5 w-3.5" /> Preview
+                        <Eye className="mr-1 h-3.5 w-3.5" /> Preview
                       </Button>
-
-                      <a
-                        href={`${paper.fileUrl}&download=1`}
-                        download
-                        className="inline-flex flex-1"
-                      >
+                      <a href={`${paper.fileUrl}&download=1`} download>
                         <Button
                           size="sm"
-                          className="w-full rounded-md bg-[#145DEB] text-xs font-semibold text-white shadow-xs hover:bg-[#0F4DC7]"
+                          className="h-8 rounded-md bg-[#145DEB] text-xs font-semibold text-white shadow-xs hover:bg-[#0F4DC7]"
                         >
-                          <Download className="mr-1.5 h-3.5 w-3.5" /> Download
+                          <Download className="mr-1 h-3.5 w-3.5" /> Download
                         </Button>
                       </a>
+                      <Link href={`/question-papers/${paper.id}`}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 px-2 text-xs font-semibold text-slate-600 hover:text-[#145DEB]"
+                          title="View syllabus & instructions"
+                        >
+                          <ArrowRight className="h-3.5 w-3.5" />
+                        </Button>
+                      </Link>
                     </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                {paginatedPapers.map((paper) => (
+                  <Card
+                    key={paper.id}
+                    className="flex h-full flex-col border-[#DCE7FA] bg-white shadow-none transition-colors hover:border-[#2A6AED]"
+                  >
+                    <CardHeader className="gap-2.5 p-5 pb-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <Badge className="rounded-sm border border-[#BFD5FA]/80 bg-[#F1F6FF] text-[11px] font-semibold text-[#145DEB]">
+                          {paper.category}
+                        </Badge>
+                        {paper.year && (
+                          <span className="rounded-sm bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-500">
+                            {paper.year}
+                          </span>
+                        )}
+                      </div>
+                      <CardTitle className="mt-1 line-clamp-2 font-heading text-base leading-snug font-bold text-[#071B3A]">
+                        {paper.title}
+                      </CardTitle>
+                      {paper.testSeriesTitle && paper.testSeriesId && (
+                        <Link
+                          href={`/tests/${paper.testSeriesId}`}
+                          className="inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-700 hover:underline pt-0.5"
+                        >
+                          <Layers className="h-3 w-3" /> Part of {paper.testSeriesTitle} &rarr;
+                        </Link>
+                      )}
+                      {paper.description && (
+                        <p className="line-clamp-2 text-xs leading-relaxed text-[#64748B]">
+                          {paper.description}
+                        </p>
+                      )}
+                    </CardHeader>
 
-                    <Link
-                      href={`/question-papers/${paper.id}`}
-                      className="pt-1 text-center text-[11px] font-medium text-slate-500 transition-colors hover:text-[#145DEB]"
-                    >
-                      View syllabus details &amp; instructions &rarr;
-                    </Link>
-                  </CardFooter>
-                </Card>
-              ))}
-            </div>
+                    <CardContent className="mt-auto px-5 py-3">
+                      <div className="grid grid-cols-2 gap-2.5 border-t border-[#DCE7FA]/80 pt-3 text-xs text-slate-600">
+                        <span className="flex items-center gap-1.5 font-semibold text-[#071B3A]">
+                          <Award className="h-3.5 w-3.5 text-[#145DEB]" />{" "}
+                          {paper.maxMarks} Marks
+                        </span>
+                        {paper.durationMinutes ? (
+                          <span className="flex items-center gap-1.5 text-slate-500">
+                            <Clock className="h-3.5 w-3.5 text-slate-400" />{" "}
+                            {paper.durationMinutes} Mins
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1.5 text-slate-500">
+                            <FileText className="h-3.5 w-3.5 text-slate-400" />{" "}
+                            PDF Format
+                          </span>
+                        )}
+                      </div>
+                    </CardContent>
+
+                    <CardFooter className="flex flex-col gap-2 rounded-b-md border-t border-[#DCE7FA] p-4">
+                      <div className="flex w-full gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPreviewPaper(paper)}
+                          className="flex-1 rounded-md border-[#DCE7FA] text-xs font-semibold text-[#145DEB] hover:bg-[#F1F6FF]"
+                        >
+                          <Eye className="mr-1.5 h-3.5 w-3.5" /> Preview
+                        </Button>
+
+                        <a
+                          href={`${paper.fileUrl}&download=1`}
+                          download
+                          className="inline-flex flex-1"
+                        >
+                          <Button
+                            size="sm"
+                            className="w-full rounded-md bg-[#145DEB] text-xs font-semibold text-white shadow-xs hover:bg-[#0F4DC7]"
+                          >
+                            <Download className="mr-1.5 h-3.5 w-3.5" /> Download
+                          </Button>
+                        </a>
+                      </div>
+
+                      <Link
+                        href={`/question-papers/${paper.id}`}
+                        className="pt-1 text-center text-[11px] font-medium text-slate-500 transition-colors hover:text-[#145DEB]"
+                      >
+                        View syllabus details &amp; instructions &rarr;
+                      </Link>
+                    </CardFooter>
+                  </Card>
+                ))}
+              </div>
+            )
           ) : (
             <div className="rounded-md border border-dashed border-[#DCE7FA] bg-white p-12 text-center">
               <Search className="mx-auto mb-3 h-10 w-10 text-slate-300" />
