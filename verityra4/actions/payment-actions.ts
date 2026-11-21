@@ -1,8 +1,9 @@
 "use server"
 
 import { requireAdmin, resolvePersistedAdminActor } from "@/lib/auth-guard"
-import { prisma, isDatabaseConnected } from "@/lib/prisma"
+import { prisma, isDatabaseConnected, DB_TX_OPTIONS } from "@/lib/prisma"
 import { sendEnrollmentReceiptEmail } from "@/lib/email"
+import { fulfillCapturedPayment } from "@/lib/payment-fulfillment"
 import { PaymentStatus, RegistrationStatus, RefundReason } from "@prisma/client"
 import { revalidatePath } from "next/cache"
 import Razorpay from "razorpay"
@@ -648,7 +649,7 @@ export async function adminTriggerRefundAction(params: {
           details: `Refunded ₹${refundAmountToProcess / 100} for candidate ${payment.user?.email || payment.userId}. Razorpay Refund ID: ${razorpayRefundId}`,
         },
       })
-    })
+    }, DB_TX_OPTIONS)
 
     // 6. Invalidate caches
     revalidatePath("/admin/payments")
@@ -801,84 +802,23 @@ export async function reconcilePendingPaymentsAction(): Promise<
           )
 
           if (capturedPayment) {
-            const testSeries = await prisma.testSeries.findUnique({
-              where: { id: p.testSeriesId },
-              select: { title: true, maxAttempts: true },
-            })
-            const maxAttempts = testSeries?.maxAttempts ?? 3
-
-            await prisma.$transaction(async (tx) => {
-              const registration = await tx.testRegistration.upsert({
-                where: {
-                  userId_testSeriesId: {
-                    userId: p.userId,
-                    testSeriesId: p.testSeriesId,
-                  },
-                },
-                create: {
-                  userId: p.userId,
-                  testSeriesId: p.testSeriesId,
-                  status: RegistrationStatus.ACTIVE,
-                  attemptsUsed: 0,
-                  maxAttempts,
-                },
-                update: {
-                  status: RegistrationStatus.ACTIVE,
-                  attemptsUsed: 0,
-                  maxAttempts,
-                },
-              })
-
-              await tx.payment.updateMany({
-                where: {
-                  registrationId: registration.id,
-                  id: { not: p.id },
-                },
-                data: { registrationId: null },
-              })
-
-              await tx.payment.update({
-                where: { id: p.id },
-                data: {
-                  status: PaymentStatus.COMPLETED,
-                  razorpayPaymentId: capturedPayment.id,
-                  paymentMethod: capturedPayment.method,
-                  bankReference:
-                    capturedPayment.acquirer_data?.rrn ||
-                    capturedPayment.acquirer_data?.bank_transaction_id,
-                  registrationId: registration.id,
-                },
-              })
-
-              await tx.paymentLedger.create({
-                data: {
-                  paymentId: p.id,
-                  eventType: "AUTO_RECONCILED",
-                  actorType: "SYSTEM",
-                  details: `Automated reconciler detected captured payment ${capturedPayment.id} on Razorpay. Fulfilled candidate enrollment.`,
-                  rawPayload: JSON.stringify(capturedPayment),
-                },
-              })
+            const fulfillment = await fulfillCapturedPayment({
+              paymentId: p.id,
+              userId: p.userId,
+              testSeriesId: p.testSeriesId,
+              razorpayPaymentId: capturedPayment.id,
+              paymentMethod: capturedPayment.method,
+              bankReference:
+                capturedPayment.acquirer_data?.rrn ||
+                capturedPayment.acquirer_data?.bank_transaction_id,
+              actorType: "SYSTEM",
+              rawPayload: capturedPayment,
+              customDetails: `Automated reconciler detected captured payment ${capturedPayment.id} on Razorpay. Fulfilled candidate enrollment.`,
             })
 
-            if (p.user?.email && testSeries) {
-              await sendEnrollmentReceiptEmail({
-                to: p.user.email,
-                name: p.user.name,
-                testSeriesId: p.testSeriesId,
-                testTitle: testSeries.title,
-                amountPaise: p.amount,
-                maxAttempts,
-                orderId: p.razorpayOrderId,
-              }).catch((err) =>
-                console.error(
-                  "[reconcilePendingPaymentsAction] Failed to send receipt:",
-                  err
-                )
-              )
+            if (fulfillment.success) {
+              reconciledCount++
             }
-
-            reconciledCount++
           } else {
             // Check if order is expired or older than 1 hour without payment
             const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)

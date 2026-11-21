@@ -1,5 +1,5 @@
 import { requireStudent } from "@/lib/auth-guard"
-import { isDatabaseConnected, prisma } from "@/lib/prisma"
+import { prisma } from "@/lib/prisma"
 import { normalizePrivateFileUrl } from "@/lib/supabase"
 import { StudentDownloadsClient } from "@/components/student/downloads/student-downloads-client"
 import type { StudentDownloadGroup } from "@/components/student/downloads/types"
@@ -12,43 +12,52 @@ export const dynamic = "force-dynamic"
 
 export default async function StudentDownloadsPage() {
   const user = await requireStudent("/student/downloads")
-  const dbConnected = await isDatabaseConnected()
   let groups: StudentDownloadGroup[] = []
+  let libraryPapers: QuestionPaperItem[] = []
 
-  if (dbConnected) {
-    const registrations = await prisma.testRegistration.findMany({
-      where: { userId: user.id, status: "ACTIVE" },
-      orderBy: { registeredAt: "desc" },
-      select: {
-        testSeriesId: true,
-        testSeries: {
-          select: {
-            title: true,
-            papers: {
-              orderBy: { title: "asc" },
-              select: {
-                id: true,
-                title: true,
-                fileUrl: true,
-                version: true,
-                createdAt: true,
+  try {
+    const [registrations, records] = await Promise.all([
+      prisma.testRegistration.findMany({
+        where: { userId: user.id, status: "ACTIVE" },
+        orderBy: { registeredAt: "desc" },
+        select: {
+          testSeriesId: true,
+          testSeries: {
+            select: {
+              title: true,
+              papers: {
+                orderBy: { title: "asc" },
+                select: {
+                  id: true,
+                  title: true,
+                  fileUrl: true,
+                  version: true,
+                  createdAt: true,
+                },
               },
-            },
-            templates: {
-              orderBy: { title: "asc" },
-              select: {
-                id: true,
-                title: true,
-                description: true,
-                fileUrl: true,
-                version: true,
-                createdAt: true,
+              templates: {
+                orderBy: { title: "asc" },
+                select: {
+                  id: true,
+                  title: true,
+                  description: true,
+                  fileUrl: true,
+                  version: true,
+                  createdAt: true,
+                },
               },
             },
           },
         },
-      },
-    })
+      }),
+      (prisma as any).questionPaper.findMany({
+        where: { isPublished: true },
+        orderBy: { createdAt: "desc" },
+      }).catch((err: any) => {
+        console.error("[STUDENT DOWNLOADS QP QUERY ERROR]", err)
+        return []
+      }),
+    ])
 
     const seen = new Set<string>()
     groups = registrations
@@ -81,38 +90,28 @@ export default async function StudentDownloadsPage() {
           }),
       }))
       .filter((group) => group.resources.length > 0)
-  }
 
-  // Fetch Standalone Question Papers Library
-  let libraryPapers: QuestionPaperItem[] = []
-  if (dbConnected) {
-    try {
-      const records = await (prisma as any).questionPaper.findMany({
-        where: { isPublished: true },
-        orderBy: { createdAt: "desc" },
-      })
-      if (records && records.length > 0) {
-        libraryPapers = records.map((r: any) => ({
-          id: r.id,
-          title: r.title,
-          description: r.description,
-          category: r.category,
-          subject: r.subject,
-          year: r.year,
-          maxMarks: r.maxMarks,
-          durationMinutes: r.durationMinutes,
-          fileUrl: r.fileUrl,
-          fileSizeBytes: r.fileSizeBytes,
-          isPublished: r.isPublished,
-          downloadsCount: r.downloadsCount || 0,
-          createdAt: r.createdAt
-            ? new Date(r.createdAt).toISOString()
-            : new Date().toISOString(),
-        }))
-      }
-    } catch (err) {
-      console.error("[STUDENT DOWNLOADS QP QUERY ERROR]", err)
+    if (records && records.length > 0) {
+      libraryPapers = records.map((r: any) => ({
+        id: r.id,
+        title: r.title,
+        description: r.description,
+        category: r.category,
+        subject: r.subject,
+        year: r.year,
+        maxMarks: r.maxMarks,
+        durationMinutes: r.durationMinutes,
+        fileUrl: r.fileUrl,
+        fileSizeBytes: r.fileSizeBytes,
+        isPublished: r.isPublished,
+        downloadsCount: r.downloadsCount || 0,
+        createdAt: r.createdAt
+          ? new Date(r.createdAt).toISOString()
+          : new Date().toISOString(),
+      }))
     }
+  } catch (error) {
+    console.error("[StudentDownloadsPage] Database query error:", error)
   }
 
   if (libraryPapers.length === 0) {

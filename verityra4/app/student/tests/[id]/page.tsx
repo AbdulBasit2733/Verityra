@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 import { requireStudent } from "@/lib/auth-guard"
-import { prisma, isDatabaseConnected } from "@/lib/prisma"
+import { prisma } from "@/lib/prisma"
 import {
   StudentWorkspaceClient,
   WorkspaceSubmissionItem,
@@ -16,12 +16,11 @@ export default async function StudentTestWorkspacePage({
 }) {
   const { id } = await params
   const user = await requireStudent(`/student/tests/${id}`)
-  const dbConnected = await isDatabaseConnected()
 
   let registration: any = null
   let testSeries: any = null
 
-  if (dbConnected) {
+  try {
     registration = await prisma.testRegistration.findFirst({
       where: {
         userId: user.id,
@@ -124,6 +123,8 @@ export default async function StudentTestWorkspacePage({
     if (registration) {
       testSeries = registration.testSeries
     }
+  } catch (error) {
+    console.error("[StudentTestWorkspacePage] Database query error:", error)
   }
 
   // Fallback demo mock if DB is offline

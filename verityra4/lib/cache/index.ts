@@ -52,12 +52,26 @@ export function invalidateTestCatalogCache() {
 }
 
 /**
+ * Invalidate admin dashboard analytics cache
+ * Call this when a new payment is captured, a test is created, or an evaluation completes
+ */
+export function invalidateAdminAnalyticsCache() {
+  try {
+    revalidateTag("admin-analytics", "default")
+    revalidatePath("/admin", "page")
+  } catch (error) {
+    console.warn("[Cache] revalidate called from invalid context:", error)
+  }
+}
+
+/**
  * Invalidate all caches (use sparingly)
  */
 export function invalidateAllCaches() {
   try {
     revalidateTag("leaderboard", "default")
     revalidateTag("test-series", "default")
+    revalidateTag("admin-analytics", "default")
     revalidatePath("/leaderboard", "page")
     revalidatePath("/tests", "page")
     revalidatePath("/", "page")

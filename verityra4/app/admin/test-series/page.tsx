@@ -1,4 +1,4 @@
-import { prisma, isDatabaseConnected } from "@/lib/prisma"
+import { prisma } from "@/lib/prisma"
 import {
   AdminTestSeriesClient,
   AdminTestSeriesRow,
@@ -7,11 +7,9 @@ import {
 export const dynamic = "force-dynamic"
 
 export default async function AdminTestSeriesPage() {
-  const dbConnected = await isDatabaseConnected()
-
   let testSeriesList: any[] = []
 
-  if (dbConnected) {
+  try {
     testSeriesList = await prisma.testSeries.findMany({
       select: {
         id: true,
@@ -33,7 +31,8 @@ export default async function AdminTestSeriesPage() {
       },
       orderBy: { createdAt: "desc" },
     })
-  } else {
+  } catch (error) {
+    console.error("[AdminTestSeriesPage] Database query error, using fallback:", error)
     testSeriesList = [
       {
         id: "demo-upsc-mains-1",

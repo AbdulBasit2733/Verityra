@@ -1,7 +1,7 @@
 "use server"
 
 import { getCurrentUser, resolvePersistedAdminActor } from "@/lib/auth-guard"
-import { prisma, isDatabaseConnected } from "@/lib/prisma"
+import { prisma, isDatabaseConnected, DB_TX_OPTIONS } from "@/lib/prisma"
 import {
   evaluateAnswerSheetWithGemini,
   getGeminiModelName,
@@ -444,7 +444,7 @@ export async function adminReviewScoreAction(
         details: `Adjusted total score from ${evaluation.totalMarksAwarded} to ${newTotal}. Notes: ${adminOverallNotes || "None"}`,
       },
     })
-  })
+  }, DB_TX_OPTIONS)
 
   revalidatePath(`/admin/submissions/${submissionId}`)
   revalidatePath("/admin/submissions")

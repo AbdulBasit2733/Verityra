@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
-import { prisma, isDatabaseConnected } from "@/lib/prisma"
+import { prisma, isDatabaseConnected, DB_TX_OPTIONS } from "@/lib/prisma"
 import { sendEnrollmentReceiptEmail } from "@/lib/email"
+import { fulfillCapturedPayment } from "@/lib/payment-fulfillment"
 import {
   PaymentStatus,
   RefundReason,
@@ -118,98 +119,33 @@ export async function POST(req: NextRequest) {
           paymentRecord.status !== PaymentStatus.REFUNDED &&
           paymentRecord.status !== PaymentStatus.REFUND_PENDING
         ) {
-          const testSeries = await prisma.testSeries.findUnique({
-            where: { id: paymentRecord.testSeriesId },
+          const fulfillment = await fulfillCapturedPayment({
+            paymentId: paymentRecord.id,
+            userId: paymentRecord.userId,
+            testSeriesId: paymentRecord.testSeriesId,
+            razorpayPaymentId:
+              razorpayPaymentId || paymentRecord.razorpayPaymentId || `pay_${Date.now()}`,
+            paymentMethod,
+            bankReference,
+            actorType: "GATEWAY_WEBHOOK",
+            actorId: "razorpay",
+            details: `Gateway event '${eventType}' verified payment capture of ₹${paymentRecord.amount / 100} via ${paymentMethod || "standard gateway"}.`,
+            rawPayload: {
+              eventId,
+              razorpayPaymentId,
+              bankReference,
+            },
           })
-          const maxAttempts = testSeries?.maxAttempts || 3
 
-          await prisma.$transaction(async (tx) => {
-            const registration = await tx.testRegistration.upsert({
-              where: {
-                userId_testSeriesId: {
-                  userId: paymentRecord.userId,
-                  testSeriesId: paymentRecord.testSeriesId,
-                },
-              },
-              create: {
-                userId: paymentRecord.userId,
-                testSeriesId: paymentRecord.testSeriesId,
-                status: RegistrationStatus.ACTIVE,
-                attemptsUsed: 0,
-                maxAttempts,
-              },
-              update: {
-                status: RegistrationStatus.ACTIVE,
-                attemptsUsed: 0,
-                maxAttempts,
-              },
-            })
-
-            await tx.payment.updateMany({
-              where: {
-                registrationId: registration.id,
-                id: { not: paymentRecord.id },
-              },
-              data: { registrationId: null },
-            })
-
-            await tx.payment.update({
-              where: { id: paymentRecord.id },
-              data: {
-                status: PaymentStatus.COMPLETED,
-                razorpayPaymentId:
-                  razorpayPaymentId || paymentRecord.razorpayPaymentId,
-                registrationId: registration.id,
-                paymentMethod,
-                bankReference,
-              },
-            })
-
-            await tx.paymentLedger.create({
-              data: {
-                paymentId: paymentRecord.id,
-                eventType: "WEBHOOK_PAYMENT_CAPTURED",
-                actorType: "GATEWAY_WEBHOOK",
-                actorId: "razorpay",
-                details: `Gateway event '${eventType}' verified payment capture of ₹${paymentRecord.amount / 100} via ${paymentMethod || "standard gateway"}.`,
-                rawPayload: JSON.stringify({
-                  eventId,
-                  razorpayPaymentId,
-                  bankReference,
-                }),
-              },
-            })
-
-            await tx.webhookEvent.update({
+          if (fulfillment.success) {
+            await prisma.webhookEvent.update({
               where: { eventId },
               data: {
                 status: WebhookStatus.PROCESSED,
                 processedAt: new Date(),
               },
             })
-          })
-          eventMarkedProcessed = true
-
-          // Send enrollment receipt email asynchronously after webhook fulfillment
-          const fulfilledUser = await prisma.user.findUnique({
-            where: { id: paymentRecord.userId },
-            select: { name: true, email: true },
-          })
-          if (fulfilledUser?.email && testSeries) {
-            await sendEnrollmentReceiptEmail({
-              to: fulfilledUser.email,
-              name: fulfilledUser.name,
-              testSeriesId: paymentRecord.testSeriesId,
-              testTitle: testSeries.title,
-              amountPaise: paymentRecord.amount,
-              maxAttempts,
-              orderId: razorpayOrderId,
-            }).catch((err) =>
-              console.error(
-                "[RAZORPAY WEBHOOK] Failed to send enrollment receipt:",
-                err
-              )
-            )
+            eventMarkedProcessed = true
           }
         }
       }
@@ -261,7 +197,7 @@ export async function POST(req: NextRequest) {
                 processedAt: new Date(),
               },
             })
-          })
+          }, DB_TX_OPTIONS)
           eventMarkedProcessed = true
         }
       }
@@ -399,7 +335,7 @@ export async function POST(req: NextRequest) {
                 processedAt: new Date(),
               },
             })
-          })
+          }, DB_TX_OPTIONS)
           eventMarkedProcessed = true
         }
       }

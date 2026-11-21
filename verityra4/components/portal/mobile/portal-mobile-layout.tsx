@@ -123,6 +123,7 @@ export function PortalMobileLayout({
               alt={BRAND_CONFIG.name}
               width={2172}
               height={724}
+              sizes="(max-width: 768px) 120px, 160px"
               priority
               className="h-8 w-auto object-contain"
             />
@@ -197,6 +198,7 @@ export function PortalMobileLayout({
                     alt={BRAND_CONFIG.name}
                     width={2172}
                     height={724}
+                    sizes="(max-width: 768px) 120px, 160px"
                     className="h-8 w-auto object-contain"
                   />
                 </Link>

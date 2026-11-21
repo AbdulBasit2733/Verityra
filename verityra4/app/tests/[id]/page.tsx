@@ -29,25 +29,24 @@ export default async function TestDetailsPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  let user = null
-  try {
-    user = await getPersistedCurrentUser()
-  } catch (err) {
-    if (err instanceof PersistedUserLookupError) {
-      user = await getCurrentUser()
-    } else {
-      throw err
-    }
-  }
-  const dbConnected = await isDatabaseConnected()
+  let user: any = null
   let testSeries: any = null
   let isRegistered = false
 
-  if (dbConnected) {
-    testSeries = await prisma.testSeries.findFirst({
-      where: { OR: [{ id }, { slug: id }], isPublished: true },
-      include: { papers: true, templates: true },
-    })
+  try {
+    const [resolvedUser, resolvedTestSeries] = await Promise.all([
+      getPersistedCurrentUser().catch(async (err) => {
+        if (err instanceof PersistedUserLookupError) return getCurrentUser()
+        return null
+      }),
+      prisma.testSeries.findFirst({
+        where: { OR: [{ id }, { slug: id }], isPublished: true },
+        include: { papers: true, templates: true },
+      }),
+    ])
+    user = resolvedUser
+    testSeries = resolvedTestSeries
+
     if (testSeries && user) {
       const registration = await prisma.testRegistration.findUnique({
         where: {
@@ -62,6 +61,8 @@ export default async function TestDetailsPage({
           registration.payment?.status === PaymentStatus.COMPLETED)
       )
     }
+  } catch (lookupErr) {
+    console.warn("[TestDetailsPage] Lookup error:", lookupErr)
   }
 
   if (!testSeries) {

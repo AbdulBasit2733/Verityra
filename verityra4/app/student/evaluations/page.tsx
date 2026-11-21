@@ -1,5 +1,5 @@
 import { requireStudent } from "@/lib/auth-guard"
-import { isDatabaseConnected, prisma } from "@/lib/prisma"
+import { prisma } from "@/lib/prisma"
 import { StudentEvaluationsClient } from "@/components/student/evaluations/student-evaluations-client"
 import type { StudentEvaluationRow } from "@/components/student/evaluations/types"
 
@@ -7,10 +7,9 @@ export const dynamic = "force-dynamic"
 
 export default async function StudentEvaluationsPage() {
   const user = await requireStudent("/student/evaluations")
-  const dbConnected = await isDatabaseConnected()
   let evaluations: StudentEvaluationRow[] = []
 
-  if (dbConnected) {
+  try {
     const submissions = await prisma.submission.findMany({
       where: { userId: user.id },
       orderBy: { submittedAt: "desc" },
@@ -49,6 +48,8 @@ export default async function StudentEvaluationsPage() {
       legibilityWarning: Boolean(submission.evaluation?.legibilityWarning),
       uncertaintyFlag: Boolean(submission.evaluation?.uncertaintyFlag),
     }))
+  } catch (error) {
+    console.error("[StudentEvaluationsPage] Database query error:", error)
   }
 
   return <StudentEvaluationsClient evaluations={evaluations} />

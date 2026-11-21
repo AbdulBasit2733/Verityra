@@ -12,6 +12,15 @@ export const prisma =
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma
 
+/**
+ * Standard configuration for interactive Prisma transactions across remote database connections.
+ * Accommodates cross-region network latency (e.g. Supabase pooler) and prevents P2028 transaction expiration.
+ */
+export const DB_TX_OPTIONS = {
+  maxWait: 10_000, // 10 seconds to wait for a connection from the pool
+  timeout: 25_000, // 25 seconds execution window for interactive transactions
+} as const
+
 // Memoized database connectivity check with 10s TTL to prevent connection churn and redundant SELECT 1 round trips
 let lastConnectionCheck = 0
 let lastConnectionResult = false

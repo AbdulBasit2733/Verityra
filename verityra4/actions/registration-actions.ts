@@ -5,8 +5,9 @@ import {
   getPersistedCurrentUser,
   PersistedUserLookupError,
 } from "@/lib/auth-guard"
-import { prisma, isDatabaseConnected } from "@/lib/prisma"
+import { prisma, isDatabaseConnected, DB_TX_OPTIONS } from "@/lib/prisma"
 import { sendEnrollmentReceiptEmail } from "@/lib/email"
+import { fulfillCapturedPayment } from "@/lib/payment-fulfillment"
 import { PaymentStatus, RegistrationStatus } from "@prisma/client"
 import { revalidatePath } from "next/cache"
 import crypto from "crypto"
@@ -199,8 +200,46 @@ export async function createRazorpayOrderAction(testSeriesId: string): Promise<
     }
   }
 
-  const dbConnected = await isDatabaseConnected()
-  if (!dbConnected) {
+  // Fetch test series, existing registration, and recent pending order in parallel
+  let testSeries: any = null
+  let existingReg: any = null
+  let recentPending: any = null
+
+  try {
+    const results = await Promise.all([
+      prisma.testSeries.findUnique({
+        where: { id: testSeriesId },
+        select: {
+          id: true,
+          title: true,
+          price: true,
+          isPublished: true,
+          maxAttempts: true,
+        },
+      }),
+      prisma.testRegistration.findUnique({
+        where: {
+          userId_testSeriesId: {
+            userId: user.id,
+            testSeriesId,
+          },
+        },
+      }),
+      prisma.payment.findFirst({
+        where: {
+          userId: user.id,
+          testSeriesId,
+          status: PaymentStatus.PENDING,
+          createdAt: { gte: new Date(Date.now() - 15 * 60 * 1000) },
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+    ])
+    testSeries = results[0]
+    existingReg = results[1]
+    recentPending = results[2]
+  } catch (dbErr: any) {
+    console.error("[createRazorpayOrderAction] Database fetch error:", dbErr)
     if (process.env.NODE_ENV === "production") {
       return {
         success: false,
@@ -221,17 +260,6 @@ export async function createRazorpayOrderAction(testSeriesId: string): Promise<
     }
   }
 
-  const testSeries = await prisma.testSeries.findUnique({
-    where: { id: testSeriesId },
-    select: {
-      id: true,
-      title: true,
-      price: true,
-      isPublished: true,
-      maxAttempts: true,
-    },
-  })
-
   if (!testSeries || !testSeries.isPublished) {
     return { success: false, error: "This test series is not available." }
   }
@@ -242,16 +270,6 @@ export async function createRazorpayOrderAction(testSeriesId: string): Promise<
       error: "This test is free. Please use the free registration option.",
     }
   }
-
-  // Verify not already registered
-  const existingReg = await prisma.testRegistration.findUnique({
-    where: {
-      userId_testSeriesId: {
-        userId: user.id,
-        testSeriesId,
-      },
-    },
-  })
 
   if (existingReg && existingReg.status !== RegistrationStatus.CANCELLED) {
     return {
@@ -277,137 +295,10 @@ export async function createRazorpayOrderAction(testSeriesId: string): Promise<
     }
   }
 
-  // Reuse a recent pending order matching the current price when a student
-  // double-clicks or refreshes checkout.
-  const recentPending = await prisma.payment.findFirst({
-    where: {
-      userId: user.id,
-      testSeriesId: testSeries.id,
-      amount: testSeries.price,
-      status: PaymentStatus.PENDING,
-      createdAt: { gte: new Date(Date.now() - 30 * 60 * 1000) },
-    },
-    orderBy: { createdAt: "desc" },
-  })
-
-  if (recentPending) {
-    // Check if the pending order was already captured on Razorpay (e.g. mobile UPI payment)
-    if (razorpayConfigured) {
-      try {
-        const razorpay = new Razorpay({ key_id, key_secret })
-        const rzpPayments: any = await razorpay.orders.fetchPayments(
-          recentPending.razorpayOrderId
-        )
-        const capturedPayment = rzpPayments.items?.find(
-          (item: any) => item.status === "captured"
-        )
-
-        if (capturedPayment) {
-          const paymentMethod = capturedPayment.method || null
-          const bankReference =
-            capturedPayment.acquirer_data?.rrn ||
-            capturedPayment.acquirer_data?.bank_transaction_id ||
-            null
-
-          await prisma.$transaction(async (tx) => {
-            const registration = await tx.testRegistration.upsert({
-              where: {
-                userId_testSeriesId: {
-                  userId: user.id,
-                  testSeriesId: testSeries.id,
-                },
-              },
-              create: {
-                userId: user.id,
-                testSeriesId: testSeries.id,
-                status: RegistrationStatus.ACTIVE,
-                attemptsUsed: 0,
-                maxAttempts: testSeries.maxAttempts,
-              },
-              update: {
-                status: RegistrationStatus.ACTIVE,
-                attemptsUsed: 0,
-                maxAttempts: testSeries.maxAttempts,
-              },
-            })
-
-            await tx.payment.updateMany({
-              where: {
-                registrationId: registration.id,
-                id: { not: recentPending.id },
-              },
-              data: { registrationId: null },
-            })
-
-            await tx.payment.update({
-              where: { id: recentPending.id },
-              data: {
-                status: PaymentStatus.COMPLETED,
-                razorpayPaymentId: capturedPayment.id,
-                paymentMethod,
-                bankReference,
-                registrationId: registration.id,
-              },
-            })
-
-            await tx.paymentLedger.create({
-              data: {
-                paymentId: recentPending.id,
-                eventType: "PAYMENT_CAPTURED",
-                actorType: "STUDENT_CLIENT",
-                actorId: user.id,
-                details: `Recovered captured payment ${capturedPayment.id} of ₹${recentPending.amount / 100} during order checkout refresh.`,
-                rawPayload: JSON.stringify(capturedPayment),
-              },
-            })
-          })
-
-          if (user.email) {
-            await sendEnrollmentReceiptEmail({
-              to: user.email,
-              name: user.name,
-              testSeriesId: testSeries.id,
-              testTitle: testSeries.title,
-              amountPaise: recentPending.amount,
-              maxAttempts: testSeries.maxAttempts,
-              orderId: recentPending.razorpayOrderId,
-            }).catch((err) =>
-              console.error(
-                "[Registration] Failed to send recovered enrollment receipt:",
-                err
-              )
-            )
-          }
-
-          revalidatePath(`/tests/${testSeries.id}`)
-          revalidatePath("/student/dashboard")
-
-          return {
-            success: true,
-            message: "Your payment was verified! Access is now unlocked.",
-            data: {
-              orderId: recentPending.razorpayOrderId,
-              amount: recentPending.amount,
-              currency: recentPending.currency,
-              keyId: key_id || "rzp_test_placeholder",
-              testTitle: testSeries.title,
-              userName: user.name || "",
-              userEmail: user.email || "",
-              alreadyCompleted: true,
-            },
-          }
-        }
-      } catch (checkErr) {
-        console.warn(
-          "[createRazorpayOrderAction] Could not verify pending order status on Razorpay:",
-          checkErr
-        )
-      }
-    }
-
+  // Fast-path: Reuse recent pending order matching current price without blocking external HTTP roundtrips
+  if (recentPending && recentPending.amount === testSeries.price) {
     return {
       success: true,
-      message: "An existing payment attempt is still active.",
       data: {
         orderId: recentPending.razorpayOrderId,
         amount: recentPending.amount,
@@ -450,7 +341,7 @@ export async function createRazorpayOrderAction(testSeriesId: string): Promise<
     }
   }
 
-  // Record payment order and initial ledger entry in DB
+  // Record payment order and initial ledger entry in DB with DB_TX_OPTIONS
   try {
     await prisma.$transaction(async (tx) => {
       const createdPayment = await tx.payment.create({
@@ -478,7 +369,7 @@ export async function createRazorpayOrderAction(testSeriesId: string): Promise<
           }),
         },
       })
-    })
+    }, DB_TX_OPTIONS)
   } catch (paymentCreateErr: any) {
     console.error(
       "[createRazorpayOrderAction] Failed to record payment order:",
@@ -633,6 +524,12 @@ export async function verifyPaymentAndRegisterAction(input: {
       error: "Invalid payment order amount or currency.",
     }
   }
+  if (payment.amount !== testSeries.price) {
+    return {
+      success: false,
+      error: "Payment order amount does not match current test series fee.",
+    }
+  }
   if (
     payment.status === PaymentStatus.REFUNDED ||
     payment.status === PaymentStatus.REFUND_PENDING
@@ -665,13 +562,19 @@ export async function verifyPaymentAndRegisterAction(input: {
   let paymentMethod: string | null = payment.paymentMethod
   let bankReference: string | null = payment.bankReference
 
-  // Fetch gateway metadata (method, UTR/RRN) if Razorpay is configured
+  // Fetch gateway metadata (method, UTR/RRN) with 2.5s timeout so network hiccups don't block fulfillment
   if (razorpayConfigured) {
     try {
       const razorpay = new Razorpay({ key_id, key_secret })
-      const rzpPayment: any = await razorpay.payments.fetch(
-        input.razorpayPaymentId
+      const fetchPromise = razorpay.payments.fetch(input.razorpayPaymentId)
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("GATEWAY_METADATA_TIMEOUT")), 2500)
       )
+      const rzpPayment: any = await Promise.race([
+        fetchPromise,
+        timeoutPromise,
+      ]).catch(() => null)
+
       if (rzpPayment) {
         if (rzpPayment.amount && rzpPayment.amount !== payment.amount) {
           return {
@@ -693,97 +596,39 @@ export async function verifyPaymentAndRegisterAction(input: {
     }
   }
 
-  // Atomically fulfill payment and create registration in a transaction
-  await prisma.$transaction(async (tx) => {
-    // 1. Create or reactivate registration with full attempts quota
-    const registration = await tx.testRegistration.upsert({
-      where: {
-        userId_testSeriesId: {
-          userId: user.id,
-          testSeriesId: input.testSeriesId,
-        },
-      },
-      create: {
-        userId: user.id,
-        testSeriesId: input.testSeriesId,
-        status: RegistrationStatus.ACTIVE,
-        attemptsUsed: 0,
-        maxAttempts: testSeries.maxAttempts,
-      },
-      update: {
-        status: RegistrationStatus.ACTIVE,
-        attemptsUsed: 0,
-        maxAttempts: testSeries.maxAttempts,
-      },
-    })
-
-    // 2. Unlink any historical refunded/failed payment from this registrationId to avoid @unique collision
-    await tx.payment.updateMany({
-      where: {
-        registrationId: registration.id,
-        id: { not: payment.id },
-      },
-      data: { registrationId: null },
-    })
-
-    // 3. Mark payment as completed and link to registration
-    await tx.payment.update({
-      where: { id: payment.id },
-      data: {
-        razorpayPaymentId: input.razorpayPaymentId,
-        razorpaySignature: input.razorpaySignature,
-        status: PaymentStatus.COMPLETED,
-        registrationId: registration.id,
-        paymentMethod,
-        bankReference,
-        verificationMetadata: JSON.stringify({
-          verifiedAt: new Date().toISOString(),
-          userId: user.id,
-        }),
-      },
-    })
-
-    // 4. Record audit ledger entry
-    await tx.paymentLedger.create({
-      data: {
-        paymentId: payment.id,
-        eventType: "PAYMENT_CAPTURED",
-        actorType: "STUDENT_CLIENT",
-        actorId: user.id,
-        details: `Verified payment ${input.razorpayPaymentId} of ₹${payment.amount / 100} via ${paymentMethod || "Razorpay Checkout"}. Candidate access unlocked.`,
-        rawPayload: JSON.stringify({
-          orderId: input.razorpayOrderId,
-          paymentId: input.razorpayPaymentId,
-          paymentMethod,
-          bankReference,
-        }),
-      },
-    })
+  // Atomically and idempotently fulfill payment and grant candidate access
+  const fulfillment = await fulfillCapturedPayment({
+    paymentId: payment.id,
+    userId: user.id,
+    testSeriesId: input.testSeriesId,
+    razorpayPaymentId: input.razorpayPaymentId,
+    razorpaySignature: input.razorpaySignature,
+    paymentMethod,
+    bankReference,
+    actorType: "STUDENT_CLIENT",
+    actorId: user.id,
+    rawPayload: {
+      orderId: input.razorpayOrderId,
+      paymentId: input.razorpayPaymentId,
+      paymentMethod,
+      bankReference,
+    },
   })
 
-  if (user.email) {
-    await sendEnrollmentReceiptEmail({
-      to: user.email,
-      name: user.name,
-      testSeriesId: input.testSeriesId,
-      testTitle: testSeries.title,
-      amountPaise: payment.amount,
-      maxAttempts: testSeries.maxAttempts,
-      orderId: input.razorpayOrderId,
-    }).catch((err) =>
-      console.error(
-        "[Registration] Failed to send paid enrollment receipt:",
-        err
-      )
-    )
+  if (!fulfillment.success) {
+    return {
+      success: false,
+      error:
+        fulfillment.error ||
+        "Payment verification failed. Please check your payment status or contact support.",
+    }
   }
-
-  revalidatePath(`/tests/${input.testSeriesId}`)
-  revalidatePath("/student/dashboard")
-  revalidatePath("/student/purchases")
 
   return {
     success: true,
-    message: "Payment verified! Your registration is now active.",
+    message: fulfillment.alreadyCompleted
+      ? "Payment was already verified and access is active."
+      : "Payment verified! Your registration is now active.",
+    data: { registrationId: fulfillment.registrationId },
   }
 }

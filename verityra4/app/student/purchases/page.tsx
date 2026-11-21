@@ -1,6 +1,6 @@
 import { PaymentStatus } from "@prisma/client"
 import { requireStudent } from "@/lib/auth-guard"
-import { isDatabaseConnected, prisma } from "@/lib/prisma"
+import { prisma } from "@/lib/prisma"
 import {
   StudentPurchaseRow,
   StudentPurchasesClient,
@@ -10,10 +10,9 @@ export const dynamic = "force-dynamic"
 
 export default async function StudentPurchasesPage() {
   const user = await requireStudent("/student/purchases")
-  const dbConnected = await isDatabaseConnected()
   let purchases: StudentPurchaseRow[] = []
 
-  if (dbConnected) {
+  try {
     const payments = await prisma.payment.findMany({
       where: { userId: user.id, amount: { gt: 0 } },
       select: {
@@ -66,6 +65,8 @@ export default async function StudentPurchasesPage() {
         payment.status === PaymentStatus.COMPLETED &&
         Boolean(payment.registrationId),
     }))
+  } catch (error) {
+    console.error("[StudentPurchasesPage] Database query error:", error)
   }
 
   return <StudentPurchasesClient purchases={purchases} />

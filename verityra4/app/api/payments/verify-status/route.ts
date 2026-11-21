@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma, isDatabaseConnected } from "@/lib/prisma"
 import { getCurrentUser } from "@/lib/auth-guard"
-import { sendEnrollmentReceiptEmail } from "@/lib/email"
+import { fulfillCapturedPayment } from "@/lib/payment-fulfillment"
 import { PaymentStatus, RegistrationStatus } from "@prisma/client"
 import Razorpay from "razorpay"
 
@@ -107,88 +107,33 @@ export async function POST(req: NextRequest) {
             { status: 409 }
           )
         }
-        let registrationId: string | null = payment.registrationId
-        await prisma.$transaction(async (tx) => {
-          const registration = await tx.testRegistration.upsert({
-            where: {
-              userId_testSeriesId: {
-                userId: payment.userId,
-                testSeriesId: payment.testSeriesId,
-              },
-            },
-            create: {
-              userId: payment.userId,
-              testSeriesId: payment.testSeriesId,
-              status: RegistrationStatus.ACTIVE,
-              attemptsUsed: 0,
-              maxAttempts: testSeries.maxAttempts,
-            },
-            update: {
-              status: RegistrationStatus.ACTIVE,
-              attemptsUsed: 0,
-              maxAttempts: testSeries.maxAttempts,
-            },
-          })
-          registrationId = registration.id
-
-          await tx.payment.updateMany({
-            where: {
-              registrationId: registration.id,
-              id: { not: payment.id },
-            },
-            data: { registrationId: null },
-          })
-
-          await tx.payment.update({
-            where: { id: payment.id },
-            data: {
-              status: PaymentStatus.COMPLETED,
-              razorpayPaymentId: capturedPayment.id,
-              paymentMethod: capturedPayment.method,
-              bankReference:
-                capturedPayment.acquirer_data?.rrn ||
-                capturedPayment.acquirer_data?.bank_transaction_id ||
-                null,
-              registrationId: registration.id,
-            },
-          })
-
-          await tx.paymentLedger.create({
-            data: {
-              paymentId: payment.id,
-              eventType: "NETWORK_RECOVERY_VERIFIED",
-              actorType: "STUDENT_CLIENT",
-              details: `Client network recovery verification detected captured payment ${capturedPayment.id}. Access granted.`,
-              rawPayload: JSON.stringify(capturedPayment),
-            },
-          })
+        const fulfillment = await fulfillCapturedPayment({
+          paymentId: payment.id,
+          userId: payment.userId,
+          testSeriesId: payment.testSeriesId,
+          razorpayPaymentId: capturedPayment.id,
+          paymentMethod: capturedPayment.method,
+          bankReference:
+            capturedPayment.acquirer_data?.rrn ||
+            capturedPayment.acquirer_data?.bank_transaction_id ||
+            null,
+          actorType: "STUDENT_CLIENT",
+          actorId: user.id,
+          rawPayload: capturedPayment,
+          customDetails: `Client network recovery verification detected captured payment ${capturedPayment.id}. Access granted.`,
         })
 
-        const paymentUser = await prisma.user.findUnique({
-          where: { id: payment.userId },
-          select: { name: true, email: true },
-        })
-        if (paymentUser?.email) {
-          await sendEnrollmentReceiptEmail({
-            to: paymentUser.email,
-            name: paymentUser.name,
-            testSeriesId: payment.testSeriesId,
-            testTitle: testSeries.title,
-            amountPaise: payment.amount,
-            maxAttempts: testSeries.maxAttempts,
-            orderId,
-          }).catch((err) =>
-            console.error(
-              "[verify-status] Failed to send enrollment receipt:",
-              err
-            )
+        if (!fulfillment.success) {
+          return NextResponse.json(
+            { error: fulfillment.error || "Recovery fulfillment failed" },
+            { status: 500 }
           )
         }
 
         return NextResponse.json({
           completed: true,
           status: "COMPLETED",
-          registrationId,
+          registrationId: fulfillment.registrationId,
         })
       }
     }

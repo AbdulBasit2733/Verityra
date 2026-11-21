@@ -5,7 +5,7 @@ import {
   getPersistedCurrentUser,
   PersistedUserLookupError,
 } from "@/lib/auth-guard"
-import { prisma, isDatabaseConnected } from "@/lib/prisma"
+import { prisma, isDatabaseConnected, DB_TX_OPTIONS } from "@/lib/prisma"
 import { uploadPrivateFile } from "@/lib/supabase"
 import {
   evaluateAnswerSheetWithGemini,
@@ -205,7 +205,7 @@ export async function submitAnswerSheetAction(
       })
 
       return newSub
-    })
+    }, DB_TX_OPTIONS)
   } catch (txError: any) {
     if (
       txError.message === "ATTEMPT_LIMIT_EXCEEDED" ||

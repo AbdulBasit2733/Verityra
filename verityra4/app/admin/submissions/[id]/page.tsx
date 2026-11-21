@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { prisma, isDatabaseConnected } from "@/lib/prisma"
+import { prisma } from "@/lib/prisma"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { AdminScoreReviewEditor } from "@/components/admin/submissions/admin-score-review-editor"
@@ -17,7 +17,6 @@ import {
 } from "lucide-react"
 import { formatDateTimeFull } from "@/lib/format"
 import { normalizePrivateFileUrl } from "@/lib/supabase"
-import { getEvaluationStatus } from "@/lib/queue/evaluation-queue"
 
 export const dynamic = "force-dynamic"
 
@@ -27,11 +26,9 @@ export default async function AdminSubmissionReviewPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const dbConnected = await isDatabaseConnected()
   let submission: any = null
 
-  if (dbConnected) {
-    await getEvaluationStatus(id).catch(() => null)
+  try {
     submission = await prisma.submission.findUnique({
       where: { id },
       include: {
@@ -46,6 +43,8 @@ export default async function AdminSubmissionReviewPage({
         },
       },
     })
+  } catch (error) {
+    console.error("[AdminSubmissionReviewPage] Database query error:", error)
   }
 
   if (!submission) {

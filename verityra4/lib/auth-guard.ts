@@ -19,6 +19,7 @@ const studentSelect = {
   name: true,
   role: true,
   status: true,
+  emailVerified: true,
 } as const
 
 export type PersistedAdminActor = Pick<
@@ -27,7 +28,7 @@ export type PersistedAdminActor = Pick<
 >
 export type PersistedStudentActor = Pick<
   User,
-  "id" | "email" | "name" | "role" | "status"
+  "id" | "email" | "name" | "role" | "status" | "emailVerified"
 >
 
 export type PersistedAdminResult =
@@ -103,32 +104,34 @@ export const getPersistedCurrentUser = cache(
   }
 )
 
-export async function resolvePersistedAdminActor(
-  sessionUser: NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>
-): Promise<PersistedAdminResult> {
-  if (sessionUser.role !== Role.ADMIN) {
-    return { success: false, error: "Unauthorized. Admin privileges required." }
-  }
-
-  const actor = await prisma.user.findUnique({
-    where: { id: sessionUser.id },
-    select: adminSelect,
-  })
-
-  if (
-    !actor ||
-    actor.role !== Role.ADMIN ||
-    actor.status !== UserStatus.ACTIVE
-  ) {
-    return {
-      success: false,
-      error:
-        "An active persisted administrator account is required. Sign in with an administrator account.",
+export const resolvePersistedAdminActor = cache(
+  async (
+    sessionUser: NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>
+  ): Promise<PersistedAdminResult> => {
+    if (sessionUser.role !== Role.ADMIN) {
+      return { success: false, error: "Unauthorized. Admin privileges required." }
     }
-  }
 
-  return { success: true, user: actor }
-}
+    const actor = await prisma.user.findUnique({
+      where: { id: sessionUser.id },
+      select: adminSelect,
+    })
+
+    if (
+      !actor ||
+      actor.role !== Role.ADMIN ||
+      actor.status !== UserStatus.ACTIVE
+    ) {
+      return {
+        success: false,
+        error:
+          "An active persisted administrator account is required. Sign in with an administrator account.",
+      }
+    }
+
+    return { success: true, user: actor }
+  }
+)
 
 export async function requireAuth(returnUrl?: string) {
   const user = await getCurrentUser()

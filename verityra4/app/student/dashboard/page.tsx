@@ -1,5 +1,5 @@
-import { requireStudent } from "@/lib/auth-guard"
-import { prisma, isDatabaseConnected } from "@/lib/prisma"
+import { requireStudent, getPersistedCurrentUser } from "@/lib/auth-guard"
+import { prisma } from "@/lib/prisma"
 import {
   StudentDashboardClient,
   StudentRegistrationRow,
@@ -10,14 +10,14 @@ export const dynamic = "force-dynamic"
 
 export default async function StudentDashboardPage() {
   const user = await requireStudent("/student/dashboard")
-  const dbConnected = await isDatabaseConnected()
+  const persistedUser = await getPersistedCurrentUser()
 
   let registrations: any[] = []
   let submissions: any[] = []
-  let isEmailVerified = true
+  let isEmailVerified = Boolean(persistedUser?.emailVerified)
 
-  if (dbConnected) {
-    const [regList, subList, dbUser] = await Promise.all([
+  try {
+    const [regList, subList] = await Promise.all([
       prisma.testRegistration.findMany({
         where: { userId: user.id },
         select: {
@@ -75,14 +75,11 @@ export default async function StudentDashboardPage() {
         },
         orderBy: { submittedAt: "desc" },
       }),
-      prisma.user.findUnique({
-        where: { id: user.id },
-        select: { emailVerified: true },
-      }),
     ])
     registrations = regList
     submissions = subList
-    isEmailVerified = Boolean(dbUser?.emailVerified)
+  } catch (error) {
+    console.error("[StudentDashboardPage] Database query error:", error)
   }
 
   // Fallback demo records if DB is not yet running

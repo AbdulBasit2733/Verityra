@@ -1,6 +1,6 @@
 import { PaymentStatus, RegistrationStatus } from "@prisma/client"
 import { requireStudent } from "@/lib/auth-guard"
-import { isDatabaseConnected, prisma } from "@/lib/prisma"
+import { prisma } from "@/lib/prisma"
 import {
   StudentRegisteredTestsClient,
   RegisteredTestRow,
@@ -10,10 +10,9 @@ export const dynamic = "force-dynamic"
 
 export default async function StudentRegisteredTestsPage() {
   const user = await requireStudent("/student/tests")
-  const dbConnected = await isDatabaseConnected()
   let tests: RegisteredTestRow[] = []
 
-  if (dbConnected) {
+  try {
     const registrations = await prisma.testRegistration.findMany({
       where: {
         userId: user.id,
@@ -70,6 +69,8 @@ export default async function StudentRegisteredTestsPage() {
         isPaid,
       }
     })
+  } catch (error) {
+    console.error("[StudentRegisteredTestsPage] Database query error:", error)
   }
 
   return (

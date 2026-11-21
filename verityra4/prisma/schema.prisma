@@ -261,6 +261,7 @@ model TestRegistration {
   @@index([status])
   @@index([userId, registeredAt])
   @@index([testSeriesId, status])
+  @@index([userId, status])
 }
 
 model Payment {
@@ -290,6 +291,8 @@ model Payment {
 
   @@index([userId])
   @@index([userId, createdAt])
+  @@index([userId, testSeriesId, status])
+  @@index([userId, status, createdAt])
   @@index([testSeriesId])
   @@index([registrationId])
   @@index([razorpayOrderId])

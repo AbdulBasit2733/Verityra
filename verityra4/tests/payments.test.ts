@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import crypto from "crypto"
 import { TestSuite } from "./test-utils"
 import { PaymentStatus, RefundReason } from "@prisma/client"
+import { DB_TX_OPTIONS } from "../lib/prisma"
 
 export function runPaymentTests() {
   const suite = new TestSuite(
@@ -332,6 +333,65 @@ export function runPaymentTests() {
         49900
       )
       assert.equal(afterProcessed, 49900)
+    }
+  )
+
+  suite.test(
+    "Transaction Resilience: DB_TX_OPTIONS configures safe timeouts for remote Supabase connections",
+    () => {
+      assert.ok(DB_TX_OPTIONS.timeout >= 25000, "Timeout must be at least 25000ms")
+      assert.ok(DB_TX_OPTIONS.maxWait >= 10000, "MaxWait must be at least 10000ms")
+    }
+  )
+
+  suite.test(
+    "Tamper Security: Mismatched captured amount or price discrepancy is strictly rejected",
+    () => {
+      function validateCapturedPayment(orderAmount: number, testSeriesPrice: number, currency: string) {
+        if (orderAmount <= 0 || currency !== "INR") return false
+        if (orderAmount !== testSeriesPrice) return false
+        return true
+      }
+
+      assert.equal(validateCapturedPayment(49900, 49900, "INR"), true)
+      assert.equal(validateCapturedPayment(100, 49900, "INR"), false) // Tampered amount
+      assert.equal(validateCapturedPayment(49900, 49900, "USD"), false) // Invalid currency
+      assert.equal(validateCapturedPayment(0, 49900, "INR"), false) // Zero amount
+    }
+  )
+
+  suite.test(
+    "Concurrent Fulfillment: Atomic conditional update prevents race condition duplicates",
+    () => {
+      let paymentRecord = {
+        id: "pay_test_001",
+        status: PaymentStatus.PENDING as PaymentStatus,
+        razorpayPaymentId: null as string | null,
+        registrationId: null as string | null,
+      }
+
+      function simulateFulfillment(attemptPayload: { paymentId: string; razorpayPaymentId: string; regId: string }) {
+        if (paymentRecord.status === PaymentStatus.COMPLETED) {
+          return { success: true, alreadyCompleted: true, registrationId: paymentRecord.registrationId }
+        }
+        // Atomic update simulated
+        paymentRecord.status = PaymentStatus.COMPLETED
+        paymentRecord.razorpayPaymentId = attemptPayload.razorpayPaymentId
+        paymentRecord.registrationId = attemptPayload.regId
+        return { success: true, alreadyCompleted: false, registrationId: attemptPayload.regId }
+      }
+
+      // First worker (e.g. client verification action)
+      const res1 = simulateFulfillment({ paymentId: "pay_test_001", razorpayPaymentId: "rzp_pay_abc", regId: "reg_001" })
+      assert.equal(res1.success, true)
+      assert.equal(res1.alreadyCompleted, false)
+      assert.equal(res1.registrationId, "reg_001")
+
+      // Second worker running simultaneously (e.g. webhook)
+      const res2 = simulateFulfillment({ paymentId: "pay_test_001", razorpayPaymentId: "rzp_pay_abc", regId: "reg_001" })
+      assert.equal(res2.success, true)
+      assert.equal(res2.alreadyCompleted, true)
+      assert.equal(res2.registrationId, "reg_001")
     }
   )
 

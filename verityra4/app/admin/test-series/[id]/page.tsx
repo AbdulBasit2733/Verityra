@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { prisma, isDatabaseConnected } from "@/lib/prisma"
+import { prisma } from "@/lib/prisma"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { PageHeader } from "@/components/ui/page-header"
@@ -50,10 +50,9 @@ export default async function AdminTestSeriesDetailPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const dbConnected = await isDatabaseConnected()
   let testSeries: AdminTestSeriesData | null = null
 
-  if (dbConnected) {
+  try {
     testSeries = await prisma.testSeries.findUnique({
       where: { id },
       include: {
@@ -62,6 +61,8 @@ export default async function AdminTestSeriesDetailPage({
         _count: { select: { registrations: true, submissions: true } },
       },
     })
+  } catch (error) {
+    console.error("[AdminTestSeriesDetailPage] Database query error:", error)
   }
 
   if (!testSeries) {

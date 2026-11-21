@@ -5,7 +5,7 @@ import {
   evaluateAnswerSheetWithGemini,
   getGeminiModelName,
 } from "@/lib/ai/gemini-evaluator"
-import { invalidateLeaderboardCache } from "@/lib/cache"
+import { invalidateLeaderboardCache, invalidateAdminAnalyticsCache } from "@/lib/cache"
 import { sendEvaluationReadyEmail } from "@/lib/email"
 import { EvaluationStatus, SubmissionStatus } from "@prisma/client"
 import {
@@ -176,6 +176,7 @@ export function createEvaluationWorker(): Worker<EvaluationJobData> | null {
         // persisted result on the next request.
         if (persisted.status === EvaluationStatus.COMPLETED) {
           invalidateLeaderboardCache() // Invalidate cached leaderboard
+          invalidateAdminAnalyticsCache() // Invalidate admin dashboard analytics
         }
 
         if (submission.user?.email) {

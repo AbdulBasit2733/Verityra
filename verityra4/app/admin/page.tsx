@@ -1,4 +1,5 @@
-import { prisma, isDatabaseConnected } from "@/lib/prisma"
+import { unstable_cache } from "next/cache"
+import { prisma } from "@/lib/prisma"
 import {
   EvaluationStatus,
   PaymentStatus,
@@ -190,7 +191,7 @@ async function loadAnalytics(): Promise<AdminAnalytics> {
       where: { status: { in: GRADED } },
       select: { percentage: true },
       orderBy: { createdAt: "desc" },
-      take: 5000,
+      take: 1000,
     }),
     prisma.testSeries.findMany({
       orderBy: { registrations: { _count: "desc" } },
@@ -267,9 +268,26 @@ async function loadAnalytics(): Promise<AdminAnalytics> {
   }
 }
 
-export default async function AdminDashboardPage() {
-  const dbConnected = await isDatabaseConnected()
-  const analytics = dbConnected ? await loadAnalytics() : demoAnalytics()
+const getCachedAdminAnalytics = unstable_cache(
+  async () => loadAnalytics(),
+  ["admin-analytics"],
+  {
+    revalidate: 60, // 60 seconds background revalidation
+    tags: ["admin-analytics"],
+  }
+)
 
-  return <AdminOverviewClient analytics={analytics} isDemo={!dbConnected} />
+export default async function AdminDashboardPage() {
+  let analytics: AdminAnalytics
+  let isDemo = false
+
+  try {
+    analytics = await getCachedAdminAnalytics()
+  } catch (error) {
+    console.error("[AdminDashboardPage] Failed to load analytics from database, falling back to demo mode:", error)
+    analytics = demoAnalytics()
+    isDemo = true
+  }
+
+  return <AdminOverviewClient analytics={analytics} isDemo={isDemo} />
 }

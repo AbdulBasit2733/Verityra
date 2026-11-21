@@ -110,6 +110,7 @@ export function TestRegistrationButton({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
+  const [pendingOrderId, setPendingOrderId] = useState<string | null>(null)
   const redirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -206,6 +207,8 @@ export function TestRegistrationButton({
         alreadyCompleted,
       } = orderResult.data
 
+      setPendingOrderId(orderId)
+
       if (alreadyCompleted) {
         setSuccess(orderResult.message || "Payment verified! Access granted.")
         setLoading(false)
@@ -255,8 +258,37 @@ export function TestRegistrationButton({
               setSuccess("Payment successful! Access granted.")
               setLoading(false)
               scheduleRedirect()
-            } else {
-              setError(verifyResult.error || "Payment verification failed.")
+              return
+            }
+
+            // Fallback recovery: query the server recovery endpoint before failing
+            let recovered = false
+            for (let attempt = 1; attempt <= 3; attempt++) {
+              await new Promise((res) => setTimeout(res, 2000))
+              try {
+                const res = await fetch("/api/payments/verify-status", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ orderId: response.razorpay_order_id }),
+                })
+                const data = await res.json()
+                if (data.completed || data.status === "COMPLETED") {
+                  recovered = true
+                  setSuccess("Payment verified! Access granted.")
+                  setLoading(false)
+                  scheduleRedirect()
+                  break
+                }
+              } catch (pollErr) {
+                console.warn("[Recovery Poll Error]", pollErr)
+              }
+            }
+
+            if (!recovered) {
+              setError(
+                verifyResult.error ||
+                  "Payment captured by gateway, but registration confirmation is taking longer than expected. Please click 'Check Payment Status' below."
+              )
               setLoading(false)
             }
           },
@@ -311,7 +343,50 @@ export function TestRegistrationButton({
     <div className="space-y-4">
       {error && (
         <Alert variant="destructive" className="rounded-md py-3 text-sm">
-          <AlertDescription>{error}</AlertDescription>
+          <AlertDescription>
+            {error}
+            {pendingOrderId && (
+              <div className="mt-2 pt-2 border-t border-destructive/20">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    setLoading(true)
+                    setError(null)
+                    try {
+                      const res = await fetch("/api/payments/verify-status", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ orderId: pendingOrderId }),
+                      })
+                      const data = await res.json()
+                      if (data.completed || data.status === "COMPLETED") {
+                        setSuccess("Payment verified! Access granted.")
+                        scheduleRedirect()
+                      } else {
+                        setError(
+                          data.error ||
+                            "Payment is still being processed by the bank. Please retry in a moment."
+                        )
+                      }
+                    } catch {
+                      setError("Could not check payment status. Please refresh.")
+                    } finally {
+                      setLoading(false)
+                    }
+                  }}
+                  disabled={loading}
+                  className="h-8 text-xs font-medium"
+                >
+                  {loading ? (
+                    <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                  ) : null}
+                  Check Payment Status
+                </Button>
+              </div>
+            )}
+          </AlertDescription>
         </Alert>
       )}
 

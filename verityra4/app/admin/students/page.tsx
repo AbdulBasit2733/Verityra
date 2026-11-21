@@ -1,4 +1,4 @@
-import { prisma, isDatabaseConnected } from "@/lib/prisma"
+import { prisma } from "@/lib/prisma"
 import {
   AdminStudentRegistrationRow,
   AdminStudentsClient,
@@ -7,11 +7,9 @@ import {
 export const dynamic = "force-dynamic"
 
 export default async function AdminStudentsPage() {
-  const dbConnected = await isDatabaseConnected()
-
   let registrations: any[] = []
 
-  if (dbConnected) {
+  try {
     registrations = await prisma.testRegistration.findMany({
       take: 100,
       select: {
@@ -28,7 +26,8 @@ export default async function AdminStudentsPage() {
       },
       orderBy: { registeredAt: "desc" },
     })
-  } else {
+  } catch (error) {
+    console.error("[AdminStudentsPage] Database query error, using fallback:", error)
     registrations = [
       {
         id: "demo-reg-1",
