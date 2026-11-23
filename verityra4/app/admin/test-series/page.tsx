@@ -3,11 +3,26 @@ import {
   AdminTestSeriesClient,
   AdminTestSeriesRow,
 } from "@/components/admin/test-series/admin-test-series-client"
+import {
+  getSubjectsAction,
+  getStandardsAction,
+  getBoardsAction,
+} from "@/actions/master-actions"
 
 export const dynamic = "force-dynamic"
 
 export default async function AdminTestSeriesPage() {
   let testSeriesList: any[] = []
+
+  const [subjectsRes, standardsRes, boardsRes] = await Promise.all([
+    getSubjectsAction({ activeOnly: true }),
+    getStandardsAction({ activeOnly: true }),
+    getBoardsAction({ activeOnly: true }),
+  ])
+
+  const masterSubjects = subjectsRes.success && subjectsRes.data ? subjectsRes.data.subjects : []
+  const masterStandards = standardsRes.success && standardsRes.data ? standardsRes.data.standards : []
+  const masterBoards = boardsRes.success && boardsRes.data ? boardsRes.data.boards : []
 
   try {
     testSeriesList = await prisma.testSeries.findMany({
@@ -25,6 +40,11 @@ export default async function AdminTestSeriesPage() {
         maxMarks: true,
         maxAttempts: true,
         createdAt: true,
+        tests: {
+          select: {
+            subject: true,
+          },
+        },
         _count: {
           select: {
             registrations: true,
@@ -76,8 +96,18 @@ export default async function AdminTestSeriesPage() {
     papersCount: test._count?.papers || 0,
     templatesCount: test._count?.templates || 0,
     testsCount: test._count?.tests || 0,
+    subjects: Array.isArray(test.tests)
+      ? Array.from(new Set(test.tests.map((t: any) => t.subject).filter(Boolean)))
+      : [],
     createdAt: new Date(test.createdAt).toISOString(),
   }))
 
-  return <AdminTestSeriesClient testSeries={rows} />
+  return (
+    <AdminTestSeriesClient
+      testSeries={rows}
+      masterSubjects={masterSubjects}
+      masterStandards={masterStandards}
+      masterBoards={masterBoards}
+    />
+  )
 }

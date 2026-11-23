@@ -298,29 +298,6 @@ export function AdminTestSeriesEditor({
                 Special bundle discount price
               </span>
             </Field>
-            <Field label="Maximum Total Marks" htmlFor="maxMarks">
-              <Input
-                id="maxMarks"
-                type="number"
-                min={1}
-                max={10000}
-                required
-                value={values.maxMarks}
-                onChange={(e) => set("maxMarks", Number(e.target.value))}
-                className="h-10 rounded-md"
-              />
-            </Field>
-            <Field label="Duration (Minutes)" htmlFor="durationMinutes">
-              <Input
-                id="durationMinutes"
-                type="number"
-                min={10}
-                required
-                value={values.durationMinutes}
-                onChange={(e) => set("durationMinutes", Number(e.target.value))}
-                className="h-10 rounded-md"
-              />
-            </Field>
           </div>
         </TabsContent>
 

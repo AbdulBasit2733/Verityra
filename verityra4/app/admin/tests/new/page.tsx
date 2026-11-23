@@ -9,7 +9,12 @@ import { AdminCreateSubjectTestForm } from "@/components/admin/tests/admin-creat
 
 export const dynamic = "force-dynamic"
 
-export default async function CreateSubjectTestPage() {
+export default async function CreateSubjectTestPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ seriesId?: string }>
+}) {
+  const { seriesId } = (await searchParams) || {}
   await requireAdmin("/admin/tests/new")
 
   const [subjectsRes, seriesRes] = await Promise.all([
@@ -42,6 +47,7 @@ export default async function CreateSubjectTestPage() {
       <AdminCreateSubjectTestForm
         availableSubjects={subjects}
         availableSeries={series}
+        defaultSeriesId={seriesId}
       />
     </div>
   )

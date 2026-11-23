@@ -4,9 +4,12 @@ import { prisma } from "@/lib/prisma"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { PageHeader } from "@/components/ui/page-header"
-import { AdminPublishToggles } from "@/components/admin/test-series/admin-test-actions"
+import {
+  AdminPublishToggles,
+  AdminDeleteSeriesButton,
+  AdminTestDocumentForms,
+} from "@/components/admin/test-series/admin-test-actions"
 import { AdminTestSeriesEditor } from "@/components/admin/test-series/admin-test-series-editor"
-import { AdminTestDocumentForms } from "@/components/admin/test-series/admin-test-actions"
 import { ArrowLeft, BookOpen } from "lucide-react"
 import { TestSeriesStatus } from "@prisma/client"
 import { normalizePrivateFileUrl } from "@/lib/supabase"
@@ -157,6 +160,10 @@ export default async function AdminTestSeriesDetailPage({
             testSeriesId={testSeries.id}
             isPublished={testSeries.isPublished}
             resultsPublished={testSeries.resultsPublished}
+          />
+          <AdminDeleteSeriesButton
+            testSeriesId={testSeries.id}
+            title={testSeries.title}
           />
           <Link href="/admin/test-series">
             <Button

@@ -17,12 +17,16 @@ import {
 } from "@/components/ui/dialog"
 import { useConfirm } from "@/components/providers/confirm-dialog-provider"
 import { useGlobalError } from "@/components/providers/error-dialog-provider"
+import Link from "next/link"
 import { toast } from "@/components/ui/sonner"
 import {
   createSubjectTestAction,
   updateSubjectTestAction,
   deleteSubjectTestAction,
   togglePublishSubjectTestAction,
+  assignSubjectTestToSeriesAction,
+  unassignSubjectTestFromSeriesAction,
+  getAvailableTestsForAssignmentAction,
   CreateSubjectTestInput,
 } from "@/actions/test-series-actions"
 import {
@@ -37,6 +41,8 @@ import {
   EyeOff,
   Clock,
   Award,
+  Unlink,
+  Link as LinkIcon,
 } from "lucide-react"
 
 export interface AdminSubjectTestItem {
@@ -90,6 +96,22 @@ export function AdminSubjectTestsManager({
   const [editingTest, setEditingTest] = React.useState<AdminSubjectTestItem | null>(null)
   const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [actionLoadingId, setActionLoadingId] = React.useState<string | null>(null)
+
+  // Assign Existing Test state
+  const [assignDialogOpen, setAssignDialogOpen] = React.useState(false)
+  const [availableTests, setAvailableTests] = React.useState<
+    Array<{
+      id: string
+      title: string
+      subject: string
+      maxMarks: number
+      durationMinutes: number
+      currentSeriesTitle?: string | null
+    }>
+  >([])
+  const [loadingAvailable, setLoadingAvailable] = React.useState(false)
+  const [selectedAssignId, setSelectedAssignId] = React.useState<string>("")
+  const [assigningLoading, setAssigningLoading] = React.useState(false)
 
   // Form state
   const [subject, setSubject] = React.useState("")
@@ -212,15 +234,44 @@ export function AdminSubjectTestsManager({
       confirmText: "Delete Subject Test",
       cancelText: "Cancel",
       variant: "destructive",
+      badgeText: "Permanent Deletion",
     })
     if (!confirmed) return
 
     setActionLoadingId(test.id)
     try {
       const res = await deleteSubjectTestAction(test.id)
-      if (!res.success) throw new Error(res.error)
-      toast.success("Subject test removed")
-      router.refresh()
+      if (res.success) {
+        toast.success("Subject test removed")
+        router.refresh()
+      } else if (res.data?.requiresForce) {
+        const forceConfirmed = await confirm({
+          title: "Force Delete Subject Test?",
+          description: `⚠️ WARNING: ${res.error}\n\nAre you sure you want to FORCE delete this test along with all student submissions?`,
+          confirmText: "Yes, Force Delete",
+          cancelText: "Cancel",
+          variant: "destructive",
+          badgeText: "High Risk",
+        })
+
+        if (forceConfirmed) {
+          const forceRes = await deleteSubjectTestAction(test.id, { force: true })
+          if (forceRes.success) {
+            toast.success("Subject test force deleted")
+            router.refresh()
+          } else {
+            showError({
+              title: "Cannot delete test",
+              message: forceRes.error || "Failed to force delete test.",
+            })
+          }
+        }
+      } else {
+        showError({
+          title: "Cannot delete test",
+          message: res.error || "Failed to delete test.",
+        })
+      }
     } catch (err: any) {
       showError({
         title: "Cannot delete test",
@@ -228,6 +279,82 @@ export function AdminSubjectTestsManager({
       })
     } finally {
       setActionLoadingId(null)
+    }
+  }
+
+  const handleUnassign = async (test: AdminSubjectTestItem) => {
+    const confirmed = await confirm({
+      title: `Remove "${test.title}" from Series?`,
+      description: `This subject test will be detached from this bundle and converted into an independent standalone test. All questions, student submissions, and registrations will be preserved.`,
+      confirmText: "Remove from Series",
+      cancelText: "Cancel",
+      badgeText: "Unassign Test",
+    })
+    if (!confirmed) return
+
+    setActionLoadingId(test.id)
+    try {
+      const res = await unassignSubjectTestFromSeriesAction(test.id)
+      if (res.success) {
+        toast.success(res.message || "Subject test removed from series.")
+        router.refresh()
+      } else {
+        showError({
+          title: "Failed to Unassign",
+          message: res.error || "Unable to remove test from series.",
+        })
+      }
+    } catch (err: any) {
+      showError({
+        title: "Failed to Unassign",
+        message: err?.message || "An unexpected error occurred.",
+      })
+    } finally {
+      setActionLoadingId(null)
+    }
+  }
+
+  const handleOpenAssignDialog = async () => {
+    setAssignDialogOpen(true)
+    setLoadingAvailable(true)
+    try {
+      const res = await getAvailableTestsForAssignmentAction(testSeriesId)
+      if (res.success && res.data) {
+        setAvailableTests(res.data.tests)
+      }
+    } catch {
+      // fallback
+    } finally {
+      setLoadingAvailable(false)
+    }
+  }
+
+  const handleConfirmAssign = async () => {
+    if (!selectedAssignId) {
+      toast.error("Please select a test to assign.")
+      return
+    }
+    setAssigningLoading(true)
+    try {
+      const res = await assignSubjectTestToSeriesAction(selectedAssignId, testSeriesId)
+      if (res.success) {
+        toast.success(res.message || "Test assigned to series successfully.")
+        setAssignDialogOpen(false)
+        setSelectedAssignId("")
+        router.refresh()
+      } else {
+        showError({
+          title: "Assignment Failed",
+          message: res.error || "Unable to assign test to this series.",
+        })
+      }
+    } catch (err: any) {
+      showError({
+        title: "Assignment Failed",
+        message: err?.message || "An unexpected error occurred.",
+      })
+    } finally {
+      setAssigningLoading(false)
     }
   }
 
@@ -239,17 +366,29 @@ export function AdminSubjectTestsManager({
             Subject Tests in this Series ({tests.length})
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Add individual subject tests (e.g. Mathematics, Science) that students can purchase individually or get access to via the complete series bundle.
+            Add or assign subject tests (e.g. Mathematics, Science) that students can access via this bundle package.
           </p>
         </div>
-        <Button
-          type="button"
-          onClick={openCreateDialog}
-          size="sm"
-          className="h-9 gap-1.5 bg-[#2A6AED] hover:bg-[#2055c0] text-xs font-semibold text-white shadow-sm"
-        >
-          <Plus className="h-4 w-4" /> Add Subject Test
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleOpenAssignDialog}
+            className="h-9 gap-1.5 text-xs font-semibold"
+          >
+            <LinkIcon className="h-3.5 w-3.5 text-primary" /> Assign Existing Test
+          </Button>
+          <Link href={`/admin/tests/new?seriesId=${testSeriesId}`}>
+            <Button
+              type="button"
+              size="sm"
+              className="h-9 gap-1.5 bg-[#2A6AED] hover:bg-[#2055c0] text-xs font-semibold text-white shadow-sm"
+            >
+              <Plus className="h-4 w-4" /> Add Subject Test
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {tests.length === 0 ? (
@@ -343,15 +482,26 @@ export function AdminSubjectTestsManager({
                       <Globe className="h-3.5 w-3.5 text-emerald-600" />
                     )}
                   </Button>
+                  <Link href={`/admin/tests/${test.id}`}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 px-2.5 text-xs font-medium"
+                    >
+                      <Edit2 className="h-3.5 w-3.5 mr-1" /> Edit
+                    </Button>
+                  </Link>
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
                     disabled={isLoading}
-                    onClick={() => openEditDialog(test)}
-                    className="h-8 px-2.5 text-xs font-medium"
+                    onClick={() => handleUnassign(test)}
+                    className="h-8 px-2 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/30"
+                    title="Remove from series (Keep as Standalone Test)"
                   >
-                    <Edit2 className="h-3.5 w-3.5 mr-1" /> Edit
+                    <Unlink className="h-3.5 w-3.5 mr-1" /> Remove
                   </Button>
                   <Button
                     type="button"
@@ -554,6 +704,109 @@ export function AdminSubjectTestsManager({
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Assign Existing Test Dialog */}
+      <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-sm font-bold flex items-center gap-1.5">
+              <LinkIcon className="h-4 w-4 text-primary" /> Assign Existing Test to Series
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              Select any existing subject test to attach into this test series bundle.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-2 space-y-3">
+            {loadingAvailable ? (
+              <div className="py-8 flex flex-col items-center justify-center gap-2 text-xs text-muted-foreground">
+                <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                <span>Loading available tests...</span>
+              </div>
+            ) : availableTests.length === 0 ? (
+              <div className="py-6 text-center text-xs text-muted-foreground border border-dashed rounded-md p-4">
+                No unassigned tests available to attach. Create a new test using the &quot;Add Subject Test&quot; button.
+              </div>
+            ) : (
+              <div className="space-y-1.5 max-h-60 overflow-y-auto pr-1">
+                {availableTests.map((t) => (
+                  <label
+                    key={t.id}
+                    className={`flex items-start gap-2.5 p-2.5 rounded-md border cursor-pointer transition-colors ${
+                      selectedAssignId === t.id
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:bg-muted/40"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="assignTest"
+                      value={t.id}
+                      checked={selectedAssignId === t.id}
+                      onChange={() => setSelectedAssignId(t.id)}
+                      className="mt-0.5 text-primary focus:ring-primary h-4 w-4"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <Badge variant="secondary" className="text-[10px] py-0 px-1.5 font-bold">
+                          {t.subject}
+                        </Badge>
+                        <span className="text-xs font-semibold text-foreground truncate">
+                          {t.title}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
+                        <span>{t.maxMarks} Marks</span>
+                        <span>•</span>
+                        <span>{t.durationMinutes} Mins</span>
+                        {t.currentSeriesTitle && (
+                          <>
+                            <span>•</span>
+                            <span className="text-amber-600 font-medium truncate">
+                              Currently in: {t.currentSeriesTitle}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setAssignDialogOpen(false)
+                setSelectedAssignId("")
+              }}
+              className="text-xs font-semibold"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              disabled={!selectedAssignId || assigningLoading}
+              onClick={handleConfirmAssign}
+              className="text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground"
+            >
+              {assigningLoading ? (
+                <>
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                  Assigning...
+                </>
+              ) : (
+                "Assign to Series"
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

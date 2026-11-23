@@ -693,6 +693,182 @@ export async function archiveTestSeriesAction(
   return { success: true, message: "Test series archived successfully." }
 }
 
+/**
+ * Server Action: Hard Delete Test Series (ADMIN ONLY)
+ * Handles all edge cases:
+ * - Checks for completed paid student purchases; blocks with count unless explicit force is confirmed.
+ * - Safely cleans up dependent submissions, evaluation jobs, evaluation runs, and registrations in a transaction.
+ * - QuestionPaper bank documents are preserved (testSeriesId set to null).
+ * - Full route and cache invalidation.
+ */
+export async function deleteTestSeriesAction(
+  testSeriesId: string,
+  options?: { force?: boolean }
+): Promise<ActionResult<{ requiresForce?: boolean; completedPayments?: number }>> {
+  const sessionUser = await getCurrentUser()
+  if (!sessionUser || sessionUser.role !== Role.ADMIN) {
+    return { success: false, error: "Unauthorized. Admin privileges required." }
+  }
+
+  const dbConnected = await isDatabaseConnected()
+  if (!dbConnected) {
+    return { success: false, error: "Database connection required." }
+  }
+
+  const actor = await resolvePersistedAdminActor(sessionUser)
+  if (!actor.success) return { success: false, error: actor.error }
+
+  const testSeries = await prisma.testSeries.findUnique({
+    where: { id: testSeriesId },
+    include: {
+      _count: {
+        select: {
+          tests: true,
+          registrations: true,
+          submissions: true,
+        },
+      },
+    },
+  })
+
+  if (!testSeries) {
+    return { success: false, error: "Test series not found." }
+  }
+
+  // Edge case 1: Check completed student payments
+  const completedPayments = await prisma.payment.count({
+    where: {
+      testSeriesId,
+      status: "COMPLETED",
+    },
+  })
+
+  if (completedPayments > 0 && !options?.force) {
+    return {
+      success: false,
+      error: `Cannot delete: ${completedPayments} candidate(s) have paid purchases for this test series. Deleting will permanently remove candidate access and exam history. Confirm force deletion to proceed.`,
+      data: { requiresForce: true, completedPayments },
+    }
+  }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      // Find all submissions under this test series to clean up evaluation jobs and runs
+      const submissions = await tx.submission.findMany({
+        where: { testSeriesId },
+        select: { id: true },
+      })
+      const subIds = submissions.map((s) => s.id)
+
+      if (subIds.length > 0) {
+        // Delete pending background evaluation jobs
+        await tx.evaluationJob.deleteMany({
+          where: { submissionId: { in: subIds } },
+        })
+
+        // Delete evaluation run questions & runs
+        const runs = await tx.evaluationRun.findMany({
+          where: { submissionId: { in: subIds } },
+          select: { id: true },
+        })
+        const runIds = runs.map((r) => r.id)
+        if (runIds.length > 0) {
+          await tx.evaluationRunQuestion.deleteMany({
+            where: { evaluationRunId: { in: runIds } },
+          })
+          await tx.evaluationRun.deleteMany({
+            where: { id: { in: runIds } },
+          })
+        }
+
+        // Delete question evaluations & evaluations
+        const evals = await tx.evaluation.findMany({
+          where: { submissionId: { in: subIds } },
+          select: { id: true },
+        })
+        const evalIds = evals.map((e) => e.id)
+        if (evalIds.length > 0) {
+          await tx.questionEvaluation.deleteMany({
+            where: { evaluationId: { in: evalIds } },
+          })
+          await tx.evaluation.deleteMany({
+            where: { id: { in: evalIds } },
+          })
+        }
+
+        // Delete submissions
+        await tx.submission.deleteMany({
+          where: { id: { in: subIds } },
+        })
+      }
+
+      // If force deleting and payments exist, unlink registrationId so FK does not restrict
+      if (completedPayments > 0) {
+        await tx.payment.updateMany({
+          where: { testSeriesId },
+          data: { registrationId: null },
+        })
+      }
+
+      // Delete registrations
+      await tx.testRegistration.deleteMany({
+        where: { testSeriesId },
+      })
+
+      // Delete child tests
+      await tx.test.deleteMany({
+        where: { testSeriesId },
+      })
+
+      // Delete test papers & templates
+      await tx.testPaper.deleteMany({
+        where: { testSeriesId },
+      })
+      await tx.answerSheetTemplate.deleteMany({
+        where: { testSeriesId },
+      })
+
+      // Delete the test series itself
+      await tx.testSeries.delete({
+        where: { id: testSeriesId },
+      })
+    })
+
+    // Audit Log
+    await prisma.auditLog.create({
+      data: {
+        adminId: actor.user.id,
+        action: "TEST_SERIES_DELETED",
+        targetType: "TestSeries",
+        targetId: testSeriesId,
+        details: `Deleted test series "${testSeries.title}" (force: ${Boolean(options?.force)}, tests: ${testSeries._count.tests})`,
+      },
+    })
+
+    // Invalidate caches & paths
+    revalidatePath("/admin/test-series")
+    revalidatePath(`/admin/test-series/${testSeriesId}`)
+    revalidatePath("/admin/tests")
+    revalidatePath("/tests")
+    revalidatePath(`/tests/${testSeries.slug}`)
+    revalidatePath("/student/tests")
+    revalidatePath("/student/dashboard")
+    invalidateTestCatalogCache()
+    invalidateLeaderboardCache()
+
+    return {
+      success: true,
+      message: `Test series "${testSeries.title}" deleted successfully.`,
+    }
+  } catch (error: any) {
+    console.error("[DELETE_TEST_SERIES_ERROR]", error)
+    return {
+      success: false,
+      error: error?.message || "Failed to delete test series.",
+    }
+  }
+}
+
 export type CreateSubjectTestInput = {
   testSeriesId?: string | null
   title: string
@@ -704,11 +880,11 @@ export type CreateSubjectTestInput = {
   maxMarks?: number
   durationMinutes?: number
   maxAttempts?: number
-  questionPaperUrl?: string
-  answerSheetUrl?: string
-  modelAnswerUrl?: string
-  studentInstructions?: string
-  privateEvaluationInstructions?: string
+  questionPaperUrl?: string | null
+  answerSheetUrl?: string | null
+  modelAnswerUrl?: string | null
+  studentInstructions?: string | null
+  privateEvaluationInstructions?: string | null
   order?: number
   status?: TestSeriesStatus
   isPublished?: boolean
@@ -820,6 +996,7 @@ export async function updateSubjectTestAction(
   if (!actor.success) return { success: false, error: actor.error }
 
   const dataToUpdate: Record<string, unknown> = {}
+  if (input.testSeriesId !== undefined) dataToUpdate.testSeriesId = input.testSeriesId
   if (input.title) dataToUpdate.title = input.title.trim()
   if (input.subject) dataToUpdate.subject = input.subject.trim()
   if (input.description !== undefined) dataToUpdate.description = input.description ? input.description.trim() : null
@@ -853,8 +1030,12 @@ export async function updateSubjectTestAction(
     },
   })
 
-  revalidatePath(`/admin/test-series/${updated.testSeriesId}`)
+  if (updated.testSeriesId) {
+    revalidatePath(`/admin/test-series/${updated.testSeriesId}`)
+  }
   revalidatePath("/admin/test-series")
+  revalidatePath("/admin/tests")
+  revalidatePath(`/admin/tests/${id}`)
   revalidatePath("/tests")
   invalidateTestCatalogCache()
 
@@ -862,9 +1043,185 @@ export async function updateSubjectTestAction(
 }
 
 /**
- * Server Action: Delete Subject Test (ADMIN ONLY)
+ * Server Action: Assign an existing Subject Test to a Test Series bundle
  */
-export async function deleteSubjectTestAction(id: string): Promise<ActionResult> {
+export async function assignSubjectTestToSeriesAction(
+  testId: string,
+  testSeriesId: string
+): Promise<ActionResult> {
+  const sessionUser = await getCurrentUser()
+  if (!sessionUser || sessionUser.role !== Role.ADMIN) {
+    return { success: false, error: "Unauthorized. Admin privileges required." }
+  }
+
+  const dbConnected = await isDatabaseConnected()
+  if (!dbConnected) {
+    if (process.env.NODE_ENV === "production") {
+      return { success: false, error: "Database temporarily unavailable." }
+    }
+    return { success: true, message: "Subject test assigned to series (Dev Mode)." }
+  }
+
+  const actor = await resolvePersistedAdminActor(sessionUser)
+  if (!actor.success) return { success: false, error: actor.error }
+
+  const series = await prisma.testSeries.findUnique({
+    where: { id: testSeriesId },
+    select: { id: true, title: true },
+  })
+  if (!series) {
+    return { success: false, error: "Target test series bundle not found." }
+  }
+
+  const updated = await prisma.test.update({
+    where: { id: testId },
+    data: { testSeriesId },
+    select: { id: true, title: true, subject: true },
+  })
+
+  await prisma.auditLog.create({
+    data: {
+      adminId: actor.user.id,
+      action: "SUBJECT_TEST_ASSIGNED_SERIES",
+      targetType: "Test",
+      targetId: testId,
+      details: `Assigned test "${updated.title}" to series "${series.title}"`,
+    },
+  })
+
+  revalidatePath(`/admin/test-series/${testSeriesId}`)
+  revalidatePath("/admin/test-series")
+  revalidatePath("/admin/tests")
+  revalidatePath(`/admin/tests/${testId}`)
+  revalidatePath("/tests")
+  invalidateTestCatalogCache()
+
+  return { success: true, message: `"${updated.title}" successfully assigned to ${series.title}.` }
+}
+
+/**
+ * Server Action: Unassign / Remove Subject Test from a Test Series bundle
+ * (Preserves test as a standalone test; does not delete student data)
+ */
+export async function unassignSubjectTestFromSeriesAction(
+  testId: string
+): Promise<ActionResult> {
+  const sessionUser = await getCurrentUser()
+  if (!sessionUser || sessionUser.role !== Role.ADMIN) {
+    return { success: false, error: "Unauthorized. Admin privileges required." }
+  }
+
+  const dbConnected = await isDatabaseConnected()
+  if (!dbConnected) {
+    if (process.env.NODE_ENV === "production") {
+      return { success: false, error: "Database temporarily unavailable." }
+    }
+    return { success: true, message: "Subject test unassigned from series (Dev Mode)." }
+  }
+
+  const actor = await resolvePersistedAdminActor(sessionUser)
+  if (!actor.success) return { success: false, error: actor.error }
+
+  const current = await prisma.test.findUnique({
+    where: { id: testId },
+    select: { id: true, title: true, testSeriesId: true },
+  })
+  if (!current) {
+    return { success: false, error: "Subject test not found." }
+  }
+
+  const prevSeriesId = current.testSeriesId
+
+  await prisma.test.update({
+    where: { id: testId },
+    data: {
+      testSeriesId: null,
+      isStandalone: true, // ensure it is accessible as standalone
+    },
+  })
+
+  await prisma.auditLog.create({
+    data: {
+      adminId: actor.user.id,
+      action: "SUBJECT_TEST_UNASSIGNED_SERIES",
+      targetType: "Test",
+      targetId: testId,
+      details: `Unassigned test "${current.title}" from series ${prevSeriesId}`,
+    },
+  })
+
+  if (prevSeriesId) {
+    revalidatePath(`/admin/test-series/${prevSeriesId}`)
+  }
+  revalidatePath("/admin/test-series")
+  revalidatePath("/admin/tests")
+  revalidatePath(`/admin/tests/${testId}`)
+  revalidatePath("/tests")
+  invalidateTestCatalogCache()
+
+  return { success: true, message: `"${current.title}" removed from series and retained as standalone test.` }
+}
+
+/**
+ * Server Action: Get available tests that can be attached to a series
+ */
+export async function getAvailableTestsForAssignmentAction(
+  currentSeriesId?: string
+): Promise<ActionResult<{ tests: Array<{ id: string; title: string; subject: string; maxMarks: number; durationMinutes: number; currentSeriesTitle?: string | null }> }>> {
+  const sessionUser = await getCurrentUser()
+  if (!sessionUser || sessionUser.role !== Role.ADMIN) {
+    return { success: false, error: "Unauthorized. Admin privileges required." }
+  }
+
+  const dbConnected = await isDatabaseConnected()
+  if (!dbConnected) {
+    return { success: true, data: { tests: [] } }
+  }
+
+  const unassignedOrOther = await prisma.test.findMany({
+    where: currentSeriesId
+      ? {
+          OR: [
+            { testSeriesId: null },
+            { testSeriesId: { not: currentSeriesId } },
+          ],
+        }
+      : { testSeriesId: null },
+    include: {
+      testSeries: {
+        select: { title: true },
+      },
+    },
+    orderBy: [{ subject: "asc" }, { title: "asc" }],
+    take: 100,
+  })
+
+  return {
+    success: true,
+    data: {
+      tests: unassignedOrOther.map((t) => ({
+        id: t.id,
+        title: t.title,
+        subject: t.subject,
+        maxMarks: t.maxMarks,
+        durationMinutes: t.durationMinutes,
+        currentSeriesTitle: t.testSeries?.title || null,
+      })),
+    },
+  }
+}
+
+/**
+ * Server Action: Delete Subject Test (ADMIN ONLY)
+ * Edge cases:
+ * - Checks for student exam attempts; blocks with count unless explicit force is confirmed.
+ * - Cancels pending evaluation jobs and cleans up submissions & registrations in transaction.
+ * - Route revalidation and cache purging.
+ */
+export async function deleteSubjectTestAction(
+  id: string,
+  options?: { force?: boolean }
+): Promise<ActionResult<{ requiresForce?: boolean; submissionsCount?: number }>> {
   const sessionUser = await getCurrentUser()
   if (!sessionUser || sessionUser.role !== Role.ADMIN) {
     return { success: false, error: "Unauthorized. Admin privileges required." }
@@ -894,33 +1251,114 @@ export async function deleteSubjectTestAction(id: string): Promise<ActionResult>
     return { success: false, error: "Subject test not found." }
   }
 
-  if (test._count.submissions > 0) {
+  // Edge case: Submissions exist
+  if (test._count.submissions > 0 && !options?.force) {
     return {
       success: false,
-      error: `Cannot delete test because students have submitted ${test._count.submissions} exam attempt(s). Set it to Draft or unpublish it instead to preserve audit records.`,
+      error: `Cannot delete: ${test._count.submissions} student exam attempt(s) exist for this test. Confirm force deletion to permanently remove this test and associated submissions.`,
+      data: { requiresForce: true, submissionsCount: test._count.submissions },
     }
   }
 
-  await prisma.test.delete({
-    where: { id },
-  })
+  try {
+    await prisma.$transaction(async (tx) => {
+      // Find all submissions specifically for this test
+      const submissions = await tx.submission.findMany({
+        where: { testId: id },
+        select: { id: true },
+      })
+      const subIds = submissions.map((s) => s.id)
 
-  await prisma.auditLog.create({
-    data: {
-      adminId: actor.user.id,
-      action: "SUBJECT_TEST_DELETED",
-      targetType: "Test",
-      targetId: id,
-      details: `Deleted subject test "${test.title}" (${test.subject})`,
-    },
-  })
+      if (subIds.length > 0) {
+        // Clear background evaluation jobs
+        await tx.evaluationJob.deleteMany({
+          where: { submissionId: { in: subIds } },
+        })
 
-  revalidatePath(`/admin/test-series/${test.testSeriesId}`)
-  revalidatePath("/admin/test-series")
-  revalidatePath("/tests")
-  invalidateTestCatalogCache()
+        // Clear evaluation runs & questions
+        const runs = await tx.evaluationRun.findMany({
+          where: { submissionId: { in: subIds } },
+          select: { id: true },
+        })
+        const runIds = runs.map((r) => r.id)
+        if (runIds.length > 0) {
+          await tx.evaluationRunQuestion.deleteMany({
+            where: { evaluationRunId: { in: runIds } },
+          })
+          await tx.evaluationRun.deleteMany({
+            where: { id: { in: runIds } },
+          })
+        }
 
-  return { success: true, message: "Subject test deleted successfully." }
+        // Clear evaluations
+        const evals = await tx.evaluation.findMany({
+          where: { submissionId: { in: subIds } },
+          select: { id: true },
+        })
+        const evalIds = evals.map((e) => e.id)
+        if (evalIds.length > 0) {
+          await tx.questionEvaluation.deleteMany({
+            where: { evaluationId: { in: evalIds } },
+          })
+          await tx.evaluation.deleteMany({
+            where: { id: { in: evalIds } },
+          })
+        }
+
+        // Delete submissions
+        await tx.submission.deleteMany({
+          where: { id: { in: subIds } },
+        })
+      }
+
+      // Unlink payments from test registrations if any
+      await tx.payment.updateMany({
+        where: { testId: id },
+        data: { registrationId: null, testId: null },
+      })
+
+      // Delete registrations for this test
+      await tx.testRegistration.deleteMany({
+        where: { testId: id },
+      })
+
+      // Delete the test itself
+      await tx.test.delete({
+        where: { id },
+      })
+    })
+
+    await prisma.auditLog.create({
+      data: {
+        adminId: actor.user.id,
+        action: "SUBJECT_TEST_DELETED",
+        targetType: "Test",
+        targetId: id,
+        details: `Deleted subject test "${test.title}" (${test.subject}, force: ${Boolean(options?.force)})`,
+      },
+    })
+
+    if (test.testSeriesId) {
+      revalidatePath(`/admin/test-series/${test.testSeriesId}`)
+    }
+    revalidatePath("/admin/test-series")
+    revalidatePath("/admin/tests")
+    revalidatePath("/tests")
+    revalidatePath(`/tests/${test.slug}`)
+    revalidatePath("/student/tests")
+    invalidateTestCatalogCache()
+
+    return {
+      success: true,
+      message: `Subject test "${test.title}" deleted successfully.`,
+    }
+  } catch (error: any) {
+    console.error("[DELETE_SUBJECT_TEST_ERROR]", error)
+    return {
+      success: false,
+      error: error?.message || "Failed to delete subject test.",
+    }
+  }
 }
 
 /**
@@ -995,6 +1433,7 @@ export type AdminAllSubjectTestItem = {
   testSeriesId: string | null
   testSeriesTitle: string | null
   testSeriesStandard: string | null
+  testSeriesStream?: string | null
   createdAt: string
   updatedAt: string
 }
@@ -1034,6 +1473,7 @@ export async function getAllSubjectTestsAction(
             testSeriesId: "demo-series-10",
             testSeriesTitle: "Class 10th CBSE Comprehensive Board Mock Series",
             testSeriesStandard: "10th",
+            testSeriesStream: "CBSE Board",
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           },
@@ -1055,6 +1495,7 @@ export async function getAllSubjectTestsAction(
             testSeriesId: "demo-series-10",
             testSeriesTitle: "Class 10th CBSE Comprehensive Board Mock Series",
             testSeriesStandard: "10th",
+            testSeriesStream: "CBSE Board",
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           },
@@ -1076,7 +1517,7 @@ export async function getAllSubjectTestsAction(
         : undefined,
       include: {
         testSeries: {
-          select: { id: true, title: true, standard: true },
+          select: { id: true, title: true, standard: true, stream: true },
         },
       },
       orderBy: { createdAt: "desc" },
@@ -1103,6 +1544,7 @@ export async function getAllSubjectTestsAction(
           testSeriesId: t.testSeriesId,
           testSeriesTitle: t.testSeries?.title || null,
           testSeriesStandard: t.testSeries?.standard || null,
+          testSeriesStream: t.testSeries?.stream || null,
           createdAt: t.createdAt.toISOString(),
           updatedAt: t.updatedAt.toISOString(),
         })),

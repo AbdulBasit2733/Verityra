@@ -13,6 +13,7 @@ import { runBrandTests } from "./brand.test"
 import { runHybridTestSeriesTests } from "./hybrid-test-series.test"
 import { runQuestionPaperSeriesAttachmentTests } from "./question-paper-series-attachment.test"
 import { runMastersAndTestArchitectureTests } from "./masters-and-test-architecture.test"
+import { runDeletionAndCurriculumTests } from "./deletion-and-cbse-curriculum.test"
 import { BRAND_CONFIG } from "../lib/brand"
 import { TestResult } from "./test-utils"
 
@@ -45,6 +46,7 @@ try {
   results.push(runHybridTestSeriesTests())
   results.push(runQuestionPaperSeriesAttachmentTests())
   results.push(runMastersAndTestArchitectureTests())
+  results.push(runDeletionAndCurriculumTests())
 } catch (err: any) {
   console.error("FATAL ERROR IN TEST SUITE RUNNER:", err)
   process.exit(1)

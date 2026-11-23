@@ -14,7 +14,10 @@ import { useGlobalError } from "@/components/providers/error-dialog-provider"
 import { SearchableCombobox } from "@/components/ui/searchable-combobox"
 import { MasterItem } from "@/lib/mock-masters"
 import { TestSeriesAttachmentOption } from "@/actions/question-paper-actions"
-import { createSubjectTestAction } from "@/actions/test-series-actions"
+import {
+  createSubjectTestAction,
+  updateSubjectTestAction,
+} from "@/actions/test-series-actions"
 import {
   FileText,
   UploadCloud,
@@ -27,11 +30,34 @@ import {
   RotateCcw,
   BookOpenCheck,
   ShieldAlert,
+  ExternalLink,
 } from "lucide-react"
+
+export interface AdminSubjectTestEditData {
+  id: string
+  title: string
+  subject: string
+  testSeriesId?: string | null
+  description?: string | null
+  price: number // in paise from database
+  isStandalone: boolean
+  maxMarks: number
+  durationMinutes: number
+  maxAttempts: number
+  studentInstructions?: string | null
+  privateEvaluationInstructions?: string | null
+  questionPaperUrl?: string | null
+  modelAnswerUrl?: string | null
+  answerSheetUrl?: string | null
+  isPublished: boolean
+}
 
 interface AdminCreateSubjectTestFormProps {
   availableSubjects: MasterItem[]
   availableSeries: TestSeriesAttachmentOption[]
+  mode?: "create" | "edit"
+  initialData?: AdminSubjectTestEditData
+  defaultSeriesId?: string
 }
 
 const DEFAULT_STUDENT_INSTRUCTIONS = `1. Read all questions thoroughly before answering.
@@ -48,35 +74,68 @@ const DEFAULT_EVALUATION_INSTRUCTIONS = `CONFIDENTIAL AI & HUMAN EVALUATION RUBR
 export function AdminCreateSubjectTestForm({
   availableSubjects,
   availableSeries,
+  mode = "create",
+  initialData,
+  defaultSeriesId,
 }: AdminCreateSubjectTestFormProps) {
   const router = useRouter()
   const confirm = useConfirm()
   const { showError } = useGlobalError()
 
+  const isEdit = mode === "edit" && !!initialData
+
   const [loading, setLoading] = React.useState(false)
 
   // Form Fields
-  const [title, setTitle] = React.useState("")
-  const [subject, setSubject] = React.useState("Mathematics")
-  const [testSeriesId, setTestSeriesId] = React.useState<string>("")
-  const [attachToSeries, setAttachToSeries] = React.useState(true)
-  const [description, setDescription] = React.useState("")
-  const [price, setPrice] = React.useState("99")
-  const [isStandalone, setIsStandalone] = React.useState(true)
-  const [maxMarks, setMaxMarks] = React.useState("80")
-  const [durationMinutes, setDurationMinutes] = React.useState("180")
-  const [maxAttempts, setMaxAttempts] = React.useState("3")
+  const [title, setTitle] = React.useState(initialData?.title || "")
+  const [subject, setSubject] = React.useState(initialData?.subject || "Mathematics")
+  const [testSeriesId, setTestSeriesId] = React.useState<string>(
+    initialData?.testSeriesId || defaultSeriesId || ""
+  )
+  const [attachToSeries, setAttachToSeries] = React.useState(
+    initialData ? !!initialData.testSeriesId : defaultSeriesId ? true : true
+  )
+  const [description, setDescription] = React.useState(initialData?.description || "")
+  const [price, setPrice] = React.useState(
+    initialData ? Math.round(initialData.price / 100).toString() : "99"
+  )
+  const [isStandalone, setIsStandalone] = React.useState(
+    initialData ? initialData.isStandalone : true
+  )
+  const [maxMarks, setMaxMarks] = React.useState(
+    initialData ? initialData.maxMarks.toString() : "80"
+  )
+  const [durationMinutes, setDurationMinutes] = React.useState(
+    initialData ? initialData.durationMinutes.toString() : "180"
+  )
+  const [maxAttempts, setMaxAttempts] = React.useState(
+    initialData ? initialData.maxAttempts.toString() : "3"
+  )
   const [studentInstructions, setStudentInstructions] = React.useState(
-    DEFAULT_STUDENT_INSTRUCTIONS
+    initialData?.studentInstructions ?? DEFAULT_STUDENT_INSTRUCTIONS
   )
   const [privateEvaluationInstructions, setPrivateEvaluationInstructions] =
-    React.useState(DEFAULT_EVALUATION_INSTRUCTIONS)
-  const [isPublished, setIsPublished] = React.useState(true)
+    React.useState(
+      initialData?.privateEvaluationInstructions ?? DEFAULT_EVALUATION_INSTRUCTIONS
+    )
+  const [isPublished, setIsPublished] = React.useState(
+    initialData ? initialData.isPublished : true
+  )
 
-  // Document Uploads
+  // Document Uploads & Existing Document References
   const [paperFile, setPaperFile] = React.useState<File | null>(null)
   const [modelAnswerFile, setModelAnswerFile] = React.useState<File | null>(null)
   const [answerSheetTemplateFile, setAnswerSheetTemplateFile] = React.useState<File | null>(null)
+
+  const [existingPaperUrl, setExistingPaperUrl] = React.useState<string | null>(
+    initialData?.questionPaperUrl || null
+  )
+  const [existingModelUrl, setExistingModelUrl] = React.useState<string | null>(
+    initialData?.modelAnswerUrl || null
+  )
+  const [existingTemplateUrl, setExistingTemplateUrl] = React.useState<string | null>(
+    initialData?.answerSheetUrl || null
+  )
 
   const subjectOptions = React.useMemo(
     () =>
@@ -100,12 +159,12 @@ export function AdminCreateSubjectTestForm({
 
   const selectedSeries = availableSeries.find((s) => s.id === testSeriesId)
 
-  // Auto-fill title suggestion
+  // Auto-fill title suggestion only in create mode
   React.useEffect(() => {
-    if (selectedSeries && subject && !title) {
+    if (!isEdit && selectedSeries && subject && !title) {
       setTitle(`${selectedSeries.title} — ${subject} Mock 1`)
     }
-  }, [selectedSeries, subject, title])
+  }, [isEdit, selectedSeries, subject, title])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -126,13 +185,15 @@ export function AdminCreateSubjectTestForm({
     }
 
     const confirmed = await confirm({
-      title: "Publish Subject Test?",
-      description: attachToSeries && selectedSeries
-        ? `This test for "${subject}" will be created and attached to "${selectedSeries.title}". Students enrolled in the bundle will get instant access.`
-        : `This test for "${subject}" will be created as a standalone examination paper.`,
-      confirmText: "Create Subject Test",
+      title: isEdit ? "Save Changes to Subject Test?" : "Publish Subject Test?",
+      description: isEdit
+        ? `Are you sure you want to update "${title}"? Changes will be immediately reflected for all enrolled candidates.`
+        : attachToSeries && selectedSeries
+          ? `This test for "${subject}" will be created and attached to "${selectedSeries.title}". Students enrolled in the bundle will get instant access.`
+          : `This test for "${subject}" will be created as a standalone examination paper.`,
+      confirmText: isEdit ? "Update Subject Test" : "Create Subject Test",
       cancelText: "Review Details",
-      badgeText: "Subject Test Record",
+      badgeText: isEdit ? "Save Changes" : "Subject Test Record",
     })
     if (!confirmed) return
 
@@ -152,6 +213,42 @@ export function AdminCreateSubjectTestForm({
         templateUrl = `/api/files/download?bucket=verityra-private&file=templates/${encodeURIComponent(answerSheetTemplateFile.name)}`
       }
 
+      const finalPaperUrl = paperUrl !== undefined ? paperUrl : existingPaperUrl
+      const finalModelUrl = modelUrl !== undefined ? modelUrl : existingModelUrl
+      const finalTemplateUrl = templateUrl !== undefined ? templateUrl : existingTemplateUrl
+
+      if (isEdit && initialData) {
+        const updateRes = await updateSubjectTestAction(initialData.id, {
+          testSeriesId: attachToSeries && testSeriesId ? testSeriesId : null,
+          title: title.trim(),
+          subject: subject.trim(),
+          description: description.trim() || undefined,
+          price: isStandalone ? parseFloat(price) || 0 : 0,
+          isStandalone,
+          maxMarks: parseFloat(maxMarks) || 80,
+          durationMinutes: parseInt(durationMinutes, 10) || 180,
+          maxAttempts: parseInt(maxAttempts, 10) || 3,
+          questionPaperUrl: finalPaperUrl || undefined,
+          modelAnswerUrl: finalModelUrl || undefined,
+          answerSheetUrl: finalTemplateUrl || undefined,
+          studentInstructions: studentInstructions.trim() || undefined,
+          privateEvaluationInstructions: privateEvaluationInstructions.trim() || undefined,
+          status: isPublished ? ("PUBLISHED" as any) : ("DRAFT" as any),
+          isPublished,
+        })
+
+        if (!updateRes.success) {
+          throw new Error(updateRes.error || "Failed to update subject test.")
+        }
+
+        toast.success("Subject test updated successfully!", {
+          description: updateRes.message,
+        })
+        router.push("/admin/tests")
+        router.refresh()
+        return
+      }
+
       const res = await createSubjectTestAction({
         testSeriesId: attachToSeries && testSeriesId ? testSeriesId : null,
         title: title.trim(),
@@ -162,9 +259,9 @@ export function AdminCreateSubjectTestForm({
         maxMarks: parseFloat(maxMarks) || 80,
         durationMinutes: parseInt(durationMinutes, 10) || 180,
         maxAttempts: parseInt(maxAttempts, 10) || 3,
-        questionPaperUrl: paperUrl,
-        modelAnswerUrl: modelUrl,
-        answerSheetUrl: templateUrl,
+        questionPaperUrl: finalPaperUrl || undefined,
+        modelAnswerUrl: finalModelUrl || undefined,
+        answerSheetUrl: finalTemplateUrl || undefined,
         studentInstructions: studentInstructions.trim() || undefined,
         privateEvaluationInstructions: privateEvaluationInstructions.trim() || undefined,
         status: isPublished ? ("PUBLISHED" as any) : ("DRAFT" as any),
@@ -182,9 +279,9 @@ export function AdminCreateSubjectTestForm({
       router.refresh()
     } catch (err: any) {
       showError({
-        title: "Creation Failed",
-        message: err?.message || "An unexpected error occurred while creating the test.",
-        code: "TEST_CREATE_ERROR",
+        title: isEdit ? "Update Failed" : "Creation Failed",
+        message: err?.message || "An unexpected error occurred.",
+        code: isEdit ? "TEST_UPDATE_ERROR" : "TEST_CREATE_ERROR",
       })
     } finally {
       setLoading(false)
@@ -227,6 +324,45 @@ export function AdminCreateSubjectTestForm({
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
+                </div>
+              ) : existingPaperUrl ? (
+                <div className="flex items-center justify-between p-2.5 rounded-md border border-primary/30 bg-primary/5">
+                  <div className="flex items-center gap-2 truncate">
+                    <FileCheck className="h-4 w-4 text-primary shrink-0" />
+                    <span className="text-xs font-semibold text-foreground truncate max-w-[170px]" title={existingPaperUrl}>
+                      {existingPaperUrl.split("/").pop()?.split("?")[0] || "Existing Question Paper PDF"}
+                    </span>
+                    <a
+                      href={existingPaperUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[11px] text-primary hover:underline flex items-center gap-0.5"
+                    >
+                      <ExternalLink className="h-3 w-3" /> View
+                    </a>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <label className="text-[10px] text-primary hover:underline font-semibold cursor-pointer">
+                      Replace
+                      <input
+                        type="file"
+                        accept=".pdf,application/pdf"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0]
+                          if (f) setPaperFile(f)
+                        }}
+                        className="hidden"
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setExistingPaperUrl(null)}
+                      className="text-muted-foreground hover:text-rose-600 p-1"
+                      title="Remove current document"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <label className="flex flex-col items-center justify-center p-4 rounded-md border border-dashed border-border hover:border-primary/60 bg-muted/20 hover:bg-muted/40 cursor-pointer transition-colors">
@@ -272,6 +408,45 @@ export function AdminCreateSubjectTestForm({
                     <X className="h-3.5 w-3.5" />
                   </button>
                 </div>
+              ) : existingModelUrl ? (
+                <div className="flex items-center justify-between p-2.5 rounded-md border border-primary/30 bg-primary/5">
+                  <div className="flex items-center gap-2 truncate">
+                    <FileCheck className="h-4 w-4 text-primary shrink-0" />
+                    <span className="text-xs font-semibold text-foreground truncate max-w-[170px]" title={existingModelUrl}>
+                      {existingModelUrl.split("/").pop()?.split("?")[0] || "Existing Model Key PDF"}
+                    </span>
+                    <a
+                      href={existingModelUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[11px] text-primary hover:underline flex items-center gap-0.5"
+                    >
+                      <ExternalLink className="h-3 w-3" /> View
+                    </a>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <label className="text-[10px] text-primary hover:underline font-semibold cursor-pointer">
+                      Replace
+                      <input
+                        type="file"
+                        accept=".pdf,application/pdf"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0]
+                          if (f) setModelAnswerFile(f)
+                        }}
+                        className="hidden"
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setExistingModelUrl(null)}
+                      className="text-muted-foreground hover:text-rose-600 p-1"
+                      title="Remove current document"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
               ) : (
                 <label className="flex items-center justify-between p-2.5 rounded-md border border-dashed border-border hover:border-primary/60 bg-muted/20 hover:bg-muted/40 cursor-pointer transition-colors">
                   <span className="text-xs text-muted-foreground">
@@ -312,6 +487,45 @@ export function AdminCreateSubjectTestForm({
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
+                </div>
+              ) : existingTemplateUrl ? (
+                <div className="flex items-center justify-between p-2.5 rounded-md border border-primary/30 bg-primary/5">
+                  <div className="flex items-center gap-2 truncate">
+                    <FileCheck className="h-4 w-4 text-primary shrink-0" />
+                    <span className="text-xs font-semibold text-foreground truncate max-w-[170px]" title={existingTemplateUrl}>
+                      {existingTemplateUrl.split("/").pop()?.split("?")[0] || "Existing Template PDF"}
+                    </span>
+                    <a
+                      href={existingTemplateUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[11px] text-primary hover:underline flex items-center gap-0.5"
+                    >
+                      <ExternalLink className="h-3 w-3" /> View
+                    </a>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <label className="text-[10px] text-primary hover:underline font-semibold cursor-pointer">
+                      Replace
+                      <input
+                        type="file"
+                        accept=".pdf,application/pdf"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0]
+                          if (f) setAnswerSheetTemplateFile(f)
+                        }}
+                        className="hidden"
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setExistingTemplateUrl(null)}
+                      className="text-muted-foreground hover:text-rose-600 p-1"
+                      title="Remove current document"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <label className="flex items-center justify-between p-2.5 rounded-md border border-dashed border-border hover:border-primary/60 bg-muted/20 hover:bg-muted/40 cursor-pointer transition-colors">
@@ -590,12 +804,12 @@ export function AdminCreateSubjectTestForm({
               {loading ? (
                 <>
                   <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                  Creating Test...
+                  {isEdit ? "Saving Changes..." : "Creating Test..."}
                 </>
               ) : (
                 <>
                   <FileText className="mr-1.5 h-3.5 w-3.5" />
-                  Create Subject Test
+                  {isEdit ? "Update Subject Test" : "Create Subject Test"}
                 </>
               )}
             </Button>

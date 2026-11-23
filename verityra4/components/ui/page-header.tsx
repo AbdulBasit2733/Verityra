@@ -21,7 +21,12 @@ export function PageHeader({
   children,
   className,
 }: PageHeaderProps) {
-  const IconComponent = typeof icon === "function" ? icon : null
+  const renderIcon = () => {
+    if (!icon) return null
+    if (React.isValidElement(icon)) return icon
+    const Comp = icon as React.ElementType
+    return <Comp className="h-6 w-6 sm:h-7 sm:w-7" />
+  }
 
   return (
     <div
@@ -34,16 +39,12 @@ export function PageHeader({
       <div className="flex min-w-0 items-center gap-3.5">
         {icon && (
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground shadow-xs sm:h-12 sm:w-12">
-            {IconComponent ? (
-              <IconComponent className="h-6 w-6 sm:h-7 sm:w-7" />
-            ) : React.isValidElement(icon) ? (
-              icon
-            ) : null}
+            {renderIcon()}
           </div>
         )}
         <div className="min-w-0 space-y-0.5">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="truncate text-xl font-extrabold tracking-tight text-foreground sm:text-2xl lg:text-3xl">
+            <h1 className="text-xl font-extrabold tracking-tight text-foreground sm:text-2xl lg:text-3xl line-clamp-2">
               {title}
             </h1>
             {badgeText && (
@@ -53,7 +54,7 @@ export function PageHeader({
             )}
           </div>
           {subtitle && (
-            <p className="truncate text-xs font-medium text-muted-foreground sm:text-sm">
+            <p className="text-xs font-medium text-muted-foreground sm:text-sm line-clamp-1 sm:line-clamp-2">
               {subtitle}
             </p>
           )}
