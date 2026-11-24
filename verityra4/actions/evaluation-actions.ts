@@ -175,7 +175,7 @@ async function legacyAdminEvaluateSubmissionAction(
       maxMarks: submission.testSeries.maxMarks,
       rubricContent: paper?.rubricContent || null,
       privateEvaluationInstructions:
-        submission.testSeries.privateEvaluationInstructions,
+        submission.testSeries.privateEvaluationInstructions || "",
       studentAnswerSheetBuffer: answerSheet,
       studentAnswerSheetMimeType: submission.fileType,
     })

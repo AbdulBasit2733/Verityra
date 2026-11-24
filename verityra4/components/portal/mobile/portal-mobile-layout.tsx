@@ -21,6 +21,7 @@ import {
   User,
   Compass,
   Trophy,
+  ClipboardList,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { BRAND_CONFIG } from "@/lib/brand"
@@ -91,10 +92,22 @@ export function PortalMobileLayout({
             href: "/student/dashboard",
             icon: LayoutDashboard,
           },
+          { label: "My Tests", href: "/student/tests", icon: BookOpen },
           { label: "Catalog", href: "/tests", icon: Compass },
-          { label: "Rankings", href: "/leaderboard", icon: Trophy },
+          { label: "Results", href: "/student/evaluations", icon: ClipboardList },
           { label: "Profile", href: "/student/profile", icon: User },
         ]
+
+  // Group navigation items by section for the drawer
+  const sections = React.useMemo(() => {
+    const map = new Map<string, NavItem[]>()
+    navItems.forEach((item) => {
+      const sec = item.section || (role === "ADMIN" ? "Management & Governance" : "Workspace & Practice")
+      if (!map.has(sec)) map.set(sec, [])
+      map.get(sec)!.push(item)
+    })
+    return Array.from(map.entries()).map(([title, items]) => ({ title, items }))
+  }, [navItems, role])
 
   return (
     <div className="flex min-h-screen w-full flex-col overflow-x-clip bg-background text-foreground lg:hidden">
@@ -213,40 +226,44 @@ export function PortalMobileLayout({
               </div>
 
               {/* Drawer Navigation Links */}
-              <div className="space-y-1 p-3.5">
-                <p className="px-3 py-1.5 text-[11px] font-semibold text-slate-400 dark:text-slate-500">
-                  Navigation
-                </p>
-                {navItems.map((item) => {
-                  const Icon = item.icon
-                  const active = isItemActive(item)
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setDrawerOpen(false)}
-                      className={cn(
-                        "flex min-h-[44px] items-center justify-between rounded-md px-3.5 py-2.5 text-xs font-bold transition-colors",
-                        active
-                          ? "bg-primary text-primary-foreground shadow-xs"
-                          : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800/80"
-                      )}
-                    >
-                      <span className="flex items-center gap-2.5 truncate">
-                        <Icon
+              <div className="space-y-4 p-3.5">
+                {sections.map((section) => (
+                  <div key={section.title} className="space-y-1">
+                    <p className="px-3 pt-1 pb-1 text-[10px] font-bold tracking-wider uppercase text-slate-400 dark:text-slate-500">
+                      {section.title}
+                    </p>
+                    {section.items.map((item) => {
+                      const Icon = item.icon
+                      const active = isItemActive(item)
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={() => setDrawerOpen(false)}
                           className={cn(
-                            "h-4 w-4 shrink-0",
-                            active ? "text-white" : "text-slate-400"
+                            "flex min-h-[44px] items-center justify-between rounded-md px-3.5 py-2.5 text-xs font-bold transition-colors",
+                            active
+                              ? "bg-primary text-primary-foreground shadow-xs"
+                              : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800/80"
                           )}
-                        />
-                        <span className="truncate">{item.label}</span>
-                      </span>
-                      {active && (
-                        <ChevronRight className="h-4 w-4 shrink-0 text-white" />
-                      )}
-                    </Link>
-                  )
-                })}
+                        >
+                          <span className="flex items-center gap-2.5 truncate">
+                            <Icon
+                              className={cn(
+                                "h-4 w-4 shrink-0",
+                                active ? "text-white" : "text-slate-400"
+                              )}
+                            />
+                            <span className="truncate">{item.label}</span>
+                          </span>
+                          {active && (
+                            <ChevronRight className="h-4 w-4 shrink-0 text-white" />
+                          )}
+                        </Link>
+                      )
+                    })}
+                  </div>
+                ))}
               </div>
 
               {/* Security Pill */}

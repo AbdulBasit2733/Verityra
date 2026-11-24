@@ -18,12 +18,14 @@ import {
   EyeOff,
   FileText,
   Download,
+  Trash2,
 } from "lucide-react"
 import {
   uploadTestPaperAction,
   uploadAnswerSheetTemplateAction,
   togglePublishTestSeriesAction,
   togglePublishResultsAction,
+  deleteTestSeriesAction,
 } from "@/actions/test-series-actions"
 import { normalizePrivateFileUrl } from "@/lib/file-urls"
 
@@ -529,5 +531,85 @@ export function AdminPublishToggles({
         </span>
       </Toggle>
     </div>
+  )
+}
+
+export function AdminDeleteSeriesButton({
+  testSeriesId,
+  title,
+}: {
+  testSeriesId: string
+  title: string
+}) {
+  const router = useRouter()
+  const confirm = useConfirm()
+  const [loading, setLoading] = useState(false)
+
+  async function handleDelete() {
+    const confirmed = await confirm({
+      title: `Delete "${title}"?`,
+      description:
+        "Are you sure you want to delete this test series bundle? This will permanently delete the bundle, all attached subject tests, and exam materials. This action cannot be undone.",
+      confirmText: "Delete Test Series",
+      cancelText: "Cancel",
+      variant: "destructive",
+      badgeText: "Permanent Deletion",
+    })
+    if (!confirmed) return
+
+    setLoading(true)
+    try {
+      const res = await deleteTestSeriesAction(testSeriesId)
+      if (res.success) {
+        toast.success(res.message || "Test series deleted successfully.")
+        router.push("/admin/test-series")
+      } else if (res.data?.requiresForce) {
+        const forceConfirmed = await confirm({
+          title: "Force Delete Test Series?",
+          description: `⚠️ WARNING: ${res.error}\n\nAre you sure you want to FORCE delete this test series?`,
+          confirmText: "Yes, Force Delete",
+          cancelText: "Cancel",
+          variant: "destructive",
+          badgeText: "High Risk",
+        })
+
+        if (forceConfirmed) {
+          const forceRes = await deleteTestSeriesAction(testSeriesId, {
+            force: true,
+          })
+          if (forceRes.success) {
+            toast.success(
+              forceRes.message || "Test series force deleted successfully."
+            )
+            router.push("/admin/test-series")
+          } else {
+            toast.error(forceRes.error || "Failed to force delete test series.")
+          }
+        }
+      } else {
+        toast.error(res.error || "Failed to delete test series.")
+      }
+    } catch (err: any) {
+      toast.error(err.message || "An unexpected error occurred.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      disabled={loading}
+      onClick={handleDelete}
+      className="h-8 rounded-md border-rose-200 px-2.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:border-rose-900/40 dark:text-rose-400 dark:hover:bg-rose-950/40"
+    >
+      {loading ? (
+        <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+      ) : (
+        <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+      )}
+      <span>Delete Series</span>
+    </Button>
   )
 }

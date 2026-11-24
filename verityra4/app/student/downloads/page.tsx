@@ -24,6 +24,7 @@ export default async function StudentDownloadsPage() {
           testSeriesId: true,
           testSeries: {
             select: {
+              id: true,
               title: true,
               papers: {
                 orderBy: { title: "asc" },
@@ -61,11 +62,12 @@ export default async function StudentDownloadsPage() {
 
     const seen = new Set<string>()
     groups = registrations
+      .filter((r) => r.testSeries != null)
       .map((registration) => ({
-        testSeriesId: registration.testSeriesId,
-        testTitle: registration.testSeries.title,
+        testSeriesId: registration.testSeriesId || registration.testSeries!.id,
+        testTitle: registration.testSeries!.title,
         resources: [
-          ...registration.testSeries.papers.map((paper) => ({
+          ...registration.testSeries!.papers.map((paper) => ({
             id: paper.id,
             type: "paper" as const,
             title: paper.title,
@@ -73,7 +75,7 @@ export default async function StudentDownloadsPage() {
             version: paper.version,
             createdAt: paper.createdAt.toISOString(),
           })),
-          ...registration.testSeries.templates.map((template) => ({
+          ...registration.testSeries!.templates.map((template) => ({
             id: template.id,
             type: "template" as const,
             title: template.title,

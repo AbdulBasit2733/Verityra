@@ -17,6 +17,11 @@ export default async function AdminQuestionPapersPage() {
   if (dbConnected) {
     try {
       const records = await (prisma as any).questionPaper.findMany({
+        include: {
+          testSeries: {
+            select: { id: true, title: true, standard: true, type: true },
+          },
+        },
         orderBy: { createdAt: "desc" },
       })
 
@@ -34,6 +39,8 @@ export default async function AdminQuestionPapersPage() {
           fileSizeBytes: r.fileSizeBytes,
           isPublished: r.isPublished,
           downloadsCount: r.downloadsCount || 0,
+          testSeriesId: r.testSeriesId || null,
+          testSeriesTitle: r.testSeries?.title || null,
           createdAt: r.createdAt
             ? new Date(r.createdAt).toISOString()
             : new Date().toISOString(),

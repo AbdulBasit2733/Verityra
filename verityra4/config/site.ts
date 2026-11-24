@@ -140,7 +140,7 @@ export const siteConfig: SiteConfig = Object.freeze({
     "i ZONE — Online Test Series & Question Papers | I Zone Coaching Classes",
   companyName: "I Zone Coaching Classes",
   supportEmail: "support@izone.com",
-  defaultAdminEmail: "admin@izone.com",
+  defaultAdminEmail: "admin@izonecc.in",
   defaultCandidateEmail: "candidate@izone.com",
   domain: "izone.com",
   appDomain: "izone.app",

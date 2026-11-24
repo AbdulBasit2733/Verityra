@@ -40,6 +40,26 @@ export function TestCatalogMobile({ items }: { items: TestCatalogItem[] }) {
             </button>
           )}
         </div>
+        {/* Format selector pills: All / Bundles / Single Tests */}
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {[
+            ["ALL", "All Formats"],
+            ["BUNDLE", "📦 Complete Bundles"],
+            ["SINGLE", "📄 Single Tests"],
+          ].map(([value, label]) => (
+            <Button
+              key={value}
+              type="button"
+              variant={state.formatFilter === value ? "default" : "secondary"}
+              size="sm"
+              className="shrink-0 text-xs font-semibold"
+              onClick={() => state.setFormatFilter(value as any)}
+            >
+              {label}
+            </Button>
+          ))}
+        </div>
+
         <div className="flex gap-2 overflow-x-auto pb-1">
           {[
             ["ALL", "All streams"],

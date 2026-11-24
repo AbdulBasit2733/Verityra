@@ -24,10 +24,25 @@ import { PageHeader } from "@/components/ui/page-header"
 import { Progress } from "@/components/ui/progress"
 import { KpiStatCard } from "@/components/ui/kpi-stat-card"
 
+export interface ChildSubjectTest {
+  id: string
+  title: string
+  subject: string
+  maxMarks: number
+  durationMinutes: number
+  hasSubmitted?: boolean
+}
+
 export interface RegisteredTestRow {
   id: string
   testSeriesId: string
+  testId?: string | null
   testTitle: string
+  subject?: string | null
+  standard?: string | null
+  isBundle: boolean
+  bundleBadge?: string | null
+  childTests?: ChildSubjectTest[]
   maxMarks: number
   durationMinutes: number
   attemptsUsed: number
@@ -60,14 +75,28 @@ export function StudentRegisteredTestsClient({
         sortable: true,
         sortAccessor: (row) => row.testTitle,
         cell: (row) => (
-          <div className="space-y-1 whitespace-normal">
-            <div className="flex flex-wrap items-center gap-2">
-              <Link
-                href={`/student/tests/${row.testSeriesId}`}
-                className="font-semibold text-foreground hover:text-primary"
+          <div className="space-y-1.5 whitespace-normal">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <Badge
+                variant="outline"
+                className={
+                  row.isBundle
+                    ? "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border-blue-200 dark:border-blue-800 text-[10px] font-bold"
+                    : "bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300 border-purple-200 dark:border-purple-800 text-[10px] font-bold"
+                }
               >
-                {row.testTitle}
-              </Link>
+                {row.isBundle ? "ALL-SUBJECTS BUNDLE" : `${row.subject || "SINGLE TEST"}`}
+              </Badge>
+              {row.standard && (
+                <Badge variant="secondary" className="text-[10px] font-semibold">
+                  {row.standard.startsWith("Class") ? row.standard : `Class ${row.standard}`}
+                </Badge>
+              )}
+              {row.bundleBadge && (
+                <Badge className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 text-[10px] font-bold">
+                  {row.bundleBadge}
+                </Badge>
+              )}
               {row.isPaid ? (
                 <Badge
                   variant="default"
@@ -81,13 +110,43 @@ export function StudentRegisteredTestsClient({
               ) : (
                 <Badge
                   variant="secondary"
-                  className="h-4.5 px-1.5 text-[10px] font-medium"
+                  className="h-4.5 px-1.5 text-[10px] font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950"
                 >
                   Free
                 </Badge>
               )}
             </div>
-            <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+
+            <div>
+              <Link
+                href={`/student/tests/${row.testId || row.testSeriesId}`}
+                className="font-bold text-sm text-foreground hover:text-primary transition-colors"
+              >
+                {row.testTitle}
+              </Link>
+            </div>
+
+            {row.isBundle && row.childTests && row.childTests.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                <span className="text-[11px] font-medium text-muted-foreground">Papers:</span>
+                {row.childTests.map((ct) => (
+                  <Link
+                    key={ct.id}
+                    href={`/student/tests/${ct.id}`}
+                    className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50 hover:bg-blue-50 hover:border-blue-300 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors font-medium shadow-2xs"
+                  >
+                    <span>{ct.subject}</span>
+                    {ct.hasSubmitted ? (
+                      <span className="text-[10px] text-emerald-600 font-bold" title="Submitted">✓</span>
+                    ) : (
+                      <span className="text-[9px] text-blue-500">→</span>
+                    )}
+                  </Link>
+                ))}
+              </div>
+            )}
+
+            <div className="flex flex-wrap gap-3 text-xs text-muted-foreground pt-0.5">
               <span className="inline-flex items-center gap-1">
                 <Clock className="h-3.5 w-3.5" />
                 {row.durationMinutes} minutes
@@ -155,12 +214,16 @@ export function StudentRegisteredTestsClient({
         headerClassName: "text-right",
         cell: (row) => {
           const canAttempt = row.attemptsUsed < row.maxAttempts
+          const targetUrl = row.testId
+            ? `/student/tests/${row.testId}`
+            : `/student/tests/${row.testSeriesId}`
+
           return (
             <IconActionButton
               label={
                 row.submissionCount ? "Give next test attempt" : "Take test"
               }
-              render={<Link href={`/student/tests/${row.testSeriesId}`} />}
+              render={<Link href={targetUrl} />}
               nativeButton={false}
               disabled={!canAttempt}
               className="bg-primary text-primary-foreground hover:bg-hover-accent"
@@ -176,6 +239,16 @@ export function StudentRegisteredTestsClient({
 
   const filters: DataTableFilter<RegisteredTestRow>[] = React.useMemo(
     () => [
+      {
+        id: "format",
+        label: "Enrollment Type",
+        accessor: (row) => (row.isBundle ? "BUNDLE" : "SINGLE"),
+        options: [
+          { label: "All Enrollments", value: "ALL" },
+          { label: "All-Subject Bundles", value: "BUNDLE" },
+          { label: "Single Subject Tests", value: "SINGLE" },
+        ],
+      },
       {
         id: "type",
         label: "Test Type",

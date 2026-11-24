@@ -135,7 +135,7 @@ export async function submitAnswerSheetAction(
   // 4. Verify test window
   const now = new Date()
   if (
-    registration.testSeries.endDate &&
+    registration.testSeries?.endDate &&
     now > registration.testSeries.endDate
   ) {
     return {
@@ -250,9 +250,10 @@ export async function submitAnswerSheetAction(
 
   // 7. Trigger AI Evaluation Workflow (Async Queue)
   // Queue evaluation in the background; only local development may use the sync fallback.
+  const targetSeriesId = registration.testSeriesId || testSeriesId
   const jobId = await queueEvaluation({
     submissionId: submission.id,
-    testSeriesId: registration.testSeriesId,
+    testSeriesId: targetSeriesId,
     userId: user.id,
     fileUrl: uploadedFileUrl,
     mimeType: file.type,
@@ -268,14 +269,14 @@ export async function submitAnswerSheetAction(
     )
 
     try {
-      const testSeries = registration.testSeries
-      const latestPaper = testSeries.papers[0]
+      const currentSeries = registration.testSeries
+      const latestPaper = currentSeries?.papers?.[0]
 
       const aiResult = await evaluateAnswerSheetWithGemini({
-        testTitle: testSeries.title,
-        maxMarks: testSeries.maxMarks,
+        testTitle: currentSeries?.title || "Test Series",
+        maxMarks: currentSeries?.maxMarks || 100,
         rubricContent: latestPaper?.rubricContent || null,
-        privateEvaluationInstructions: testSeries.privateEvaluationInstructions,
+        privateEvaluationInstructions: currentSeries?.privateEvaluationInstructions || "",
         studentAnswerSheetBuffer: fileBytes,
         studentAnswerSheetMimeType: file.type,
         studentAnswerSheetUrl: uploadedFileUrl,
@@ -285,7 +286,7 @@ export async function submitAnswerSheetAction(
         runId: evaluationRun.id,
         submissionId: submission.id,
         result: aiResult,
-        maxMarks: testSeries.maxMarks,
+        maxMarks: currentSeries?.maxMarks || 100,
         evaluatorModel: getGeminiModelName(),
       })
     } catch (evalErr) {

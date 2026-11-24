@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { prisma, isDatabaseConnected } from "@/lib/prisma"
+import { prisma } from "@/lib/prisma"
 import {
   getCurrentUser,
   getPersistedCurrentUser,
@@ -11,15 +11,20 @@ import { TestRegistrationButton } from "@/components/test-registration-button"
 import {
   AlertCircle,
   ArrowLeft,
+  ArrowRight,
   Award,
   CheckCircle2,
   Clock,
   Download,
   Eye,
   FileText,
+  Layers,
+  Sparkles,
+  BookOpen,
 } from "lucide-react"
 import { normalizePrivateFileUrl } from "@/lib/supabase"
 import { PaymentStatus, RegistrationStatus } from "@prisma/client"
+import { checkStudentTestAccess } from "@/lib/test-access"
 
 export const dynamic = "force-dynamic"
 
@@ -32,34 +37,103 @@ export default async function TestDetailsPage({
   let user: any = null
   let testSeries: any = null
   let isRegistered = false
+  let isSingleTest = false
+  let parentBundle: any = null
 
   try {
-    const [resolvedUser, resolvedTestSeries] = await Promise.all([
+    const [resolvedUser, resolvedSeries, resolvedSingleTest] = await Promise.all([
       getPersistedCurrentUser().catch(async (err) => {
         if (err instanceof PersistedUserLookupError) return getCurrentUser()
         return null
       }),
       prisma.testSeries.findFirst({
         where: { OR: [{ id }, { slug: id }], isPublished: true },
-        include: { papers: true, templates: true },
+        include: {
+          papers: true,
+          templates: true,
+          tests: {
+            where: { isPublished: true },
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+              subject: true,
+              price: true,
+              maxMarks: true,
+              durationMinutes: true,
+              maxAttempts: true,
+            },
+            orderBy: { order: "asc" },
+          },
+        },
+      }),
+      prisma.test.findFirst({
+        where: { OR: [{ id }, { slug: id }], isPublished: true },
+        include: {
+          testSeries: {
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+              bundlePrice: true,
+              price: true,
+              standard: true,
+              stream: true,
+            },
+          },
+        },
       }),
     ])
+
     user = resolvedUser
-    testSeries = resolvedTestSeries
+
+    if (resolvedSeries) {
+      testSeries = resolvedSeries
+      isSingleTest = resolvedSeries.type === "SINGLE_TEST"
+    } else if (resolvedSingleTest) {
+      testSeries = {
+        ...resolvedSingleTest,
+        price: resolvedSingleTest.price,
+        templates: resolvedSingleTest.answerSheetUrl
+          ? [
+              {
+                id: "tpl-" + resolvedSingleTest.id,
+                title: `${resolvedSingleTest.subject} Official Margin Sheet`,
+                fileUrl: resolvedSingleTest.answerSheetUrl,
+                templateRequired: true,
+              },
+            ]
+          : [],
+        papers: [
+          {
+            id: "paper-" + resolvedSingleTest.id,
+            title: resolvedSingleTest.title,
+            fileUrl: resolvedSingleTest.questionPaperUrl,
+            maxMarks: resolvedSingleTest.maxMarks,
+          },
+        ],
+      }
+      isSingleTest = true
+      parentBundle = resolvedSingleTest.testSeries
+    }
 
     if (testSeries && user) {
-      const registration = await prisma.testRegistration.findUnique({
-        where: {
-          userId_testSeriesId: { userId: user.id, testSeriesId: testSeries.id },
-        },
-        include: { payment: { select: { status: true } } },
-      })
-      isRegistered = Boolean(
-        registration &&
-        registration.status !== RegistrationStatus.CANCELLED &&
-        (testSeries.price === 0 ||
-          registration.payment?.status === PaymentStatus.COMPLETED)
-      )
+      if (isSingleTest) {
+        isRegistered = await checkStudentTestAccess(user.id, testSeries.id)
+      } else {
+        const registration = await prisma.testRegistration.findUnique({
+          where: {
+            userId_testSeriesId: { userId: user.id, testSeriesId: testSeries.id },
+          },
+          include: { payment: { select: { status: true } } },
+        })
+        isRegistered = Boolean(
+          registration &&
+            registration.status !== RegistrationStatus.CANCELLED &&
+            (testSeries.price === 0 ||
+              registration.payment?.status === PaymentStatus.COMPLETED)
+        )
+      }
     }
   } catch (lookupErr) {
     console.warn("[TestDetailsPage] Lookup error:", lookupErr)
@@ -193,6 +267,23 @@ export default async function TestDetailsPage({
                     Up to {testSeries.maxAttempts} attempts
                   </p>
                 </div>
+
+                {parentBundle && (
+                  <div className="mt-5 rounded-md border border-primary/30 bg-primary/[0.05] p-4 text-xs">
+                    <div className="flex items-center gap-1.5 font-bold text-primary">
+                      <Sparkles className="h-4 w-4" /> Want all {parentBundle.standard ? `Class ${parentBundle.standard}` : "Class 10"} subjects?
+                    </div>
+                    <p className="mt-1 text-muted-foreground leading-relaxed">
+                      Get the complete <strong className="text-foreground">{parentBundle.title}</strong> for just <strong className="text-primary">₹{((parentBundle.bundlePrice || parentBundle.price) / 100).toLocaleString()}</strong>.
+                    </p>
+                    <Link
+                      href={`/tests/${parentBundle.slug || parentBundle.id}`}
+                      className="mt-3 inline-flex items-center gap-1 font-semibold text-primary hover:underline"
+                    >
+                      View Complete Bundle <ArrowRight className="h-3 w-3" />
+                    </Link>
+                  </div>
+                )}
               </div>
             </aside>
           </div>
@@ -236,6 +327,56 @@ export default async function TestDetailsPage({
                 </p>
               </div>
             </section>
+
+            {/* If Bundle: Showcase Included Subject Tests */}
+            {testSeries.tests && testSeries.tests.length > 0 && (
+              <section className="border-b border-border py-10">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-secondary text-primary">
+                    <Layers className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-semibold">
+                      Included Subject Tests in this Series ({testSeries.tests.length})
+                    </h2>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Each subject test is a full-length examination with its own attempts and AI scorecard.
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-6 divide-y divide-border rounded-md border border-border">
+                  {testSeries.tests.map((sub: any) => (
+                    <div
+                      key={sub.id}
+                      className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary" className="text-[10px] font-bold">
+                            {sub.subject}
+                          </Badge>
+                          <span className="text-sm font-semibold">{sub.title}</span>
+                        </div>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {sub.maxMarks} marks · {sub.durationMinutes} min · {sub.maxAttempts || 3} attempts
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs font-semibold text-muted-foreground">
+                          {sub.price === 0 ? "Free" : `₹${sub.price / 100} single`}
+                        </span>
+                        <Link
+                          href={`/tests/${sub.slug || sub.id}`}
+                          className="inline-flex h-8 items-center justify-center rounded-md border border-border bg-card px-2.5 text-xs font-medium text-foreground hover:bg-muted"
+                        >
+                          View Test <ArrowRight className="ml-1 h-3 w-3" />
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
             {testSeries.templates && testSeries.templates.length > 0 && (
               <section className="pt-10">
                 <div className="flex items-start gap-3">

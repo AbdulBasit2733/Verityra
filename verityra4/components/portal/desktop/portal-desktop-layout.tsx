@@ -34,6 +34,7 @@ export interface NavItem {
   href: string
   icon: React.ComponentType<{ className?: string }>
   exact?: boolean
+  section?: string
 }
 
 export interface PortalDesktopLayoutProps {
@@ -107,6 +108,17 @@ export function PortalDesktopLayout({
       .slice(0, 2)
       .toUpperCase() || BRAND_CONFIG.monogram
 
+  // Group navigation items by section
+  const sections = React.useMemo(() => {
+    const map = new Map<string, NavItem[]>()
+    navItems.forEach((item) => {
+      const sec = item.section || (role === "ADMIN" ? "Management & Governance" : "Workspace & Practice")
+      if (!map.has(sec)) map.set(sec, [])
+      map.get(sec)!.push(item)
+    })
+    return Array.from(map.entries()).map(([title, items]) => ({ title, items }))
+  }, [navItems, role])
+
   return (
     <div className="hidden min-h-screen w-full overflow-x-clip bg-background text-foreground lg:flex">
       {/* =========================================================
@@ -155,86 +167,89 @@ export function PortalDesktopLayout({
         {/* Navigation Links with Shadcn Tooltips */}
         <div
           className={cn(
-            "flex-1 space-y-5 overflow-y-auto py-5",
+            "flex-1 space-y-4 overflow-y-auto py-3",
             sidebarCollapsed ? "px-2" : "px-3.5"
           )}
         >
-          <div className="space-y-1.5">
-            {!sidebarCollapsed && (
-              <p className="mb-2 px-3 text-[11px] font-semibold text-slate-400 dark:text-slate-500">
-                {role === "ADMIN"
-                  ? "Management & Governance"
-                  : "Workspace & Practice"}
-              </p>
-            )}
-            <TooltipProvider>
-              {navItems.map((item) => {
-                const Icon = item.icon
-                const active = isItemActive(item)
+          <TooltipProvider>
+            {sections.map((section, secIndex) => (
+              <div key={section.title} className="space-y-1">
+                {!sidebarCollapsed ? (
+                  <p className="px-3 pt-2 pb-1 text-[10px] font-bold tracking-wider uppercase text-slate-400 dark:text-slate-500">
+                    {section.title}
+                  </p>
+                ) : secIndex > 0 ? (
+                  <Separator className="my-2 bg-slate-200/60 dark:bg-slate-800" />
+                ) : null}
 
-                if (sidebarCollapsed) {
-                  return (
-                    <Tooltip key={item.href}>
-                      <TooltipTrigger>
-                        <Link
-                          href={item.href}
-                          className={cn(
-                            "group flex w-full cursor-pointer items-center justify-center rounded-md p-2.5 text-xs font-bold transition-colors duration-150",
-                            active
-                              ? "bg-primary text-primary-foreground shadow-xs"
-                              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800/80 dark:hover:text-slate-100"
-                          )}
-                        >
-                          <Icon
+                {section.items.map((item) => {
+                  const Icon = item.icon
+                  const active = isItemActive(item)
+
+                  if (sidebarCollapsed) {
+                    return (
+                      <Tooltip key={item.href}>
+                        <TooltipTrigger>
+                          <Link
+                            href={item.href}
                             className={cn(
-                              "h-5 w-5 shrink-0 transition-colors",
+                              "group flex w-full cursor-pointer items-center justify-center rounded-md p-2.5 text-xs font-bold transition-colors duration-150",
                               active
-                                ? "text-white"
-                                : "text-slate-400 group-hover:text-slate-700 dark:text-slate-500 dark:group-hover:text-slate-300"
+                                ? "bg-primary text-primary-foreground shadow-xs"
+                                : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800/80 dark:hover:text-slate-100"
                             )}
-                          />
-                        </Link>
-                      </TooltipTrigger>
-                      <TooltipContent
-                        side="right"
-                        className="text-xs font-semibold"
-                      >
-                        {item.label}
-                      </TooltipContent>
-                    </Tooltip>
-                  )
-                }
+                          >
+                            <Icon
+                              className={cn(
+                                "h-5 w-5 shrink-0 transition-colors",
+                                active
+                                  ? "text-white"
+                                  : "text-slate-400 group-hover:text-slate-700 dark:text-slate-500 dark:group-hover:text-slate-300"
+                              )}
+                            />
+                          </Link>
+                        </TooltipTrigger>
+                        <TooltipContent
+                          side="right"
+                          className="text-xs font-semibold"
+                        >
+                          {item.label}
+                        </TooltipContent>
+                      </Tooltip>
+                    )
+                  }
 
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={cn(
-                      "group flex cursor-pointer items-center justify-between rounded-md px-3.5 py-2.5 text-xs font-bold transition-colors duration-150",
-                      active
-                        ? "bg-primary text-primary-foreground shadow-xs"
-                        : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800/80 dark:hover:text-slate-100"
-                    )}
-                  >
-                    <span className="flex items-center gap-2.5 truncate">
-                      <Icon
-                        className={cn(
-                          "h-4 w-4 shrink-0 transition-colors",
-                          active
-                            ? "text-white"
-                            : "text-slate-400 group-hover:text-slate-700 dark:text-slate-500 dark:group-hover:text-slate-300"
-                        )}
-                      />
-                      <span className="truncate">{item.label}</span>
-                    </span>
-                    {active && (
-                      <ChevronRight className="h-3.5 w-3.5 shrink-0 text-white/80" />
-                    )}
-                  </Link>
-                )
-              })}
-            </TooltipProvider>
-          </div>
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={cn(
+                        "group flex cursor-pointer items-center justify-between rounded-md px-3.5 py-2 text-xs font-bold transition-colors duration-150",
+                        active
+                          ? "bg-primary text-primary-foreground shadow-xs"
+                          : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800/80 dark:hover:text-slate-100"
+                      )}
+                    >
+                      <span className="flex items-center gap-2.5 truncate">
+                        <Icon
+                          className={cn(
+                            "h-4 w-4 shrink-0 transition-colors",
+                            active
+                              ? "text-white"
+                              : "text-slate-400 group-hover:text-slate-700 dark:text-slate-500 dark:group-hover:text-slate-300"
+                          )}
+                        />
+                        <span className="truncate">{item.label}</span>
+                      </span>
+                      {active && (
+                        <ChevronRight className="h-3.5 w-3.5 shrink-0 text-white/80" />
+                      )}
+                    </Link>
+                  )
+                })}
+              </div>
+            ))}
+          </TooltipProvider>
 
           {!sidebarCollapsed && (
             <>

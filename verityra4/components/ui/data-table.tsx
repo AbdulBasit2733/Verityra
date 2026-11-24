@@ -23,6 +23,19 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command"
+import {
   DateFilterPicker,
   DateFilterValue,
   isDateMatchingFilter,
@@ -32,6 +45,8 @@ import {
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
+  Check,
+  ChevronDown,
   Filter,
   LayoutGrid,
   List,
@@ -59,6 +74,8 @@ export interface DataTableColumn<T> {
 export interface DataTableFilterOption {
   label: string
   value: string
+  count?: number
+  hint?: string
   icon?: React.ComponentType<{ className?: string }>
 }
 
@@ -66,9 +83,175 @@ export interface DataTableFilter<T> {
   id: string
   label: string
   options: DataTableFilterOption[]
-  accessor: (row: T) => string
+  accessor: (row: T) => string | string[]
   defaultValue?: string
   icon?: React.ComponentType<{ className?: string }>
+  searchable?: boolean
+  searchPlaceholder?: string
+  allLabel?: string
+  width?: string
+}
+
+interface DataTableCommandFilterProps {
+  label: string
+  icon?: React.ComponentType<{ className?: string }>
+  options: DataTableFilterOption[]
+  selectedValue: string
+  onSelect: (value: string) => void
+  placeholder?: string
+  allLabel?: string
+  width?: string
+}
+
+function DataTableCommandFilter({
+  label,
+  icon: Icon,
+  options,
+  selectedValue,
+  onSelect,
+  placeholder,
+  allLabel,
+  width = "w-64",
+}: DataTableCommandFilterProps) {
+  const [open, setOpen] = React.useState(false)
+
+  const isActive = selectedValue !== "ALL" && selectedValue !== ""
+  const selectedOption = options.find((opt) => opt.value === selectedValue)
+  const defaultAll = allLabel || `All ${label}s`
+
+  const handleClear = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    onSelect("ALL")
+  }
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger
+        className={cn(
+          "inline-flex h-9 cursor-pointer items-center justify-between gap-1.5 rounded-md border px-3 text-xs font-semibold shadow-2xs transition-colors outline-none select-none",
+          isActive
+            ? "border-primary/50 bg-primary/10 text-primary hover:bg-primary/15"
+            : "border-border/80 bg-background text-foreground hover:bg-muted/50"
+        )}
+      >
+        <div className="flex items-center gap-1.5 truncate">
+          {Icon && (
+            <Icon
+              className={cn(
+                "h-3.5 w-3.5 shrink-0",
+                isActive ? "text-primary" : "text-muted-foreground"
+              )}
+            />
+          )}
+          <span className="text-muted-foreground font-medium">{label}:</span>
+          <span className="truncate font-bold">
+            {isActive ? selectedOption?.label || selectedValue : defaultAll}
+          </span>
+        </div>
+
+        <div className="ml-1 flex shrink-0 items-center gap-1">
+          {isActive ? (
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={handleClear}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  handleClear(e as any)
+                }
+              }}
+              title={`Clear ${label} filter`}
+              className="flex h-4 w-4 items-center justify-center rounded-sm text-primary transition-colors hover:bg-primary/20"
+            >
+              <X className="h-3 w-3" />
+            </span>
+          ) : (
+            <ChevronDown className="h-3 w-3 opacity-60" />
+          )}
+        </div>
+      </PopoverTrigger>
+
+      <PopoverContent align="start" className={cn("p-0 shadow-md", width)}>
+        <Command>
+          <CommandInput
+            placeholder={placeholder || `Search ${label.toLowerCase()}...`}
+            className="h-8 text-xs"
+          />
+          <CommandList className="max-h-60 p-1">
+            <CommandEmpty className="py-3 text-center text-xs text-muted-foreground">
+              No {label.toLowerCase()} found.
+            </CommandEmpty>
+            <CommandGroup>
+              <CommandItem
+                value="ALL"
+                onSelect={() => {
+                  onSelect("ALL")
+                  setOpen(false)
+                }}
+                className="flex items-center justify-between py-1.5 text-xs font-semibold"
+              >
+                <div className="flex items-center gap-2">
+                  <div
+                    className={cn(
+                      "flex h-4 w-4 items-center justify-center rounded-sm border border-primary/40",
+                      !isActive
+                        ? "bg-primary text-primary-foreground"
+                        : "opacity-40 [&_svg]:invisible"
+                    )}
+                  >
+                    <Check className="h-3 w-3" />
+                  </div>
+                  <span>{defaultAll}</span>
+                </div>
+              </CommandItem>
+
+              {options.map((opt) => {
+                const isSelected = selectedValue === opt.value
+                return (
+                  <CommandItem
+                    key={opt.value}
+                    value={`${opt.label} ${opt.value} ${opt.hint || ""}`}
+                    onSelect={() => {
+                      onSelect(opt.value)
+                      setOpen(false)
+                    }}
+                    className="flex items-center justify-between py-1.5 text-xs font-medium cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2 truncate">
+                      <div
+                        className={cn(
+                          "flex h-4 w-4 items-center justify-center rounded-sm border border-primary/40",
+                          isSelected
+                            ? "bg-primary text-primary-foreground"
+                            : "opacity-40 [&_svg]:invisible"
+                        )}
+                      >
+                        <Check className="h-3 w-3" />
+                      </div>
+                      <span className="truncate">{opt.label}</span>
+                      {opt.hint && (
+                        <span className="text-[10px] text-muted-foreground">
+                          ({opt.hint})
+                        </span>
+                      )}
+                    </div>
+                    {typeof opt.count === "number" && (
+                      <Badge
+                        variant="secondary"
+                        className="ml-2 h-4 px-1 text-[10px] text-muted-foreground"
+                      >
+                        {opt.count}
+                      </Badge>
+                    )}
+                  </CommandItem>
+                )
+              })}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  )
 }
 
 export interface DataTableProps<T> {
@@ -226,7 +409,11 @@ export function DataTable<T>({
         const selectedVal = activeFilters[filter.id] || "ALL"
         if (selectedVal !== "ALL") {
           const rowVal = filter.accessor(row)
-          if (rowVal !== selectedVal) return false
+          if (Array.isArray(rowVal)) {
+            if (!rowVal.includes(selectedVal)) return false
+          } else if (rowVal !== selectedVal) {
+            return false
+          }
         }
       }
 
@@ -423,9 +610,26 @@ export function DataTable<T>({
         {/* Tier 2: Horizontal Filter Strip */}
         {(filters.length > 0 || dateAccessor || hasActiveControls) && (
           <div className="no-scrollbar flex flex-nowrap items-center gap-2 overflow-x-auto scroll-smooth border-t border-slate-100 pt-1 sm:flex-wrap dark:border-slate-800/80">
-            {/* Dropdown Filters */}
+            {/* Dropdown & Command Popover Filters */}
             {filters.map((filter) => {
               const currentVal = activeFilters[filter.id] || "ALL"
+
+              if (filter.searchable) {
+                return (
+                  <DataTableCommandFilter
+                    key={filter.id}
+                    label={filter.label}
+                    icon={filter.icon}
+                    options={filter.options}
+                    selectedValue={currentVal}
+                    onSelect={(val) => handleFilterChange(filter.id, val)}
+                    placeholder={filter.searchPlaceholder}
+                    allLabel={filter.allLabel}
+                    width={filter.width}
+                  />
+                )
+              }
+
               const activeOption = filter.options.find(
                 (o) => o.value === currentVal
               )
@@ -509,6 +713,69 @@ export function DataTable<T>({
             )}
           </div>
         )}
+
+        {/* Tier 3: Active Filter Chips & Results Count */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-t border-slate-100 pt-2 sm:pt-2.5 dark:border-slate-800/80">
+          <div className="flex flex-wrap items-center gap-1.5">
+            {hasActiveControls && (
+              <>
+                <span className="text-[11px] font-semibold text-muted-foreground mr-0.5">
+                  Filtered by:
+                </span>
+                {searchQuery.trim().length > 0 && (
+                  <Badge variant="secondary" className="text-[10px] gap-1 pl-2 pr-1 py-0.5">
+                    Query: &quot;{searchQuery}&quot;
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearchQuery("")
+                        setCurrentPage(1)
+                      }}
+                      className="hover:text-foreground cursor-pointer"
+                    >
+                      <X className="h-2.5 w-2.5" />
+                    </button>
+                  </Badge>
+                )}
+                {filters.map((f) => {
+                  const val = activeFilters[f.id] || "ALL"
+                  if (val === "ALL") return null
+                  const opt = f.options.find((o) => o.value === val)
+                  return (
+                    <Badge
+                      key={f.id}
+                      variant="secondary"
+                      className="text-[10px] gap-1 pl-2 pr-1 py-0.5"
+                    >
+                      {f.label}: {opt?.label || val}
+                      <button
+                        type="button"
+                        onClick={() => handleFilterChange(f.id, "ALL")}
+                        className="hover:text-foreground cursor-pointer"
+                      >
+                        <X className="h-2.5 w-2.5" />
+                      </button>
+                    </Badge>
+                  )
+                })}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={resetAllFilters}
+                  className="h-6 px-1.5 text-[11px] font-bold text-primary hover:underline hover:bg-transparent"
+                >
+                  <RotateCcw className="h-3 w-3 mr-1" /> Reset all
+                </Button>
+              </>
+            )}
+          </div>
+
+          <span className="text-[11px] font-medium text-muted-foreground shrink-0 self-end sm:self-center">
+            Showing <strong className="text-foreground">{filteredData.length}</strong> of{" "}
+            <strong>{data.length}</strong> records
+          </span>
+        </div>
       </div>
 
       {/* =========================================================================
@@ -653,7 +920,7 @@ export function DataTable<T>({
             <TableRow className="border-b border-border bg-muted/50 hover:bg-muted/70">
               {/* Sr. Column Header matching reference screenshots */}
               {showSerialNumber && (
-                <TableHead className="h-11 w-14 px-4 text-center text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                <TableHead className="h-10 w-12 px-3 text-center text-[11px] font-bold text-slate-500 dark:text-slate-400">
                   Sr.
                 </TableHead>
               )}
@@ -663,7 +930,7 @@ export function DataTable<T>({
                   <TableHead
                     key={col.id}
                     className={cn(
-                      "h-11 px-4 text-[11px] font-bold text-slate-500 dark:text-slate-400",
+                      "h-10 px-3.5 text-[11px] font-bold text-slate-500 dark:text-slate-400",
                       col.headerClassName
                     )}
                   >
@@ -736,7 +1003,7 @@ export function DataTable<T>({
                     className="border-b border-slate-100 transition-colors hover:bg-slate-50/60 dark:border-slate-800/80 dark:hover:bg-slate-800/40"
                   >
                     {showSerialNumber && (
-                      <TableCell className="w-14 px-4 py-3.5 text-center text-xs font-bold text-slate-400 dark:text-slate-500">
+                      <TableCell className="w-12 px-3 py-2.5 text-center text-xs font-bold text-slate-400 dark:text-slate-500">
                         {serialNumber}
                       </TableCell>
                     )}
@@ -744,7 +1011,7 @@ export function DataTable<T>({
                       <TableCell
                         key={col.id}
                         className={cn(
-                          "px-4 py-3.5 text-xs sm:text-sm",
+                          "px-3.5 py-2.5 text-xs",
                           col.className
                         )}
                       >

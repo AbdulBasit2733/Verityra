@@ -59,7 +59,7 @@ export function runBrandTests() {
 
       // Domains & Emails
       assert.equal(siteConfig.supportEmail, "support@izone.com")
-      assert.equal(siteConfig.defaultAdminEmail, "admin@izone.com")
+      assert.equal(siteConfig.defaultAdminEmail, "admin@izonecc.in")
       assert.equal(siteConfig.defaultCandidateEmail, "candidate@izone.com")
       assert.equal(siteConfig.domain, "izone.com")
       assert.equal(siteConfig.appDomain, "izone.app")

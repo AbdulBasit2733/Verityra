@@ -4,9 +4,12 @@ import { prisma } from "@/lib/prisma"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { PageHeader } from "@/components/ui/page-header"
-import { AdminPublishToggles } from "@/components/admin/test-series/admin-test-actions"
+import {
+  AdminPublishToggles,
+  AdminDeleteSeriesButton,
+  AdminTestDocumentForms,
+} from "@/components/admin/test-series/admin-test-actions"
 import { AdminTestSeriesEditor } from "@/components/admin/test-series/admin-test-series-editor"
-import { AdminTestDocumentForms } from "@/components/admin/test-series/admin-test-actions"
 import { ArrowLeft, BookOpen } from "lucide-react"
 import { TestSeriesStatus } from "@prisma/client"
 import { normalizePrivateFileUrl } from "@/lib/supabase"
@@ -26,12 +29,39 @@ type AdminTemplate = {
   fileUrl: string
   templateRequired: boolean
 }
+type AdminSubjectTestData = {
+  id: string
+  title: string
+  slug: string
+  subject: string
+  description?: string | null
+  price: number
+  isStandalone: boolean
+  maxMarks: number
+  durationMinutes: number
+  maxAttempts: number
+  questionPaperUrl?: string | null
+  answerSheetUrl?: string | null
+  modelAnswerUrl?: string | null
+  studentInstructions?: string | null
+  privateEvaluationInstructions?: string | null
+  order: number
+  status: string
+  isPublished: boolean
+  _count?: { submissions: number; registrations: number }
+}
+
 type AdminTestSeriesData = {
   id: string
   title: string
   slug: string
   description: string
   price: number
+  bundlePrice?: number | null
+  type?: "BUNDLE" | "SINGLE_TEST"
+  standard?: string | null
+  stream?: string | null
+  badge?: string | null
   maxMarks: number
   durationMinutes: number
   maxAttempts: number
@@ -42,6 +72,7 @@ type AdminTestSeriesData = {
   privateEvaluationInstructions: string
   papers: AdminPaper[]
   templates: AdminTemplate[]
+  tests?: AdminSubjectTestData[]
   _count: { registrations: number; submissions: number }
 }
 export default async function AdminTestSeriesDetailPage({
@@ -53,14 +84,20 @@ export default async function AdminTestSeriesDetailPage({
   let testSeries: AdminTestSeriesData | null = null
 
   try {
-    testSeries = await prisma.testSeries.findUnique({
+    testSeries = (await prisma.testSeries.findUnique({
       where: { id },
       include: {
         papers: true,
         templates: true,
+        tests: {
+          orderBy: { order: "asc" },
+          include: {
+            _count: { select: { submissions: true, registrations: true } },
+          },
+        },
         _count: { select: { registrations: true, submissions: true } },
       },
-    })
+    })) as unknown as AdminTestSeriesData | null
   } catch (error) {
     console.error("[AdminTestSeriesDetailPage] Database query error:", error)
   }
@@ -124,6 +161,10 @@ export default async function AdminTestSeriesDetailPage({
             isPublished={testSeries.isPublished}
             resultsPublished={testSeries.resultsPublished}
           />
+          <AdminDeleteSeriesButton
+            testSeriesId={testSeries.id}
+            title={testSeries.title}
+          />
           <Link href="/admin/test-series">
             <Button
               variant="outline"
@@ -153,6 +194,14 @@ export default async function AdminTestSeriesDetailPage({
           title: testSeries.title,
           description: testSeries.description,
           price: testSeries.price / 100,
+          bundlePrice:
+            testSeries.bundlePrice !== undefined && testSeries.bundlePrice !== null
+              ? testSeries.bundlePrice / 100
+              : testSeries.price / 100,
+          type: testSeries.type || "BUNDLE",
+          standard: testSeries.standard || "10th",
+          stream: testSeries.stream || "",
+          badge: testSeries.badge || "",
           maxMarks: testSeries.maxMarks,
           durationMinutes: testSeries.durationMinutes,
           maxAttempts: testSeries.maxAttempts,
@@ -161,6 +210,7 @@ export default async function AdminTestSeriesDetailPage({
             testSeries.privateEvaluationInstructions,
         }}
         documents={documents}
+        subjectTests={testSeries.tests || []}
       />
     </div>
   )

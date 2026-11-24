@@ -7,7 +7,8 @@ import { invalidateAdminAnalyticsCache } from "@/lib/cache"
 export interface FulfillCapturedPaymentParams {
   paymentId: string
   userId: string
-  testSeriesId: string
+  testSeriesId?: string
+  testId?: string | null
   razorpayPaymentId: string
   razorpaySignature?: string | null
   paymentMethod?: string | null
@@ -40,40 +41,87 @@ export async function fulfillCapturedPayment(
 ): Promise<FulfillPaymentResult> {
   try {
     const txResult = await prisma.$transaction(async (tx) => {
-      // 1. Fetch test series metadata for attempts allocation and receipt
-      const testSeries = await tx.testSeries.findUnique({
-        where: { id: params.testSeriesId },
-        select: {
-          id: true,
-          title: true,
-          maxAttempts: true,
-          price: true,
-        },
-      })
+      let itemTitle = "Test Series"
+      let maxAttempts = 3
+      let amountPaise = 0
+      let registration: any = null
 
-      const maxAttempts = testSeries?.maxAttempts ?? 3
+      if (params.testId) {
+        // Individual subject test purchase
+        const test = await tx.test.findUnique({
+          where: { id: params.testId },
+          select: {
+            id: true,
+            title: true,
+            maxAttempts: true,
+            price: true,
+            testSeriesId: true,
+          },
+        })
 
-      // 2. Create or reactivate the candidate registration
-      const registration = await tx.testRegistration.upsert({
-        where: {
-          userId_testSeriesId: {
+        itemTitle = test?.title ?? "Subject Test"
+        maxAttempts = test?.maxAttempts ?? 3
+        amountPaise = test?.price ?? 0
+
+        registration = await tx.testRegistration.upsert({
+          where: {
+            userId_testId: {
+              userId: params.userId,
+              testId: params.testId,
+            },
+          },
+          create: {
+            userId: params.userId,
+            testId: params.testId,
+            testSeriesId: test?.testSeriesId,
+            status: RegistrationStatus.ACTIVE,
+            attemptsUsed: 0,
+            maxAttempts,
+          },
+          update: {
+            status: RegistrationStatus.ACTIVE,
+            attemptsUsed: 0,
+            maxAttempts,
+          },
+        })
+      } else {
+        // Complete series bundle purchase
+        const testSeries = await tx.testSeries.findUnique({
+          where: { id: params.testSeriesId || "" },
+          select: {
+            id: true,
+            title: true,
+            maxAttempts: true,
+            price: true,
+            bundlePrice: true,
+          },
+        })
+
+        itemTitle = testSeries?.title ?? "Test Series Bundle"
+        maxAttempts = testSeries?.maxAttempts ?? 3
+        amountPaise = testSeries?.bundlePrice || testSeries?.price || 0
+
+        registration = await tx.testRegistration.upsert({
+          where: {
+            userId_testSeriesId: {
+              userId: params.userId,
+              testSeriesId: params.testSeriesId || "",
+            },
+          },
+          create: {
             userId: params.userId,
             testSeriesId: params.testSeriesId,
+            status: RegistrationStatus.ACTIVE,
+            attemptsUsed: 0,
+            maxAttempts,
           },
-        },
-        create: {
-          userId: params.userId,
-          testSeriesId: params.testSeriesId,
-          status: RegistrationStatus.ACTIVE,
-          attemptsUsed: 0,
-          maxAttempts,
-        },
-        update: {
-          status: RegistrationStatus.ACTIVE,
-          attemptsUsed: 0,
-          maxAttempts,
-        },
-      })
+          update: {
+            status: RegistrationStatus.ACTIVE,
+            attemptsUsed: 0,
+            maxAttempts,
+          },
+        })
+      }
 
       // 3. Unlink any previous refunded/cancelled payments from this registrationId to prevent @unique constraint violation
       await tx.payment.updateMany({
@@ -96,6 +144,7 @@ export async function fulfillCapturedPayment(
           razorpayPaymentId: params.razorpayPaymentId,
           razorpaySignature: params.razorpaySignature ?? undefined,
           registrationId: registration.id,
+          testId: params.testId ?? undefined,
           paymentMethod: params.paymentMethod ?? undefined,
           bankReference: params.bankReference ?? undefined,
           verificationMetadata: JSON.stringify({
@@ -123,7 +172,7 @@ export async function fulfillCapturedPayment(
           return {
             alreadyCompleted: true,
             registrationId: currentPayment.registrationId || registration.id,
-            testTitle: testSeries?.title || "Test Series",
+            testTitle: itemTitle,
             amountPaise: currentPayment.amount,
             maxAttempts,
             orderId: currentPayment.razorpayOrderId,
@@ -132,7 +181,7 @@ export async function fulfillCapturedPayment(
         throw new Error("Failed to transition payment status to COMPLETED.")
       }
 
-      const amountPaise = currentPayment?.amount ?? 0
+      amountPaise = currentPayment?.amount ?? 0
       const orderId = currentPayment?.razorpayOrderId ?? ""
 
       // 5. Record immutable audit ledger entry
@@ -148,7 +197,7 @@ export async function fulfillCapturedPayment(
           details:
             params.customDetails ||
             params.details ||
-            `Verified payment ${params.razorpayPaymentId} of ₹${amountPaise / 100} via ${params.paymentMethod || "Razorpay Checkout"}. Candidate access unlocked.`,
+            `Verified payment ${params.razorpayPaymentId} of ₹${amountPaise / 100} via ${params.paymentMethod || "Razorpay Checkout"}. Candidate access unlocked for ${itemTitle}.`,
           rawPayload: params.rawPayload
             ? typeof params.rawPayload === "string"
               ? params.rawPayload
@@ -160,7 +209,7 @@ export async function fulfillCapturedPayment(
       return {
         alreadyCompleted: false,
         registrationId: registration.id,
-        testTitle: testSeries?.title || "Test Series",
+        testTitle: itemTitle,
         amountPaise,
         maxAttempts,
         orderId,
@@ -179,7 +228,7 @@ export async function fulfillCapturedPayment(
         sendEnrollmentReceiptEmail({
           to: user.email,
           name: user.name,
-          testSeriesId: params.testSeriesId,
+          testSeriesId: params.testSeriesId || params.testId || "",
           testTitle: txResult.testTitle,
           amountPaise: txResult.amountPaise,
           maxAttempts: txResult.maxAttempts,
@@ -200,9 +249,15 @@ export async function fulfillCapturedPayment(
 
     try {
       invalidateAdminAnalyticsCache()
-      revalidatePath(`/tests/${params.testSeriesId}`)
-      revalidatePath(`/student/tests/${params.testSeriesId}`)
+      if (params.testSeriesId) {
+        revalidatePath(`/tests/${params.testSeriesId}`)
+      }
+      if (params.testId) {
+        revalidatePath(`/tests/${params.testId}`)
+        revalidatePath(`/student/tests/${params.testId}`)
+      }
       revalidatePath("/student/dashboard")
+      revalidatePath("/student/tests")
       revalidatePath("/admin/payments")
     } catch (revalidateErr) {
       // Revalidation warning during non-request contexts

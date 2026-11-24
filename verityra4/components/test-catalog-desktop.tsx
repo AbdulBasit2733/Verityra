@@ -33,6 +33,57 @@ export function TestCatalogDesktop({ items }: { items: TestCatalogItem[] }) {
           </h2>
         </div>
         <div className="space-y-5 border-t border-border pt-5">
+            {/* Format Filter: Single vs Bundle */}
+            <div className="space-y-2">
+              <Label className="text-xs font-bold">Format</Label>
+              <div className="grid grid-cols-1 gap-1.5">
+                {[
+                  ["ALL", "All Formats"],
+                  ["BUNDLE", "Complete Series (Bundles)"],
+                  ["SINGLE", "Single Subject Tests"],
+                ].map(([value, label]) => (
+                  <Button
+                    key={value}
+                    type="button"
+                    variant={
+                      state.formatFilter === value ? "secondary" : "ghost"
+                    }
+                    size="sm"
+                    className="justify-start text-xs font-medium"
+                    onClick={() =>
+                      state.setFormatFilter(value as "ALL" | "BUNDLE" | "SINGLE")
+                    }
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Class / Standard Filter */}
+            <div className="space-y-2">
+              <Label className="text-xs font-bold">Class / Standard</Label>
+              <Select
+                value={state.standardFilter}
+                onValueChange={(value) =>
+                  state.setStandardFilter(value || "ALL")
+                }
+              >
+                <SelectTrigger className="w-full" size="sm">
+                  <SelectValue placeholder="All classes" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All standards / classes</SelectItem>
+                  <SelectItem value="10th">Class 10th</SelectItem>
+                  <SelectItem value="11th">Class 11th</SelectItem>
+                  <SelectItem value="12th">Class 12th</SelectItem>
+                  <SelectItem value="NEET">NEET-UG Medical</SelectItem>
+                  <SelectItem value="JEE">JEE Main &amp; Advanced</SelectItem>
+                  <SelectItem value="FOUNDATION">Foundation &amp; Olympiad</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="space-y-2">
               <Label className="text-xs font-bold">Exam stream</Label>
               <Select
