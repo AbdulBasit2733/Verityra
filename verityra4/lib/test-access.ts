@@ -33,7 +33,10 @@ export async function checkStudentTestAccess(
       where: {
         userId,
         status: RegistrationStatus.ACTIVE,
-        OR: [{ testId: test.id }, { testSeriesId: test.testSeriesId }],
+        OR: [
+          { testId: test.id },
+          ...(test.testSeriesId ? [{ testSeriesId: test.testSeriesId }] : []),
+        ],
       },
       select: { id: true },
     })
@@ -74,7 +77,10 @@ export async function getTestAccessStatus(
       where: {
         userId,
         status: RegistrationStatus.ACTIVE,
-        OR: [{ testId: test.id }, { testSeriesId: test.testSeriesId }],
+        OR: [
+          { testId: test.id },
+          ...(test.testSeriesId ? [{ testSeriesId: test.testSeriesId }] : []),
+        ],
       },
       select: {
         testId: true,

@@ -82,7 +82,51 @@ export {
   parsePrivateFileReference,
 } from "./file-urls"
 
-import { privateFileDownloadUrl } from "./file-urls"
+import {
+  privateFileDownloadUrl,
+  parsePrivateFileReference,
+} from "./file-urls"
+
+/**
+ * Checks whether a stored private file exists in Supabase Storage or local disk.
+ * External https:// URLs are treated as available; malformed or missing objects return false.
+ */
+export async function privateFileExists(
+  fileUrl: string | null | undefined
+): Promise<boolean> {
+  if (!fileUrl) return false
+  if (/^https?:\/\//i.test(fileUrl)) return true
+
+  const ref = parsePrivateFileReference(fileUrl)
+  if (!ref) return false
+
+  const safePath = path.posix.normalize(ref.filePath.replace(/\\/g, "/"))
+  if (
+    safePath.startsWith("../") ||
+    safePath === ".." ||
+    path.posix.isAbsolute(safePath)
+  ) {
+    return false
+  }
+
+  const supabase = getSupabase()
+  if (supabase) {
+    try {
+      const { data, error } = await supabase.storage
+        .from(ref.bucket)
+        .createSignedUrl(safePath, 60)
+      if (!error && data?.signedUrl) {
+        return true
+      }
+    } catch {
+      // Fall back to local disk check below
+    }
+  }
+
+  const fullPath = path.resolve(LOCAL_STORAGE_DIR, ref.bucket, safePath)
+  const storageRoot = path.resolve(LOCAL_STORAGE_DIR, ref.bucket) + path.sep
+  return fullPath.startsWith(storageRoot) && fs.existsSync(fullPath)
+}
 
 export async function downloadPrivateFile(
   bucketName: string,

@@ -201,7 +201,11 @@ export async function GET(req: NextRequest) {
           )
         }
       }
-    } else if (fileType === "papers" || fileType === "templates") {
+    } else if (
+      fileType === "papers" ||
+      fileType === "templates" ||
+      fileType === "tests"
+    ) {
       if (!user) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
       }
@@ -222,44 +226,81 @@ export async function GET(req: NextRequest) {
             )
           }
 
-          // Identify test series that owns this paper or template
-          let resolvedTestSeriesId = testSeriesIdCandidate
-          if (!resolvedTestSeriesId) {
-            if (fileType === "papers") {
-              const paper = await prisma.testPaper.findFirst({
-                where: {
-                  OR: [
-                    { fileUrl: { contains: safeFilePath } },
-                    { fileUrl: { contains: filename } },
-                  ],
-                },
-                select: { testSeriesId: true },
-              })
-              resolvedTestSeriesId = paper?.testSeriesId || ""
-            } else {
-              const tpl = await prisma.answerSheetTemplate.findFirst({
-                where: {
-                  OR: [
-                    { fileUrl: { contains: safeFilePath } },
-                    { fileUrl: { contains: filename } },
-                  ],
-                },
-                select: { testSeriesId: true },
-              })
-              resolvedTestSeriesId = tpl?.testSeriesId || ""
-            }
-          }
+          // Resolve owning TestSeries and/or individual Subject Test for this file
+          const [paper, tpl, subjectTest] = await Promise.all([
+            fileType === "papers"
+              ? prisma.testPaper.findFirst({
+                  where: {
+                    OR: [
+                      { fileUrl: { contains: safeFilePath } },
+                      { fileUrl: { contains: filename } },
+                    ],
+                  },
+                  select: { testSeriesId: true },
+                })
+              : Promise.resolve(null),
+            fileType === "templates"
+              ? prisma.answerSheetTemplate.findFirst({
+                  where: {
+                    OR: [
+                      { fileUrl: { contains: safeFilePath } },
+                      { fileUrl: { contains: filename } },
+                    ],
+                  },
+                  select: { testSeriesId: true },
+                })
+              : Promise.resolve(null),
+            prisma.test.findFirst({
+              where: {
+                OR: [
+                  { questionPaperUrl: { contains: safeFilePath } },
+                  { questionPaperUrl: { contains: filename } },
+                  { answerSheetUrl: { contains: safeFilePath } },
+                  { answerSheetUrl: { contains: filename } },
+                  ...(testSeriesIdCandidate.startsWith("test-")
+                    ? [{ id: testSeriesIdCandidate.slice(5) }]
+                    : []),
+                ],
+              },
+              select: { id: true, testSeriesId: true },
+            }),
+          ])
+
+          const candidateSeriesIds = Array.from(
+            new Set(
+              [
+                paper?.testSeriesId,
+                tpl?.testSeriesId,
+                subjectTest?.testSeriesId,
+                testSeriesIdCandidate &&
+                !testSeriesIdCandidate.startsWith("test-") &&
+                testSeriesIdCandidate !== "standalone"
+                  ? testSeriesIdCandidate
+                  : null,
+              ].filter((v): v is string => Boolean(v))
+            )
+          )
+
+          const candidateTestIds = Array.from(
+            new Set(
+              [
+                subjectTest?.id,
+                testSeriesIdCandidate.startsWith("test-")
+                  ? testSeriesIdCandidate.slice(5)
+                  : null,
+              ].filter((v): v is string => Boolean(v))
+            )
+          )
 
           const registration = await prisma.testRegistration.findFirst({
             where: {
               userId: user.id,
               OR: [
-                ...(resolvedTestSeriesId
-                  ? [
-                      { testSeriesId: resolvedTestSeriesId },
-                      { testSeries: { slug: resolvedTestSeriesId } },
-                    ]
-                  : []),
+                ...candidateTestIds.map((tId) => ({ testId: tId })),
+                ...candidateSeriesIds.flatMap((sId) => [
+                  { testSeriesId: sId },
+                  { testSeries: { slug: sId } },
+                ]),
                 {
                   testSeries: {
                     papers: { some: { fileUrl: { contains: filename } } },
@@ -279,24 +320,13 @@ export async function GET(req: NextRequest) {
           })
 
           if (!registration) {
-            // Also check if test series is published
-            const testSeries = await prisma.testSeries.findFirst({
-              where: {
-                id: resolvedTestSeriesId,
-                isPublished: true,
+            return NextResponse.json(
+              {
+                error:
+                  "Enroll in this test series to access its official papers and margin templates.",
               },
-              select: { id: true },
-            })
-
-            if (!testSeries) {
-              return NextResponse.json(
-                {
-                  error:
-                    "Enroll in this test series to access its official papers and margin templates.",
-                },
-                { status: 403 }
-              )
-            }
+              { status: 403 }
+            )
           }
         }
       }

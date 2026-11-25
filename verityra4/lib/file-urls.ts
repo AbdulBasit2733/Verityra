@@ -47,9 +47,14 @@ export function parsePrivateFileReference(
   }
 
   if (
-    ["papers", "templates", "submissions", "model-answers"].includes(
-      firstSegment
-    )
+    [
+      "papers",
+      "templates",
+      "submissions",
+      "model-answers",
+      "question-papers",
+      "tests",
+    ].includes(firstSegment)
   ) {
     return { bucket: "verityra-private", filePath: fileUrl }
   }

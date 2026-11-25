@@ -1036,10 +1036,323 @@ export async function updateSubjectTestAction(
   revalidatePath("/admin/test-series")
   revalidatePath("/admin/tests")
   revalidatePath(`/admin/tests/${id}`)
+  revalidatePath(`/student/tests/${id}`)
+  revalidatePath("/student/downloads")
   revalidatePath("/tests")
   invalidateTestCatalogCache()
 
   return { success: true, message: "Subject test updated successfully." }
+}
+
+/**
+ * Server Action: Create or Update Subject Test with real private file uploads (ADMIN ONLY)
+ * Uploads question paper, model answer key, and answer sheet template to private storage
+ * and supports explicit clearing of existing documents.
+ */
+export async function saveSubjectTestFormAction(formData: FormData): Promise<
+  ActionResult<{
+    id: string
+    questionPaperUrl?: string | null
+    modelAnswerUrl?: string | null
+    answerSheetUrl?: string | null
+  }>
+> {
+  const sessionUser = await getCurrentUser()
+  if (!sessionUser || sessionUser.role !== Role.ADMIN) {
+    return { success: false, error: "Unauthorized. Admin privileges required." }
+  }
+
+  const mode = formData.get("mode") === "edit" ? "edit" : "create"
+  const testId = ((formData.get("id") as string) || "").trim()
+  const title = ((formData.get("title") as string) || "").trim()
+  const subject = ((formData.get("subject") as string) || "").trim()
+  const rawSeriesId = ((formData.get("testSeriesId") as string) || "").trim()
+  const testSeriesId = rawSeriesId || null
+  const description = ((formData.get("description") as string) || "").trim()
+  const isStandalone = formData.get("isStandalone") === "true"
+  const price = isStandalone
+    ? Math.max(0, Number(formData.get("price") || 0) || 0)
+    : 0
+  const maxMarks = Number(formData.get("maxMarks") || 80)
+  const durationMinutes = parseInt(
+    String(formData.get("durationMinutes") || 180),
+    10
+  )
+  const maxAttempts = parseInt(String(formData.get("maxAttempts") || 3), 10)
+  const studentInstructions =
+    ((formData.get("studentInstructions") as string) || "").trim() || null
+  const privateEvaluationInstructions =
+    ((formData.get("privateEvaluationInstructions") as string) || "").trim() ||
+    null
+  const isPublished = formData.get("isPublished") === "true"
+
+  const clearQuestionPaper = formData.get("clearQuestionPaper") === "true"
+  const clearModelAnswer = formData.get("clearModelAnswer") === "true"
+  const clearAnswerSheet = formData.get("clearAnswerSheet") === "true"
+
+  const paperFileRaw = formData.get("paperFile")
+  const modelFileRaw = formData.get("modelAnswerFile")
+  const templateFileRaw = formData.get("answerSheetTemplateFile")
+  const paperFile =
+    paperFileRaw instanceof File && paperFileRaw.size > 0 ? paperFileRaw : null
+  const modelFile =
+    modelFileRaw instanceof File && modelFileRaw.size > 0 ? modelFileRaw : null
+  const templateFile =
+    templateFileRaw instanceof File && templateFileRaw.size > 0
+      ? templateFileRaw
+      : null
+
+  if (!title || !subject) {
+    return { success: false, error: "Test title and subject are required." }
+  }
+  if (mode === "edit" && !testId) {
+    return { success: false, error: "Subject test ID is required." }
+  }
+  if (!Number.isFinite(maxMarks) || maxMarks <= 0 || maxMarks > 10000) {
+    return {
+      success: false,
+      error: "Maximum marks must be between 1 and 10,000.",
+    }
+  }
+  if (
+    !Number.isFinite(durationMinutes) ||
+    durationMinutes < 10 ||
+    durationMinutes > 600
+  ) {
+    return {
+      success: false,
+      error: "Duration must be between 10 and 600 minutes.",
+    }
+  }
+  if (!Number.isFinite(maxAttempts) || maxAttempts < 1 || maxAttempts > 10) {
+    return {
+      success: false,
+      error: "Max attempts must be between 1 and 10.",
+    }
+  }
+
+  for (const [label, file] of [
+    ["Question paper", paperFile],
+    ["Model answer key", modelFile],
+    ["Answer sheet template", templateFile],
+  ] as const) {
+    if (file) {
+      const fileErr = documentValidationError(file)
+      if (fileErr) return { success: false, error: `${label}: ${fileErr}` }
+    }
+  }
+
+  const dbConnected = await isDatabaseConnected()
+  if (!dbConnected) {
+    if (process.env.NODE_ENV === "production") {
+      return { success: false, error: "Database temporarily unavailable." }
+    }
+    return {
+      success: true,
+      message:
+        mode === "edit"
+          ? "Subject test updated (Dev Mode)."
+          : "Subject test created (Dev Mode).",
+      data: { id: testId || `dev-subject-test-${Date.now()}` },
+    }
+  }
+
+  const actor = await resolvePersistedAdminActor(sessionUser)
+  if (!actor.success) return { success: false, error: actor.error }
+
+  let existingTest: { id: string; testSeriesId: string | null } | null = null
+  if (mode === "edit") {
+    existingTest = await prisma.test.findUnique({
+      where: { id: testId },
+      select: { id: true, testSeriesId: true },
+    })
+    if (!existingTest) {
+      return { success: false, error: "Subject test not found." }
+    }
+  }
+
+  const folderScope = existingTest
+    ? `test-${existingTest.id}`
+    : `test-${Date.now().toString(36)}`
+  const now = Date.now()
+
+  let uploadedPaperUrl: string | undefined
+  let uploadedModelUrl: string | undefined
+  let uploadedTemplateUrl: string | undefined
+
+  try {
+    if (paperFile) {
+      const storagePath = `papers/${folderScope}/${now}-${safeDocumentName(paperFile.name)}`
+      const res = await uploadPrivateFile(
+        "verityra-private",
+        storagePath,
+        Buffer.from(await paperFile.arrayBuffer()),
+        paperFile.type
+      )
+      uploadedPaperUrl = res.url
+    }
+    if (modelFile) {
+      const storagePath = `model-answers/${folderScope}/${now}-${safeDocumentName(modelFile.name)}`
+      const res = await uploadPrivateFile(
+        "verityra-private",
+        storagePath,
+        Buffer.from(await modelFile.arrayBuffer()),
+        modelFile.type
+      )
+      uploadedModelUrl = res.url
+    }
+    if (templateFile) {
+      const storagePath = `templates/${folderScope}/${now}-${safeDocumentName(templateFile.name)}`
+      const res = await uploadPrivateFile(
+        "verityra-private",
+        storagePath,
+        Buffer.from(await templateFile.arrayBuffer()),
+        templateFile.type
+      )
+      uploadedTemplateUrl = res.url
+    }
+  } catch (err: any) {
+    console.error("[SUBJECT TEST DOCUMENT UPLOAD ERROR]", err)
+    return {
+      success: false,
+      error:
+        err?.message ||
+        "Document upload failed. Verify storage configuration and try again.",
+    }
+  }
+
+  const priceInPaise = Math.round(price * 100)
+  const status = isPublished ? TestSeriesStatus.PUBLISHED : TestSeriesStatus.DRAFT
+
+  if (mode === "edit" && existingTest) {
+    const dataToUpdate: Record<string, unknown> = {
+      testSeriesId,
+      title,
+      subject,
+      description: description || null,
+      price: priceInPaise,
+      isStandalone,
+      maxMarks,
+      durationMinutes,
+      maxAttempts,
+      studentInstructions,
+      privateEvaluationInstructions,
+      status,
+      isPublished,
+    }
+
+    if (uploadedPaperUrl !== undefined) {
+      dataToUpdate.questionPaperUrl = uploadedPaperUrl
+    } else if (clearQuestionPaper) {
+      dataToUpdate.questionPaperUrl = null
+    }
+
+    if (uploadedModelUrl !== undefined) {
+      dataToUpdate.modelAnswerUrl = uploadedModelUrl
+    } else if (clearModelAnswer) {
+      dataToUpdate.modelAnswerUrl = null
+    }
+
+    if (uploadedTemplateUrl !== undefined) {
+      dataToUpdate.answerSheetUrl = uploadedTemplateUrl
+    } else if (clearAnswerSheet) {
+      dataToUpdate.answerSheetUrl = null
+    }
+
+    const updatedRecord = await prisma.test.update({
+      where: { id: existingTest.id },
+      data: dataToUpdate,
+      select: {
+        id: true,
+        questionPaperUrl: true,
+        modelAnswerUrl: true,
+        answerSheetUrl: true,
+      },
+    })
+
+    await prisma.auditLog.create({
+      data: {
+        adminId: actor.user.id,
+        action: "SUBJECT_TEST_UPDATED",
+        targetType: "Test",
+        targetId: existingTest.id,
+        details: `Updated subject test "${title}" (${subject})`,
+      },
+    })
+
+    if (existingTest.testSeriesId) {
+      revalidatePath(`/admin/test-series/${existingTest.testSeriesId}`)
+    }
+    if (testSeriesId && testSeriesId !== existingTest.testSeriesId) {
+      revalidatePath(`/admin/test-series/${testSeriesId}`)
+    }
+    revalidatePath("/admin/test-series")
+    revalidatePath("/admin/tests")
+    revalidatePath(`/admin/tests/${existingTest.id}`)
+    revalidatePath(`/student/tests/${existingTest.id}`)
+    revalidatePath("/student/downloads")
+    revalidatePath("/tests")
+    invalidateTestCatalogCache()
+
+    return {
+      success: true,
+      message: "Subject test updated successfully.",
+      data: {
+        id: updatedRecord.id,
+        questionPaperUrl: updatedRecord.questionPaperUrl,
+        modelAnswerUrl: updatedRecord.modelAnswerUrl,
+        answerSheetUrl: updatedRecord.answerSheetUrl,
+      },
+    }
+  }
+
+  const slug = `${slugify(title)}-${Date.now().toString(36)}`
+  const createdTest = await prisma.test.create({
+    data: {
+      testSeriesId,
+      title,
+      slug,
+      subject,
+      description: description || null,
+      price: priceInPaise,
+      isStandalone,
+      maxMarks,
+      durationMinutes,
+      maxAttempts,
+      questionPaperUrl: uploadedPaperUrl || null,
+      modelAnswerUrl: uploadedModelUrl || null,
+      answerSheetUrl: uploadedTemplateUrl || null,
+      studentInstructions,
+      privateEvaluationInstructions,
+      status,
+      isPublished,
+    },
+  })
+
+  await prisma.auditLog.create({
+    data: {
+      adminId: actor.user.id,
+      action: "SUBJECT_TEST_CREATED",
+      targetType: "Test",
+      targetId: createdTest.id,
+      details: `Created subject test "${createdTest.title}" (${createdTest.subject}) in series ${testSeriesId}`,
+    },
+  })
+
+  if (testSeriesId) {
+    revalidatePath(`/admin/test-series/${testSeriesId}`)
+  }
+  revalidatePath("/admin/test-series")
+  revalidatePath("/admin/tests")
+  revalidatePath("/student/downloads")
+  revalidatePath("/tests")
+  invalidateTestCatalogCache()
+
+  return {
+    success: true,
+    message: "Subject test created successfully.",
+    data: { id: createdTest.id },
+  }
 }
 
 /**

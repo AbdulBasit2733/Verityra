@@ -49,7 +49,9 @@ export default async function StudentTestWorkspacePage({
           userId: user.id,
           OR: [
             { testId: subjectTest.id },
-            { testSeriesId: subjectTest.testSeriesId },
+            ...(subjectTest.testSeriesId
+              ? [{ testSeriesId: subjectTest.testSeriesId }]
+              : []),
           ],
         },
         select: {

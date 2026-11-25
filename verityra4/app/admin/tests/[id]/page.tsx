@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { PageHeader } from "@/components/ui/page-header"
 import { requireAdmin } from "@/lib/auth-guard"
 import { prisma } from "@/lib/prisma"
+import { normalizePrivateFileUrl, privateFileExists } from "@/lib/supabase"
 import { getSubjectsAction } from "@/actions/master-actions"
 import { getTestSeriesForAttachmentAction } from "@/actions/question-paper-actions"
 import {
@@ -35,13 +36,25 @@ export default async function EditSubjectTestPage({
     notFound()
   }
 
-  const [subjectsRes, seriesRes] = await Promise.all([
-    getSubjectsAction({ activeOnly: true }),
-    getTestSeriesForAttachmentAction(),
-  ])
+  const [subjectsRes, seriesRes, paperExists, modelExists, templateExists] =
+    await Promise.all([
+      getSubjectsAction({ activeOnly: true }),
+      getTestSeriesForAttachmentAction(),
+      test.questionPaperUrl
+        ? privateFileExists(test.questionPaperUrl)
+        : Promise.resolve(true),
+      test.modelAnswerUrl
+        ? privateFileExists(test.modelAnswerUrl)
+        : Promise.resolve(true),
+      test.answerSheetUrl
+        ? privateFileExists(test.answerSheetUrl)
+        : Promise.resolve(true),
+    ])
 
-  const subjects = subjectsRes.success && subjectsRes.data ? subjectsRes.data.subjects : []
-  const series = seriesRes.success && seriesRes.data ? seriesRes.data.testSeries : []
+  const subjects =
+    subjectsRes.success && subjectsRes.data ? subjectsRes.data.subjects : []
+  const series =
+    seriesRes.success && seriesRes.data ? seriesRes.data.testSeries : []
 
   const initialData: AdminSubjectTestEditData = {
     id: test.id,
@@ -56,10 +69,16 @@ export default async function EditSubjectTestPage({
     maxAttempts: test.maxAttempts,
     studentInstructions: test.studentInstructions,
     privateEvaluationInstructions: test.privateEvaluationInstructions,
-    questionPaperUrl: test.questionPaperUrl,
-    modelAnswerUrl: test.modelAnswerUrl,
-    answerSheetUrl: test.answerSheetUrl,
+    questionPaperUrl: normalizePrivateFileUrl(test.questionPaperUrl),
+    modelAnswerUrl: normalizePrivateFileUrl(test.modelAnswerUrl),
+    answerSheetUrl: normalizePrivateFileUrl(test.answerSheetUrl),
     isPublished: test.status === "PUBLISHED" || test.isPublished,
+  }
+
+  const documentStatus = {
+    paperMissing: Boolean(test.questionPaperUrl && !paperExists),
+    modelMissing: Boolean(test.modelAnswerUrl && !modelExists),
+    templateMissing: Boolean(test.answerSheetUrl && !templateExists),
   }
 
   return (
@@ -110,6 +129,7 @@ export default async function EditSubjectTestPage({
         availableSeries={series}
         mode="edit"
         initialData={initialData}
+        documentStatus={documentStatus}
       />
     </div>
   )

@@ -14,6 +14,7 @@ import {
   DataTableFilter,
 } from "@/components/ui/data-table"
 import { FormattedDate } from "@/components/ui/date-picker"
+import { toast } from "@/components/ui/sonner"
 import { cn } from "@/lib/utils"
 import { ExamWorkspaceTimer } from "@/components/student/workspace/exam-workspace-timer"
 import {
@@ -24,7 +25,6 @@ import {
   CheckCircle2,
   Clock,
   Download,
-  ExternalLink,
   Eye,
   FileCheck2,
   FileText,
@@ -33,7 +33,6 @@ import {
   Printer,
   Sparkles,
   UploadCloud,
-  Timer,
 } from "lucide-react"
 
 const SubmissionUploadForm = dynamic(
@@ -173,27 +172,63 @@ export function StudentWorkspaceClient({
   const reportQuestions =
     selectedRun?.questions || activeSubmission?.evaluation?.questions || []
 
-  const resolvedPapers =
-    papers.length > 0
-      ? papers
-      : [
-          {
-            id: "default-paper",
-            title: "Official Examination Question Paper (PDF)",
-            fileUrl: "/api/files/download?file=papers/upsc-paper.pdf",
-          },
-        ]
+  const [downloadingUrl, setDownloadingUrl] = React.useState<string | null>(null)
 
-  const resolvedTemplates =
-    templates.length > 0
-      ? templates
-      : [
-          {
-            id: "default-tpl",
-            title: "Official 24-Page Ruled Margin Booklet (A4)",
-            fileUrl: "/api/files/download?file=templates/upsc-template.pdf",
-          },
-        ]
+  const handleResourceDownload = React.useCallback(
+    async (fileUrl: string, titleFallback: string) => {
+      if (!fileUrl) return
+      const targetUrl = fileUrl.includes("?")
+        ? `${fileUrl}&download=1`
+        : `${fileUrl}?download=1`
+
+      setDownloadingUrl(fileUrl)
+      try {
+        const res = await fetch(targetUrl)
+        if (!res.ok) {
+          let errMsg = "This document could not be downloaded."
+          try {
+            const payload = await res.json()
+            if (payload?.error) errMsg = payload.error
+          } catch {
+            // Non-JSON error response
+          }
+          toast.error("Download Unavailable", { description: errMsg })
+          return
+        }
+
+        const blob = await res.blob()
+        const disposition = res.headers.get("Content-Disposition") || ""
+        const match = disposition.match(/filename="?([^";]+)"?/i)
+        const filename =
+          match?.[1] ||
+          `${titleFallback.replace(/[^\w.-]+/g, "_").slice(0, 60) || "document"}.pdf`
+
+        const blobUrl = URL.createObjectURL(blob)
+        const a = document.createElement("a")
+        a.href = blobUrl
+        a.download = filename
+        document.body.appendChild(a)
+        a.click()
+        a.remove()
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 1000)
+      } catch {
+        toast.error("Download Failed", {
+          description:
+            "Network error while downloading the document. Please try again.",
+        })
+      } finally {
+        setDownloadingUrl(null)
+      }
+    },
+    []
+  )
+
+  const resolvedPapers = papers.filter((p) => Boolean(p.fileUrl))
+  const resolvedTemplates = templates.filter((t) => Boolean(t.fileUrl))
+  const isDemoWorkspace =
+    testSeriesId.startsWith("demo-") ||
+    testSeriesId.startsWith("upsc-") ||
+    testSeriesId === "test-1"
 
   const questionColumns: DataTableColumn<WorkspaceQuestionScore>[] =
     React.useMemo(
@@ -393,24 +428,27 @@ export function StudentWorkspaceClient({
         {/* Right Header Navigation */}
         <div className="flex shrink-0 items-center gap-2 self-start sm:self-center">
           {resolvedPapers[0]?.fileUrl && (
-            <a
-              href={
-                resolvedPapers[0].fileUrl.includes("?")
-                  ? `${resolvedPapers[0].fileUrl}&download=1`
-                  : `${resolvedPapers[0].fileUrl}?download=1`
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={downloadingUrl === resolvedPapers[0].fileUrl}
+              onClick={() =>
+                handleResourceDownload(
+                  resolvedPapers[0].fileUrl,
+                  resolvedPapers[0].title
+                )
               }
-              download
-              className="inline-flex"
+              className="h-9 gap-1.5 rounded-md border-slate-200 px-3 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800"
             >
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-9 gap-1.5 rounded-md border-slate-200 px-3 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800"
-              >
-                <Download className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Download</span> Paper
-              </Button>
-            </a>
+              <Download className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">
+                {downloadingUrl === resolvedPapers[0].fileUrl
+                  ? "Downloading..."
+                  : "Download"}
+              </span>{" "}
+              Paper
+            </Button>
           )}
           <Link href="/student/dashboard">
             <Button
@@ -860,11 +898,8 @@ export function StudentWorkspaceClient({
               </div>
 
               <div className="divide-y divide-slate-100 border-t border-slate-100 pt-1 dark:divide-slate-800 dark:border-slate-800">
-                {resolvedPapers.map((paper) => {
-                  const downloadUrl = paper.fileUrl.includes("?")
-                    ? `${paper.fileUrl}&download=1`
-                    : `${paper.fileUrl}?download=1`
-                  return (
+                {resolvedPapers.length > 0 ? (
+                  resolvedPapers.map((paper) => (
                     <div
                       key={paper.id}
                       className="flex flex-col justify-between gap-2.5 py-3 text-xs sm:flex-row sm:items-center"
@@ -885,20 +920,28 @@ export function StudentWorkspaceClient({
                           <Eye className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
                           Preview
                         </a>
-                        <a
-                          href={downloadUrl}
-                          download
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[#2A6AED] px-3 text-[11px] font-semibold text-white shadow-2xs transition-colors hover:bg-[#1E55C7]"
+                        <button
+                          type="button"
+                          disabled={downloadingUrl === paper.fileUrl}
+                          onClick={() =>
+                            handleResourceDownload(paper.fileUrl, paper.title)
+                          }
+                          className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md bg-[#2A6AED] px-3 text-[11px] font-semibold text-white shadow-2xs transition-colors hover:bg-[#1E55C7] disabled:opacity-60"
                         >
                           <Download className="h-3.5 w-3.5" />
-                          Download
-                        </a>
+                          {downloadingUrl === paper.fileUrl
+                            ? "Downloading..."
+                            : "Download"}
+                        </button>
                       </div>
                     </div>
-                  )
-                })}
+                  ))
+                ) : (
+                  <p className="py-4 text-xs text-slate-500 dark:text-slate-400">
+                    Question paper has not been uploaded yet. Please check back
+                    shortly.
+                  </p>
+                )}
               </div>
             </div>
 
@@ -924,11 +967,8 @@ export function StudentWorkspaceClient({
               </div>
 
               <div className="divide-y divide-slate-100 border-t border-slate-100 pt-1 dark:divide-slate-800 dark:border-slate-800">
-                {resolvedTemplates.map((tpl) => {
-                  const downloadUrl = tpl.fileUrl.includes("?")
-                    ? `${tpl.fileUrl}&download=1`
-                    : `${tpl.fileUrl}?download=1`
-                  return (
+                {resolvedTemplates.length > 0 ? (
+                  resolvedTemplates.map((tpl) => (
                     <div
                       key={tpl.id}
                       className="flex flex-col justify-between gap-2.5 py-3 text-xs sm:flex-row sm:items-center"
@@ -949,77 +989,87 @@ export function StudentWorkspaceClient({
                           <Eye className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
                           Preview
                         </a>
-                        <a
-                          href={downloadUrl}
-                          download
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex h-8 items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 text-[11px] font-semibold text-slate-800 shadow-2xs transition-colors hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+                        <button
+                          type="button"
+                          disabled={downloadingUrl === tpl.fileUrl}
+                          onClick={() =>
+                            handleResourceDownload(tpl.fileUrl, tpl.title)
+                          }
+                          className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 text-[11px] font-semibold text-slate-800 shadow-2xs transition-colors hover:bg-slate-50 disabled:opacity-60 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
                         >
                           <Printer className="h-3.5 w-3.5 text-[#2A6AED] dark:text-blue-400" />
-                          Print / Save
-                        </a>
+                          {downloadingUrl === tpl.fileUrl
+                            ? "Downloading..."
+                            : "Print / Save"}
+                        </button>
                       </div>
                     </div>
-                  )
-                })}
+                  ))
+                ) : (
+                  <p className="py-4 text-xs text-slate-500 dark:text-slate-400">
+                    No separate margin template attached — standard A4 ruled
+                    margin sheets may be used.
+                  </p>
+                )}
               </div>
             </div>
 
-            {/* 3. Benchmark Sample Answer Sheet */}
-            <div className="flex flex-col justify-between space-y-4 rounded-md border border-slate-200/80 bg-white p-5 shadow-none dark:border-slate-800 dark:bg-slate-900">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-slate-100">
-                    <BookOpen className="h-4 w-4 text-[#2A6AED] dark:text-blue-400" />
-                    Benchmark Sample Answer Sheet
-                  </h3>
-                  <Badge
-                    variant="outline"
-                    className="border-amber-200 bg-amber-50/60 text-[10px] font-semibold text-amber-700 dark:bg-amber-950/60 dark:text-amber-300"
-                  >
-                    Model 73.8%
-                  </Badge>
+            {/* 3. Benchmark Sample Answer Sheet (shown in demo/development workspaces) */}
+            {isDemoWorkspace && (
+              <div className="flex flex-col justify-between space-y-4 rounded-md border border-slate-200/80 bg-white p-5 shadow-none dark:border-slate-800 dark:bg-slate-900">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-slate-100">
+                      <BookOpen className="h-4 w-4 text-[#2A6AED] dark:text-blue-400" />
+                      Benchmark Sample Answer Sheet
+                    </h3>
+                    <Badge
+                      variant="outline"
+                      className="border-amber-200 bg-amber-50/60 text-[10px] font-semibold text-amber-700 dark:bg-amber-950/60 dark:text-amber-300"
+                    >
+                      Model 73.8%
+                    </Badge>
+                  </div>
+                  <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                    Inspect a verified handwritten candidate response booklet
+                    demonstrating structured headings, margin discipline, and
+                    examiner marks.
+                  </p>
                 </div>
-                <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-                  Inspect a verified handwritten candidate response booklet
-                  demonstrating structured headings, margin discipline, and
-                  examiner marks.
-                </p>
-              </div>
 
-              <div className="divide-y divide-slate-100 border-t border-slate-100 pt-1 dark:divide-slate-800 dark:border-slate-800">
-                <div className="flex flex-col justify-between gap-2.5 py-3 text-xs sm:flex-row sm:items-center">
-                  <span
-                    className="truncate font-semibold text-slate-800 dark:text-slate-200"
-                    title="UPSC GS-1 Model Handwritten Booklet"
-                  >
-                    UPSC GS-1 Benchmark Booklet (PDF)
-                  </span>
-                  <div className="flex shrink-0 items-center gap-2">
-                    <a
-                      href="/api/files/download?file=submissions/demo/sample-attempt.pdf"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex h-8 items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 text-[11px] font-semibold text-slate-700 shadow-2xs transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                <div className="divide-y divide-slate-100 border-t border-slate-100 pt-1 dark:divide-slate-800 dark:border-slate-800">
+                  <div className="flex flex-col justify-between gap-2.5 py-3 text-xs sm:flex-row sm:items-center">
+                    <span
+                      className="truncate font-semibold text-slate-800 dark:text-slate-200"
+                      title="UPSC GS-1 Model Handwritten Booklet"
                     >
-                      <Eye className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
-                      Preview
-                    </a>
-                    <a
-                      href="/api/files/download?file=submissions/demo/sample-attempt.pdf&download=1"
-                      download
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[#2A6AED] px-3 text-[11px] font-semibold text-white shadow-2xs transition-colors hover:bg-[#1E55C7]"
-                    >
-                      <Download className="h-3.5 w-3.5" />
-                      Download
-                    </a>
+                      UPSC GS-1 Benchmark Booklet (PDF)
+                    </span>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <a
+                        href="/api/files/download?file=submissions/demo/sample-attempt.pdf"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex h-8 items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 text-[11px] font-semibold text-slate-700 shadow-2xs transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                      >
+                        <Eye className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                        Preview
+                      </a>
+                      <a
+                        href="/api/files/download?file=submissions/demo/sample-attempt.pdf&download=1"
+                        download
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[#2A6AED] px-3 text-[11px] font-semibold text-white shadow-2xs transition-colors hover:bg-[#1E55C7]"
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                        Download
+                      </a>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
 
           <Separator className="bg-slate-200 dark:bg-slate-800" />

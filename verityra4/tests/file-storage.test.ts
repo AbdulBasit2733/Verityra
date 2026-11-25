@@ -51,5 +51,31 @@ export function runFileStorageTests() {
     assert.equal(normalizePrivateFileUrl(external), external)
   })
 
+  suite.test(
+    "Parses question-papers and legacy tests storage paths cleanly",
+    () => {
+      assert.deepEqual(
+        parsePrivateFileReference("question-papers/1234-cbse-math.pdf"),
+        {
+          bucket: "verityra-private",
+          filePath: "question-papers/1234-cbse-math.pdf",
+        }
+      )
+      assert.deepEqual(
+        parsePrivateFileReference(
+          "/api/files/download?bucket=verityra-private&file=tests%2Fsample.pdf"
+        ),
+        {
+          bucket: "verityra-private",
+          filePath: "tests/sample.pdf",
+        }
+      )
+      assert.equal(
+        normalizePrivateFileUrl("papers/test-abc/123-paper.pdf"),
+        "/api/files/download?bucket=verityra-private&file=papers%2Ftest-abc%2F123-paper.pdf"
+      )
+    }
+  )
+
   return suite.summary()
 }

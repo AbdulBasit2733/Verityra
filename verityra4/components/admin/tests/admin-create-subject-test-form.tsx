@@ -14,11 +14,11 @@ import { useGlobalError } from "@/components/providers/error-dialog-provider"
 import { SearchableCombobox } from "@/components/ui/searchable-combobox"
 import { MasterItem } from "@/lib/mock-masters"
 import { TestSeriesAttachmentOption } from "@/actions/question-paper-actions"
+import { normalizePrivateFileUrl } from "@/lib/file-urls"
+import { saveSubjectTestFormAction } from "@/actions/test-series-actions"
+import { AdminPdfPreviewModal } from "@/components/admin/question-papers/admin-pdf-preview-modal"
 import {
-  createSubjectTestAction,
-  updateSubjectTestAction,
-} from "@/actions/test-series-actions"
-import {
+  AlertTriangle,
   FileText,
   UploadCloud,
   FileCheck,
@@ -30,8 +30,41 @@ import {
   RotateCcw,
   BookOpenCheck,
   ShieldAlert,
-  ExternalLink,
+  Download,
+  Eye,
 } from "lucide-react"
+
+const ALLOWED_DOCUMENT_TYPES = [
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+]
+const MAX_DOCUMENT_BYTES = 25 * 1024 * 1024
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024 * 1024) {
+    return `${Math.max(1, Math.round(bytes / 1024))} KB`
+  }
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`
+}
+
+function extractReadableFilename(fileUrl: string, fallback: string): string {
+  try {
+    const parsed = new URL(fileUrl, "http://localhost")
+    const paramFile = parsed.searchParams.get("file")
+    const rawName = (paramFile || parsed.pathname).split("/").pop()
+    return rawName ? decodeURIComponent(rawName) : fallback
+  } catch {
+    return fileUrl.split("/").pop()?.split("?")[0] || fallback
+  }
+}
+
+export interface SubjectTestDocumentStatus {
+  paperMissing?: boolean
+  modelMissing?: boolean
+  templateMissing?: boolean
+}
 
 export interface AdminSubjectTestEditData {
   id: string
@@ -58,6 +91,7 @@ interface AdminCreateSubjectTestFormProps {
   mode?: "create" | "edit"
   initialData?: AdminSubjectTestEditData
   defaultSeriesId?: string
+  documentStatus?: SubjectTestDocumentStatus
 }
 
 const DEFAULT_STUDENT_INSTRUCTIONS = `1. Read all questions thoroughly before answering.
@@ -77,6 +111,7 @@ export function AdminCreateSubjectTestForm({
   mode = "create",
   initialData,
   defaultSeriesId,
+  documentStatus,
 }: AdminCreateSubjectTestFormProps) {
   const router = useRouter()
   const confirm = useConfirm()
@@ -136,6 +171,18 @@ export function AdminCreateSubjectTestForm({
   const [existingTemplateUrl, setExistingTemplateUrl] = React.useState<string | null>(
     initialData?.answerSheetUrl || null
   )
+  const [clearPaper, setClearPaper] = React.useState(false)
+  const [clearModel, setClearModel] = React.useState(false)
+  const [clearTemplate, setClearTemplate] = React.useState(false)
+  const [previewDoc, setPreviewDoc] = React.useState<{
+    title: string
+    fileUrl: string
+  } | null>(null)
+  const [missingFlags, setMissingFlags] = React.useState({
+    paper: Boolean(documentStatus?.paperMissing),
+    model: Boolean(documentStatus?.modelMissing),
+    template: Boolean(documentStatus?.templateMissing),
+  })
 
   const subjectOptions = React.useMemo(
     () =>
@@ -199,84 +246,91 @@ export function AdminCreateSubjectTestForm({
 
     setLoading(true)
     try {
-      // In development / demo mode or standard upload:
-      let paperUrl: string | undefined
-      if (paperFile) {
-        paperUrl = `/api/files/download?bucket=verityra-private&file=tests/${encodeURIComponent(paperFile.name)}`
-      }
-      let modelUrl: string | undefined
-      if (modelAnswerFile) {
-        modelUrl = `/api/files/download?bucket=verityra-private&file=model-answers/${encodeURIComponent(modelAnswerFile.name)}`
-      }
-      let templateUrl: string | undefined
-      if (answerSheetTemplateFile) {
-        templateUrl = `/api/files/download?bucket=verityra-private&file=templates/${encodeURIComponent(answerSheetTemplateFile.name)}`
-      }
-
-      const finalPaperUrl = paperUrl !== undefined ? paperUrl : existingPaperUrl
-      const finalModelUrl = modelUrl !== undefined ? modelUrl : existingModelUrl
-      const finalTemplateUrl = templateUrl !== undefined ? templateUrl : existingTemplateUrl
-
+      const formData = new FormData()
+      formData.append("mode", isEdit ? "edit" : "create")
       if (isEdit && initialData) {
-        const updateRes = await updateSubjectTestAction(initialData.id, {
-          testSeriesId: attachToSeries && testSeriesId ? testSeriesId : null,
-          title: title.trim(),
-          subject: subject.trim(),
-          description: description.trim() || undefined,
-          price: isStandalone ? parseFloat(price) || 0 : 0,
-          isStandalone,
-          maxMarks: parseFloat(maxMarks) || 80,
-          durationMinutes: parseInt(durationMinutes, 10) || 180,
-          maxAttempts: parseInt(maxAttempts, 10) || 3,
-          questionPaperUrl: finalPaperUrl || undefined,
-          modelAnswerUrl: finalModelUrl || undefined,
-          answerSheetUrl: finalTemplateUrl || undefined,
-          studentInstructions: studentInstructions.trim() || undefined,
-          privateEvaluationInstructions: privateEvaluationInstructions.trim() || undefined,
-          status: isPublished ? ("PUBLISHED" as any) : ("DRAFT" as any),
-          isPublished,
-        })
+        formData.append("id", initialData.id)
+      }
+      formData.append(
+        "testSeriesId",
+        attachToSeries && testSeriesId ? testSeriesId : ""
+      )
+      formData.append("title", title.trim())
+      formData.append("subject", subject.trim())
+      formData.append("description", description.trim())
+      formData.append("isStandalone", String(isStandalone))
+      formData.append("price", isStandalone ? String(parseFloat(price) || 0) : "0")
+      formData.append("maxMarks", String(parseFloat(maxMarks) || 80))
+      formData.append("durationMinutes", String(parseInt(durationMinutes, 10) || 180))
+      formData.append("maxAttempts", String(parseInt(maxAttempts, 10) || 3))
+      formData.append("studentInstructions", studentInstructions.trim())
+      formData.append(
+        "privateEvaluationInstructions",
+        privateEvaluationInstructions.trim()
+      )
+      formData.append("isPublished", String(isPublished))
 
-        if (!updateRes.success) {
-          throw new Error(updateRes.error || "Failed to update subject test.")
+      formData.append("clearQuestionPaper", String(clearPaper && !paperFile))
+      formData.append("clearModelAnswer", String(clearModel && !modelAnswerFile))
+      formData.append(
+        "clearAnswerSheet",
+        String(clearTemplate && !answerSheetTemplateFile)
+      )
+
+      if (paperFile) formData.append("paperFile", paperFile)
+      if (modelAnswerFile) formData.append("modelAnswerFile", modelAnswerFile)
+      if (answerSheetTemplateFile) {
+        formData.append("answerSheetTemplateFile", answerSheetTemplateFile)
+      }
+
+      const res = await saveSubjectTestFormAction(formData)
+      if (!res.success) {
+        throw new Error(
+          res.error ||
+            (isEdit
+              ? "Failed to update subject test."
+              : "Failed to create subject test.")
+        )
+      }
+
+      toast.success(
+        isEdit
+          ? "Subject test updated successfully!"
+          : "Subject test created successfully!",
+        { description: res.message }
+      )
+      if (isEdit && initialData) {
+        if (res.data) {
+          if ("questionPaperUrl" in res.data) {
+            setExistingPaperUrl(normalizePrivateFileUrl(res.data.questionPaperUrl))
+            if (paperFile || clearPaper) {
+              setMissingFlags((prev) => ({ ...prev, paper: false }))
+            }
+          }
+          if ("modelAnswerUrl" in res.data) {
+            setExistingModelUrl(normalizePrivateFileUrl(res.data.modelAnswerUrl))
+            if (modelAnswerFile || clearModel) {
+              setMissingFlags((prev) => ({ ...prev, model: false }))
+            }
+          }
+          if ("answerSheetUrl" in res.data) {
+            setExistingTemplateUrl(normalizePrivateFileUrl(res.data.answerSheetUrl))
+            if (answerSheetTemplateFile || clearTemplate) {
+              setMissingFlags((prev) => ({ ...prev, template: false }))
+            }
+          }
         }
-
-        toast.success("Subject test updated successfully!", {
-          description: updateRes.message,
-        })
+        setPaperFile(null)
+        setModelAnswerFile(null)
+        setAnswerSheetTemplateFile(null)
+        setClearPaper(false)
+        setClearModel(false)
+        setClearTemplate(false)
+        router.refresh()
+      } else {
         router.push("/admin/tests")
         router.refresh()
-        return
       }
-
-      const res = await createSubjectTestAction({
-        testSeriesId: attachToSeries && testSeriesId ? testSeriesId : null,
-        title: title.trim(),
-        subject: subject.trim(),
-        description: description.trim() || undefined,
-        price: isStandalone ? parseFloat(price) || 0 : 0,
-        isStandalone,
-        maxMarks: parseFloat(maxMarks) || 80,
-        durationMinutes: parseInt(durationMinutes, 10) || 180,
-        maxAttempts: parseInt(maxAttempts, 10) || 3,
-        questionPaperUrl: finalPaperUrl || undefined,
-        modelAnswerUrl: finalModelUrl || undefined,
-        answerSheetUrl: finalTemplateUrl || undefined,
-        studentInstructions: studentInstructions.trim() || undefined,
-        privateEvaluationInstructions: privateEvaluationInstructions.trim() || undefined,
-        status: isPublished ? ("PUBLISHED" as any) : ("DRAFT" as any),
-        isPublished,
-      })
-
-      if (!res.success) {
-        throw new Error(res.error || "Failed to create subject test.")
-      }
-
-      toast.success("Subject test created successfully!", {
-        description: res.message,
-      })
-      router.push("/admin/tests")
-      router.refresh()
     } catch (err: any) {
       showError({
         title: isEdit ? "Update Failed" : "Creation Failed",
@@ -300,251 +354,89 @@ export function AdminCreateSubjectTestForm({
               <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                 <FileText className="h-4 w-4 text-primary" /> Examination Documents
               </h3>
-              <span className="text-[11px] text-muted-foreground">PDF Format</span>
+              <span className="text-[11px] text-muted-foreground">
+                PDF or Image · Max 25 MB
+              </span>
             </div>
 
-            {/* Question Paper PDF */}
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-foreground flex items-center justify-between">
-                <span>Question Paper PDF</span>
-                <span className="text-[10px] text-primary font-bold">Mandatory for Candidates</span>
-              </Label>
-              {paperFile ? (
-                <div className="flex items-center justify-between p-2.5 rounded-md border border-emerald-500/30 bg-emerald-500/5">
-                  <div className="flex items-center gap-2 truncate">
-                    <FileCheck className="h-4 w-4 text-emerald-600 shrink-0" />
-                    <span className="text-xs font-semibold text-foreground truncate max-w-[200px]">
-                      {paperFile.name}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setPaperFile(null)}
-                    className="text-muted-foreground hover:text-rose-600 p-1"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              ) : existingPaperUrl ? (
-                <div className="flex items-center justify-between p-2.5 rounded-md border border-primary/30 bg-primary/5">
-                  <div className="flex items-center gap-2 truncate">
-                    <FileCheck className="h-4 w-4 text-primary shrink-0" />
-                    <span className="text-xs font-semibold text-foreground truncate max-w-[170px]" title={existingPaperUrl}>
-                      {existingPaperUrl.split("/").pop()?.split("?")[0] || "Existing Question Paper PDF"}
-                    </span>
-                    <a
-                      href={existingPaperUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[11px] text-primary hover:underline flex items-center gap-0.5"
-                    >
-                      <ExternalLink className="h-3 w-3" /> View
-                    </a>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <label className="text-[10px] text-primary hover:underline font-semibold cursor-pointer">
-                      Replace
-                      <input
-                        type="file"
-                        accept=".pdf,application/pdf"
-                        onChange={(e) => {
-                          const f = e.target.files?.[0]
-                          if (f) setPaperFile(f)
-                        }}
-                        className="hidden"
-                      />
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => setExistingPaperUrl(null)}
-                      className="text-muted-foreground hover:text-rose-600 p-1"
-                      title="Remove current document"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <label className="flex flex-col items-center justify-center p-4 rounded-md border border-dashed border-border hover:border-primary/60 bg-muted/20 hover:bg-muted/40 cursor-pointer transition-colors">
-                  <UploadCloud className="h-5 w-5 text-muted-foreground mb-1" />
-                  <span className="text-xs font-semibold text-foreground">
-                    Upload official question paper PDF
-                  </span>
-                  <span className="text-[10px] text-muted-foreground mt-0.5">
-                    Drag and drop or browse files
-                  </span>
-                  <input
-                    type="file"
-                    accept=".pdf,application/pdf"
-                    onChange={(e) => {
-                      const f = e.target.files?.[0]
-                      if (f) setPaperFile(f)
-                    }}
-                    className="hidden"
-                  />
-                </label>
-              )}
-            </div>
+            <DocumentUploadSlot
+              id="paper-upload"
+              label="Question Paper PDF"
+              hint="Mandatory for Candidates"
+              hintTone="primary"
+              emptyTitle="Upload official question paper PDF"
+              emptySubtitle="Drag & drop or click to browse (PDF/JPG/PNG)"
+              file={paperFile}
+              existingUrl={existingPaperUrl}
+              isMissing={Boolean(missingFlags.paper && !clearPaper)}
+              onSelectFile={(f) => {
+                setPaperFile(f)
+                setClearPaper(false)
+              }}
+              onClearPending={() => setPaperFile(null)}
+              onRemoveExisting={() => {
+                setExistingPaperUrl(null)
+                setClearPaper(true)
+              }}
+              onPreview={(url) =>
+                setPreviewDoc({
+                  title: `${title || subject || "Subject Test"} — Question Paper`,
+                  fileUrl: url,
+                })
+              }
+            />
 
-            {/* Model Answer PDF */}
-            <div className="space-y-1.5 pt-1">
-              <Label className="text-xs font-semibold text-foreground flex items-center justify-between">
-                <span>Model Answer Key PDF (Optional)</span>
-                <span className="text-[10px] text-muted-foreground">For AI Reference</span>
-              </Label>
-              {modelAnswerFile ? (
-                <div className="flex items-center justify-between p-2.5 rounded-md border border-emerald-500/30 bg-emerald-500/5">
-                  <div className="flex items-center gap-2 truncate">
-                    <FileCheck className="h-4 w-4 text-emerald-600 shrink-0" />
-                    <span className="text-xs font-semibold text-foreground truncate max-w-[200px]">
-                      {modelAnswerFile.name}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setModelAnswerFile(null)}
-                    className="text-muted-foreground hover:text-rose-600 p-1"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              ) : existingModelUrl ? (
-                <div className="flex items-center justify-between p-2.5 rounded-md border border-primary/30 bg-primary/5">
-                  <div className="flex items-center gap-2 truncate">
-                    <FileCheck className="h-4 w-4 text-primary shrink-0" />
-                    <span className="text-xs font-semibold text-foreground truncate max-w-[170px]" title={existingModelUrl}>
-                      {existingModelUrl.split("/").pop()?.split("?")[0] || "Existing Model Key PDF"}
-                    </span>
-                    <a
-                      href={existingModelUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[11px] text-primary hover:underline flex items-center gap-0.5"
-                    >
-                      <ExternalLink className="h-3 w-3" /> View
-                    </a>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <label className="text-[10px] text-primary hover:underline font-semibold cursor-pointer">
-                      Replace
-                      <input
-                        type="file"
-                        accept=".pdf,application/pdf"
-                        onChange={(e) => {
-                          const f = e.target.files?.[0]
-                          if (f) setModelAnswerFile(f)
-                        }}
-                        className="hidden"
-                      />
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => setExistingModelUrl(null)}
-                      className="text-muted-foreground hover:text-rose-600 p-1"
-                      title="Remove current document"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <label className="flex items-center justify-between p-2.5 rounded-md border border-dashed border-border hover:border-primary/60 bg-muted/20 hover:bg-muted/40 cursor-pointer transition-colors">
-                  <span className="text-xs text-muted-foreground">
-                    Select model answer key PDF...
-                  </span>
-                  <span className="text-[10px] text-primary font-semibold">Browse</span>
-                  <input
-                    type="file"
-                    accept=".pdf,application/pdf"
-                    onChange={(e) => {
-                      const f = e.target.files?.[0]
-                      if (f) setModelAnswerFile(f)
-                    }}
-                    className="hidden"
-                  />
-                </label>
-              )}
-            </div>
+            <DocumentUploadSlot
+              id="model-upload"
+              label="Model Answer Key PDF (Optional)"
+              hint="For AI Reference"
+              emptyTitle="Upload model answer key PDF"
+              emptySubtitle="Drag & drop or click to browse"
+              file={modelAnswerFile}
+              existingUrl={existingModelUrl}
+              isMissing={Boolean(missingFlags.model && !clearModel)}
+              onSelectFile={(f) => {
+                setModelAnswerFile(f)
+                setClearModel(false)
+              }}
+              onClearPending={() => setModelAnswerFile(null)}
+              onRemoveExisting={() => {
+                setExistingModelUrl(null)
+                setClearModel(true)
+              }}
+              onPreview={(url) =>
+                setPreviewDoc({
+                  title: `${title || subject || "Subject Test"} — Model Answer Key`,
+                  fileUrl: url,
+                })
+              }
+            />
 
-            {/* Answer Sheet Template PDF */}
-            <div className="space-y-1.5 pt-1">
-              <Label className="text-xs font-semibold text-foreground flex items-center justify-between">
-                <span>Answer Sheet Template PDF (Optional)</span>
-                <span className="text-[10px] text-muted-foreground">For Candidate Printout</span>
-              </Label>
-              {answerSheetTemplateFile ? (
-                <div className="flex items-center justify-between p-2.5 rounded-md border border-emerald-500/30 bg-emerald-500/5">
-                  <div className="flex items-center gap-2 truncate">
-                    <FileCheck className="h-4 w-4 text-emerald-600 shrink-0" />
-                    <span className="text-xs font-semibold text-foreground truncate max-w-[200px]">
-                      {answerSheetTemplateFile.name}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setAnswerSheetTemplateFile(null)}
-                    className="text-muted-foreground hover:text-rose-600 p-1"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              ) : existingTemplateUrl ? (
-                <div className="flex items-center justify-between p-2.5 rounded-md border border-primary/30 bg-primary/5">
-                  <div className="flex items-center gap-2 truncate">
-                    <FileCheck className="h-4 w-4 text-primary shrink-0" />
-                    <span className="text-xs font-semibold text-foreground truncate max-w-[170px]" title={existingTemplateUrl}>
-                      {existingTemplateUrl.split("/").pop()?.split("?")[0] || "Existing Template PDF"}
-                    </span>
-                    <a
-                      href={existingTemplateUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[11px] text-primary hover:underline flex items-center gap-0.5"
-                    >
-                      <ExternalLink className="h-3 w-3" /> View
-                    </a>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <label className="text-[10px] text-primary hover:underline font-semibold cursor-pointer">
-                      Replace
-                      <input
-                        type="file"
-                        accept=".pdf,application/pdf"
-                        onChange={(e) => {
-                          const f = e.target.files?.[0]
-                          if (f) setAnswerSheetTemplateFile(f)
-                        }}
-                        className="hidden"
-                      />
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => setExistingTemplateUrl(null)}
-                      className="text-muted-foreground hover:text-rose-600 p-1"
-                      title="Remove current document"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <label className="flex items-center justify-between p-2.5 rounded-md border border-dashed border-border hover:border-primary/60 bg-muted/20 hover:bg-muted/40 cursor-pointer transition-colors">
-                  <span className="text-xs text-muted-foreground">
-                    Select blank template PDF...
-                  </span>
-                  <span className="text-[10px] text-primary font-semibold">Browse</span>
-                  <input
-                    type="file"
-                    accept=".pdf,application/pdf"
-                    onChange={(e) => {
-                      const f = e.target.files?.[0]
-                      if (f) setAnswerSheetTemplateFile(f)
-                    }}
-                    className="hidden"
-                  />
-                </label>
-              )}
-            </div>
+            <DocumentUploadSlot
+              id="template-upload"
+              label="Answer Sheet Template PDF (Optional)"
+              hint="For Candidate Printout"
+              emptyTitle="Upload blank margin template PDF"
+              emptySubtitle="Drag & drop or click to browse"
+              file={answerSheetTemplateFile}
+              existingUrl={existingTemplateUrl}
+              isMissing={Boolean(missingFlags.template && !clearTemplate)}
+              onSelectFile={(f) => {
+                setAnswerSheetTemplateFile(f)
+                setClearTemplate(false)
+              }}
+              onClearPending={() => setAnswerSheetTemplateFile(null)}
+              onRemoveExisting={() => {
+                setExistingTemplateUrl(null)
+                setClearTemplate(true)
+              }}
+              onPreview={(url) =>
+                setPreviewDoc({
+                  title: `${title || subject || "Subject Test"} — Answer Sheet Template`,
+                  fileUrl: url,
+                })
+              }
+            />
           </div>
 
           {/* Test Series Attachment */}
@@ -816,6 +708,270 @@ export function AdminCreateSubjectTestForm({
           </div>
         </div>
       </div>
+
+      {previewDoc && (
+        <AdminPdfPreviewModal
+          open={Boolean(previewDoc)}
+          onOpenChange={(open) => !open && setPreviewDoc(null)}
+          title={previewDoc.title}
+          fileUrl={previewDoc.fileUrl}
+        />
+      )}
     </form>
+  )
+}
+
+function DocumentUploadSlot({
+  id,
+  label,
+  hint,
+  hintTone = "muted",
+  emptyTitle,
+  emptySubtitle,
+  file,
+  existingUrl,
+  isMissing,
+  onSelectFile,
+  onClearPending,
+  onRemoveExisting,
+  onPreview,
+}: {
+  id: string
+  label: string
+  hint: string
+  hintTone?: "primary" | "muted"
+  emptyTitle: string
+  emptySubtitle: string
+  file: File | null
+  existingUrl: string | null
+  isMissing: boolean
+  onSelectFile: (file: File) => void
+  onClearPending: () => void
+  onRemoveExisting: () => void
+  onPreview: (url: string) => void
+}) {
+  const [dragging, setDragging] = React.useState(false)
+  const inputRef = React.useRef<HTMLInputElement>(null)
+
+  const validateAndAccept = (candidate?: File | null) => {
+    if (!candidate) return
+    if (!ALLOWED_DOCUMENT_TYPES.includes(candidate.type)) {
+      toast.error("Unsupported file format", {
+        description: "Upload a PDF or JPG, PNG, or WebP document.",
+      })
+      return
+    }
+    if (candidate.size === 0 || candidate.size > MAX_DOCUMENT_BYTES) {
+      toast.error("File size error", {
+        description: "Document must be non-empty and smaller than 25 MB.",
+      })
+      return
+    }
+    onSelectFile(candidate)
+  }
+
+  const downloadUrl =
+    existingUrl &&
+    (existingUrl.includes("?")
+      ? `${existingUrl}&download=1`
+      : `${existingUrl}?download=1`)
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between gap-2">
+        <Label htmlFor={id} className="text-xs font-semibold text-foreground">
+          {label}
+        </Label>
+        <span
+          className={`text-[10px] ${
+            hintTone === "primary"
+              ? "font-bold text-primary"
+              : "text-muted-foreground"
+          }`}
+        >
+          {hint}
+        </span>
+      </div>
+
+      <input
+        ref={inputRef}
+        id={id}
+        type="file"
+        accept=".pdf,application/pdf,image/jpeg,image/png,image/webp"
+        onChange={(e) => {
+          validateAndAccept(e.target.files?.[0])
+          e.target.value = ""
+        }}
+        className="hidden"
+      />
+
+      {file ? (
+        <div className="flex items-center justify-between gap-2 rounded-md border border-emerald-500/40 bg-emerald-500/5 p-3">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <FileCheck className="h-4 w-4 shrink-0 text-emerald-600" />
+            <div className="min-w-0">
+              <p className="truncate text-xs font-semibold text-foreground">
+                {file.name}
+              </p>
+              <div className="mt-0.5 flex items-center gap-1.5">
+                <Badge className="h-4 border-0 bg-emerald-600 px-1.5 text-[10px] font-bold text-white">
+                  New file ready
+                </Badge>
+                <span className="text-[10px] text-muted-foreground">
+                  {formatFileSize(file.size)}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="flex shrink-0 items-center gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => inputRef.current?.click()}
+              className="h-7 px-2 text-[11px] font-semibold text-primary"
+            >
+              Change
+            </Button>
+            <button
+              type="button"
+              onClick={onClearPending}
+              aria-label={`Discard selected ${label}`}
+              className="rounded p-1 text-muted-foreground hover:text-rose-600"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+      ) : existingUrl ? (
+        <div
+          className={`space-y-2 rounded-md border p-3 ${
+            isMissing
+              ? "border-amber-400/70 bg-amber-50/70 dark:border-amber-800 dark:bg-amber-950/30"
+              : "border-primary/30 bg-primary/5"
+          }`}
+        >
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex min-w-0 items-center gap-2">
+              {isMissing ? (
+                <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />
+              ) : (
+                <FileCheck className="h-4 w-4 shrink-0 text-primary" />
+              )}
+              <div className="min-w-0">
+                <p
+                  className="truncate text-xs font-semibold text-foreground"
+                  title={existingUrl}
+                >
+                  {extractReadableFilename(existingUrl, label)}
+                </p>
+                <div className="mt-0.5 flex items-center gap-1.5">
+                  {isMissing ? (
+                    <Badge className="h-4 border-0 bg-amber-600 px-1.5 text-[10px] font-bold text-white">
+                      Missing in storage — re-upload required
+                    </Badge>
+                  ) : (
+                    <Badge
+                      variant="outline"
+                      className="h-4 border-emerald-300 bg-emerald-50 px-1.5 text-[10px] font-semibold text-emerald-700"
+                    >
+                      Saved in storage
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex shrink-0 items-center gap-1">
+              {!isMissing && (
+                <>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onPreview(existingUrl)}
+                    aria-label={`Preview ${label}`}
+                    className="h-7 px-2 text-[11px] font-semibold text-primary"
+                  >
+                    <Eye className="mr-1 h-3 w-3" /> Preview
+                  </Button>
+                  {downloadUrl && (
+                    <a
+                      href={downloadUrl}
+                      download
+                      aria-label={`Download ${label}`}
+                      className="inline-flex h-7 items-center rounded px-2 text-[11px] font-semibold text-muted-foreground hover:bg-muted hover:text-foreground"
+                    >
+                      <Download className="h-3 w-3" />
+                    </a>
+                  )}
+                </>
+              )}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => inputRef.current?.click()}
+                className="h-7 px-2 text-[11px] font-semibold"
+              >
+                {isMissing ? "Upload PDF" : "Replace"}
+              </Button>
+              <button
+                type="button"
+                onClick={onRemoveExisting}
+                aria-label={`Remove ${label}`}
+                title="Remove current document"
+                className="rounded p-1 text-muted-foreground hover:text-rose-600"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+
+          {isMissing && (
+            <p className="text-[11px] leading-relaxed text-amber-800 dark:text-amber-300">
+              This document URL was saved without an uploaded file in storage.
+              Click <strong>Upload PDF</strong> above and save changes to make
+              it downloadable for students.
+            </p>
+          )}
+        </div>
+      ) : (
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => inputRef.current?.click()}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault()
+              inputRef.current?.click()
+            }
+          }}
+          onDragOver={(e) => {
+            e.preventDefault()
+            setDragging(true)
+          }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={(e) => {
+            e.preventDefault()
+            setDragging(false)
+            validateAndAccept(e.dataTransfer.files?.[0])
+          }}
+          className={`flex cursor-pointer flex-col items-center justify-center rounded-md border border-dashed p-4 text-center transition-colors ${
+            dragging
+              ? "border-primary bg-primary/5"
+              : "border-border bg-muted/20 hover:border-primary/60 hover:bg-muted/40"
+          }`}
+        >
+          <UploadCloud className="mb-1 h-5 w-5 text-muted-foreground" />
+          <span className="text-xs font-semibold text-foreground">
+            {emptyTitle}
+          </span>
+          <span className="mt-0.5 text-[10px] text-muted-foreground">
+            {emptySubtitle}
+          </span>
+        </div>
+      )}
+    </div>
   )
 }
