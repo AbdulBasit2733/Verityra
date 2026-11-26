@@ -28,6 +28,10 @@ export interface EvaluationEmailPayload {
 export async function sendEvaluationReadyEmail(
   payload: EvaluationEmailPayload
 ): Promise<boolean> {
+  if (process.env.ENABLE_EMAIL_DELIVERY !== "true") {
+    return false
+  }
+
   const resend = getResend()
   if (!resend) {
     console.log(

@@ -13,7 +13,7 @@ import {
   downloadPrivateFile,
   parsePrivateFileReference,
 } from "../storage/supabase.js"
-import { sendEvaluationReadyEmail } from "../email/mailer.js"
+// import { sendEvaluationReadyEmail } from "../email/mailer.js"
 import { EvaluationStatus, SubmissionStatus } from "@prisma/client"
 import { config } from "../config.js"
 
@@ -319,7 +319,8 @@ export function createEvaluationWorker(): Worker<EvaluationJobData> {
           // Non-critical cache purge failure
         }
 
-        // Email scorecard notification
+        // Email scorecard notification bypassed until custom Resend domain is verified
+        /*
         if (submission.user?.email) {
           await sendEvaluationReadyEmail({
             to: submission.user.email,
@@ -339,6 +340,7 @@ export function createEvaluationWorker(): Worker<EvaluationJobData> {
             )
           })
         }
+        */
 
         console.log(
           `[Worker] Job ${job.id} completed successfully for submission ${submissionId}: ${persisted.totalMarksAwarded}/${effectiveMaxMarks} marks (${persisted.percentage}%)`

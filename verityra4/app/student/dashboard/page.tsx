@@ -14,7 +14,10 @@ export default async function StudentDashboardPage() {
 
   let registrations: any[] = []
   let submissions: any[] = []
-  let isEmailVerified = Boolean(persistedUser?.emailVerified)
+  // Email verification requirement bypassed — treat all active student sessions as verified
+  // const isEmailVerified = Boolean(persistedUser?.emailVerified)
+  const isEmailVerified = true
+  void persistedUser
 
   try {
     const [regList, subList] = await Promise.all([

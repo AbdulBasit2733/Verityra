@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server"
 import { registerSchema } from "@/lib/validations/auth"
 import { prisma, isDatabaseConnected } from "@/lib/prisma"
-import { sendVerificationEmail } from "@/lib/email"
+// import { sendVerificationEmail } from "@/lib/email"
 import bcrypt from "bcryptjs"
-import crypto from "crypto"
 import { Role, UserStatus } from "@prisma/client"
 
 export async function POST(req: Request) {
@@ -48,7 +47,7 @@ export async function POST(req: Request) {
     // Hash password with bcrypt
     const passwordHash = await bcrypt.hash(password, 12)
 
-    // Strictly assign Role.STUDENT for public signup
+    // Strictly assign Role.STUDENT for public signup & auto-verify for direct sign-in
     const user = await prisma.user.create({
       data: {
         name,
@@ -56,6 +55,7 @@ export async function POST(req: Request) {
         passwordHash,
         role: Role.STUDENT,
         status: UserStatus.ACTIVE,
+        emailVerified: new Date(),
         profile: {
           create: {},
         },
@@ -69,45 +69,16 @@ export async function POST(req: Request) {
       },
     })
 
+    // Email verification bypassed for direct student sign-in:
+    /*
     try {
       const rawToken = crypto.randomBytes(32).toString("hex")
-      const tokenHash = crypto
-        .createHash("sha256")
-        .update(rawToken)
-        .digest("hex")
-      const expires = new Date(Date.now() + 24 * 60 * 60 * 1000)
-
-      await prisma.verificationToken.deleteMany({
-        where: { identifier: normalizedEmail },
-      })
-
-      await prisma.verificationToken.create({
-        data: {
-          identifier: normalizedEmail,
-          token: tokenHash,
-          expires,
-        },
-      })
-
-      const dispatch = await sendVerificationEmail({
-        to: normalizedEmail,
-        name,
-        rawToken,
-        expiresInHours: 24,
-      })
-
-      if (!dispatch.success) {
-        console.error(
-          "[Register API] sendVerificationEmail unsuccessful:",
-          dispatch.error
-        )
-      }
+      ...
+      await sendVerificationEmail({ to: normalizedEmail, name, rawToken, expiresInHours: 24 })
     } catch (verifyErr) {
-      console.error(
-        "[Register API] Failed to send verification email:",
-        verifyErr
-      )
+      console.error("[Register API] Failed to send verification email:", verifyErr)
     }
+    */
 
     return NextResponse.json(
       {

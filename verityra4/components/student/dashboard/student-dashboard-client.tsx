@@ -395,7 +395,8 @@ export function StudentDashboardClient({
         </Link>
       </PageHeader>
 
-      {!isEmailVerified && (
+      {/* Email verification banner bypassed while Resend domain verification is disabled */}
+      {false && !isEmailVerified && (
         <div className="flex flex-col justify-between gap-3 rounded-md border border-amber-200 bg-amber-50/80 p-4 text-sm sm:flex-row sm:items-center dark:border-amber-900/50 dark:bg-amber-950/30">
           <div className="flex items-start gap-3 sm:items-center">
             <MailWarning className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 sm:mt-0 dark:text-amber-400" />

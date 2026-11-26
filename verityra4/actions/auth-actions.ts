@@ -20,7 +20,7 @@ import { BRAND_CONFIG } from "@/lib/brand"
 import {
   sendPasswordChangedEmail,
   sendPasswordResetEmail,
-  sendVerificationEmail,
+  // sendVerificationEmail,
 } from "@/lib/email"
 import bcrypt from "bcryptjs"
 import crypto from "crypto"
@@ -84,6 +84,7 @@ export async function registerStudentAction(formData: {
   const passwordHash = await bcrypt.hash(password, 12)
 
   // Strictly enforce Role.STUDENT with concurrent P2002 race-condition guard
+  // Auto-mark emailVerified so students can register & sign in directly without email verification
   try {
     await prisma.user.create({
       data: {
@@ -92,6 +93,7 @@ export async function registerStudentAction(formData: {
         passwordHash,
         role: Role.STUDENT,
         status: UserStatus.ACTIVE,
+        emailVerified: new Date(),
         profile: {
           create: {},
         },
@@ -108,7 +110,8 @@ export async function registerStudentAction(formData: {
     throw createError
   }
 
-  // Generate verification token and dispatch welcome/verification email via Resend
+  // Email verification token & Resend dispatch bypassed for direct student sign-in:
+  /*
   let devVerificationUrl: string | undefined
   try {
     const rawToken = crypto.randomBytes(32).toString("hex")
@@ -135,27 +138,18 @@ export async function registerStudentAction(formData: {
     })
 
     devVerificationUrl = dispatch.verificationUrl
-
-    if (!dispatch.success) {
-      console.error(
-        "[Auth] Verification email dispatch was unsuccessful:",
-        dispatch.error
-      )
-    }
   } catch (emailErr) {
     console.error(
       "[Auth] Failed to dispatch verification email on signup:",
       emailErr
     )
   }
+  */
 
   return {
     success: true,
     message:
-      "Your account has been created successfully. We have sent a verification link to your email.",
-    ...(process.env.NODE_ENV === "development" && {
-      data: { devVerificationUrl },
-    }),
+      "Your account has been created successfully! Redirecting you to sign in...",
   }
 }
 
@@ -486,6 +480,15 @@ export async function resendVerificationEmailAction(
     }
   }
 
+  // Email verification dispatch bypassed — auto-verify existing unverified account
+  await prisma.user
+    .update({
+      where: { email: targetEmail },
+      data: { emailVerified: new Date() },
+    })
+    .catch(() => undefined)
+
+  /*
   const rawToken = crypto.randomBytes(32).toString("hex")
   const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex")
   const expires = new Date(Date.now() + 24 * 60 * 60 * 1000)
@@ -508,20 +511,12 @@ export async function resendVerificationEmailAction(
     rawToken,
     expiresInHours: 24,
   })
+  */
 
-  if (!dispatch.success) {
-    console.error(
-      "[Auth] Resend verification email dispatch was unsuccessful:",
-      dispatch.error
-    )
-  }
-
+  revalidatePath("/student/dashboard")
   return {
     success: true,
-    message: "A fresh verification link has been sent to your email address.",
-    ...(process.env.NODE_ENV === "development" && {
-      data: { devVerificationUrl: dispatch.verificationUrl },
-    }),
+    message: "Your account is active and ready to use.",
   }
 }
 

@@ -6,7 +6,7 @@ import {
   getGeminiModelName,
 } from "@/lib/ai/gemini-evaluator"
 import { invalidateLeaderboardCache, invalidateAdminAnalyticsCache } from "@/lib/cache"
-import { sendEvaluationReadyEmail } from "@/lib/email"
+// import { sendEvaluationReadyEmail } from "@/lib/email"
 import { EvaluationStatus, SubmissionStatus } from "@prisma/client"
 import {
   failEvaluationRun,
@@ -456,6 +456,8 @@ export function createEvaluationWorker(): Worker<EvaluationJobData> | null {
           invalidateAdminAnalyticsCache() // Invalidate admin dashboard analytics
         }
 
+        // Email notification bypassed until custom Resend domain is verified
+        /*
         if (submission.user?.email) {
           await sendEvaluationReadyEmail({
             to: submission.user.email,
@@ -475,6 +477,7 @@ export function createEvaluationWorker(): Worker<EvaluationJobData> | null {
             )
           })
         }
+        */
 
         console.log(`[Worker] Job ${job.id} completed successfully`)
 

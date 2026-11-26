@@ -86,6 +86,15 @@ export function getResendClient(): Resend | null {
 export async function sendEmail(
   payload: EmailPayload
 ): Promise<EmailDispatchResult> {
+  // Bypass live Resend delivery until custom domain is verified and ENABLE_EMAIL_DELIVERY="true" is set
+  if (process.env.ENABLE_EMAIL_DELIVERY !== "true") {
+    return {
+      success: true,
+      simulated: true,
+      id: `sim_bypassed_${Date.now()}`,
+    }
+  }
+
   const resend = getResendClient()
   const fromEmail =
     payload.from ||
@@ -127,8 +136,8 @@ export async function sendEmail(
         error.message?.includes("testing emails to your own email address") ||
         error.message?.includes("Invalid `to` field")
 
-      // In non-production/dev environments, don't let Resend sandbox limitation block developers
-      if (isSandboxRestriction && process.env.NODE_ENV !== "production") {
+      // Gracefully bypass Resend sandbox restriction across all environments
+      if (isSandboxRestriction) {
         const recipient = Array.isArray(payload.to)
           ? payload.to.join(", ")
           : payload.to
