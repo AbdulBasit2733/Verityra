@@ -99,12 +99,32 @@ export async function submitAnswerSheetAction(
     }
   }
 
-  // 2. Fetch Registration and Test Series
+  // 2. Resolve optional Subject Test (Test.id) vs parent TestSeries and fetch registration
+  const childTest = await prisma.test.findUnique({
+    where: { id: testSeriesId },
+    select: {
+      id: true,
+      title: true,
+      maxMarks: true,
+      privateEvaluationInstructions: true,
+      testSeriesId: true,
+    },
+  })
+
+  if (childTest && !childTest.testSeriesId) {
+    return {
+      success: false,
+      error: "This subject test is not linked to an active test series yet.",
+    }
+  }
+
+  const resolvedTestSeriesId = childTest?.testSeriesId || testSeriesId
+
   const registration = await prisma.testRegistration.findUnique({
     where: {
       userId_testSeriesId: {
         userId: user.id,
-        testSeriesId,
+        testSeriesId: resolvedTestSeriesId,
       },
     },
     include: {
@@ -150,7 +170,7 @@ export async function submitAnswerSheetAction(
   const safeFileName = (
     file.name.split(/[\\/]/).pop() || "answer-sheet"
   ).replace(/[^\w.-]/g, "_")
-  const storagePath = `submissions/${testSeriesId}/${user.id}/attempt_${attemptToReserve}_${Date.now()}_${safeFileName}`
+  const storagePath = `submissions/${resolvedTestSeriesId}/${user.id}/attempt_${attemptToReserve}_${Date.now()}_${safeFileName}`
 
   let uploadedFileUrl: string
   try {
@@ -194,7 +214,8 @@ export async function submitAnswerSheetAction(
       const newSub = await tx.submission.create({
         data: {
           registrationId: currentReg.id,
-          testSeriesId,
+          testSeriesId: resolvedTestSeriesId,
+          testId: childTest?.id ?? null,
           userId: user.id,
           attemptNumber: nextAttemptNumber,
           fileUrl: uploadedFileUrl,
@@ -250,7 +271,7 @@ export async function submitAnswerSheetAction(
 
   // 7. Trigger AI Evaluation Workflow (Async Queue)
   // Queue evaluation in the background; only local development may use the sync fallback.
-  const targetSeriesId = registration.testSeriesId || testSeriesId
+  const targetSeriesId = registration.testSeriesId || resolvedTestSeriesId
   const jobId = await queueEvaluation({
     submissionId: submission.id,
     testSeriesId: targetSeriesId,
@@ -271,12 +292,20 @@ export async function submitAnswerSheetAction(
     try {
       const currentSeries = registration.testSeries
       const latestPaper = currentSeries?.papers?.[0]
+      const effectiveTitle =
+        childTest?.title || currentSeries?.title || "Test Series"
+      const effectiveMaxMarks =
+        childTest?.maxMarks ?? currentSeries?.maxMarks ?? 100
+      const effectiveInstructions =
+        childTest?.privateEvaluationInstructions ||
+        currentSeries?.privateEvaluationInstructions ||
+        ""
 
       const aiResult = await evaluateAnswerSheetWithGemini({
-        testTitle: currentSeries?.title || "Test Series",
-        maxMarks: currentSeries?.maxMarks || 100,
+        testTitle: effectiveTitle,
+        maxMarks: effectiveMaxMarks,
         rubricContent: latestPaper?.rubricContent || null,
-        privateEvaluationInstructions: currentSeries?.privateEvaluationInstructions || "",
+        privateEvaluationInstructions: effectiveInstructions,
         studentAnswerSheetBuffer: fileBytes,
         studentAnswerSheetMimeType: file.type,
         studentAnswerSheetUrl: uploadedFileUrl,
@@ -286,7 +315,7 @@ export async function submitAnswerSheetAction(
         runId: evaluationRun.id,
         submissionId: submission.id,
         result: aiResult,
-        maxMarks: currentSeries?.maxMarks || 100,
+        maxMarks: effectiveMaxMarks,
         evaluatorModel: getGeminiModelName(),
       })
     } catch (evalErr) {
@@ -308,6 +337,9 @@ export async function submitAnswerSheetAction(
   }
 
   revalidatePath(`/student/tests/${testSeriesId}`)
+  if (resolvedTestSeriesId !== testSeriesId) {
+    revalidatePath(`/student/tests/${resolvedTestSeriesId}`)
+  }
   revalidatePath("/student/dashboard")
   revalidatePath("/admin/submissions")
 

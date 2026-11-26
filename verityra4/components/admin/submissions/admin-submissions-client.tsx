@@ -42,6 +42,9 @@ export interface AdminSubmissionRow {
   fileUrl?: string | null
   submittedAt: string
   aiEvaluationRuns: number
+  jobStatus?: string | null
+  jobAttempts?: number | null
+  jobError?: string | null
 }
 
 export function AdminSubmissionEvaluationTrigger({
@@ -49,11 +52,13 @@ export function AdminSubmissionEvaluationTrigger({
   compact = false,
   iconOnly = false,
   aiEvaluationRuns = 0,
+  isProcessing = false,
 }: {
   submissionId: string
   compact?: boolean
   iconOnly?: boolean
   aiEvaluationRuns?: number
+  isProcessing?: boolean
 }) {
   const router = useRouter()
   const { showError } = useGlobalError()
@@ -62,16 +67,22 @@ export function AdminSubmissionEvaluationTrigger({
 
   async function handleEvaluate() {
     const confirmed = await confirm({
-      title: "Queue AI re-evaluation?",
-      description: `This will trigger administrative AI evaluation run #${aiEvaluationRuns + 1}.`,
-      confirmText: "Re-evaluate",
+      title: isProcessing
+        ? "Force retry stalled evaluation?"
+        : "Queue AI re-evaluation?",
+      description: isProcessing
+        ? `This submission is currently marked PROCESSING. Force-retrying will mark the stalled run failed and queue run #${aiEvaluationRuns + 1}.`
+        : `This will trigger administrative AI evaluation run #${aiEvaluationRuns + 1}.`,
+      confirmText: isProcessing ? "Force Retry" : "Re-evaluate",
       cancelText: "Cancel",
       variant: "default",
     })
     if (!confirmed) return
     setLoading(true)
     try {
-      const result = await adminReevaluateSubmissionAction(submissionId)
+      const result = await adminReevaluateSubmissionAction(submissionId, {
+        force: isProcessing,
+      })
       if (!result.success) {
         showError({
           title: "AI Evaluation Failed",
@@ -217,22 +228,36 @@ export function AdminSubmissionsClient({
       sortable: true,
       sortAccessor: (s) => s.status,
       cell: (s) => (
-        <Badge
-          variant={
-            s.status === "COMPLETED"
-              ? "success"
+        <div className="space-y-1">
+          <Badge
+            variant={
+              s.status === "COMPLETED"
+                ? "success"
+                : s.status === "REVIEW_REQUIRED"
+                  ? "warning"
+                  : "info"
+            }
+            className={
+              s.status === "FAILED"
+                ? "rounded-sm border-red-200 bg-red-50 text-[11px] font-semibold text-red-700"
+                : "rounded-sm text-[11px] font-semibold"
+            }
+          >
+            {s.status === "COMPLETED"
+              ? "Completed"
               : s.status === "REVIEW_REQUIRED"
-                ? "warning"
-                : "info"
-          }
-          className="rounded-sm text-[11px] font-semibold"
-        >
-          {s.status === "COMPLETED"
-            ? "Completed"
-            : s.status === "REVIEW_REQUIRED"
-              ? "Review Required"
-              : s.status}
-        </Badge>
+                ? "Review Required"
+                : s.status}
+          </Badge>
+          {s.jobError && s.status !== "COMPLETED" && (
+            <p
+              title={s.jobError}
+              className="max-w-[180px] truncate text-[10px] text-red-600 dark:text-red-400"
+            >
+              {s.jobError}
+            </p>
+          )}
+        </div>
       ),
     },
     {
@@ -281,12 +306,15 @@ export function AdminSubmissionsClient({
         <div className="flex items-center justify-end gap-1">
           {(s.status === "COMPLETED" ||
             s.status === "FAILED" ||
-            s.status === "REVIEW_REQUIRED") && (
+            s.status === "REVIEW_REQUIRED" ||
+            s.status === "PROCESSING" ||
+            s.status === "PENDING") && (
             <AdminSubmissionEvaluationTrigger
               submissionId={s.id}
               compact
               iconOnly
               aiEvaluationRuns={s.aiEvaluationRuns}
+              isProcessing={s.status === "PROCESSING"}
             />
           )}
           {s.fileUrl && (
@@ -334,6 +362,8 @@ export function AdminSubmissionsClient({
         { label: "Review Required", value: "REVIEW_REQUIRED" },
         { label: "Completed", value: "COMPLETED" },
         { label: "Processing", value: "PROCESSING" },
+        { label: "Failed", value: "FAILED" },
+        { label: "Pending", value: "PENDING" },
       ],
     },
     {

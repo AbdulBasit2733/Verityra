@@ -7,7 +7,13 @@ import {
   DEFAULT_GEMINI_MODEL,
   extractAndParseJson,
   getGeminiModelName,
+  isRetryableGeminiStatus,
 } from "../lib/ai/gemini-evaluator"
+import {
+  evaluateStaleJobDecision,
+  isFinalBullMqAttempt,
+  resolveEvaluationTargetMeta,
+} from "../lib/queue/evaluation-queue"
 
 export function runEvaluationTests() {
   const suite = new TestSuite(
@@ -275,6 +281,119 @@ export function runEvaluationTests() {
       assert.equal(canClaimEvaluationRun(3, "ADMIN_REEVALUATION"), true)
       assert.equal(canClaimEvaluationRun(10, "ADMIN_REEVALUATION"), true)
       assert.equal(canClaimEvaluationRun(50, "ADMIN_REEVALUATION"), true)
+    }
+  )
+
+  suite.test(
+    "Gemini Retry Eligibility: Transient statuses 404/429/500/502/503/504 are retried; client 400/401 are not",
+    () => {
+      for (const code of [404, 429, 500, 502, 503, 504]) {
+        assert.equal(isRetryableGeminiStatus(code), true)
+      }
+      for (const code of [400, 401, 403, 422, undefined]) {
+        assert.equal(isRetryableGeminiStatus(code), false)
+      }
+    }
+  )
+
+  suite.test(
+    "Queue Retry Lifecycle: isFinalBullMqAttempt honors custom attempts option and default 3",
+    () => {
+      assert.equal(isFinalBullMqAttempt(0, undefined), false)
+      assert.equal(isFinalBullMqAttempt(1, 3), false)
+      assert.equal(isFinalBullMqAttempt(2, 3), true)
+      assert.equal(isFinalBullMqAttempt(0, 1), true)
+    }
+  )
+
+  suite.test(
+    "Subject Test Routing: Child Test metadata overrides parent TestSeries title, maxMarks, and instructions",
+    () => {
+      const parentOnly = resolveEvaluationTargetMeta({
+        testSeries: {
+          title: "Mock Series",
+          maxMarks: 250,
+          privateEvaluationInstructions: "Series rubric",
+        },
+        test: null,
+      })
+      assert.equal(parentOnly.title, "Mock Series")
+      assert.equal(parentOnly.maxMarks, 250)
+      assert.equal(parentOnly.privateEvaluationInstructions, "Series rubric")
+
+      const withChildTest = resolveEvaluationTargetMeta({
+        testSeries: {
+          title: "Mock Series",
+          maxMarks: 250,
+          privateEvaluationInstructions: "Series rubric",
+        },
+        test: {
+          title: "Class 10th Science Test",
+          maxMarks: 80,
+          privateEvaluationInstructions: "Science step marking",
+        },
+      })
+      assert.equal(withChildTest.title, "Class 10th Science Test")
+      assert.equal(withChildTest.maxMarks, 80)
+      assert.equal(
+        withChildTest.privateEvaluationInstructions,
+        "Science step marking"
+      )
+    }
+  )
+
+  suite.test(
+    "Stale Job Reconciliation: Flags orphaned or timed-out PROCESSING/QUEUED jobs while sparing fresh active jobs",
+    () => {
+      // Active PROCESSING job within 10 minutes should NOT be failed
+      assert.deepEqual(
+        evaluateStaleJobDecision({
+          status: "PROCESSING",
+          ageMs: 5 * 60 * 1000,
+          queueJobState: "active",
+        }),
+        { shouldFail: false, shouldWake: false }
+      )
+
+      // Orphaned PROCESSING job (e.g. stalled out of Redis) after 13 min -> fail
+      assert.deepEqual(
+        evaluateStaleJobDecision({
+          status: "PROCESSING",
+          ageMs: 13 * 60 * 1000,
+          queueJobState: "failed",
+        }),
+        { shouldFail: true, shouldWake: false }
+      )
+
+      // Hard-timed-out PROCESSING job after 26 min even if Redis still says active -> fail
+      assert.deepEqual(
+        evaluateStaleJobDecision({
+          status: "PROCESSING",
+          ageMs: 26 * 60 * 1000,
+          queueJobState: "active",
+        }),
+        { shouldFail: true, shouldWake: false }
+      )
+
+      // Sleeping worker wakeup when QUEUED in Redis for 5 min
+      assert.deepEqual(
+        evaluateStaleJobDecision({
+          status: "QUEUED",
+          ageMs: 5 * 60 * 1000,
+          queueJobState: "waiting",
+        }),
+        { shouldFail: false, shouldWake: true }
+      )
+
+      // Stuck QUEUED job past hard timeout (50 min) -> fail
+      assert.deepEqual(
+        evaluateStaleJobDecision({
+          status: "QUEUED",
+          ageMs: 50 * 60 * 1000,
+          queueJobState: "waiting",
+        }),
+        { shouldFail: true, shouldWake: false }
+      )
     }
   )
 

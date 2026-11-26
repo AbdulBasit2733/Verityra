@@ -173,6 +173,52 @@ export function runSubmissionTests() {
     }
   )
 
+  suite.test(
+    "Subject Test Linkage: Child Test ID resolves parent testSeriesId and preserves testId",
+    () => {
+      function resolveSubmissionTargets(
+        routeId: string,
+        childTest: { id: string; testSeriesId: string | null } | null
+      ) {
+        if (childTest && !childTest.testSeriesId) {
+          return {
+            ok: false as const,
+            error: "Subject test is not linked to an active test series.",
+          }
+        }
+        return {
+          ok: true as const,
+          testSeriesId: childTest?.testSeriesId || routeId,
+          testId: childTest?.id ?? null,
+        }
+      }
+
+      assert.deepEqual(resolveSubmissionTargets("series-1", null), {
+        ok: true,
+        testSeriesId: "series-1",
+        testId: null,
+      })
+
+      assert.deepEqual(
+        resolveSubmissionTargets("test-1", {
+          id: "test-1",
+          testSeriesId: "series-1",
+        }),
+        {
+          ok: true,
+          testSeriesId: "series-1",
+          testId: "test-1",
+        }
+      )
+
+      const unlinked = resolveSubmissionTargets("test-orphan", {
+        id: "test-orphan",
+        testSeriesId: null,
+      })
+      assert.equal(unlinked.ok, false)
+    }
+  )
+
   return suite.summary()
 }
 

@@ -8,12 +8,18 @@ import { config } from "../config.js"
 export const DEFAULT_GEMINI_MODEL = "gemini-3.8-flash"
 const CURRENT_FREE_FALLBACK_GEMINI_MODEL = "gemini-3.5-flash-lite"
 const LEGACY_GEMINI_MODEL = "gemini-2.5-flash-lite"
+const RETRYABLE_GEMINI_STATUSES = new Set([404, 429, 500, 502, 503, 504])
 
 export function getGeminiModelName(): string {
   const configured = config.geminiModel || DEFAULT_GEMINI_MODEL
   return configured === LEGACY_GEMINI_MODEL
     ? CURRENT_FREE_FALLBACK_GEMINI_MODEL
     : configured
+}
+
+export function isRetryableGeminiStatus(status: unknown): boolean {
+  const numericStatus = typeof status === "number" ? status : Number(status)
+  return RETRYABLE_GEMINI_STATUSES.has(numericStatus)
 }
 
 export type EvaluationInput = {
@@ -96,9 +102,15 @@ ${input.privateEvaluationInstructions}
 Please evaluate the attached student answer sheet thoroughly and return the structured JSON evaluation.
 `
 
+    if (!input.studentAnswerSheetBuffer || input.studentAnswerSheetBuffer.length === 0) {
+      throw new Error(
+        "Student answer sheet file is empty or could not be downloaded."
+      )
+    }
+
     const contents: Part[] = [{ text: userPrompt }]
 
-    if (input.studentAnswerSheetBuffer && input.studentAnswerSheetMimeType) {
+    if (input.studentAnswerSheetMimeType) {
       contents.push({
         inlineData: {
           mimeType: input.studentAnswerSheetMimeType,
@@ -118,17 +130,29 @@ Please evaluate the attached student answer sheet thoroughly and return the stru
         },
       })
     } catch (error: any) {
+      const status = error?.status ?? error?.code
+      const numericStatus = typeof status === "number" ? status : Number(status)
       if (
-        ![404, 503].includes(error?.status) ||
-        modelName === CURRENT_FREE_FALLBACK_GEMINI_MODEL
+        !isRetryableGeminiStatus(numericStatus) ||
+        (numericStatus === 404 &&
+          modelName === CURRENT_FREE_FALLBACK_GEMINI_MODEL)
       ) {
         throw error
       }
+
+      const retryModel =
+        modelName === CURRENT_FREE_FALLBACK_GEMINI_MODEL
+          ? modelName
+          : CURRENT_FREE_FALLBACK_GEMINI_MODEL
+      if (numericStatus !== 404) {
+        await new Promise((resolve) => setTimeout(resolve, 2000))
+      }
+
       console.warn(
-        `[Worker:AI] ${modelName} unavailable (HTTP ${error?.status}); retrying with ${CURRENT_FREE_FALLBACK_GEMINI_MODEL}.`
+        `[Worker:AI] ${modelName} transient/unavailable error (HTTP ${numericStatus}); retrying with ${retryModel}.`
       )
       response = await ai.models.generateContent({
-        model: CURRENT_FREE_FALLBACK_GEMINI_MODEL,
+        model: retryModel,
         contents,
         config: {
           systemInstruction: systemPrompt,

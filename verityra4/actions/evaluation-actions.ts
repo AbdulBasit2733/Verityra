@@ -19,7 +19,8 @@ import { revalidatePath } from "next/cache"
 import { ActionResult } from "./auth-actions"
 
 export async function adminReevaluateSubmissionAction(
-  submissionId: string
+  submissionId: string,
+  options?: { force?: boolean }
 ): Promise<ActionResult<{ runNumber: number }>> {
   const sessionUser = await getCurrentUser()
   if (!sessionUser || sessionUser.role !== Role.ADMIN) {
@@ -39,6 +40,7 @@ export async function adminReevaluateSubmissionAction(
     where: { id: submissionId },
     select: {
       id: true,
+      status: true,
       testSeriesId: true,
       userId: true,
       fileUrl: true,
@@ -49,7 +51,10 @@ export async function adminReevaluateSubmissionAction(
 
   let run
   try {
-    run = await claimEvaluationRun(submission.id, "ADMIN_REEVALUATION")
+    run = await claimEvaluationRun(submission.id, "ADMIN_REEVALUATION", {
+      force:
+        options?.force ?? submission.status === SubmissionStatus.PROCESSING,
+    })
   } catch (error) {
     if (error instanceof EvaluationRunError)
       return { success: false, error: error.message }

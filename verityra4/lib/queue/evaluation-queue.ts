@@ -25,6 +25,169 @@ export interface EvaluationJobData {
   runNumber: number
 }
 
+const PROCESSING_ORPHAN_MS = 12 * 60 * 1000
+const PROCESSING_HARD_TIMEOUT_MS = 25 * 60 * 1000
+const QUEUED_WAKE_THRESHOLD_MS = 3 * 60 * 1000
+const QUEUED_ORPHAN_MS = 20 * 60 * 1000
+const QUEUED_HARD_TIMEOUT_MS = 45 * 60 * 1000
+
+export function isFinalBullMqAttempt(
+  attemptsMade: number,
+  maxAttempts?: number | null
+): boolean {
+  return attemptsMade + 1 >= (maxAttempts ?? 3)
+}
+
+export function resolveEvaluationTargetMeta(submission: {
+  testSeries: {
+    title: string
+    maxMarks: number
+    privateEvaluationInstructions?: string | null
+  }
+  test?: {
+    title: string
+    maxMarks: number
+    privateEvaluationInstructions?: string | null
+  } | null
+}) {
+  return {
+    title: submission.test?.title || submission.testSeries.title,
+    maxMarks: submission.test?.maxMarks ?? submission.testSeries.maxMarks,
+    privateEvaluationInstructions:
+      submission.test?.privateEvaluationInstructions ||
+      submission.testSeries.privateEvaluationInstructions ||
+      "",
+  }
+}
+
+export function evaluateStaleJobDecision(params: {
+  status: string
+  ageMs: number
+  queueJobState: string | null
+}): { shouldFail: boolean; shouldWake: boolean } {
+  const { status, ageMs, queueJobState } = params
+  const hasRedisJob = queueJobState !== null
+  const isWaitingInRedis =
+    queueJobState === "waiting" ||
+    queueJobState === "delayed" ||
+    queueJobState === "prioritized"
+
+  if (status === "PROCESSING") {
+    if (ageMs >= PROCESSING_HARD_TIMEOUT_MS) {
+      return { shouldFail: true, shouldWake: false }
+    }
+    if (ageMs >= PROCESSING_ORPHAN_MS && queueJobState !== "active") {
+      return { shouldFail: true, shouldWake: false }
+    }
+    return { shouldFail: false, shouldWake: false }
+  }
+
+  if (status === "QUEUED" || status === "RETRYING") {
+    if (ageMs >= QUEUED_HARD_TIMEOUT_MS) {
+      return { shouldFail: true, shouldWake: false }
+    }
+    if (ageMs >= QUEUED_ORPHAN_MS && !hasRedisJob) {
+      return { shouldFail: true, shouldWake: false }
+    }
+    if (
+      ageMs >= QUEUED_WAKE_THRESHOLD_MS &&
+      (isWaitingInRedis || !hasRedisJob)
+    ) {
+      return { shouldFail: false, shouldWake: true }
+    }
+  }
+
+  return { shouldFail: false, shouldWake: false }
+}
+
+export async function wakeEvaluationWorker(): Promise<void> {
+  const workerBaseUrl = process.env.EVALUATION_WORKER_URL?.trim()
+  if (!workerBaseUrl) return
+
+  const healthUrl = `${workerBaseUrl.replace(/\/+$/, "")}/health`
+  try {
+    await fetch(healthUrl, {
+      method: "GET",
+      cache: "no-store",
+      signal: AbortSignal.timeout(2500),
+    })
+  } catch {
+    // Best-effort wake-up for sleeping Render free-tier worker
+  }
+}
+
+async function markEvaluationJobAndSubmissionFailed(params: {
+  submissionId: string
+  runId?: string
+  runNumber?: number
+  errorMessage: string
+  attempts?: number
+}) {
+  const { submissionId, runId, runNumber, errorMessage, attempts } = params
+
+  if (runId) {
+    await failEvaluationRun(runId, errorMessage).catch((runError) => {
+      console.error(
+        `[Worker] Failed to mark evaluation run ${runId} failed:`,
+        runError
+      )
+    })
+  } else {
+    const existingSub = await prisma.submission
+      .findUnique({
+        where: { id: submissionId },
+        select: { status: true },
+      })
+      .catch(() => null)
+    if (
+      existingSub &&
+      existingSub.status !== SubmissionStatus.COMPLETED &&
+      existingSub.status !== SubmissionStatus.REVIEW_REQUIRED
+    ) {
+      await prisma.submission
+        .updateMany({
+          where: {
+            id: submissionId,
+            status: {
+              in: [SubmissionStatus.PENDING, SubmissionStatus.PROCESSING],
+            },
+          },
+          data: { status: SubmissionStatus.FAILED },
+        })
+        .catch(() => undefined)
+    }
+  }
+
+  await prisma.evaluationJob
+    .updateMany({
+      where: { submissionId },
+      data: {
+        status: "FAILED",
+        lastError: errorMessage,
+        ...(typeof attempts === "number" ? { attempts } : {}),
+      },
+    })
+    .catch(() => undefined)
+
+  if (runNumber === 1) {
+    const sub = await prisma.submission
+      .findUnique({
+        where: { id: submissionId },
+        select: { registrationId: true },
+      })
+      .catch(() => null)
+
+    if (sub?.registrationId) {
+      await prisma.testRegistration
+        .update({
+          where: { id: sub.registrationId },
+          data: { maxAttempts: { increment: 1 } },
+        })
+        .catch(() => undefined)
+    }
+  }
+}
+
 const globalForQueue = globalThis as unknown as {
   evaluationQueue: Queue<EvaluationJobData> | null | undefined
   evaluationWorker: Worker<EvaluationJobData> | null | undefined
@@ -75,7 +238,6 @@ export function createEvaluationWorker(): Worker<EvaluationJobData> | null {
     async (job: Job<EvaluationJobData>) => {
       const {
         submissionId,
-        testSeriesId,
         fileUrl,
         fileBuffer,
         mimeType,
@@ -97,12 +259,20 @@ export function createEvaluationWorker(): Worker<EvaluationJobData> | null {
           },
         })
 
-        // Fetch submission with test series data
+        // Fetch submission with test series & optional child subject test data
         const submission = await prisma.submission.findUnique({
           where: { id: submissionId },
           include: {
             user: {
               select: { name: true, email: true },
+            },
+            test: {
+              select: {
+                id: true,
+                title: true,
+                maxMarks: true,
+                privateEvaluationInstructions: true,
+              },
             },
             testSeries: {
               include: {
@@ -115,6 +285,8 @@ export function createEvaluationWorker(): Worker<EvaluationJobData> | null {
         if (!submission) {
           throw new Error(`Submission ${submissionId} not found`)
         }
+
+        const targetMeta = resolveEvaluationTargetMeta(submission)
 
         // Get file buffer (either from job data or download from URL)
         let buffer: Buffer
@@ -132,6 +304,12 @@ export function createEvaluationWorker(): Worker<EvaluationJobData> | null {
           )
         }
 
+        if (!buffer || buffer.length === 0) {
+          throw new Error(
+            "Student answer sheet file is empty or could not be downloaded."
+          )
+        }
+
         // Update job progress
         await job.updateProgress(20)
 
@@ -140,11 +318,10 @@ export function createEvaluationWorker(): Worker<EvaluationJobData> | null {
           `[Worker] Running AI evaluation for submission ${submissionId}`
         )
         const aiResult = await evaluateAnswerSheetWithGemini({
-          testTitle: submission.testSeries.title,
-          maxMarks: submission.testSeries.maxMarks,
+          testTitle: targetMeta.title,
+          maxMarks: targetMeta.maxMarks,
           rubricContent: submission.testSeries.papers[0]?.rubricContent || null,
-          privateEvaluationInstructions:
-            submission.testSeries.privateEvaluationInstructions || "",
+          privateEvaluationInstructions: targetMeta.privateEvaluationInstructions,
           studentAnswerSheetBuffer: buffer,
           studentAnswerSheetMimeType: mimeType,
           studentAnswerSheetUrl: fileUrl,
@@ -156,7 +333,7 @@ export function createEvaluationWorker(): Worker<EvaluationJobData> | null {
           runId,
           submissionId,
           result: aiResult,
-          maxMarks: submission.testSeries.maxMarks,
+          maxMarks: targetMeta.maxMarks,
           evaluatorModel: getGeminiModelName(),
         })
 
@@ -184,10 +361,10 @@ export function createEvaluationWorker(): Worker<EvaluationJobData> | null {
             to: submission.user.email,
             name: submission.user.name,
             testSeriesId: submission.testSeriesId,
-            testTitle: submission.testSeries.title,
+            testTitle: targetMeta.title,
             attemptNumber: submission.attemptNumber,
             totalMarksAwarded: persisted.totalMarksAwarded,
-            maxMarks: submission.testSeries.maxMarks,
+            maxMarks: targetMeta.maxMarks,
             percentage: persisted.percentage,
             requiresReview:
               persisted.status === EvaluationStatus.REVIEW_REQUIRED,
@@ -207,66 +384,51 @@ export function createEvaluationWorker(): Worker<EvaluationJobData> | null {
           totalMarksAwarded: persisted.totalMarksAwarded,
           percentage: persisted.percentage,
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error(`[Worker] Job ${job.id} failed:`, error)
 
-        // Update job status in database
-        await prisma.evaluationJob
-          .update({
-            where: { submissionId },
-            data: {
-              status: job.attemptsMade >= 2 ? "FAILED" : "RETRYING",
-              lastError: error.message || "Unknown error",
-              attempts: job.attemptsMade,
-            },
-          })
-          .catch((dbError) => {
-            console.error(
-              `[Worker] Failed to update job status in database:`,
-              dbError
-            )
-          })
+        const isFinal = isFinalBullMqAttempt(
+          job.attemptsMade,
+          job.opts.attempts
+        )
+        const errorMessage =
+          error instanceof Error ? error.message : "Unknown error"
 
-        // BullMQ attemptsMade starts at 0, so the third delivery is attempt 2.
-        if (job.attemptsMade >= 2) {
-          const failedSub = await prisma.submission
-            .update({
+        if (isFinal) {
+          const currentSub = await prisma.submission
+            .findUnique({
               where: { id: submissionId },
-              data: { status: SubmissionStatus.FAILED },
-              select: { registrationId: true },
+              select: { status: true },
+            })
+            .catch(() => null)
+          const wasNotFailed =
+            currentSub &&
+            (currentSub.status === SubmissionStatus.PENDING ||
+              currentSub.status === SubmissionStatus.PROCESSING)
+
+          await markEvaluationJobAndSubmissionFailed({
+            submissionId,
+            runId,
+            runNumber: wasNotFailed ? job.data.runNumber : undefined,
+            errorMessage,
+            attempts: job.attemptsMade + 1,
+          })
+        } else {
+          await prisma.evaluationJob
+            .update({
+              where: { submissionId },
+              data: {
+                status: "RETRYING",
+                lastError: errorMessage,
+                attempts: job.attemptsMade + 1,
+              },
             })
             .catch((dbError) => {
               console.error(
-                `[Worker] Failed to mark submission as failed:`,
+                `[Worker] Failed to update job status in database:`,
                 dbError
               )
-              return null
             })
-
-          // Compensate candidate quota on terminal system failure of initial run
-          if (failedSub?.registrationId && job.data.runNumber === 1) {
-            await prisma.testRegistration
-              .update({
-                where: { id: failedSub.registrationId },
-                data: { maxAttempts: { increment: 1 } },
-              })
-              .catch((regError) => {
-                console.error(
-                  `[Worker] Failed to compensate candidate attempt quota:`,
-                  regError
-                )
-              })
-          }
-
-          await failEvaluationRun(
-            runId,
-            error.message || "Evaluation failed after retries"
-          ).catch((runError) => {
-            console.error(
-              `[Worker] Failed to mark evaluation run ${runId} failed:`,
-              runError
-            )
-          })
         }
 
         throw error
@@ -295,8 +457,35 @@ export function createEvaluationWorker(): Worker<EvaluationJobData> | null {
     console.log(`[Worker] Job ${job.id} completed`)
   })
 
-  globalForQueue.evaluationWorker.on("failed", (job, err) => {
+  globalForQueue.evaluationWorker.on("failed", async (job, err) => {
     console.error(`[Worker] Job ${job?.id} failed:`, err.message)
+    if (!job?.data?.submissionId) return
+    const maxAttempts = job.opts?.attempts ?? 1
+    if (
+      job.attemptsMade >= maxAttempts ||
+      err.message.toLowerCase().includes("stalled")
+    ) {
+      const currentSub = await prisma.submission
+        .findUnique({
+          where: { id: job.data.submissionId },
+          select: { status: true },
+        })
+        .catch(() => null)
+      const wasNotFailed =
+        currentSub &&
+        (currentSub.status === SubmissionStatus.PENDING ||
+          currentSub.status === SubmissionStatus.PROCESSING)
+
+      if (wasNotFailed) {
+        await markEvaluationJobAndSubmissionFailed({
+          submissionId: job.data.submissionId,
+          runId: job.data.runId,
+          runNumber: job.data.runNumber,
+          errorMessage: err.message || "Evaluation job failed permanently.",
+          attempts: job.attemptsMade,
+        })
+      }
+    }
   })
 
   globalForQueue.evaluationWorker.on("error", (err) => {
@@ -320,9 +509,17 @@ export async function queueEvaluation(
   }
 
   try {
-    // A re-evaluation is a new logical run. Reusing a completed BullMQ job ID
-    // causes BullMQ to return the old job without executing the new run.
+    // A re-evaluation is a new logical run. Remove any leftover completed/failed
+    // BullMQ job for the same jobId so re-queueing never silently no-ops.
     const jobId = `eval-${data.submissionId}-run-${data.runNumber}`
+    const existing = await queue.getJob(jobId).catch(() => null)
+    if (existing) {
+      const existingState = await existing.getState().catch(() => null)
+      if (existingState === "completed" || existingState === "failed") {
+        await existing.remove().catch(() => undefined)
+      }
+    }
+
     await prisma.evaluationJob.upsert({
       where: { submissionId: data.submissionId },
       create: {
@@ -334,6 +531,7 @@ export async function queueEvaluation(
       update: {
         status: "QUEUED",
         queuedAt: new Date(),
+        startedAt: null,
         attempts: 0,
         lastError: null,
       },
@@ -341,19 +539,23 @@ export async function queueEvaluation(
 
     const job = await queue.add("evaluate", data, { jobId })
 
+    // Best-effort wake-up ping for Render free-tier worker
+    await wakeEvaluationWorker()
+
     console.log(
       `[Queue] Queued evaluation job ${job.id} for submission ${data.submissionId}`
     )
 
     return job.id || jobId
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[Queue] Failed to queue evaluation:", error)
     await prisma.evaluationJob
       .updateMany({
         where: { submissionId: data.submissionId },
         data: {
           status: "FAILED",
-          lastError: error.message || "Queue submission failed",
+          lastError:
+            error instanceof Error ? error.message : "Queue submission failed",
         },
       })
       .catch(() => undefined)
@@ -438,6 +640,102 @@ export async function recoverPendingEvaluationJobs(): Promise<number> {
 }
 
 /**
+ * Reconcile stale PROCESSING / QUEUED / RETRYING evaluation jobs so submissions
+ * never stay stuck indefinitely if the worker crashed, stalled, or slept.
+ */
+export async function reconcileStaleEvaluationJobs(
+  limit = 25
+): Promise<number> {
+  try {
+    const staleThreshold = new Date(Date.now() - QUEUED_WAKE_THRESHOLD_MS)
+    const candidateJobs = await prisma.evaluationJob.findMany({
+      where: {
+        status: { in: ["PROCESSING", "QUEUED", "RETRYING"] },
+        queuedAt: { lt: staleThreshold },
+      },
+      orderBy: { queuedAt: "asc" },
+      take: limit,
+      select: {
+        id: true,
+        submissionId: true,
+        status: true,
+        queuedAt: true,
+        startedAt: true,
+        updatedAt: true,
+        attempts: true,
+      },
+    })
+
+    if (candidateJobs.length === 0) return 0
+
+    const queue = getEvaluationQueue()
+    let reconciled = 0
+    let wokeWorker = false
+
+    for (const jobRecord of candidateJobs) {
+      const latestRun = await prisma.evaluationRun.findFirst({
+        where: { submissionId: jobRecord.submissionId },
+        orderBy: { runNumber: "desc" },
+        select: { id: true, runNumber: true, status: true },
+      })
+
+      let queueJobState: string | null = null
+      if (queue) {
+        const queueJobId = latestRun
+          ? `eval-${jobRecord.submissionId}-run-${latestRun.runNumber}`
+          : jobRecord.id
+        const bullJob = await queue.getJob(queueJobId).catch(() => null)
+        queueJobState = bullJob ? await bullJob.getState().catch(() => null) : null
+      }
+
+      const ageBase =
+        jobRecord.status === "PROCESSING"
+          ? jobRecord.startedAt ?? jobRecord.queuedAt
+          : jobRecord.updatedAt ?? jobRecord.queuedAt
+      const decision = evaluateStaleJobDecision({
+        status: jobRecord.status,
+        ageMs: Date.now() - ageBase.getTime(),
+        queueJobState,
+      })
+
+      if (decision.shouldFail) {
+        const currentSub = await prisma.submission
+          .findUnique({
+            where: { id: jobRecord.submissionId },
+            select: { status: true },
+          })
+          .catch(() => null)
+        const wasActive =
+          currentSub &&
+          (currentSub.status === SubmissionStatus.PENDING ||
+            currentSub.status === SubmissionStatus.PROCESSING)
+
+        await markEvaluationJobAndSubmissionFailed({
+          submissionId: jobRecord.submissionId,
+          runId:
+            latestRun?.status === EvaluationStatus.PROCESSING
+              ? latestRun.id
+              : undefined,
+          runNumber: wasActive ? latestRun?.runNumber : undefined,
+          errorMessage:
+            "Evaluation worker timed out before finishing. Use Retry / Re-evaluate from the admin panel.",
+          attempts: jobRecord.attempts,
+        })
+        reconciled += 1
+      } else if (decision.shouldWake && !wokeWorker) {
+        await wakeEvaluationWorker()
+        wokeWorker = true
+      }
+    }
+
+    return reconciled
+  } catch (error) {
+    console.error("[Queue] Failed to reconcile stale evaluation jobs:", error)
+    return 0
+  }
+}
+
+/**
  * Get evaluation job status
  */
 export async function getEvaluationStatus(submissionId: string) {
@@ -451,7 +749,7 @@ export async function getEvaluationStatus(submissionId: string) {
     const latestRun = await prisma.evaluationRun.findFirst({
       where: { submissionId },
       orderBy: { runNumber: "desc" },
-      select: { runNumber: true },
+      select: { id: true, runNumber: true, status: true },
     })
 
     const queue = getEvaluationQueue()
@@ -473,54 +771,60 @@ export async function getEvaluationStatus(submissionId: string) {
           const parsed = parseFloat(jobProgress)
           jobProgressValue = isNaN(parsed) ? 0 : parsed
         }
-      } catch (err) {
+      } catch {
         // Job might not exist in queue anymore
         jobProgressValue = 0
       }
     }
 
-    const ageBase = jobRecord.startedAt ?? jobRecord.queuedAt
-    const staleAfterMs =
-      jobRecord.status === "PROCESSING" ? 10 * 60 * 1000 : 15 * 60 * 1000
-    const stale = Date.now() - ageBase.getTime() > staleAfterMs
-    const activeQueueStates = new Set([
-      "active",
-      "waiting",
-      "delayed",
-      "prioritized",
-      "waiting-children",
-    ])
+    const ageBase =
+      jobRecord.status === "PROCESSING"
+        ? jobRecord.startedAt ?? jobRecord.queuedAt
+        : jobRecord.updatedAt ?? jobRecord.queuedAt
+    const decision = evaluateStaleJobDecision({
+      status: jobRecord.status,
+      ageMs: Date.now() - ageBase.getTime(),
+      queueJobState,
+    })
 
-    if (stale && !activeQueueStates.has(queueJobState || "")) {
-      const staleRun = await prisma.evaluationRun.findFirst({
-        where: { submissionId, status: EvaluationStatus.PROCESSING },
-        orderBy: { runNumber: "desc" },
-        select: { id: true },
+    if (decision.shouldFail) {
+      const errorMsg =
+        "Evaluation worker timed out. Retry from the admin submissions page."
+      const currentSub = await prisma.submission
+        .findUnique({
+          where: { id: submissionId },
+          select: { status: true },
+        })
+        .catch(() => null)
+      const wasActive =
+        currentSub &&
+        (currentSub.status === SubmissionStatus.PENDING ||
+          currentSub.status === SubmissionStatus.PROCESSING)
+
+      await markEvaluationJobAndSubmissionFailed({
+        submissionId,
+        runId:
+          latestRun?.status === EvaluationStatus.PROCESSING
+            ? latestRun.id
+            : undefined,
+        runNumber: wasActive ? latestRun?.runNumber : undefined,
+        errorMessage: errorMsg,
+        attempts: jobRecord.attempts,
       })
-      if (staleRun) {
-        await failEvaluationRun(
-          staleRun.id,
-          "Evaluation worker timed out. The submission can be retried by an administrator."
-        )
-      }
-      await prisma.evaluationJob.updateMany({
-        where: { submissionId },
-        data: {
-          status: "FAILED",
-          lastError:
-            "Evaluation worker timed out. Retry from the admin submissions page.",
-        },
-      })
+
       return {
         status: "FAILED",
         progress: jobProgressValue,
         attempts: jobRecord.attempts,
-        error:
-          "Evaluation worker timed out. Retry from the admin submissions page.",
+        error: errorMsg,
         queuedAt: jobRecord.queuedAt,
         startedAt: jobRecord.startedAt,
         completedAt: jobRecord.completedAt,
       }
+    }
+
+    if (decision.shouldWake) {
+      await wakeEvaluationWorker()
     }
 
     return {

@@ -101,9 +101,9 @@ export function SubmissionUploadForm({
       if (pollCount > maxPolls) {
         clearInterval(interval)
         if (!isCancelled) {
-          toast.info("Evaluation Still Queued", {
+          toast.info("Evaluation Continuing in Background", {
             description:
-              "Your submission is being processed by the AI evaluation worker. Check back shortly for updated scorecards.",
+              "Your answer sheet was saved safely and AI grading is continuing in the background. Refresh shortly to view your scorecard.",
           })
           setEvaluatingState(null)
           router.refresh()

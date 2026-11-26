@@ -17,6 +17,7 @@ import {
 } from "lucide-react"
 import { formatDateTimeFull } from "@/lib/format"
 import { normalizePrivateFileUrl } from "@/lib/supabase"
+import { getEvaluationStatus } from "@/lib/queue/evaluation-queue"
 
 export const dynamic = "force-dynamic"
 
@@ -29,11 +30,15 @@ export default async function AdminSubmissionReviewPage({
   let submission: any = null
 
   try {
+    await getEvaluationStatus(id).catch(() => null)
+
     submission = await prisma.submission.findUnique({
       where: { id },
       include: {
         user: true,
         testSeries: true,
+        test: true,
+        evaluationJob: true,
         evaluation: {
           include: { questions: { orderBy: { questionNumber: "asc" } } },
         },
@@ -114,7 +119,11 @@ export default async function AdminSubmissionReviewPage({
       <PageHeader
         icon={FileCheck2}
         title="Submission Review"
-        subtitle={submission.testSeries?.title || "Candidate answer sheet"}
+        subtitle={
+          submission.test?.title ||
+          submission.testSeries?.title ||
+          "Candidate answer sheet"
+        }
         showRefresh={false}
       >
         <Link href="/admin/submissions">
@@ -168,10 +177,12 @@ export default async function AdminSubmissionReviewPage({
             {submission.evaluation &&
             (submission.status === "COMPLETED" ||
               submission.status === "REVIEW_REQUIRED" ||
-              submission.status === "FAILED") ? (
+              submission.status === "FAILED" ||
+              submission.status === "PROCESSING") ? (
               <AdminSubmissionEvaluationTrigger
                 submissionId={submission.id}
                 aiEvaluationRuns={submission.aiEvaluationRuns || 0}
+                isProcessing={submission.status === "PROCESSING"}
                 compact
               />
             ) : null}
@@ -244,9 +255,16 @@ export default async function AdminSubmissionReviewPage({
             Evaluation is not available yet
           </h2>
           <p className="mx-auto mt-1 max-w-md text-xs leading-relaxed text-muted-foreground">
-            The submission is waiting for evaluation or needs to be retried. You
-            can open the answer sheet while the queue is processing.
+            {submission.evaluationJob?.lastError
+              ? `Last worker error: ${submission.evaluationJob.lastError}`
+              : "The submission is waiting for evaluation or needs to be retried. You can open the answer sheet while the queue is processing."}
           </p>
+          {submission.evaluationJob && (
+            <p className="mt-2 text-[11px] font-medium text-muted-foreground">
+              Queue Status: {submission.evaluationJob.status} · Attempts:{" "}
+              {submission.evaluationJob.attempts}
+            </p>
+          )}
           <div className="mt-5 flex flex-wrap justify-center gap-2">
             <a
               href={fileUrl}
@@ -257,8 +275,13 @@ export default async function AdminSubmissionReviewPage({
               <FileText className="h-3.5 w-3.5" /> Open answer sheet
             </a>
             {(submission.status === "PENDING" ||
-              submission.status === "FAILED") && (
-              <AdminSubmissionEvaluationTrigger submissionId={submission.id} />
+              submission.status === "FAILED" ||
+              submission.status === "PROCESSING") && (
+              <AdminSubmissionEvaluationTrigger
+                submissionId={submission.id}
+                aiEvaluationRuns={submission.aiEvaluationRuns || 0}
+                isProcessing={submission.status === "PROCESSING"}
+              />
             )}
           </div>
         </section>

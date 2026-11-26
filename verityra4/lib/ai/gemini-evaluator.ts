@@ -8,6 +8,7 @@ import { BRAND_CONFIG } from "../brand"
 export const DEFAULT_GEMINI_MODEL = "gemini-3.8-flash"
 const CURRENT_FREE_FALLBACK_GEMINI_MODEL = "gemini-3.5-flash-lite"
 const LEGACY_GEMINI_MODEL = "gemini-2.5-flash-lite"
+const RETRYABLE_GEMINI_STATUSES = new Set([404, 429, 500, 502, 503, 504])
 
 export function getGeminiModelName(): string {
   const configuredModel =
@@ -15,6 +16,11 @@ export function getGeminiModelName(): string {
   return configuredModel === LEGACY_GEMINI_MODEL
     ? CURRENT_FREE_FALLBACK_GEMINI_MODEL
     : configuredModel
+}
+
+export function isRetryableGeminiStatus(status: unknown): boolean {
+  const numericStatus = typeof status === "number" ? status : Number(status)
+  return RETRYABLE_GEMINI_STATUSES.has(numericStatus)
 }
 
 export function assertGeminiApiKeyConfigured(
@@ -115,10 +121,19 @@ ${input.privateEvaluationInstructions}
 Please evaluate the attached student answer sheet thoroughly and return the structured JSON evaluation.
 `
 
+    if (
+      !input.studentAnswerSheetBuffer ||
+      input.studentAnswerSheetBuffer.length === 0
+    ) {
+      throw new Error(
+        "Student answer sheet file is empty or could not be downloaded."
+      )
+    }
+
     const contents: Part[] = [{ text: userPrompt }]
 
     // Attach student answer sheet document/image if buffer is provided
-    if (input.studentAnswerSheetBuffer && input.studentAnswerSheetMimeType) {
+    if (input.studentAnswerSheetMimeType) {
       contents.push({
         inlineData: {
           mimeType: input.studentAnswerSheetMimeType,
@@ -137,21 +152,31 @@ Please evaluate the attached student answer sheet thoroughly and return the stru
           responseMimeType: "application/json",
         },
       })
-    } catch (error: any) {
-      // Temporary 503s are common on free-tier capacity. Retry once on a smaller
-      // free model instead of making the admin wait through repeated failures.
+    } catch (error: unknown) {
+      const errObj = error as { status?: unknown; code?: unknown } | null
+      const status = errObj?.status ?? errObj?.code
+      const numericStatus = typeof status === "number" ? status : Number(status)
       if (
-        ![404, 503].includes(error?.status) ||
-        modelName === CURRENT_FREE_FALLBACK_GEMINI_MODEL
+        !isRetryableGeminiStatus(numericStatus) ||
+        (numericStatus === 404 &&
+          modelName === CURRENT_FREE_FALLBACK_GEMINI_MODEL)
       ) {
         throw error
       }
 
+      const retryModel =
+        modelName === CURRENT_FREE_FALLBACK_GEMINI_MODEL
+          ? modelName
+          : CURRENT_FREE_FALLBACK_GEMINI_MODEL
+      if (numericStatus !== 404) {
+        await new Promise((resolve) => setTimeout(resolve, 2000))
+      }
+
       console.warn(
-        `[GEMINI EVALUATION] ${modelName} unavailable; retrying with ${CURRENT_FREE_FALLBACK_GEMINI_MODEL}.`
+        `[GEMINI EVALUATION] ${modelName} transient/unavailable error (HTTP ${numericStatus}); retrying with ${retryModel}.`
       )
       response = await ai.models.generateContent({
-        model: CURRENT_FREE_FALLBACK_GEMINI_MODEL,
+        model: retryModel,
         contents,
         config: {
           systemInstruction: systemPrompt,

@@ -4,6 +4,7 @@ import {
   AdminSubmissionsClient,
 } from "@/components/admin/submissions/admin-submissions-client"
 import { normalizePrivateFileUrl } from "@/lib/supabase"
+import { reconcileStaleEvaluationJobs } from "@/lib/queue/evaluation-queue"
 
 export const dynamic = "force-dynamic"
 
@@ -21,6 +22,8 @@ export default async function AdminSubmissionsPage({
   let totalCount = 0
 
   try {
+    await reconcileStaleEvaluationJobs(25)
+
     // The queries themselves are the health check; avoid an extra round trip to the database.
     ;[submissions, totalCount] = await Promise.all([
       prisma.submission.findMany({
@@ -29,12 +32,20 @@ export default async function AdminSubmissionsPage({
         include: {
           user: { select: { name: true, email: true } },
           testSeries: { select: { title: true, maxMarks: true } },
+          test: { select: { title: true, maxMarks: true } },
           evaluation: {
             select: {
               status: true,
               totalMarksAwarded: true,
               maxMarks: true,
               uncertaintyFlag: true,
+            },
+          },
+          evaluationJob: {
+            select: {
+              status: true,
+              attempts: true,
+              lastError: true,
             },
           },
         },
@@ -65,17 +76,20 @@ export default async function AdminSubmissionsPage({
     id: sub.id,
     candidateName: sub.user?.name || "Student",
     candidateEmail: sub.user?.email || "",
-    testTitle: sub.testSeries?.title || "Mock Examination",
+    testTitle: sub.test?.title || sub.testSeries?.title || "Mock Examination",
     attemptNumber: sub.attemptNumber,
     status: sub.status,
     totalMarksAwarded: sub.evaluation ? sub.evaluation.totalMarksAwarded : null,
     maxMarks: sub.evaluation
       ? sub.evaluation.maxMarks
-      : sub.testSeries?.maxMarks || 250,
+      : sub.test?.maxMarks ?? sub.testSeries?.maxMarks ?? 250,
     uncertaintyFlag: Boolean(sub.evaluation?.uncertaintyFlag),
     fileUrl: normalizePrivateFileUrl(sub.fileUrl),
     submittedAt: new Date(sub.submittedAt).toISOString(),
     aiEvaluationRuns: sub.aiEvaluationRuns || 0,
+    jobStatus: sub.evaluationJob?.status || null,
+    jobAttempts: sub.evaluationJob?.attempts ?? null,
+    jobError: sub.evaluationJob?.lastError || null,
   }))
   const totalPages = Math.ceil(totalCount / limit)
 

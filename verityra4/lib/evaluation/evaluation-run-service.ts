@@ -17,7 +17,8 @@ export class EvaluationRunError extends Error {
 
 export async function claimEvaluationRun(
   submissionId: string,
-  trigger: EvaluationTriggerValue
+  trigger: EvaluationTriggerValue,
+  options?: { force?: boolean }
 ) {
   return prisma.$transaction(
     async (tx) => {
@@ -28,6 +29,7 @@ export async function claimEvaluationRun(
           aiEvaluationRuns: true,
           status: true,
           evaluation: { select: { id: true } },
+          evaluationJob: { select: { status: true, startedAt: true, queuedAt: true } },
         },
       })
 
@@ -53,17 +55,45 @@ export async function claimEvaluationRun(
         )
       }
 
+      const staleAgeBase =
+        current.evaluationJob?.startedAt ?? current.evaluationJob?.queuedAt
+      const isStaleProcessing =
+        current.status === SubmissionStatus.PROCESSING &&
+        staleAgeBase != null &&
+        Date.now() - staleAgeBase.getTime() > 10 * 60 * 1000
+      const canOverrideProcessing =
+        isAdminTrigger && (Boolean(options?.force) || isStaleProcessing)
+
+      if (canOverrideProcessing) {
+        await tx.evaluationRun.updateMany({
+          where: {
+            submissionId,
+            status: EvaluationStatus.PROCESSING,
+          },
+          data: {
+            status: EvaluationStatus.FAILED,
+            failureReason: "Superseded by admin retry after stalled evaluation.",
+            completedAt: new Date(),
+          },
+        })
+      }
+
+      const claimableStatuses: SubmissionStatus[] = [
+        SubmissionStatus.PENDING,
+        SubmissionStatus.FAILED,
+        SubmissionStatus.COMPLETED,
+        SubmissionStatus.REVIEW_REQUIRED,
+      ]
+      if (canOverrideProcessing) {
+        claimableStatuses.push(SubmissionStatus.PROCESSING)
+      }
+
       const claimed = await tx.submission.updateMany({
         where: {
           id: submissionId,
           aiEvaluationRuns: current.aiEvaluationRuns,
           status: {
-            in: [
-              SubmissionStatus.PENDING,
-              SubmissionStatus.FAILED,
-              SubmissionStatus.COMPLETED,
-              SubmissionStatus.REVIEW_REQUIRED,
-            ],
+            in: claimableStatuses,
           },
         },
         data: {
