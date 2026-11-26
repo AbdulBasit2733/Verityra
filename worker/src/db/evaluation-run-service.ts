@@ -1,6 +1,7 @@
 import { prisma } from "./prisma.js"
 import { EvaluationStatus, SubmissionStatus } from "@prisma/client"
 import type { AiEvaluationResult } from "../ai/evaluation-schema.js"
+import { compareQuestionNumbers } from "../ai/gemini-evaluator.js"
 
 export async function failEvaluationRun(
   runId: string,
@@ -37,16 +38,32 @@ export async function persistEvaluationRun(input: {
   percentage: number
   status: EvaluationStatus
 }> {
-  const totalMarksAwarded = input.result.questions.reduce(
+  const sortedQuestions = [...input.result.questions].sort((a, b) =>
+    compareQuestionNumbers(a.questionNumber, b.questionNumber)
+  )
+  const rawTotal = sortedQuestions.reduce(
     (sum, question) => sum + question.marksAwarded,
     0
   )
+  const sumQuestionMax = sortedQuestions.reduce(
+    (sum, question) => sum + question.maxMarks,
+    0
+  )
+  const totalMarksAwarded =
+    input.maxMarks > 0
+      ? Math.min(Number(rawTotal.toFixed(2)), input.maxMarks)
+      : Number(rawTotal.toFixed(2))
   const percentage =
     input.maxMarks > 0
       ? Number(((totalMarksAwarded / input.maxMarks) * 100).toFixed(2))
       : 0
+  const maxMarksMismatch =
+    input.maxMarks > 0 && Math.abs(sumQuestionMax - input.maxMarks) > 0.5
   const requiresReview =
-    input.result.uncertaintyFlag || input.result.legibilityWarning
+    input.result.uncertaintyFlag ||
+    input.result.legibilityWarning ||
+    rawTotal > input.maxMarks ||
+    maxMarksMismatch
   const status = requiresReview
     ? EvaluationStatus.REVIEW_REQUIRED
     : EvaluationStatus.COMPLETED
@@ -66,11 +83,11 @@ export async function persistEvaluationRun(input: {
           percentage,
           generalFeedback: input.result.generalFeedback,
           legibilityWarning: input.result.legibilityWarning,
-          uncertaintyFlag: input.result.uncertaintyFlag,
+          uncertaintyFlag: input.result.uncertaintyFlag || maxMarksMismatch,
           evaluatorModel: input.evaluatorModel,
           completedAt: new Date(),
           questions: {
-            create: input.result.questions.map((question) => ({
+            create: sortedQuestions.map((question) => ({
               questionNumber: question.questionNumber,
               maxMarks: question.maxMarks,
               marksAwarded: question.marksAwarded,
@@ -106,7 +123,7 @@ export async function persistEvaluationRun(input: {
             percentage,
             generalFeedback: input.result.generalFeedback,
             legibilityWarning: input.result.legibilityWarning,
-            uncertaintyFlag: input.result.uncertaintyFlag,
+            uncertaintyFlag: input.result.uncertaintyFlag || maxMarksMismatch,
             status,
             evaluatorModel: input.evaluatorModel,
             evaluatedAt: new Date(),
@@ -114,7 +131,7 @@ export async function persistEvaluationRun(input: {
             reviewedAt: null,
             reviewedBy: null,
             questions: {
-              create: input.result.questions.map((question) => ({
+              create: sortedQuestions.map((question) => ({
                 questionNumber: question.questionNumber,
                 maxMarks: question.maxMarks,
                 marksAwarded: question.marksAwarded,
@@ -142,12 +159,12 @@ export async function persistEvaluationRun(input: {
             percentage,
             generalFeedback: input.result.generalFeedback,
             legibilityWarning: input.result.legibilityWarning,
-            uncertaintyFlag: input.result.uncertaintyFlag,
+            uncertaintyFlag: input.result.uncertaintyFlag || maxMarksMismatch,
             status,
             evaluatorModel: input.evaluatorModel,
             evaluatedAt: new Date(),
             questions: {
-              create: input.result.questions.map((question) => ({
+              create: sortedQuestions.map((question) => ({
                 questionNumber: question.questionNumber,
                 maxMarks: question.maxMarks,
                 marksAwarded: question.marksAwarded,

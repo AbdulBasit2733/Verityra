@@ -4,10 +4,12 @@ import { aiEvaluationResponseSchema } from "../lib/ai/evaluation-schema"
 import { EvaluationStatus } from "@prisma/client"
 import {
   assertGeminiApiKeyConfigured,
+  compareQuestionNumbers,
   DEFAULT_GEMINI_MODEL,
   extractAndParseJson,
   getGeminiModelName,
   isRetryableGeminiStatus,
+  normalizeEvaluationOutput,
 } from "../lib/ai/gemini-evaluator"
 import {
   evaluateStaleJobDecision,
@@ -394,6 +396,83 @@ export function runEvaluationTests() {
         }),
         { shouldFail: true, shouldWake: false }
       )
+    }
+  )
+
+  suite.test(
+    "Legacy Unlinked Submission Self-Healing: Single Subject Test in TestSeries resolves 40 maxMarks, questionPaperUrl, and modelAnswerUrl",
+    () => {
+      const resolved = resolveEvaluationTargetMeta({
+        testSeries: {
+          title: "Class 10th CBSE Board Comprehensive Mock Series",
+          standard: "10th",
+          maxMarks: 100,
+          privateEvaluationInstructions: "Generic series instructions",
+          tests: [
+            {
+              id: "cmwrju52a001p45sc7fhk3lva",
+              title: "Mathematics Half-Syllabus Test",
+              subject: "Mathematics",
+              maxMarks: 40,
+              privateEvaluationInstructions: "Award step marks",
+              questionPaperUrl: "papers/cmwrju52a001p45sc7fhk3lva.pdf",
+              modelAnswerUrl: "model-answers/cmwrju52a001p45sc7fhk3lva.pdf",
+            },
+          ],
+        },
+        test: null,
+        registration: { test: null },
+      })
+
+      assert.equal(resolved.inferredTestId, "cmwrju52a001p45sc7fhk3lva")
+      assert.equal(resolved.maxMarks, 40)
+      assert.equal(resolved.title, "Mathematics Half-Syllabus Test")
+      assert.equal(resolved.subject, "Mathematics")
+      assert.equal(
+        resolved.questionPaperUrl,
+        "papers/cmwrju52a001p45sc7fhk3lva.pdf"
+      )
+      assert.equal(
+        resolved.modelAnswerUrl,
+        "model-answers/cmwrju52a001p45sc7fhk3lva.pdf"
+      )
+    }
+  )
+
+  suite.test(
+    "Post-AI Normalization: Sorts Q1..Q10 naturally, clamps marks, and flags maxMarks mismatch for review",
+    () => {
+      const parsed = aiEvaluationResponseSchema.parse({
+        generalFeedback: "Checked against 40-mark paper.",
+        legibilityWarning: false,
+        uncertaintyFlag: false,
+        questions: [
+          {
+            questionNumber: "Q10",
+            maxMarks: 25,
+            marksAwarded: 30, // exceeds question max -> clamped to 25
+            feedback: "Detailed derivation.",
+            missingConcepts: null, // null coerced cleanly to ""
+            scoreExplanation: "", // empty coerced cleanly to default
+          },
+          {
+            questionNumber: "Q2",
+            maxMarks: 25,
+            marksAwarded: 20,
+            feedback: "Good work.",
+          },
+        ],
+      })
+
+      const normalized = normalizeEvaluationOutput(parsed, 40)
+      assert.deepEqual(
+        normalized.questions.map((q) => q.questionNumber),
+        ["Q2", "Q10"]
+      )
+      assert.equal(normalized.questions[1].marksAwarded, 25)
+      // Sum of question maxMarks (50) != configured 40 -> uncertaintyFlag must be true
+      assert.equal(normalized.uncertaintyFlag, true)
+      assert.equal(compareQuestionNumbers("Q2", "Q10") < 0, true)
     }
   )
 

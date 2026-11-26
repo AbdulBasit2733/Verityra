@@ -11,7 +11,10 @@ import {
   evaluateAnswerSheetWithGemini,
   getGeminiModelName,
 } from "@/lib/ai/gemini-evaluator"
-import { queueEvaluation } from "@/lib/queue/evaluation-queue"
+import {
+  queueEvaluation,
+  tryDownloadOptionalPrivateFile,
+} from "@/lib/queue/evaluation-queue"
 import {
   claimEvaluationRun,
   failEvaluationRun,
@@ -27,7 +30,7 @@ const ALLOWED_MIME_TYPES = [
   "image/png",
   "image/webp",
 ]
-const MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024 // Keep scanned answer sheets under 2 MB
+const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024 // Allow multi-page scanned answer booklets up to 25 MB
 
 /**
  * Server Action: Submit Handwritten Answer Sheet
@@ -77,10 +80,17 @@ export async function submitAnswerSheetAction(
     }
   }
 
+  if (file.size <= 0) {
+    return {
+      success: false,
+      error: "The selected answer sheet file is empty. Please upload a valid scan.",
+    }
+  }
+
   if (file.size > MAX_FILE_SIZE_BYTES) {
     return {
       success: false,
-      error: `File size exceeds the 2MB limit (current: ${(file.size / (1024 * 1024)).toFixed(2)} MB).`,
+      error: `File size exceeds the 25MB limit (current: ${(file.size / (1024 * 1024)).toFixed(2)} MB).`,
     }
   }
 
@@ -105,8 +115,12 @@ export async function submitAnswerSheetAction(
     select: {
       id: true,
       title: true,
+      subject: true,
       maxMarks: true,
+      maxAttempts: true,
       privateEvaluationInstructions: true,
+      questionPaperUrl: true,
+      modelAnswerUrl: true,
       testSeriesId: true,
     },
   })
@@ -120,44 +134,116 @@ export async function submitAnswerSheetAction(
 
   const resolvedTestSeriesId = childTest?.testSeriesId || testSeriesId
 
-  const registration = await prisma.testRegistration.findUnique({
-    where: {
-      userId_testSeriesId: {
-        userId: user.id,
-        testSeriesId: resolvedTestSeriesId,
-      },
-    },
-    include: {
-      testSeries: {
-        include: {
-          papers: true,
+  const [directTestRegistration, bundleRegistration] = await Promise.all([
+    childTest
+      ? prisma.testRegistration.findUnique({
+          where: {
+            userId_testId: {
+              userId: user.id,
+              testId: childTest.id,
+            },
+          },
+          include: {
+            testSeries: { include: { papers: true, _count: { select: { tests: true } } } },
+          },
+        })
+      : Promise.resolve(null),
+    prisma.testRegistration.findUnique({
+      where: {
+        userId_testSeriesId: {
+          userId: user.id,
+          testSeriesId: resolvedTestSeriesId,
         },
       },
-    },
-  })
+      include: {
+        testSeries: { include: { papers: true, _count: { select: { tests: true } } } },
+      },
+    }),
+  ])
 
-  if (!registration || registration.status !== RegistrationStatus.ACTIVE) {
+  const hasDirectAccess =
+    directTestRegistration?.status === RegistrationStatus.ACTIVE
+  const hasBundleAccess =
+    bundleRegistration?.status === RegistrationStatus.ACTIVE
+
+  if (!hasDirectAccess && !hasBundleAccess) {
     return {
       success: false,
       error:
-        "You are not registered for this test series or your registration is inactive.",
+        "You are not registered for this test or your registration is inactive.",
     }
   }
 
+  const parentSeries =
+    bundleRegistration?.testSeries ||
+    directTestRegistration?.testSeries ||
+    (await prisma.testSeries.findUnique({
+      where: { id: resolvedTestSeriesId },
+      include: { papers: true, _count: { select: { tests: true } } },
+    }))
+
+  // Isolate per-Subject-Test 3-attempt quota so bundle students get independent attempts per subject
+  let activeRegistration: {
+    id: string
+    attemptsUsed: number
+    maxAttempts: number
+    testSeriesId: string | null
+  }
+
+  if (childTest) {
+    if (directTestRegistration && hasDirectAccess) {
+      activeRegistration = directTestRegistration
+    } else {
+      const isSingleTestSeries = (parentSeries?._count?.tests || 0) <= 1
+      const legacySubjectAttempts = bundleRegistration
+        ? await prisma.submission.count({
+            where: {
+              registrationId: bundleRegistration.id,
+              OR: [
+                { testId: childTest.id },
+                ...(isSingleTestSeries ? [{ testId: null }] : []),
+              ],
+            },
+          })
+        : 0
+      const resolvedMaxAttempts =
+        childTest.maxAttempts || bundleRegistration?.maxAttempts || 3
+
+      activeRegistration = await prisma.testRegistration.upsert({
+        where: {
+          userId_testId: {
+            userId: user.id,
+            testId: childTest.id,
+          },
+        },
+        create: {
+          userId: user.id,
+          testId: childTest.id,
+          testSeriesId: null,
+          status: RegistrationStatus.ACTIVE,
+          attemptsUsed: legacySubjectAttempts,
+          maxAttempts: resolvedMaxAttempts,
+        },
+        update: {
+          status: RegistrationStatus.ACTIVE,
+        },
+      })
+    }
+  } else {
+    activeRegistration = bundleRegistration!
+  }
+
   // 3. Strict Attempt Limit Check
-  if (registration.attemptsUsed >= registration.maxAttempts) {
+  if (activeRegistration.attemptsUsed >= activeRegistration.maxAttempts) {
     return {
       success: false,
-      error: `Attempt limit reached. You have utilized all ${registration.maxAttempts} allowed submissions for this test series.`,
+      error: `Attempt limit reached. You have utilized all ${activeRegistration.maxAttempts} allowed submissions for this test.`,
     }
   }
 
   // 4. Verify test window
   const now = new Date()
-  if (
-    registration.testSeries?.endDate &&
-    now > registration.testSeries.endDate
-  ) {
+  if (parentSeries?.endDate && now > parentSeries.endDate) {
     return {
       success: false,
       error: "The submission deadline for this test series has passed.",
@@ -166,7 +252,7 @@ export async function submitAnswerSheetAction(
 
   // 5. Upload File Securely to Private Storage
   const fileBytes = Buffer.from(await file.arrayBuffer())
-  const attemptToReserve = registration.attemptsUsed + 1
+  const attemptToReserve = activeRegistration.attemptsUsed + 1
   const safeFileName = (
     file.name.split(/[\\/]/).pop() || "answer-sheet"
   ).replace(/[^\w.-]/g, "_")
@@ -195,7 +281,7 @@ export async function submitAnswerSheetAction(
     submission = await prisma.$transaction(async (tx) => {
       // Re-check count inside transaction to prevent concurrent race condition bypass
       const currentReg = await tx.testRegistration.findUnique({
-        where: { id: registration.id },
+        where: { id: activeRegistration.id },
       })
 
       if (!currentReg || currentReg.attemptsUsed >= currentReg.maxAttempts) {
@@ -255,7 +341,7 @@ export async function submitAnswerSheetAction(
       await prisma.$transaction([
         prisma.submission.delete({ where: { id: submission.id } }),
         prisma.testRegistration.update({
-          where: { id: registration.id },
+          where: { id: activeRegistration.id },
           data: { attemptsUsed: { decrement: 1 } },
         }),
       ])
@@ -271,7 +357,8 @@ export async function submitAnswerSheetAction(
 
   // 7. Trigger AI Evaluation Workflow (Async Queue)
   // Queue evaluation in the background; only local development may use the sync fallback.
-  const targetSeriesId = registration.testSeriesId || resolvedTestSeriesId
+  const targetSeriesId =
+    activeRegistration.testSeriesId || resolvedTestSeriesId
   const jobId = await queueEvaluation({
     submissionId: submission.id,
     testSeriesId: targetSeriesId,
@@ -290,22 +377,35 @@ export async function submitAnswerSheetAction(
     )
 
     try {
-      const currentSeries = registration.testSeries
-      const latestPaper = currentSeries?.papers?.[0]
+      const latestPaper = parentSeries?.papers?.[0]
       const effectiveTitle =
-        childTest?.title || currentSeries?.title || "Test Series"
+        childTest?.title || parentSeries?.title || "Test Series"
       const effectiveMaxMarks =
-        childTest?.maxMarks ?? currentSeries?.maxMarks ?? 100
+        childTest?.maxMarks ?? parentSeries?.maxMarks ?? 100
       const effectiveInstructions =
         childTest?.privateEvaluationInstructions ||
-        currentSeries?.privateEvaluationInstructions ||
+        parentSeries?.privateEvaluationInstructions ||
         ""
+      const [questionPaperDoc, modelAnswerDoc] = await Promise.all([
+        tryDownloadOptionalPrivateFile(
+          childTest?.questionPaperUrl || latestPaper?.fileUrl
+        ),
+        tryDownloadOptionalPrivateFile(
+          childTest?.modelAnswerUrl || latestPaper?.modelAnswerUrl
+        ),
+      ])
 
       const aiResult = await evaluateAnswerSheetWithGemini({
         testTitle: effectiveTitle,
+        subject: childTest?.subject || null,
+        standard: parentSeries?.standard || null,
         maxMarks: effectiveMaxMarks,
         rubricContent: latestPaper?.rubricContent || null,
         privateEvaluationInstructions: effectiveInstructions,
+        questionPaperBuffer: questionPaperDoc?.buffer || null,
+        questionPaperMimeType: questionPaperDoc?.mimeType || null,
+        modelAnswerBuffer: modelAnswerDoc?.buffer || null,
+        modelAnswerMimeType: modelAnswerDoc?.mimeType || null,
         studentAnswerSheetBuffer: fileBytes,
         studentAnswerSheetMimeType: file.type,
         studentAnswerSheetUrl: uploadedFileUrl,
@@ -341,6 +441,7 @@ export async function submitAnswerSheetAction(
     revalidatePath(`/student/tests/${resolvedTestSeriesId}`)
   }
   revalidatePath("/student/dashboard")
+  revalidatePath("/student/evaluations")
   revalidatePath("/admin/submissions")
 
   const evaluationMessage = jobId
@@ -351,7 +452,7 @@ export async function submitAnswerSheetAction(
 
   return {
     success: true,
-    message: `Attempt ${submission.attemptNumber} of ${registration.maxAttempts} submitted successfully. ${evaluationMessage}`,
+    message: `Attempt ${submission.attemptNumber} of ${activeRegistration.maxAttempts} submitted successfully. ${evaluationMessage}`,
     data: {
       submissionId: submission.id,
       attemptNumber: submission.attemptNumber,

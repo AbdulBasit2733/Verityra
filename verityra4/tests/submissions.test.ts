@@ -219,6 +219,37 @@ export function runSubmissionTests() {
     }
   )
 
+  suite.test(
+    "Per-Subject Attempt Isolation: Submitting 3 attempts in Maths does not exhaust Science attempts in the same bundle",
+    () => {
+      const subjectQuotas = new Map<
+        string,
+        { attemptsUsed: number; maxAttempts: number }
+      >()
+
+      function reserveSubjectAttempt(testId: string, maxAttempts = 3) {
+        const reg = subjectQuotas.get(testId) || {
+          attemptsUsed: 0,
+          maxAttempts,
+        }
+        if (reg.attemptsUsed >= reg.maxAttempts) {
+          return { ok: false as const, error: "ATTEMPT_LIMIT_EXCEEDED" }
+        }
+        reg.attemptsUsed += 1
+        subjectQuotas.set(testId, reg)
+        return { ok: true as const, attemptNumber: reg.attemptsUsed }
+      }
+
+      assert.equal(reserveSubjectAttempt("test-maths").ok, true)
+      assert.equal(reserveSubjectAttempt("test-maths").ok, true)
+      assert.equal(reserveSubjectAttempt("test-maths").ok, true)
+      assert.equal(reserveSubjectAttempt("test-maths").ok, false)
+
+      const scienceAttempt = reserveSubjectAttempt("test-science")
+      assert.deepEqual(scienceAttempt, { ok: true, attemptNumber: 1 })
+    }
+  )
+
   return suite.summary()
 }
 

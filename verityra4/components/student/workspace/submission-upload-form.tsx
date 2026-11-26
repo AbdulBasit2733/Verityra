@@ -20,7 +20,7 @@ import {
 } from "lucide-react"
 import { submitAnswerSheetAction } from "@/actions/submission-actions"
 
-const MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024
+const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024
 
 type EvaluatingState = {
   submissionId: string
@@ -335,7 +335,7 @@ export function SubmissionUploadForm({
             </h3>
             <p className="text-xs text-[#64748B]">
               Upload your scanned handwritten response booklet (PDF or clear
-              image pages, max 2MB).
+              image pages, max 25MB).
             </p>
           </div>
         </div>
@@ -455,7 +455,7 @@ export function SubmissionUploadForm({
                 if (selectedFile && selectedFile.size > MAX_FILE_SIZE_BYTES) {
                   toast.warning("File is too large", {
                     description:
-                      "Please compress the scanned booklet to 2 MB or less before uploading.",
+                      "Please compress the scanned booklet to 25 MB or less before uploading.",
                   })
                   e.currentTarget.value = ""
                   setFile(null)
@@ -468,7 +468,7 @@ export function SubmissionUploadForm({
             <p className="text-[11px] text-[#64748B] sm:text-xs">
               {file
                 ? `File size: ${(file.size / (1024 * 1024)).toFixed(2)} MB • Ready for encrypted submission`
-                : "PDF, JPG, PNG or WEBP up to 2MB • Upright orientation recommended"}
+                : "PDF, JPG, PNG or WEBP up to 25MB • Upright orientation recommended"}
             </p>
           </div>
         </label>

@@ -2,11 +2,6 @@
 
 import { getCurrentUser, resolvePersistedAdminActor } from "@/lib/auth-guard"
 import { prisma, isDatabaseConnected, DB_TX_OPTIONS } from "@/lib/prisma"
-import {
-  evaluateAnswerSheetWithGemini,
-  getGeminiModelName,
-} from "@/lib/ai/gemini-evaluator"
-import { downloadPrivateFile, parsePrivateFileReference } from "@/lib/supabase"
 import { invalidateLeaderboardCache } from "@/lib/cache"
 import { EvaluationStatus, Role, SubmissionStatus } from "@prisma/client"
 import {
@@ -42,12 +37,31 @@ export async function adminReevaluateSubmissionAction(
       id: true,
       status: true,
       testSeriesId: true,
+      testId: true,
       userId: true,
       fileUrl: true,
       fileType: true,
+      registration: { select: { testId: true } },
+      testSeries: { select: { tests: { select: { id: true } } } },
     },
   })
   if (!submission) return { success: false, error: "Submission not found." }
+
+  const inferredTestId =
+    submission.testId ||
+    submission.registration?.testId ||
+    (submission.testSeries.tests.length === 1
+      ? submission.testSeries.tests[0].id
+      : null)
+
+  if (!submission.testId && inferredTestId) {
+    await prisma.submission
+      .update({
+        where: { id: submission.id },
+        data: { testId: inferredTestId },
+      })
+      .catch(() => undefined)
+  }
 
   let run
   try {
@@ -83,249 +97,30 @@ export async function adminReevaluateSubmissionAction(
     }
   }
 
+  await prisma.auditLog
+    .create({
+      data: {
+        adminId: actor.user.id,
+        action: "SUBMISSION_EVALUATION_RETRIGGERED",
+        targetType: "Submission",
+        targetId: submission.id,
+        details: `Admin queued AI re-evaluation run #${run.runNumber}${options?.force ? " (force override)" : ""}.`,
+      },
+    })
+    .catch(() => undefined)
+
   revalidatePath("/admin/submissions")
   revalidatePath(`/admin/submissions/${submission.id}`)
   revalidatePath(`/student/tests/${submission.testSeriesId}`)
+  if (inferredTestId) {
+    revalidatePath(`/student/tests/${inferredTestId}`)
+  }
+  revalidatePath("/student/evaluations")
+  revalidatePath(`/student/evaluations/${submission.id}`)
   return {
     success: true,
     message: `Re-evaluation run ${run.runNumber} queued.`,
     data: { runNumber: run.runNumber },
-  }
-}
-
-async function legacyAdminEvaluateSubmissionAction(
-  submissionId: string
-): Promise<ActionResult<{ totalMarksAwarded: number; maxMarks: number }>> {
-  const sessionUser = await getCurrentUser()
-  if (!sessionUser || sessionUser.role !== Role.ADMIN) {
-    return { success: false, error: "Unauthorized. Admin privileges required." }
-  }
-
-  if (!submissionId?.trim()) {
-    return { success: false, error: "A submission ID is required." }
-  }
-
-  if (!(await isDatabaseConnected())) {
-    return {
-      success: false,
-      error: "Connect the database before evaluating a submission.",
-    }
-  }
-
-  const actor = await resolvePersistedAdminActor(sessionUser)
-  if (!actor.success) return { success: false, error: actor.error }
-  const user = actor.user
-
-  const submission = await prisma.submission.findUnique({
-    where: { id: submissionId },
-    include: {
-      evaluation: { include: { questions: true } },
-      testSeries: {
-        include: {
-          papers: { orderBy: { createdAt: "desc" } },
-        },
-      },
-    },
-  })
-
-  if (!submission) {
-    return { success: false, error: "Submission not found." }
-  }
-  const isReviewRequiredRetry =
-    submission.status === SubmissionStatus.REVIEW_REQUIRED &&
-    submission.evaluation?.status === EvaluationStatus.REVIEW_REQUIRED
-  if (submission.evaluation && !isReviewRequiredRetry) {
-    return {
-      success: false,
-      error: "This submission already has a score to review.",
-    }
-  }
-  if (
-    submission.status !== SubmissionStatus.PENDING &&
-    submission.status !== SubmissionStatus.FAILED &&
-    submission.status !== SubmissionStatus.REVIEW_REQUIRED
-  ) {
-    return {
-      success: false,
-      error:
-        "This submission is already being evaluated or has been finalized.",
-    }
-  }
-
-  const claimed = await prisma.submission.updateMany({
-    where: { id: submission.id, status: submission.status },
-    data: { status: SubmissionStatus.PROCESSING },
-  })
-  if (claimed.count !== 1) {
-    return {
-      success: false,
-      error:
-        "This submission was already claimed for evaluation. Refresh and check its status.",
-    }
-  }
-
-  try {
-    const fileReference = parsePrivateFileReference(submission.fileUrl)
-    if (!fileReference || fileReference.bucket !== "verityra-private") {
-      throw new Error("The answer-sheet file reference is invalid.")
-    }
-
-    const answerSheet = await downloadPrivateFile(
-      fileReference.bucket,
-      fileReference.filePath
-    )
-    const paper = submission.testSeries.papers[0]
-    const result = await evaluateAnswerSheetWithGemini({
-      testTitle: submission.testSeries.title,
-      maxMarks: submission.testSeries.maxMarks,
-      rubricContent: paper?.rubricContent || null,
-      privateEvaluationInstructions:
-        submission.testSeries.privateEvaluationInstructions || "",
-      studentAnswerSheetBuffer: answerSheet,
-      studentAnswerSheetMimeType: submission.fileType,
-    })
-
-    const totalMarksAwarded = result.questions.reduce(
-      (total, question) => total + question.marksAwarded,
-      0
-    )
-    const maxMarks = submission.testSeries.maxMarks
-    const percentage =
-      maxMarks > 0
-        ? Number(((totalMarksAwarded / maxMarks) * 100).toFixed(2))
-        : 0
-    const requiresReview = result.uncertaintyFlag || result.legibilityWarning
-    const evaluationStatus = requiresReview
-      ? EvaluationStatus.REVIEW_REQUIRED
-      : EvaluationStatus.COMPLETED
-
-    await prisma.$transaction(
-      async (tx) => {
-        if (submission.evaluation && isReviewRequiredRetry) {
-          await tx.auditLog.create({
-            data: {
-              adminId: user.id,
-              action: "SUBMISSION_EVALUATION_RETRIGGERED",
-              targetType: "Submission",
-              targetId: submission.id,
-              details: JSON.stringify({
-                reason:
-                  "Admin retriggered AI evaluation for a review-required submission.",
-                previousEvaluation: {
-                  totalMarksAwarded: submission.evaluation.totalMarksAwarded,
-                  maxMarks: submission.evaluation.maxMarks,
-                  percentage: submission.evaluation.percentage,
-                  status: submission.evaluation.status,
-                  uncertaintyFlag: submission.evaluation.uncertaintyFlag,
-                  legibilityWarning: submission.evaluation.legibilityWarning,
-                  questions: submission.evaluation.questions.map(
-                    (question) => ({
-                      questionNumber: question.questionNumber,
-                      maxMarks: question.maxMarks,
-                      marksAwarded: question.marksAwarded,
-                      isUncertain: question.isUncertain,
-                      isLegible: question.isLegible,
-                    })
-                  ),
-                },
-              }),
-            },
-          })
-          await tx.evaluation.delete({
-            where: { id: submission.evaluation.id },
-          })
-        }
-
-        await tx.evaluation.create({
-          data: {
-            submissionId: submission.id,
-            totalMarksAwarded,
-            maxMarks,
-            percentage,
-            generalFeedback: result.generalFeedback,
-            legibilityWarning: result.legibilityWarning,
-            uncertaintyFlag: result.uncertaintyFlag,
-            status: evaluationStatus,
-            evaluatorModel: getGeminiModelName(),
-            evaluatedAt: new Date(),
-            questions: {
-              create: result.questions.map((question) => ({
-                questionNumber: question.questionNumber,
-                maxMarks: question.maxMarks,
-                marksAwarded: question.marksAwarded,
-                feedback: question.feedback,
-                missingConcepts: question.missingConcepts || "",
-                isLegible: question.isLegible,
-                isUncertain: question.isUncertain,
-              })),
-            },
-          },
-        })
-
-        await tx.submission.update({
-          where: { id: submission.id },
-          data: {
-            status: requiresReview
-              ? SubmissionStatus.REVIEW_REQUIRED
-              : SubmissionStatus.COMPLETED,
-          },
-        })
-
-        await tx.evaluationJob.updateMany({
-          where: { submissionId: submission.id },
-          data: {
-            status: "COMPLETED",
-            completedAt: new Date(),
-            lastError: null,
-          },
-        })
-
-        await tx.auditLog.create({
-          data: {
-            adminId: user.id,
-            action: isReviewRequiredRetry
-              ? "SUBMISSION_EVALUATION_RETRIGGERED"
-              : "SUBMISSION_EVALUATION_TRIGGERED",
-            targetType: "Submission",
-            targetId: submission.id,
-            details: `Admin ${isReviewRequiredRetry ? "retriggered" : "triggered"} score calculation for attempt ${submission.attemptNumber}.`,
-          },
-        })
-      },
-      {
-        // Supabase can take a few seconds for the delete/create cascade on a retry.
-        // Keep this scoped to evaluation persistence instead of slowing all transactions.
-        maxWait: 10_000,
-        timeout: 30_000,
-      }
-    )
-
-    revalidatePath("/admin/submissions")
-    revalidatePath(`/admin/submissions/${submission.id}`)
-    revalidatePath(`/student/tests/${submission.testSeriesId}`)
-    revalidatePath("/leaderboard")
-    invalidateLeaderboardCache()
-
-    return {
-      success: true,
-      message: `Score calculated: ${totalMarksAwarded} / ${maxMarks}.`,
-      data: { totalMarksAwarded, maxMarks },
-    }
-  } catch (error) {
-    console.error("[ADMIN SUBMISSION EVALUATION ERROR]", error)
-    await prisma.submission.update({
-      where: { id: submission.id },
-      data: {
-        status: isReviewRequiredRetry
-          ? SubmissionStatus.REVIEW_REQUIRED
-          : SubmissionStatus.FAILED,
-      },
-    })
-    return {
-      success: false,
-      error:
-        "Could not calculate a score. Check the answer-sheet file and evaluation service, then retry.",
-    }
   }
 }
 
@@ -370,7 +165,9 @@ export async function adminReviewScoreAction(
       questions: true,
       submission: {
         include: {
-          testSeries: true,
+          test: true,
+          registration: { include: { test: true } },
+          testSeries: { include: { tests: true } },
         },
       },
     },
@@ -383,10 +180,20 @@ export async function adminReviewScoreAction(
     }
   }
 
+  const seriesTests = evaluation.submission.testSeries.tests || []
+  const effectiveTest =
+    evaluation.submission.test ||
+    evaluation.submission.registration?.test ||
+    (seriesTests.length === 1 ? seriesTests[0] : null)
+  const authoritativeMaxMarks =
+    effectiveTest?.maxMarks ??
+    evaluation.submission.testSeries.maxMarks ??
+    evaluation.maxMarks
+
   // Update questions and recalculate total
   await prisma.$transaction(async (tx) => {
     let newTotal = 0
-    const updatePromises: Promise<any>[] = []
+    const updatePromises: Promise<unknown>[] = []
 
     for (const q of evaluation.questions) {
       const adjustment = adjustments.find(
@@ -418,14 +225,20 @@ export async function adminReviewScoreAction(
       await Promise.all(updatePromises)
     }
 
-    const percentage = Number(
-      ((newTotal / evaluation.maxMarks) * 100).toFixed(2)
-    )
+    const cappedTotal =
+      authoritativeMaxMarks > 0
+        ? Math.min(Number(newTotal.toFixed(2)), authoritativeMaxMarks)
+        : Number(newTotal.toFixed(2))
+    const percentage =
+      authoritativeMaxMarks > 0
+        ? Number(((cappedTotal / authoritativeMaxMarks) * 100).toFixed(2))
+        : 0
 
     await tx.evaluation.update({
       where: { id: evaluation.id },
       data: {
-        totalMarksAwarded: newTotal,
+        totalMarksAwarded: cappedTotal,
+        maxMarks: authoritativeMaxMarks,
         percentage,
         status: EvaluationStatus.ADJUSTED,
         adminNotes: adminOverallNotes || evaluation.adminNotes,
@@ -436,7 +249,12 @@ export async function adminReviewScoreAction(
 
     await tx.submission.update({
       where: { id: submissionId },
-      data: { status: SubmissionStatus.COMPLETED },
+      data: {
+        status: SubmissionStatus.COMPLETED,
+        ...(effectiveTest && !evaluation.submission.testId
+          ? { testId: effectiveTest.id }
+          : {}),
+      },
     })
 
     // Create Audit Log
@@ -446,7 +264,7 @@ export async function adminReviewScoreAction(
         action: "SCORE_REVIEW_ADJUSTED",
         targetType: "Evaluation",
         targetId: evaluation.id,
-        details: `Adjusted total score from ${evaluation.totalMarksAwarded} to ${newTotal}. Notes: ${adminOverallNotes || "None"}`,
+        details: `Adjusted total score from ${evaluation.totalMarksAwarded} to ${cappedTotal} / ${authoritativeMaxMarks}. Notes: ${adminOverallNotes || "None"}`,
       },
     })
   }, DB_TX_OPTIONS)
@@ -454,6 +272,11 @@ export async function adminReviewScoreAction(
   revalidatePath(`/admin/submissions/${submissionId}`)
   revalidatePath("/admin/submissions")
   revalidatePath(`/student/tests/${evaluation.submission.testSeriesId}`)
+  if (effectiveTest?.id) {
+    revalidatePath(`/student/tests/${effectiveTest.id}`)
+  }
+  revalidatePath("/student/evaluations")
+  revalidatePath(`/student/evaluations/${submissionId}`)
   // Revalidate leaderboard to update rankings immediately after score adjustments
   revalidatePath("/leaderboard")
   invalidateLeaderboardCache() // Invalidate cached leaderboard data

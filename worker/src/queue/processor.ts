@@ -38,6 +38,36 @@ const EVALUATION_JOB_DEFAULT_OPTIONS = {
   removeOnFail: 500,
 }
 
+function inferDocumentMimeType(filePath: string): string {
+  const lower = filePath.toLowerCase()
+  if (lower.endsWith(".png")) return "image/png"
+  if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg"
+  if (lower.endsWith(".webp")) return "image/webp"
+  return "application/pdf"
+}
+
+async function tryDownloadOptionalPrivateFile(
+  fileUrl: string | null | undefined
+): Promise<{ buffer: Buffer; mimeType: string } | null> {
+  if (!fileUrl) return null
+  try {
+    const ref = parsePrivateFileReference(fileUrl)
+    if (!ref || ref.bucket !== "verityra-private") return null
+    const buffer = await downloadPrivateFile(ref.bucket, ref.filePath)
+    if (!buffer || buffer.length === 0) return null
+    return {
+      buffer,
+      mimeType: inferDocumentMimeType(ref.filePath),
+    }
+  } catch (err) {
+    console.warn(
+      `[Worker] Optional evaluation reference file unavailable (${fileUrl}):`,
+      err instanceof Error ? err.message : err
+    )
+    return null
+  }
+}
+
 async function markEvaluationFailed(params: {
   submissionId: string
   runId?: string
@@ -135,21 +165,31 @@ export function createEvaluationWorker(): Worker<EvaluationJobData> {
           })
           .catch(() => undefined)
 
+        const testSelect = {
+          id: true,
+          title: true,
+          subject: true,
+          maxMarks: true,
+          privateEvaluationInstructions: true,
+          questionPaperUrl: true,
+          modelAnswerUrl: true,
+        }
+
         const submission = await prisma.submission.findUnique({
           where: { id: submissionId },
           include: {
             user: { select: { name: true, email: true } },
-            test: {
+            test: { select: testSelect },
+            registration: {
               select: {
-                id: true,
-                title: true,
-                maxMarks: true,
-                privateEvaluationInstructions: true,
+                test: { select: testSelect },
               },
             },
             testSeries: {
               include: {
+                tests: { select: testSelect, orderBy: { order: "asc" } },
                 papers: { orderBy: { createdAt: "desc" }, take: 1 },
+                questionPapers: { orderBy: { createdAt: "desc" }, take: 1 },
               },
             },
           },
@@ -159,30 +199,63 @@ export function createEvaluationWorker(): Worker<EvaluationJobData> {
           throw new Error(`Submission ${submissionId} not found in database.`)
         }
 
-        const effectiveTitle = submission.test?.title || submission.testSeries.title
+        const seriesTests = submission.testSeries.tests || []
+        const effectiveTest =
+          submission.test ||
+          submission.registration?.test ||
+          (seriesTests.length === 1 ? seriesTests[0] : null)
+
+        // Auto-heal legacy unlinked submissions when Subject Test can be resolved unambiguously
+        if (!submission.test && effectiveTest?.id) {
+          await prisma.submission
+            .update({
+              where: { id: submissionId },
+              data: { testId: effectiveTest.id },
+            })
+            .catch(() => undefined)
+        }
+
+        const effectiveTitle =
+          effectiveTest?.title || submission.testSeries.title
+        const effectiveSubject = effectiveTest?.subject || null
+        const effectiveStandard = submission.testSeries.standard || null
         const effectiveMaxMarks =
-          submission.test?.maxMarks ?? submission.testSeries.maxMarks
+          effectiveTest?.maxMarks ?? submission.testSeries.maxMarks
         const effectiveInstructions =
-          submission.test?.privateEvaluationInstructions ||
+          effectiveTest?.privateEvaluationInstructions ||
           submission.testSeries.privateEvaluationInstructions ||
           ""
 
-        // Retrieve student booklet buffer
-        let buffer: Buffer
-        if (fileBuffer) {
-          buffer = Buffer.from(fileBuffer, "base64")
-        } else {
-          const fileReference = parsePrivateFileReference(fileUrl)
-          if (!fileReference || fileReference.bucket !== "verityra-private") {
-            throw new Error(
-              `Invalid answer sheet storage reference: ${fileUrl}`
+        const latestPaper = submission.testSeries.papers[0]
+        const latestMasterPaper = submission.testSeries.questionPapers[0]
+        const questionPaperUrl =
+          effectiveTest?.questionPaperUrl ||
+          latestPaper?.fileUrl ||
+          latestMasterPaper?.fileUrl ||
+          null
+        const modelAnswerUrl =
+          effectiveTest?.modelAnswerUrl || latestPaper?.modelAnswerUrl || null
+
+        // Retrieve student booklet buffer + optional ground-truth Question Paper & Model Answer PDFs in parallel
+        const [buffer, questionPaperDoc, modelAnswerDoc] = await Promise.all([
+          (async () => {
+            if (fileBuffer) {
+              return Buffer.from(fileBuffer, "base64")
+            }
+            const fileReference = parsePrivateFileReference(fileUrl)
+            if (!fileReference || fileReference.bucket !== "verityra-private") {
+              throw new Error(
+                `Invalid answer sheet storage reference: ${fileUrl}`
+              )
+            }
+            return downloadPrivateFile(
+              fileReference.bucket,
+              fileReference.filePath
             )
-          }
-          buffer = await downloadPrivateFile(
-            fileReference.bucket,
-            fileReference.filePath
-          )
-        }
+          })(),
+          tryDownloadOptionalPrivateFile(questionPaperUrl),
+          tryDownloadOptionalPrivateFile(modelAnswerUrl),
+        ])
 
         if (!buffer || buffer.length === 0) {
           throw new Error(
@@ -193,13 +266,19 @@ export function createEvaluationWorker(): Worker<EvaluationJobData> {
         await job.updateProgress(25)
 
         console.log(
-          `[Worker] Running multimodal Gemini evaluation on ${buffer.length} bytes for submission ${submissionId}`
+          `[Worker] Running multimodal Gemini evaluation on ${buffer.length} bytes for submission ${submissionId} (maxMarks=${effectiveMaxMarks}, questionPaper=${Boolean(questionPaperDoc)}, modelAnswer=${Boolean(modelAnswerDoc)})`
         )
         const aiResult = await evaluateAnswerSheetWithGemini({
           testTitle: effectiveTitle,
+          subject: effectiveSubject,
+          standard: effectiveStandard,
           maxMarks: effectiveMaxMarks,
-          rubricContent: submission.testSeries.papers[0]?.rubricContent || null,
+          rubricContent: latestPaper?.rubricContent || null,
           privateEvaluationInstructions: effectiveInstructions,
+          questionPaperBuffer: questionPaperDoc?.buffer || null,
+          questionPaperMimeType: questionPaperDoc?.mimeType || null,
+          modelAnswerBuffer: modelAnswerDoc?.buffer || null,
+          modelAnswerMimeType: modelAnswerDoc?.mimeType || null,
           studentAnswerSheetBuffer: buffer,
           studentAnswerSheetMimeType: mimeType,
           studentAnswerSheetUrl: fileUrl,

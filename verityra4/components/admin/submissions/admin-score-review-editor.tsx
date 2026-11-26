@@ -16,34 +16,51 @@ import { toast } from "@/components/ui/sonner"
 import { Download, FileText, Loader2, ShieldCheck } from "lucide-react"
 import { adminReviewScoreAction } from "@/actions/evaluation-actions"
 
+function compareQuestionLabels(a: string, b: string): number {
+  return String(a || "").localeCompare(String(b || ""), undefined, {
+    numeric: true,
+    sensitivity: "base",
+  })
+}
+
 export function AdminScoreReviewEditor({
   submissionId,
   initialEvaluation,
+  configuredMaxMarks,
   evaluationRuns = [],
   fileUrl,
 }: {
   submissionId: string
   initialEvaluation: any
+  configuredMaxMarks?: number
   evaluationRuns?: any[]
   fileUrl: string
 }) {
   const router = useRouter()
   const confirm = useConfirm()
   const { showError } = useGlobalError()
-  const [questions, setQuestions] = useState<any[]>(
-    initialEvaluation.questions || []
+  const effectiveMaxMarks =
+    configuredMaxMarks && configuredMaxMarks > 0
+      ? configuredMaxMarks
+      : initialEvaluation.maxMarks
+  const [questions, setQuestions] = useState<any[]>(() =>
+    [...(initialEvaluation.questions || [])].sort((a, b) =>
+      compareQuestionLabels(a.questionNumber, b.questionNumber)
+    )
   )
   const [adminNotes, setAdminNotes] = useState(
     initialEvaluation.adminNotes || ""
   )
   const [loading, setLoading] = useState(false)
-  const calculatedTotal = questions.reduce(
-    (sum, question) => sum + (Number(question.marksAwarded) || 0),
-    0
+  const calculatedTotal = Number(
+    questions
+      .reduce((sum, question) => sum + (Number(question.marksAwarded) || 0), 0)
+      .toFixed(2)
   )
-  const percentage = Number(
-    ((calculatedTotal / initialEvaluation.maxMarks) * 100).toFixed(2)
-  )
+  const percentage =
+    effectiveMaxMarks > 0
+      ? Number(((calculatedTotal / effectiveMaxMarks) * 100).toFixed(2))
+      : 0
 
   function handleScoreChange(
     questionId: string,
@@ -74,7 +91,7 @@ export function AdminScoreReviewEditor({
     event.preventDefault()
     const confirmed = await confirm({
       title: "Save Adjusted Scores & Finalize Evaluation?",
-      description: `This will set the candidate's total score to ${calculatedTotal} / ${initialEvaluation.maxMarks} (${percentage}%) and write an immutable audit entry.`,
+      description: `This will set the candidate's total score to ${calculatedTotal} / ${effectiveMaxMarks} (${percentage}%) and write an immutable audit entry.`,
       confirmText: "Approve & Write Audit Log",
       cancelText: "Continue Editing",
       badgeText: "Audited Score Override",
@@ -100,7 +117,7 @@ export function AdminScoreReviewEditor({
         return
       }
       toast.success("Evaluation score finalized", {
-        description: `${calculatedTotal}/${initialEvaluation.maxMarks} saved with an audit log.`,
+        description: `${calculatedTotal}/${effectiveMaxMarks} saved with an audit log.`,
       })
       router.refresh()
     } catch {
@@ -119,7 +136,10 @@ export function AdminScoreReviewEditor({
       id: "questionNumber",
       header: "Question",
       sortable: true,
-      sortAccessor: (q) => q.questionNumber,
+      sortAccessor: (q) => {
+        const match = String(q.questionNumber || "").match(/\d+/)
+        return match ? parseInt(match[0], 10) : String(q.questionNumber || "")
+      },
       searchAccessor: (q) =>
         `${q.questionNumber} ${q.feedback || ""} ${q.missingConcepts || ""} ${q.adminNotes || ""}`,
       className: "w-24 font-bold text-primary",
@@ -242,7 +262,7 @@ export function AdminScoreReviewEditor({
           <div className="grid grid-cols-1 divide-y border-y border-border bg-muted/20 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
             <SummaryMetric
               label="Calculated total"
-              value={`${calculatedTotal} / ${initialEvaluation.maxMarks}`}
+              value={`${calculatedTotal} / ${effectiveMaxMarks}`}
             />
             <SummaryMetric
               label="Calculated percentage"
@@ -392,7 +412,7 @@ export function AdminScoreReviewEditor({
         <p className="text-xs text-muted-foreground">
           Current review total:{" "}
           <span className="font-bold text-foreground">
-            {calculatedTotal} / {initialEvaluation.maxMarks} ({percentage}%)
+            {calculatedTotal} / {effectiveMaxMarks} ({percentage}%)
           </span>
         </p>
         <Button

@@ -4,6 +4,7 @@ import { isDatabaseConnected, prisma } from "@/lib/prisma"
 import { normalizePrivateFileUrl } from "@/lib/supabase"
 import { StudentEvaluationDetailClient } from "@/components/student/evaluations/student-evaluation-detail-client"
 import type { StudentEvaluationDetail } from "@/components/student/evaluations/types"
+import { compareQuestionNumbers } from "@/lib/ai/gemini-evaluator"
 
 export const dynamic = "force-dynamic"
 
@@ -21,11 +22,19 @@ export default async function StudentEvaluationDetailPage({
     select: {
       id: true,
       testSeriesId: true,
+      testId: true,
       attemptNumber: true,
       status: true,
       fileUrl: true,
       submittedAt: true,
-      testSeries: { select: { title: true } },
+      test: { select: { id: true, title: true, maxMarks: true } },
+      testSeries: {
+        select: {
+          title: true,
+          maxMarks: true,
+          tests: { select: { id: true, title: true, maxMarks: true } },
+        },
+      },
       evaluation: {
         select: {
           totalMarksAwarded: true,
@@ -58,10 +67,16 @@ export default async function StudentEvaluationDetailPage({
   })
   if (!submission) notFound()
 
+  const effectiveTest =
+    submission.test ||
+    (submission.testSeries.tests.length === 1
+      ? submission.testSeries.tests[0]
+      : null)
+
   const detail: StudentEvaluationDetail = {
     submissionId: submission.id,
-    testSeriesId: submission.testSeriesId,
-    testTitle: submission.testSeries.title,
+    testSeriesId: effectiveTest?.id || submission.testSeriesId,
+    testTitle: effectiveTest?.title || submission.testSeries.title,
     attemptNumber: submission.attemptNumber,
     submittedAt: submission.submittedAt.toISOString(),
     status: submission.status,
@@ -74,7 +89,9 @@ export default async function StudentEvaluationDetailPage({
           evaluatedAt: submission.evaluation.evaluatedAt?.toISOString() || null,
           legibilityWarning: submission.evaluation.legibilityWarning,
           uncertaintyFlag: submission.evaluation.uncertaintyFlag,
-          questions: submission.evaluation.questions,
+          questions: [...submission.evaluation.questions].sort((a, b) =>
+            compareQuestionNumbers(a.questionNumber, b.questionNumber)
+          ),
         }
       : null,
   }

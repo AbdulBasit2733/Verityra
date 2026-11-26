@@ -38,25 +38,96 @@ export function isFinalBullMqAttempt(
   return attemptsMade + 1 >= (maxAttempts ?? 3)
 }
 
+export interface SubjectTestCandidate {
+  id?: string
+  title: string
+  subject?: string | null
+  maxMarks: number
+  privateEvaluationInstructions?: string | null
+  questionPaperUrl?: string | null
+  modelAnswerUrl?: string | null
+}
+
+export function inferDocumentMimeType(filePath: string): string {
+  const lower = filePath.toLowerCase()
+  if (lower.endsWith(".png")) return "image/png"
+  if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg"
+  if (lower.endsWith(".webp")) return "image/webp"
+  return "application/pdf"
+}
+
+export async function tryDownloadOptionalPrivateFile(
+  fileUrl: string | null | undefined
+): Promise<{ buffer: Buffer; mimeType: string } | null> {
+  if (!fileUrl) return null
+  try {
+    const ref = parsePrivateFileReference(fileUrl)
+    if (!ref || ref.bucket !== "verityra-private") return null
+    const buffer = await downloadPrivateFile(ref.bucket, ref.filePath)
+    if (!buffer || buffer.length === 0) return null
+    return {
+      buffer,
+      mimeType: inferDocumentMimeType(ref.filePath),
+    }
+  } catch (err) {
+    console.warn(
+      `[Queue] Optional evaluation reference file unavailable (${fileUrl}):`,
+      err instanceof Error ? err.message : err
+    )
+    return null
+  }
+}
+
 export function resolveEvaluationTargetMeta(submission: {
   testSeries: {
     title: string
+    standard?: string | null
     maxMarks: number
     privateEvaluationInstructions?: string | null
+    tests?: SubjectTestCandidate[]
+    papers?: Array<{
+      fileUrl?: string | null
+      modelAnswerUrl?: string | null
+      rubricContent?: string | null
+    }>
+    questionPapers?: Array<{
+      fileUrl?: string | null
+    }>
   }
-  test?: {
-    title: string
-    maxMarks: number
-    privateEvaluationInstructions?: string | null
+  test?: SubjectTestCandidate | null
+  registration?: {
+    test?: SubjectTestCandidate | null
   } | null
 }) {
+  const seriesTests = submission.testSeries.tests || []
+  const effectiveTest =
+    submission.test ||
+    submission.registration?.test ||
+    (seriesTests.length === 1 ? seriesTests[0] : null)
+
+  const latestPaper = submission.testSeries.papers?.[0]
+  const latestMasterPaper = submission.testSeries.questionPapers?.[0]
+
   return {
-    title: submission.test?.title || submission.testSeries.title,
-    maxMarks: submission.test?.maxMarks ?? submission.testSeries.maxMarks,
+    inferredTestId:
+      !submission.test && effectiveTest?.id ? effectiveTest.id : null,
+    subjectTest: effectiveTest,
+    title: effectiveTest?.title || submission.testSeries.title,
+    subject: effectiveTest?.subject || null,
+    standard: submission.testSeries.standard || null,
+    maxMarks: effectiveTest?.maxMarks ?? submission.testSeries.maxMarks,
     privateEvaluationInstructions:
-      submission.test?.privateEvaluationInstructions ||
+      effectiveTest?.privateEvaluationInstructions ||
       submission.testSeries.privateEvaluationInstructions ||
       "",
+    rubricContent: latestPaper?.rubricContent || null,
+    questionPaperUrl:
+      effectiveTest?.questionPaperUrl ||
+      latestPaper?.fileUrl ||
+      latestMasterPaper?.fileUrl ||
+      null,
+    modelAnswerUrl:
+      effectiveTest?.modelAnswerUrl || latestPaper?.modelAnswerUrl || null,
   }
 }
 
@@ -259,6 +330,16 @@ export function createEvaluationWorker(): Worker<EvaluationJobData> | null {
           },
         })
 
+        const testSelect = {
+          id: true,
+          title: true,
+          subject: true,
+          maxMarks: true,
+          privateEvaluationInstructions: true,
+          questionPaperUrl: true,
+          modelAnswerUrl: true,
+        }
+
         // Fetch submission with test series & optional child subject test data
         const submission = await prisma.submission.findUnique({
           where: { id: submissionId },
@@ -266,17 +347,17 @@ export function createEvaluationWorker(): Worker<EvaluationJobData> | null {
             user: {
               select: { name: true, email: true },
             },
-            test: {
+            test: { select: testSelect },
+            registration: {
               select: {
-                id: true,
-                title: true,
-                maxMarks: true,
-                privateEvaluationInstructions: true,
+                test: { select: testSelect },
               },
             },
             testSeries: {
               include: {
+                tests: { select: testSelect, orderBy: { order: "asc" } },
                 papers: { orderBy: { createdAt: "desc" }, take: 1 },
+                questionPapers: { orderBy: { createdAt: "desc" }, take: 1 },
               },
             },
           },
@@ -288,21 +369,33 @@ export function createEvaluationWorker(): Worker<EvaluationJobData> | null {
 
         const targetMeta = resolveEvaluationTargetMeta(submission)
 
-        // Get file buffer (either from job data or download from URL)
-        let buffer: Buffer
-        if (fileBuffer) {
-          // Decode base64 buffer from job data
-          buffer = Buffer.from(fileBuffer, "base64")
-        } else {
-          const fileReference = parsePrivateFileReference(fileUrl)
-          if (!fileReference || fileReference.bucket !== "verityra-private") {
-            throw new Error("The answer-sheet file reference is invalid.")
-          }
-          buffer = await downloadPrivateFile(
-            fileReference.bucket,
-            fileReference.filePath
-          )
+        if (targetMeta.inferredTestId) {
+          await prisma.submission
+            .update({
+              where: { id: submissionId },
+              data: { testId: targetMeta.inferredTestId },
+            })
+            .catch(() => undefined)
         }
+
+        // Get file buffer + optional ground-truth Question Paper & Model Answer PDFs
+        const [buffer, questionPaperDoc, modelAnswerDoc] = await Promise.all([
+          (async () => {
+            if (fileBuffer) {
+              return Buffer.from(fileBuffer, "base64")
+            }
+            const fileReference = parsePrivateFileReference(fileUrl)
+            if (!fileReference || fileReference.bucket !== "verityra-private") {
+              throw new Error("The answer-sheet file reference is invalid.")
+            }
+            return downloadPrivateFile(
+              fileReference.bucket,
+              fileReference.filePath
+            )
+          })(),
+          tryDownloadOptionalPrivateFile(targetMeta.questionPaperUrl),
+          tryDownloadOptionalPrivateFile(targetMeta.modelAnswerUrl),
+        ])
 
         if (!buffer || buffer.length === 0) {
           throw new Error(
@@ -315,13 +408,20 @@ export function createEvaluationWorker(): Worker<EvaluationJobData> | null {
 
         // Run AI evaluation
         console.log(
-          `[Worker] Running AI evaluation for submission ${submissionId}`
+          `[Worker] Running AI evaluation for submission ${submissionId} (maxMarks=${targetMeta.maxMarks})`
         )
         const aiResult = await evaluateAnswerSheetWithGemini({
           testTitle: targetMeta.title,
+          subject: targetMeta.subject,
+          standard: targetMeta.standard,
           maxMarks: targetMeta.maxMarks,
-          rubricContent: submission.testSeries.papers[0]?.rubricContent || null,
-          privateEvaluationInstructions: targetMeta.privateEvaluationInstructions,
+          rubricContent: targetMeta.rubricContent,
+          privateEvaluationInstructions:
+            targetMeta.privateEvaluationInstructions,
+          questionPaperBuffer: questionPaperDoc?.buffer || null,
+          questionPaperMimeType: questionPaperDoc?.mimeType || null,
+          modelAnswerBuffer: modelAnswerDoc?.buffer || null,
+          modelAnswerMimeType: modelAnswerDoc?.mimeType || null,
           studentAnswerSheetBuffer: buffer,
           studentAnswerSheetMimeType: mimeType,
           studentAnswerSheetUrl: fileUrl,

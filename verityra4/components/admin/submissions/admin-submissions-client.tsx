@@ -34,10 +34,13 @@ export interface AdminSubmissionRow {
   candidateName: string
   candidateEmail: string
   testTitle: string
+  subjectTestTitle?: string | null
+  testSeriesTitle?: string | null
   attemptNumber: number
   status: string
   totalMarksAwarded: number | null
   maxMarks: number | null
+  evaluatedMaxMarks?: number | null
   uncertaintyFlag: boolean
   fileUrl?: string | null
   submittedAt: string
@@ -45,6 +48,125 @@ export interface AdminSubmissionRow {
   jobStatus?: string | null
   jobAttempts?: number | null
   jobError?: string | null
+}
+
+export function AdminEvaluationLiveBanner({
+  submissionId,
+  initialJobStatus,
+  initialAttempts = 0,
+  runNumber = 1,
+}: {
+  submissionId: string
+  initialJobStatus?: string | null
+  initialAttempts?: number
+  runNumber?: number
+}) {
+  const router = useRouter()
+  const [liveState, setLiveState] = React.useState<{
+    jobStatus: string
+    progress: number
+    attempts: number
+    error: string | null
+  }>({
+    jobStatus: initialJobStatus || "PROCESSING",
+    progress: 15,
+    attempts: initialAttempts,
+    error: null,
+  })
+
+  React.useEffect(() => {
+    let cancelled = false
+    let polls = 0
+    const maxPolls = 120 // 6 minutes @ 3s
+
+    const timer = setInterval(async () => {
+      polls += 1
+      if (polls > maxPolls) {
+        clearInterval(timer)
+        return
+      }
+      try {
+        const res = await fetch(`/api/submissions/${submissionId}/status`, {
+          cache: "no-store",
+        })
+        if (!res.ok || cancelled) return
+        const data = await res.json()
+        if (cancelled) return
+
+        if (data.isComplete) {
+          clearInterval(timer)
+          toast.success(`AI Evaluation Run #${runNumber} Completed`, {
+            description:
+              data.totalMarksAwarded != null
+                ? `Updated score: ${data.totalMarksAwarded} / ${data.maxMarks} marks (${data.percentage}%).`
+                : "Updated question review is now ready.",
+          })
+          router.refresh()
+          return
+        }
+
+        if (data.isFailed) {
+          clearInterval(timer)
+          toast.error("AI Evaluation Failed", {
+            description:
+              data.jobError ||
+              "Worker encountered an error. You can force-retry from this page.",
+          })
+          router.refresh()
+          return
+        }
+
+        setLiveState((prev) => ({
+          jobStatus: data.jobStatus || data.submissionStatus || prev.jobStatus,
+          progress:
+            data.progress > 0
+              ? data.progress
+              : Math.min(92, prev.progress + 10),
+          attempts: data.jobAttempts ?? prev.attempts,
+          error: data.jobError || null,
+        }))
+      } catch {
+        // Ignore transient network hiccups while polling
+      }
+    }, 3000)
+
+    return () => {
+      cancelled = true
+      clearInterval(timer)
+    }
+  }, [submissionId, runNumber, router])
+
+  return (
+    <div className="space-y-2.5 rounded-md border border-blue-200 bg-blue-50/70 p-4 dark:border-blue-900/60 dark:bg-blue-950/40">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2.5">
+          <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[#2A6AED]" />
+          <div>
+            <p className="text-xs font-bold text-slate-900 sm:text-sm dark:text-slate-100">
+              AI Evaluation Run #{runNumber} in progress ({liveState.jobStatus})
+            </p>
+            <p className="text-[11px] text-slate-600 dark:text-slate-400">
+              Checking handwritten sheet against official Question Paper, Model
+              Answer, and board step-marking rules. Page will refresh
+              automatically when done.
+            </p>
+          </div>
+        </div>
+        <Badge
+          variant="outline"
+          className="border-blue-300 bg-white text-[11px] font-semibold text-[#2A6AED]"
+        >
+          Attempt {Math.max(1, liveState.attempts)} · {liveState.progress}%
+        </Badge>
+      </div>
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-blue-200/70 dark:bg-blue-900/50">
+        <div
+          className="h-full origin-left rounded-full bg-[#2A6AED] transition-all duration-500"
+          style={{ width: `${Math.min(100, Math.max(8, liveState.progress))}%` }}
+        />
+      </div>
+    </div>
+  )
 }
 
 export function AdminSubmissionEvaluationTrigger({
@@ -185,7 +307,7 @@ export function AdminSubmissionsClient({
       sortable: true,
       sortAccessor: (s) => s.candidateName,
       searchAccessor: (s) =>
-        `${s.candidateName} ${s.candidateEmail} ${s.testTitle} ${s.status}`,
+        `${s.candidateName} ${s.candidateEmail} ${s.subjectTestTitle || ""} ${s.testSeriesTitle || ""} ${s.testTitle} ${s.status}`,
       cell: (s) => (
         <div>
           <span className="block font-bold text-slate-900 dark:text-slate-100">
@@ -199,13 +321,26 @@ export function AdminSubmissionsClient({
     },
     {
       id: "testTitle",
-      header: "Test Series",
+      header: "Subject Test & Series",
       sortable: true,
-      sortAccessor: (s) => s.testTitle,
+      sortAccessor: (s) => s.subjectTestTitle || s.testTitle,
       cell: (s) => (
-        <span className="block max-w-xs truncate font-semibold text-slate-900 dark:text-slate-100">
-          {s.testTitle}
-        </span>
+        <div className="min-w-0">
+          <h1
+            className="max-w-xs truncate text-xs font-bold text-slate-900 sm:text-sm dark:text-slate-100"
+            title={s.subjectTestTitle || s.testSeriesTitle || s.testTitle}
+          >
+            {s.subjectTestTitle || s.testSeriesTitle || s.testTitle}
+          </h1>
+          {s.subjectTestTitle && s.testSeriesTitle && (
+            <span
+              className="mt-0.5 block max-w-xs truncate text-[11px] font-normal text-slate-500 dark:text-slate-400"
+              title={s.testSeriesTitle}
+            >
+              {s.testSeriesTitle}
+            </span>
+          )}
+        </div>
       ),
     },
     {
@@ -267,11 +402,25 @@ export function AdminSubmissionsClient({
       sortAccessor: (s) => s.totalMarksAwarded ?? -1,
       cell: (s) =>
         s.totalMarksAwarded !== null ? (
-          <span className="text-xs font-extrabold text-[#2A6AED] sm:text-sm dark:text-blue-400">
-            {s.totalMarksAwarded} / {s.maxMarks}
-          </span>
+          <div className="space-y-0.5">
+            <span className="block text-xs font-extrabold text-[#2A6AED] sm:text-sm dark:text-blue-400">
+              {s.totalMarksAwarded} / {s.maxMarks}
+            </span>
+            {s.evaluatedMaxMarks != null &&
+              s.maxMarks != null &&
+              Math.abs(s.evaluatedMaxMarks - s.maxMarks) > 0.01 && (
+                <span
+                  title={`Previous AI run used ${s.evaluatedMaxMarks} max marks instead of configured ${s.maxMarks}. Click Re-evaluate to refresh.`}
+                  className="block text-[10px] font-medium text-amber-700 dark:text-amber-400"
+                >
+                  Graded /{s.evaluatedMaxMarks} · Re-evaluate
+                </span>
+              )}
+          </div>
         ) : (
-          <span className="text-xs text-slate-400">Processing</span>
+          <span className="text-xs text-slate-400">
+            {s.status === "FAILED" ? `— / ${s.maxMarks}` : `Processing / ${s.maxMarks}`}
+          </span>
         ),
     },
     {
@@ -514,15 +663,20 @@ export function AdminSubmissionsClient({
                 </p>
               </div>
 
-              {/* Test Series Title */}
+              {/* Subject Test & Series Title */}
               <div className="border-t border-slate-100 pt-2.5 dark:border-slate-800">
                 <div className="mb-0.5 flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
                   <FileText className="h-3 w-3" />
-                  <span>Test Series</span>
+                  <span>Subject Test & Series</span>
                 </div>
-                <p className="line-clamp-1 text-xs font-semibold text-slate-900 dark:text-slate-100">
-                  {s.testTitle}
-                </p>
+                <h1 className="line-clamp-1 text-xs font-bold text-slate-900 dark:text-slate-100">
+                  {s.subjectTestTitle || s.testSeriesTitle || s.testTitle}
+                </h1>
+                {s.subjectTestTitle && s.testSeriesTitle && (
+                  <span className="mt-0.5 block line-clamp-1 text-[11px] text-slate-500 dark:text-slate-400">
+                    {s.testSeriesTitle}
+                  </span>
+                )}
               </div>
 
               {/* Marks & Uncertainty Flag */}

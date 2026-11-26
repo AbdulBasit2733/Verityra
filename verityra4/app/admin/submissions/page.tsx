@@ -31,8 +31,25 @@ export default async function AdminSubmissionsPage({
         take: limit,
         include: {
           user: { select: { name: true, email: true } },
-          testSeries: { select: { title: true, maxMarks: true } },
-          test: { select: { title: true, maxMarks: true } },
+          testSeries: {
+            select: {
+              title: true,
+              maxMarks: true,
+              tests: {
+                select: { id: true, title: true, subject: true, maxMarks: true },
+              },
+            },
+          },
+          test: {
+            select: { id: true, title: true, subject: true, maxMarks: true },
+          },
+          registration: {
+            select: {
+              test: {
+                select: { id: true, title: true, subject: true, maxMarks: true },
+              },
+            },
+          },
           evaluation: {
             select: {
               status: true,
@@ -72,25 +89,47 @@ export default async function AdminSubmissionsPage({
     totalCount = 1
   }
 
-  const rows: AdminSubmissionRow[] = submissions.map((sub) => ({
-    id: sub.id,
-    candidateName: sub.user?.name || "Student",
-    candidateEmail: sub.user?.email || "",
-    testTitle: sub.test?.title || sub.testSeries?.title || "Mock Examination",
-    attemptNumber: sub.attemptNumber,
-    status: sub.status,
-    totalMarksAwarded: sub.evaluation ? sub.evaluation.totalMarksAwarded : null,
-    maxMarks: sub.evaluation
-      ? sub.evaluation.maxMarks
-      : sub.test?.maxMarks ?? sub.testSeries?.maxMarks ?? 250,
-    uncertaintyFlag: Boolean(sub.evaluation?.uncertaintyFlag),
-    fileUrl: normalizePrivateFileUrl(sub.fileUrl),
-    submittedAt: new Date(sub.submittedAt).toISOString(),
-    aiEvaluationRuns: sub.aiEvaluationRuns || 0,
-    jobStatus: sub.evaluationJob?.status || null,
-    jobAttempts: sub.evaluationJob?.attempts ?? null,
-    jobError: sub.evaluationJob?.lastError || null,
-  }))
+  const rows: AdminSubmissionRow[] = submissions.map((sub) => {
+    const seriesTests = sub.testSeries?.tests || []
+    const effectiveTest =
+      sub.test ||
+      sub.registration?.test ||
+      (seriesTests.length === 1 ? seriesTests[0] : null)
+    const configuredMaxMarks =
+      effectiveTest?.maxMarks ?? sub.testSeries?.maxMarks ?? 100
+    const subjectTestTitle = effectiveTest
+      ? effectiveTest.subject &&
+        !effectiveTest.title
+          .toLowerCase()
+          .startsWith(effectiveTest.subject.toLowerCase())
+        ? `${effectiveTest.subject}: ${effectiveTest.title}`
+        : effectiveTest.title
+      : null
+    const testSeriesTitle = sub.testSeries?.title || "Mock Examination"
+
+    return {
+      id: sub.id,
+      candidateName: sub.user?.name || "Student",
+      candidateEmail: sub.user?.email || "",
+      testTitle: subjectTestTitle || testSeriesTitle,
+      subjectTestTitle,
+      testSeriesTitle,
+      attemptNumber: sub.attemptNumber,
+      status: sub.status,
+      totalMarksAwarded: sub.evaluation
+        ? sub.evaluation.totalMarksAwarded
+        : null,
+      maxMarks: configuredMaxMarks,
+      evaluatedMaxMarks: sub.evaluation ? sub.evaluation.maxMarks : null,
+      uncertaintyFlag: Boolean(sub.evaluation?.uncertaintyFlag),
+      fileUrl: normalizePrivateFileUrl(sub.fileUrl),
+      submittedAt: new Date(sub.submittedAt).toISOString(),
+      aiEvaluationRuns: sub.aiEvaluationRuns || 0,
+      jobStatus: sub.evaluationJob?.status || null,
+      jobAttempts: sub.evaluationJob?.attempts ?? null,
+      jobError: sub.evaluationJob?.lastError || null,
+    }
+  })
   const totalPages = Math.ceil(totalCount / limit)
 
   return (

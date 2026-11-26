@@ -6,7 +6,8 @@ import {
   WorkspaceSubmissionItem,
 } from "@/components/student/workspace/student-workspace-client"
 import { normalizePrivateFileUrl } from "@/lib/supabase"
-import { checkStudentTestAccess, getTestAccessStatus } from "@/lib/test-access"
+import { checkStudentTestAccess } from "@/lib/test-access"
+import { compareQuestionNumbers } from "@/lib/ai/gemini-evaluator"
 
 export const dynamic = "force-dynamic"
 
@@ -31,6 +32,7 @@ export default async function StudentTestWorkspacePage({
             id: true,
             title: true,
             studentInstructions: true,
+            _count: { select: { tests: true } },
             papers: { select: { id: true, title: true, fileUrl: true } },
             templates: { select: { id: true, title: true, fileUrl: true } },
           },
@@ -41,10 +43,13 @@ export default async function StudentTestWorkspacePage({
     if (subjectTest) {
       const hasAccess = await checkStudentTestAccess(user.id, subjectTest.id)
       if (!hasAccess) {
-        redirect(`/tests/${subjectTest.testSeriesId}`)
+        redirect(`/tests/${subjectTest.testSeriesId || subjectTest.id}`)
       }
 
-      registration = await prisma.testRegistration.findFirst({
+      const isSingleTestSeries =
+        (subjectTest.testSeries?._count?.tests || 0) <= 1
+
+      const matchingRegistrations = await prisma.testRegistration.findMany({
         where: {
           userId: user.id,
           OR: [
@@ -56,13 +61,17 @@ export default async function StudentTestWorkspacePage({
         },
         select: {
           id: true,
+          testId: true,
+          testSeriesId: true,
           attemptsUsed: true,
           maxAttempts: true,
           submissions: {
             where: {
               OR: [
                 { testId: subjectTest.id },
-                ...(subjectTest.testSeriesId ? [{ testSeriesId: subjectTest.testSeriesId }] : []),
+                ...(isSingleTestSeries && subjectTest.testSeriesId
+                  ? [{ testId: null, testSeriesId: subjectTest.testSeriesId }]
+                  : []),
               ],
             },
             select: {
@@ -130,6 +139,39 @@ export default async function StudentTestWorkspacePage({
           },
         },
       })
+
+      const directReg = matchingRegistrations.find(
+        (r) => r.testId === subjectTest.id
+      )
+      const bundleReg = matchingRegistrations.find(
+        (r) => r.testSeriesId === subjectTest.testSeriesId
+      )
+      const mergedSubMap = new Map<string, any>()
+      for (const reg of matchingRegistrations) {
+        for (const sub of reg.submissions || []) {
+          mergedSubMap.set(sub.id, sub)
+        }
+      }
+      const mergedSubmissions = Array.from(mergedSubMap.values()).sort(
+        (a, b) =>
+          b.attemptNumber - a.attemptNumber ||
+          new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
+      )
+
+      if (matchingRegistrations.length > 0) {
+        registration = {
+          id: directReg?.id || bundleReg?.id || matchingRegistrations[0].id,
+          attemptsUsed: directReg
+            ? directReg.attemptsUsed
+            : mergedSubmissions.length,
+          maxAttempts:
+            directReg?.maxAttempts ||
+            subjectTest.maxAttempts ||
+            bundleReg?.maxAttempts ||
+            3,
+          submissions: mergedSubmissions,
+        }
+      }
 
       testSeries = {
         id: subjectTest.id,
@@ -380,7 +422,11 @@ export default async function StudentTestWorkspacePage({
           generalFeedback: sub.evaluation.generalFeedback,
           legibilityWarning: Boolean(sub.evaluation.legibilityWarning),
           uncertaintyFlag: Boolean(sub.evaluation.uncertaintyFlag),
-          questions: (sub.evaluation.questions || []).map((q: any) => ({
+          questions: [...(sub.evaluation.questions || [])]
+            .sort((a: any, b: any) =>
+              compareQuestionNumbers(a.questionNumber, b.questionNumber)
+            )
+            .map((q: any) => ({
             id: q.id,
             questionNumber: q.questionNumber,
             maxMarks: q.maxMarks,
@@ -404,7 +450,11 @@ export default async function StudentTestWorkspacePage({
           status: run.status,
           totalMarksAwarded: run.totalMarksAwarded,
           maxMarks: run.maxMarks,
-          questions: (run.questions || []).map((q: any) => ({
+          questions: [...(run.questions || [])]
+            .sort((a: any, b: any) =>
+              compareQuestionNumbers(a.questionNumber, b.questionNumber)
+            )
+            .map((q: any) => ({
             id: q.id,
             questionNumber: q.questionNumber,
             maxMarks: q.maxMarks,

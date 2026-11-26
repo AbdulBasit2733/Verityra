@@ -4,7 +4,10 @@ import { prisma } from "@/lib/prisma"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { AdminScoreReviewEditor } from "@/components/admin/submissions/admin-score-review-editor"
-import { AdminSubmissionEvaluationTrigger } from "@/components/admin/submissions/admin-submissions-client"
+import {
+  AdminEvaluationLiveBanner,
+  AdminSubmissionEvaluationTrigger,
+} from "@/components/admin/submissions/admin-submissions-client"
 import { PageHeader } from "@/components/ui/page-header"
 import {
   ArrowLeft,
@@ -36,8 +39,17 @@ export default async function AdminSubmissionReviewPage({
       where: { id },
       include: {
         user: true,
-        testSeries: true,
+        testSeries: {
+          include: {
+            tests: true,
+          },
+        },
         test: true,
+        registration: {
+          include: {
+            test: true,
+          },
+        },
         evaluationJob: true,
         evaluation: {
           include: { questions: { orderBy: { questionNumber: "asc" } } },
@@ -101,6 +113,25 @@ export default async function AdminSubmissionReviewPage({
   }
 
   const fileUrl = normalizePrivateFileUrl(submission.fileUrl) || "#"
+  const seriesTests = submission.testSeries?.tests || []
+  const effectiveTest =
+    submission.test ||
+    submission.registration?.test ||
+    (seriesTests.length === 1 ? seriesTests[0] : null)
+  const configuredMaxMarks =
+    effectiveTest?.maxMarks ?? submission.testSeries?.maxMarks ?? 100
+  const subjectTitle = effectiveTest
+    ? effectiveTest.subject &&
+      !effectiveTest.title
+        .toLowerCase()
+        .startsWith(effectiveTest.subject.toLowerCase())
+      ? `${effectiveTest.subject}: ${effectiveTest.title}`
+      : effectiveTest.title
+    : null
+  const headerSubtitle = subjectTitle
+    ? `${subjectTitle} · ${submission.testSeries?.title || "Test Series"} (${configuredMaxMarks} Max Marks)`
+    : `${submission.testSeries?.title || "Candidate answer sheet"} (${configuredMaxMarks} Max Marks)`
+
   const statusLabel =
     submission.status === "REVIEW_REQUIRED"
       ? "Review required"
@@ -112,18 +143,22 @@ export default async function AdminSubmissionReviewPage({
       ? "border-emerald-200 bg-emerald-50 text-emerald-700"
       : submission.status === "REVIEW_REQUIRED"
         ? "border-amber-200 bg-amber-50 text-amber-800"
-        : "border-blue-200 bg-blue-50 text-blue-700"
+        : submission.status === "FAILED"
+          ? "border-red-200 bg-red-50 text-red-700"
+          : "border-blue-200 bg-blue-50 text-blue-700"
+
+  const isActivelyProcessing =
+    submission.status === "PROCESSING" ||
+    submission.evaluationJob?.status === "QUEUED" ||
+    submission.evaluationJob?.status === "PROCESSING" ||
+    submission.evaluationJob?.status === "RETRYING"
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6">
       <PageHeader
         icon={FileCheck2}
         title="Submission Review"
-        subtitle={
-          submission.test?.title ||
-          submission.testSeries?.title ||
-          "Candidate answer sheet"
-        }
+        subtitle={headerSubtitle}
         showRefresh={false}
       >
         <Link href="/admin/submissions">
@@ -190,12 +225,23 @@ export default async function AdminSubmissionReviewPage({
         </div>
       </section>
 
+      {isActivelyProcessing && (
+        <AdminEvaluationLiveBanner
+          submissionId={submission.id}
+          initialJobStatus={submission.evaluationJob?.status}
+          initialAttempts={submission.evaluationJob?.attempts || 0}
+          runNumber={Math.max(1, submission.aiEvaluationRuns || 1)}
+        />
+      )}
+
       {submission.evaluation ? (
         <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_260px]">
           <main className="min-w-0">
             <AdminScoreReviewEditor
+              key={`${submission.evaluation.id}-${submission.evaluation.evaluatedAt?.toISOString?.() || ""}-${submission.aiEvaluationRuns || 0}`}
               submissionId={submission.id}
               initialEvaluation={submission.evaluation}
+              configuredMaxMarks={configuredMaxMarks}
               evaluationRuns={submission.evaluationRuns || []}
               fileUrl={fileUrl}
             />
@@ -239,12 +285,30 @@ export default async function AdminSubmissionReviewPage({
                 {submission.evaluation.totalMarksAwarded}
                 <span className="text-base font-semibold text-muted-foreground">
                   {" "}
-                  / {submission.evaluation.maxMarks}
+                  / {configuredMaxMarks}
                 </span>
               </p>
               <p className="text-xs text-muted-foreground">
-                {submission.evaluation.percentage}% overall
+                {configuredMaxMarks > 0
+                  ? Number(
+                      (
+                        (submission.evaluation.totalMarksAwarded /
+                          configuredMaxMarks) *
+                        100
+                      ).toFixed(2)
+                    )
+                  : 0}
+                % overall
               </p>
+              {Math.abs(
+                (submission.evaluation.maxMarks || 0) - configuredMaxMarks
+              ) > 0.01 && (
+                <p className="mt-2 rounded-sm border border-amber-200 bg-amber-50/70 px-2.5 py-1.5 text-[11px] leading-relaxed text-amber-900">
+                  Previous AI run graded out of {submission.evaluation.maxMarks}
+                  . Click <b>Re-evaluate</b> above to re-grade against{" "}
+                  {configuredMaxMarks} max marks.
+                </p>
+              )}
             </section>
           </aside>
         </div>

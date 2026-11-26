@@ -16,10 +16,18 @@ export default async function StudentEvaluationsPage() {
       select: {
         id: true,
         testSeriesId: true,
+        testId: true,
         attemptNumber: true,
         status: true,
         submittedAt: true,
-        testSeries: { select: { title: true } },
+        test: { select: { id: true, title: true, maxMarks: true } },
+        testSeries: {
+          select: {
+            title: true,
+            maxMarks: true,
+            tests: { select: { id: true, title: true, maxMarks: true } },
+          },
+        },
         evaluation: {
           select: {
             totalMarksAwarded: true,
@@ -33,21 +41,32 @@ export default async function StudentEvaluationsPage() {
         },
       },
     })
-    evaluations = submissions.map((submission) => ({
-      submissionId: submission.id,
-      testSeriesId: submission.testSeriesId,
-      testTitle: submission.testSeries.title,
-      attemptNumber: submission.attemptNumber,
-      status: submission.status,
-      submittedAt: submission.submittedAt.toISOString(),
-      evaluatedAt: submission.evaluation?.evaluatedAt?.toISOString() || null,
-      score: submission.evaluation?.totalMarksAwarded ?? null,
-      maxMarks: submission.evaluation?.maxMarks ?? null,
-      percentage: submission.evaluation?.percentage ?? null,
-      questionCount: submission.evaluation?._count.questions || 0,
-      legibilityWarning: Boolean(submission.evaluation?.legibilityWarning),
-      uncertaintyFlag: Boolean(submission.evaluation?.uncertaintyFlag),
-    }))
+    evaluations = submissions.map((submission) => {
+      const effectiveTest =
+        submission.test ||
+        (submission.testSeries.tests.length === 1
+          ? submission.testSeries.tests[0]
+          : null)
+      return {
+        submissionId: submission.id,
+        testSeriesId: effectiveTest?.id || submission.testSeriesId,
+        testTitle: effectiveTest?.title || submission.testSeries.title,
+        attemptNumber: submission.attemptNumber,
+        status: submission.status,
+        submittedAt: submission.submittedAt.toISOString(),
+        evaluatedAt: submission.evaluation?.evaluatedAt?.toISOString() || null,
+        score: submission.evaluation?.totalMarksAwarded ?? null,
+        maxMarks:
+          effectiveTest?.maxMarks ??
+          submission.evaluation?.maxMarks ??
+          submission.testSeries.maxMarks ??
+          null,
+        percentage: submission.evaluation?.percentage ?? null,
+        questionCount: submission.evaluation?._count.questions || 0,
+        legibilityWarning: Boolean(submission.evaluation?.legibilityWarning),
+        uncertaintyFlag: Boolean(submission.evaluation?.uncertaintyFlag),
+      }
+    })
   } catch (error) {
     console.error("[StudentEvaluationsPage] Database query error:", error)
   }

@@ -56,9 +56,11 @@ export default async function StudentDashboardPage() {
         select: {
           id: true,
           testSeriesId: true,
+          testId: true,
           attemptNumber: true,
           status: true,
           submittedAt: true,
+          test: { select: { id: true, title: true } },
           testSeries: {
             select: {
               id: true,
@@ -161,8 +163,8 @@ export default async function StudentDashboardPage() {
 
   const submissionRows: StudentSubmissionRow[] = submissions.map((sub) => ({
     id: sub.id,
-    testSeriesId: sub.testSeries?.id || sub.testSeriesId,
-    testTitle: sub.testSeries?.title || "Mock Examination",
+    testSeriesId: sub.test?.id || sub.testSeries?.id || sub.testSeriesId,
+    testTitle: sub.test?.title || sub.testSeries?.title || "Mock Examination",
     attemptNumber: sub.attemptNumber,
     status: sub.status,
     submittedAt: new Date(sub.submittedAt).toISOString(),
