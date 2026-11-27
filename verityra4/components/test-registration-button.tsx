@@ -99,7 +99,13 @@ export function TestRegistrationButton({
   priceInRupees,
   isRegistered,
   isSignedIn,
+  ctaLabel,
+  freeCtaLabel,
+  enrolledLabel,
 }: {
+  ctaLabel?: string
+  freeCtaLabel?: string
+  enrolledLabel?: string
   testSeriesId: string
   isFree: boolean
   priceInRupees: number
@@ -148,7 +154,7 @@ export function TestRegistrationButton({
       <div className="space-y-3">
         <div className="flex items-center gap-2.5 rounded-md border border-chart-3/30 bg-chart-3/10 p-3.5 text-xs font-semibold text-foreground">
           <CheckCircle2 className="h-4 w-4 shrink-0 text-chart-3" />
-          <span>You have active access to this test series.</span>
+          <span>{enrolledLabel ?? "You have active access to this test series."}</span>
         </div>
         <Button
           onClick={() => router.push(`/student/tests/${testSeriesId}`)}
@@ -404,7 +410,7 @@ export function TestRegistrationButton({
           className="h-12 w-full rounded-md bg-primary text-sm font-semibold text-primary-foreground hover:bg-hover-accent"
         >
           {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-          Register for Free Test
+          {freeCtaLabel ?? "Register for Free Test"}
         </Button>
       ) : (
         <Button
@@ -417,7 +423,7 @@ export function TestRegistrationButton({
           ) : (
             <CreditCard className="mr-1 h-4 w-4" />
           )}
-          Unlock Test Series — ₹{priceInRupees}
+          {ctaLabel ?? `Unlock Test Series — ₹${priceInRupees}`}
         </Button>
       )}
     </div>

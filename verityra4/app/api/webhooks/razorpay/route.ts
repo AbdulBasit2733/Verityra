@@ -123,6 +123,7 @@ export async function POST(req: NextRequest) {
             paymentId: paymentRecord.id,
             userId: paymentRecord.userId,
             testSeriesId: paymentRecord.testSeriesId,
+            testId: paymentRecord.testId,
             razorpayPaymentId:
               razorpayPaymentId || paymentRecord.razorpayPaymentId || `pay_${Date.now()}`,
             paymentMethod,

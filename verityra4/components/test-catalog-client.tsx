@@ -23,6 +23,13 @@ export interface TestCatalogItem {
   includedSubjects?: string[]
   badge?: string
   createdAt?: string
+  stream?: string | null
+  isStandalone?: boolean
+  parentSeriesId?: string | null
+  parentSeriesTitle?: string | null
+  parentBundlePrice?: number | null
+  individualTotalPrice?: number | null
+  savingsAmount?: number | null
 }
 
 export function TestCatalogClient({

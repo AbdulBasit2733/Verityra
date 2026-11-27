@@ -8,6 +8,8 @@ import {
 import { prisma, isDatabaseConnected, DB_TX_OPTIONS } from "@/lib/prisma"
 import { sendEnrollmentReceiptEmail } from "@/lib/email"
 import { fulfillCapturedPayment } from "@/lib/payment-fulfillment"
+import { checkStudentTestAccess } from "@/lib/test-access"
+import { resolveEffectiveBundlePrice } from "@/lib/test-catalog-projection"
 import { PaymentStatus, RegistrationStatus } from "@prisma/client"
 import { revalidatePath } from "next/cache"
 import crypto from "crypto"
@@ -62,6 +64,7 @@ export async function registerFreeTestAction(
       id: true,
       title: true,
       price: true,
+      bundlePrice: true,
       isPublished: true,
       maxAttempts: true,
     },
@@ -76,6 +79,7 @@ export async function registerFreeTestAction(
         title: true,
         price: true,
         isPublished: true,
+        isStandalone: true,
         maxAttempts: true,
         testSeriesId: true,
       },
@@ -93,7 +97,21 @@ export async function registerFreeTestAction(
     }
   }
 
-  if (testSeries.price > 0) {
+  if (isSingleTest && testSeries.isStandalone === false) {
+    return {
+      success: false,
+      error: "This subject test is only available through its test series.",
+    }
+  }
+
+  if (isSingleTest && (await checkStudentTestAccess(user.id, testSeries.id))) {
+    return { success: false, error: "You already have access to this test." }
+  }
+
+  const freeFee = isSingleTest
+    ? testSeries.price
+    : resolveEffectiveBundlePrice(testSeries)
+  if (freeFee > 0) {
     return {
       success: false,
       error: "This is a paid test. Payment is required to register.",
@@ -263,6 +281,7 @@ export async function createRazorpayOrderAction(testSeriesId: string): Promise<
           id: true,
           title: true,
           price: true,
+          bundlePrice: true,
           isPublished: true,
           maxAttempts: true,
         },
@@ -298,6 +317,7 @@ export async function createRazorpayOrderAction(testSeriesId: string): Promise<
           price: true,
           isPublished: true,
           maxAttempts: true,
+          isStandalone: true,
           testSeriesId: true,
         },
       })
@@ -310,6 +330,7 @@ export async function createRazorpayOrderAction(testSeriesId: string): Promise<
           maxAttempts: singleTest.maxAttempts,
           isSingleTest: true,
           parentSeriesId: singleTest.testSeriesId,
+          isStandaloneTest: singleTest.isStandalone,
         }
       }
     }
@@ -339,12 +360,28 @@ export async function createRazorpayOrderAction(testSeriesId: string): Promise<
     return { success: false, error: "This test series is not available." }
   }
 
-  if (testSeries.price <= 0) {
+  const chargeAmount = testSeries.isSingleTest
+    ? testSeries.price
+    : resolveEffectiveBundlePrice(testSeries)
+  if (testSeries.isSingleTest && testSeries.isStandaloneTest === false) {
+    return {
+      success: false,
+      error: "This subject test is only available through its test series.",
+    }
+  }
+  if (chargeAmount <= 0) {
     return {
       success: false,
       error: "This test is free. Please use the free registration option.",
     }
   }
+  if (
+    testSeries.isSingleTest &&
+    (await checkStudentTestAccess(user.id, testSeries.id))
+  ) {
+    return { success: false, error: "You already have access to this test." }
+  }
+  testSeries.price = chargeAmount
 
   if (existingReg && existingReg.status !== RegistrationStatus.CANCELLED) {
     return {
@@ -371,13 +408,26 @@ export async function createRazorpayOrderAction(testSeriesId: string): Promise<
   }
 
   // Fast-path: Reuse recent pending order matching current price without blocking external HTTP roundtrips
-  if (recentPending && recentPending.amount === testSeries.price) {
+  const reusablePending = testSeries.isSingleTest
+    ? await prisma.payment.findFirst({
+        where: {
+          userId: user.id,
+          testId: testSeries.id,
+          status: PaymentStatus.PENDING,
+          createdAt: { gte: new Date(Date.now() - 15 * 60 * 1000) },
+        },
+        orderBy: { createdAt: "desc" },
+      })
+    : recentPending && !recentPending.testId
+      ? recentPending
+      : null
+  if (reusablePending && reusablePending.amount === testSeries.price) {
     return {
       success: true,
       data: {
-        orderId: recentPending.razorpayOrderId,
-        amount: recentPending.amount,
-        currency: recentPending.currency,
+        orderId: reusablePending.razorpayOrderId,
+        amount: reusablePending.amount,
+        currency: reusablePending.currency,
         keyId: key_id || "rzp_test_placeholder",
         testTitle: testSeries.title,
         userName: user.name || "",
@@ -573,7 +623,13 @@ export async function verifyPaymentAndRegisterAction(input: {
 
   let testSeries: any = await prisma.testSeries.findUnique({
     where: { id: input.testSeriesId },
-    select: { id: true, title: true, price: true, maxAttempts: true },
+    select: {
+      id: true,
+      title: true,
+      price: true,
+      bundlePrice: true,
+      maxAttempts: true,
+    },
   })
 
   let isSingleTest = false
@@ -618,7 +674,10 @@ export async function verifyPaymentAndRegisterAction(input: {
       error: "Invalid payment order amount or currency.",
     }
   }
-  if (payment.amount !== testSeries.price) {
+  const expectedAmount = isSingleTest
+    ? testSeries.price
+    : resolveEffectiveBundlePrice(testSeries)
+  if (payment.amount !== expectedAmount) {
     return {
       success: false,
       error: "Payment order amount does not match current test series fee.",

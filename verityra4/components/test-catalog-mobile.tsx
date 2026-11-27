@@ -43,19 +43,20 @@ export function TestCatalogMobile({ items }: { items: TestCatalogItem[] }) {
         {/* Format selector pills: All / Bundles / Single Tests */}
         <div className="flex gap-2 overflow-x-auto pb-1">
           {[
-            ["ALL", "All Formats"],
-            ["BUNDLE", "📦 Complete Bundles"],
-            ["SINGLE", "📄 Single Tests"],
-          ].map(([value, label]) => (
+            ["ALL", "All formats", state.formatCounts.all],
+            ["BUNDLE", "Test series", state.formatCounts.bundle],
+            ["SINGLE", "Subject tests", state.formatCounts.single],
+          ].map(([value, label, count]) => (
             <Button
               key={value}
               type="button"
               variant={state.formatFilter === value ? "default" : "secondary"}
               size="sm"
               className="shrink-0 text-xs font-semibold"
-              onClick={() => state.setFormatFilter(value as any)}
+              onClick={() => state.setFormatFilter(value as "ALL" | "BUNDLE" | "SINGLE")}
+              aria-pressed={state.formatFilter === value}
             >
-              {label}
+              {label} ({count})
             </Button>
           ))}
         </div>

@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Award, ArrowRight, CheckCircle, Layers, BookOpen, Sparkles } from "lucide-react"
+import { Award, ArrowRight, CheckCircle, Layers, BookOpen } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -9,6 +9,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import {
+  entryPrice,
+  formatInr,
+  formatStandard,
+} from "@/lib/test-catalog-projection"
 import type { TestCatalogItem } from "./test-catalog-client"
 
 export function TestCatalogCard({
@@ -19,7 +24,8 @@ export function TestCatalogCard({
   compact?: boolean
 }) {
   const isBundle = item.type === "BUNDLE"
-  const isFree = item.price === 0
+  const bundleOnly = !isBundle && item.isStandalone === false
+  const isFree = item.price === 0 && !bundleOnly
 
   return (
     <Card
@@ -27,61 +33,54 @@ export function TestCatalogCard({
         compact
           ? "gap-4 py-4 shadow-none"
           : isBundle
-            ? "h-full gap-5 border-2 border-primary/40 bg-gradient-to-b from-primary/[0.03] to-transparent shadow-xs transition-all hover:border-primary hover:shadow-md"
-            : "h-full gap-5 shadow-none transition-colors hover:border-[#2A6AED]"
+            ? "h-full gap-5 border-primary/50 shadow-none transition-colors hover:border-primary"
+            : "h-full gap-5 shadow-none transition-colors hover:border-primary"
       }
     >
       <CardHeader className={compact ? "gap-1.5" : "gap-3"}>
-        <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="flex flex-wrap items-center gap-1.5">
             {isBundle ? (
-              <Badge
-                variant="default"
-                className="bg-primary text-primary-foreground text-[10px] font-extrabold uppercase tracking-wide"
-              >
-                <Layers className="mr-1 h-3 w-3" /> All-Subjects Bundle
+              <Badge variant="default" className="text-xs font-semibold">
+                <Layers className="mr-1 h-3 w-3" aria-hidden="true" />
+                Test series
               </Badge>
             ) : (
-              <Badge
-                variant="outline"
-                className="border-slate-300 text-[10px] font-semibold text-slate-700 dark:border-slate-700 dark:text-slate-300"
-              >
-                <BookOpen className="mr-1 h-3 w-3 text-slate-500" /> Single Test
+              <Badge variant="outline" className="text-xs font-semibold">
+                <BookOpen className="mr-1 h-3 w-3" aria-hidden="true" />
+                Subject test
               </Badge>
             )}
-
             {item.subject && item.subject !== "All Subjects" && (
-              <Badge variant="secondary" className="text-[10px] font-medium">
+              <Badge variant="secondary" className="text-xs font-medium">
                 {item.subject}
               </Badge>
             )}
-
             {item.standard && (
-              <Badge variant="secondary" className="text-[10px] font-semibold">
-                Class {item.standard}
+              <Badge variant="secondary" className="text-xs font-medium">
+                {formatStandard(item.standard)}
               </Badge>
             )}
           </div>
 
-          <div>
-            {isFree ? (
-              <Badge
-                variant="success"
-                className="rounded-sm text-[10px] font-bold"
-              >
+          <div className="text-right">
+            {bundleOnly ? (
+              <span className="text-sm font-semibold text-muted-foreground">
+                In series
+              </span>
+            ) : isFree ? (
+              <Badge variant="success" className="text-xs font-bold">
                 Free
               </Badge>
             ) : (
-              <div className="text-right">
-                <span className="text-lg font-extrabold text-primary">
-                  ₹{(item.price / 100).toLocaleString()}
-                </span>
-                {isBundle && (
-                  <span className="block text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
-                    Bundle Savings
-                  </span>
-                )}
-              </div>
+              <span className="text-lg font-bold text-primary tabular-nums">
+                {formatInr(item.price)}
+              </span>
+            )}
+            {isBundle && (item.savingsAmount ?? 0) > 0 && (
+              <span className="block text-xs font-semibold text-emerald-700 tabular-nums">
+                Save {formatInr(item.savingsAmount as number)}
+              </span>
             )}
           </div>
         </div>
@@ -96,6 +95,12 @@ export function TestCatalogCard({
           {item.title}
         </CardTitle>
 
+        {item.parentSeriesTitle && (
+          <p className="text-xs text-muted-foreground">
+            Part of {item.parentSeriesTitle}
+          </p>
+        )}
+
         <p
           className={
             compact
@@ -108,13 +113,13 @@ export function TestCatalogCard({
 
         {isBundle && item.includedSubjects && item.includedSubjects.length > 0 && (
           <div className="flex flex-wrap items-center gap-1 pt-1">
-            <span className="text-[11px] font-semibold text-muted-foreground">
-              Includes:
+            <span className="text-xs font-semibold text-muted-foreground">
+              Includes
             </span>
             {item.includedSubjects.map((sub) => (
               <span
                 key={sub}
-                className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-foreground"
+                className="rounded-sm bg-muted px-1.5 py-0.5 text-xs font-medium text-foreground"
               >
                 {sub}
               </span>
@@ -127,23 +132,23 @@ export function TestCatalogCard({
         {isBundle ? (
           <>
             <span className="flex items-center gap-1.5 font-medium text-foreground">
-              <Layers className="h-4 w-4 text-primary" />
-              {item.testsCount || 4} Full Subject Tests
+              <Layers className="h-4 w-4 text-primary" aria-hidden="true" />
+              {item.testsCount || 0} subject tests
             </span>
             <span className="flex items-center gap-1.5">
-              <CheckCircle className="h-4 w-4 text-primary" />
-              3 Attempts / Test
+              <CheckCircle className="h-4 w-4 text-primary" aria-hidden="true" />
+              {item.maxAttempts} attempts per test
             </span>
           </>
         ) : (
           <>
             <span className="flex items-center gap-1.5">
-              <Award className="h-4 w-4 text-primary" />
+              <Award className="h-4 w-4 text-primary" aria-hidden="true" />
               {item.maxMarks} marks
             </span>
             <span className="flex items-center gap-1.5">
-              <CheckCircle className="h-4 w-4 text-primary" />
-              {item.durationMinutes} min · {item.maxAttempts} attempts
+              <CheckCircle className="h-4 w-4 text-primary" aria-hidden="true" />
+              {item.durationMinutes} min, {item.maxAttempts} attempts
             </span>
           </>
         )}
@@ -156,8 +161,12 @@ export function TestCatalogCard({
             variant={isBundle ? "default" : "outline"}
             className="w-full font-semibold"
           >
-            {isBundle ? "View Complete Bundle" : "View Subject Test"}
-            <ArrowRight className="ml-1.5 h-4 w-4" />
+            {isBundle
+              ? "View test series"
+              : bundleOnly
+                ? `View series from ${formatInr(entryPrice(item))}`
+                : "View subject test"}
+            <ArrowRight className="ml-1.5 h-4 w-4" aria-hidden="true" />
           </Button>
         </Link>
       </CardFooter>

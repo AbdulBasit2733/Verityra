@@ -27,6 +27,7 @@ export default async function StudentPurchasesPage() {
         razorpayPaymentId: true,
         createdAt: true,
         registrationId: true,
+        test: { select: { title: true } },
         registration: { select: { testSeries: { select: { title: true } } } },
       },
       orderBy: { createdAt: "desc" },
@@ -50,6 +51,7 @@ export default async function StudentPurchasesPage() {
       id: payment.id,
       testSeriesId: payment.testSeriesId,
       testTitle:
+        payment.test?.title ||
         payment.registration?.testSeries?.title ||
         testSeriesTitleMap.get(payment.testSeriesId) ||
         "Paid test series",

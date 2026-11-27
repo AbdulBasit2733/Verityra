@@ -25,10 +25,7 @@ export function TestCatalogDesktop({ items }: { items: TestCatalogItem[] }) {
     <div className="hidden lg:grid lg:grid-cols-[240px_minmax(0,1fr)] lg:items-start lg:gap-8">
       <aside className="sticky top-24 space-y-5">
         <div>
-          <p className="text-xs font-bold tracking-[0.16em] text-muted-foreground uppercase">
-            Catalog workspace
-          </p>
-          <h2 className="mt-1 text-lg font-bold text-foreground">
+          <h2 className="text-lg font-bold text-foreground">
             Find your next paper
           </h2>
         </div>
@@ -38,10 +35,10 @@ export function TestCatalogDesktop({ items }: { items: TestCatalogItem[] }) {
               <Label className="text-xs font-bold">Format</Label>
               <div className="grid grid-cols-1 gap-1.5">
                 {[
-                  ["ALL", "All Formats"],
-                  ["BUNDLE", "Complete Series (Bundles)"],
-                  ["SINGLE", "Single Subject Tests"],
-                ].map(([value, label]) => (
+                  ["ALL", "All formats", state.formatCounts.all],
+                  ["BUNDLE", "Test series", state.formatCounts.bundle],
+                  ["SINGLE", "Subject tests", state.formatCounts.single],
+                ].map(([value, label, count]) => (
                   <Button
                     key={value}
                     type="button"
@@ -53,8 +50,9 @@ export function TestCatalogDesktop({ items }: { items: TestCatalogItem[] }) {
                     onClick={() =>
                       state.setFormatFilter(value as "ALL" | "BUNDLE" | "SINGLE")
                     }
+                    aria-pressed={state.formatFilter === value}
                   >
-                    {label}
+                    {label} ({count})
                   </Button>
                 ))}
               </div>

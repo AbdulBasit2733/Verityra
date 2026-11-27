@@ -88,15 +88,15 @@ export async function POST(req: NextRequest) {
       )
 
       if (capturedPayment) {
-        const testSeries = await prisma.testSeries.findUnique({
-          where: { id: payment.testSeriesId },
-          select: {
-            title: true,
-            maxAttempts: true,
-            price: true,
-            isPublished: true,
-          },
-        })
+        const testSeries = payment.testId
+          ? await prisma.test.findUnique({
+              where: { id: payment.testId },
+              select: { price: true },
+            })
+          : await prisma.testSeries.findUnique({
+              where: { id: payment.testSeriesId },
+              select: { price: true },
+            })
         if (
           !testSeries ||
           capturedPayment.amount !== payment.amount ||
@@ -111,6 +111,7 @@ export async function POST(req: NextRequest) {
           paymentId: payment.id,
           userId: payment.userId,
           testSeriesId: payment.testSeriesId,
+          testId: payment.testId,
           razorpayPaymentId: capturedPayment.id,
           paymentMethod: capturedPayment.method,
           bankReference:
