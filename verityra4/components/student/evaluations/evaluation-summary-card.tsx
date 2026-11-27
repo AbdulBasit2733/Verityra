@@ -24,12 +24,17 @@ export function EvaluationSummaryCard({
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-secondary text-primary">
               <FileCheck2 className="h-5 w-5" aria-hidden="true" />
             </span>
-            <div className="min-w-0">
-              <p className="truncate font-bold text-foreground">
+            <div className="min-w-0 space-y-1">
+              {evaluation.subject && (
+                <Badge variant="secondary" className="text-xs font-medium">
+                  {evaluation.subject}
+                </Badge>
+              )}
+              <p className="truncate text-sm font-bold leading-snug text-foreground">
                 {evaluation.testTitle}
               </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Attempt {evaluation.attemptNumber}
+              <p className="text-xs text-muted-foreground tabular-nums">
+                Attempt #{evaluation.attemptNumber}
               </p>
             </div>
           </div>
@@ -40,10 +45,12 @@ export function EvaluationSummaryCard({
         <div className="flex items-end justify-between gap-4 border-y border-border py-3">
           <div>
             <p className="text-xs font-semibold text-muted-foreground">
-              Result
+              Marks
             </p>
             <p className="mt-1 text-2xl font-extrabold text-primary tabular-nums">
-              {hasScore ? `${evaluation.score} / ${evaluation.maxMarks}` : "—"}
+              {hasScore
+                ? `${evaluation.score} / ${evaluation.maxMarks}`
+                : `—${evaluation.maxMarks ? ` / ${evaluation.maxMarks}` : ""}`}
             </p>
           </div>
           {hasScore && (

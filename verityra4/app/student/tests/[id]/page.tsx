@@ -175,13 +175,21 @@ export default async function StudentTestWorkspacePage({
 
       testSeries = {
         id: subjectTest.id,
-        title: `${subjectTest.subject}: ${subjectTest.title}`,
+        title: subjectTest.title,
+        seriesTitle:
+          subjectTest.testSeries?.title &&
+          subjectTest.testSeries.title.toLowerCase() !==
+            subjectTest.title.toLowerCase()
+            ? subjectTest.testSeries.title
+            : null,
+        subjectName: subjectTest.subject || null,
+        childSubjectTests: [],
         maxMarks: subjectTest.maxMarks,
         durationMinutes: subjectTest.durationMinutes,
         studentInstructions:
           subjectTest.studentInstructions ||
           subjectTest.testSeries?.studentInstructions ||
-          "1. Number all responses clearly inside the left margin.\n2. Scan all pages upright into a single clear PDF before uploading.",
+          "1. Number all responses clearly inside the left margin.\n2. Scan all pages upright into a single clear PDF (max 10 MB) before uploading.",
         papers: subjectTest.questionPaperUrl
           ? [
               {
@@ -219,6 +227,20 @@ export default async function StudentTestWorkspacePage({
               maxMarks: true,
               durationMinutes: true,
               studentInstructions: true,
+              tests: {
+                where: { isPublished: true },
+                orderBy: { order: "asc" },
+                select: {
+                  id: true,
+                  title: true,
+                  subject: true,
+                  maxMarks: true,
+                  durationMinutes: true,
+                  questionPaperUrl: true,
+                  answerSheetUrl: true,
+                  studentInstructions: true,
+                },
+              },
               papers: {
                 select: {
                   id: true,
@@ -302,8 +324,63 @@ export default async function StudentTestWorkspacePage({
         },
       })
 
-      if (registration) {
-        testSeries = registration.testSeries
+      if (registration?.testSeries) {
+        const publishedTests = registration.testSeries.tests || []
+        if (publishedTests.length === 1) {
+          const singleTest = publishedTests[0]
+          testSeries = {
+            id: singleTest.id,
+            title: singleTest.title,
+            seriesTitle:
+              registration.testSeries.title.toLowerCase() !==
+              singleTest.title.toLowerCase()
+                ? registration.testSeries.title
+                : null,
+            subjectName: singleTest.subject || null,
+            childSubjectTests: [],
+            maxMarks:
+              singleTest.maxMarks || registration.testSeries.maxMarks,
+            durationMinutes:
+              singleTest.durationMinutes ||
+              registration.testSeries.durationMinutes,
+            studentInstructions:
+              singleTest.studentInstructions ||
+              registration.testSeries.studentInstructions,
+            papers: singleTest.questionPaperUrl
+              ? [
+                  {
+                    id: `paper-${singleTest.id}`,
+                    title: `${singleTest.title} Question Paper`,
+                    fileUrl: singleTest.questionPaperUrl,
+                  },
+                ]
+              : registration.testSeries.papers,
+            templates: singleTest.answerSheetUrl
+              ? [
+                  {
+                    id: `template-${singleTest.id}`,
+                    title: "Prescribed Answer Sheet Template",
+                    fileUrl: singleTest.answerSheetUrl,
+                  },
+                ]
+              : registration.testSeries.templates,
+          }
+        } else {
+          testSeries = {
+            ...registration.testSeries,
+            seriesTitle:
+              publishedTests.length > 1
+                ? "Select one of the subject tests below to download its question paper and submit its answer sheet (max 10 MB)."
+                : null,
+            subjectName: null,
+            childSubjectTests: publishedTests.map((t: any) => ({
+              id: t.id,
+              title: t.title,
+              subject: t.subject,
+              maxMarks: t.maxMarks,
+            })),
+          }
+        }
       }
     }
   } catch (error) {
@@ -475,6 +552,9 @@ export default async function StudentTestWorkspacePage({
     <StudentWorkspaceClient
       testSeriesId={testSeries.id}
       title={testSeries.title}
+      seriesTitle={testSeries.seriesTitle || null}
+      subjectName={testSeries.subjectName || null}
+      childSubjectTests={testSeries.childSubjectTests || []}
       maxMarks={testSeries.maxMarks || 250}
       durationMinutes={testSeries.durationMinutes || 180}
       studentInstructions={

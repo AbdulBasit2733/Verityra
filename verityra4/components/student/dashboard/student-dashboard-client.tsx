@@ -35,6 +35,8 @@ export interface StudentRegistrationRow {
   id: string
   testSeriesId: string
   testTitle: string
+  seriesTitle?: string | null
+  subject?: string | null
   maxMarks: number
   durationMinutes: number
   attemptsUsed: number
@@ -50,6 +52,8 @@ export interface StudentSubmissionRow {
   id: string
   testSeriesId: string
   testTitle: string
+  seriesTitle?: string | null
+  subject?: string | null
   attemptNumber: number
   status: string
   submittedAt: string
@@ -113,26 +117,30 @@ export function StudentDashboardClient({
       () => [
         {
           id: "title",
-          header: "Enrolled Test Series",
+          header: "Subject Test",
           sortable: true,
           sortAccessor: (r) => r.testTitle,
-          searchAccessor: (r) => `${r.testTitle} ${r.latestFeedback || ""}`,
+          searchAccessor: (r) =>
+            `${r.testTitle} ${r.seriesTitle || ""} ${r.latestFeedback || ""}`,
           cell: (r) => (
-            <div className="max-w-md space-y-1 whitespace-normal">
+            <div className="max-w-md space-y-0.5 whitespace-normal">
               <Link
                 href={`/student/tests/${r.testSeriesId}`}
-                className="block leading-snug font-bold text-slate-900 transition-colors hover:text-[#2A6AED] dark:text-slate-100 dark:hover:text-blue-400"
+                className="block text-slate-900 transition-colors hover:text-[#2A6AED] dark:text-slate-100 dark:hover:text-blue-400"
               >
-                {r.testTitle}
+                <h1 className="text-sm leading-snug font-bold">
+                  {r.testTitle}
+                </h1>
               </Link>
-              <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-500 dark:text-slate-400">
-                <span className="inline-flex items-center gap-1">
-                  <Clock className="h-3 w-3 text-slate-400" />
-                  {r.durationMinutes} mins
-                </span>
+              {r.seriesTitle && (
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Test Series: {r.seriesTitle}
+                </p>
+              )}
+              <div className="flex flex-wrap items-center gap-3 pt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
                 <span className="inline-flex items-center gap-1">
                   <Award className="h-3 w-3 text-[#2A6AED] dark:text-blue-400" />
-                  {r.maxMarks} Marks
+                  {r.maxMarks} Marks · Max 10 MB Answer Sheet
                 </span>
               </div>
             </div>
@@ -251,17 +259,27 @@ export function StudentDashboardClient({
       () => [
         {
           id: "testTitle",
-          header: "Test Series",
+          header: "Subject Test",
           sortable: true,
           sortAccessor: (s) => s.testTitle,
-          searchAccessor: (s) => `${s.testTitle} ${s.status}`,
+          searchAccessor: (s) =>
+            `${s.testTitle} ${s.seriesTitle || ""} ${s.status}`,
           cell: (s) => (
-            <Link
-              href={`/student/tests/${s.testSeriesId}`}
-              className="block max-w-xs truncate font-bold text-slate-900 transition-colors hover:text-[#2A6AED] dark:text-slate-100 dark:hover:text-blue-400"
-            >
-              {s.testTitle}
-            </Link>
+            <div className="max-w-xs space-y-0.5 whitespace-normal">
+              <Link
+                href={`/student/tests/${s.testSeriesId}`}
+                className="block text-slate-900 transition-colors hover:text-[#2A6AED] dark:text-slate-100 dark:hover:text-blue-400"
+              >
+                <h1 className="truncate text-sm leading-snug font-bold">
+                  {s.testTitle}
+                </h1>
+              </Link>
+              {s.seriesTitle && (
+                <p className="truncate text-xs text-slate-500 dark:text-slate-400">
+                  Test Series: {s.seriesTitle}
+                </p>
+              )}
+            </div>
           ),
         },
         {
@@ -385,7 +403,7 @@ export function StudentDashboardClient({
       <PageHeader
         icon={GraduationCap}
         title={`Welcome back, ${userName}`}
-        subtitle="Viewing: Your Enrolled Test Series & 3-Attempt Progression"
+        subtitle="Submit your subject test answer sheets (max 10 MB) and track your evaluated attempts."
       >
         <Link href="/tests">
           <Button className="h-10 rounded-md bg-[#2A6AED] px-4 text-xs font-semibold text-white shadow-xs hover:bg-[#1E55C7] sm:text-sm">
@@ -524,16 +542,25 @@ export function StudentDashboardClient({
                   <div className="flex flex-col justify-between space-y-3.5 rounded-md border border-border bg-background p-4 shadow-none sm:p-5">
                     <div className="space-y-2">
                       <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-center gap-2">
+                        <div className="flex min-w-0 items-start gap-2">
                           <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-sm bg-slate-100 text-[11px] font-bold text-slate-500 dark:bg-slate-800">
                             #{serialNumber}
                           </span>
-                          <Link
-                            href={`/student/tests/${r.testSeriesId}`}
-                            className="line-clamp-2 text-sm leading-snug font-bold text-slate-900 transition-colors hover:text-[#2A6AED] sm:text-base dark:text-slate-100 dark:hover:text-blue-400"
-                          >
-                            {r.testTitle}
-                          </Link>
+                          <div className="min-w-0 space-y-0.5">
+                            <Link
+                              href={`/student/tests/${r.testSeriesId}`}
+                              className="block text-slate-900 transition-colors hover:text-[#2A6AED] dark:text-slate-100 dark:hover:text-blue-400"
+                            >
+                              <h1 className="line-clamp-2 text-sm leading-snug font-bold sm:text-base">
+                                {r.testTitle}
+                              </h1>
+                            </Link>
+                            {r.seriesTitle && (
+                              <p className="truncate text-xs text-slate-500 dark:text-slate-400">
+                                Test Series: {r.seriesTitle}
+                              </p>
+                            )}
+                          </div>
                         </div>
                         <Badge
                           variant="outline"
@@ -645,16 +672,25 @@ export function StudentDashboardClient({
               <div className="flex flex-col justify-between space-y-3 rounded-md border border-border bg-background p-4 shadow-none sm:p-5">
                 <div className="space-y-2">
                   <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2">
+                    <div className="flex min-w-0 items-start gap-2">
                       <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-sm bg-slate-100 text-[11px] font-bold text-slate-500 dark:bg-slate-800">
                         #{serialNumber}
                       </span>
-                      <Link
-                        href={`/student/tests/${s.testSeriesId}`}
-                        className="line-clamp-2 text-sm leading-snug font-bold text-slate-900 transition-colors hover:text-[#2A6AED] sm:text-base dark:text-slate-100 dark:hover:text-blue-400"
-                      >
-                        {s.testTitle}
-                      </Link>
+                      <div className="min-w-0 space-y-0.5">
+                        <Link
+                          href={`/student/tests/${s.testSeriesId}`}
+                          className="block text-slate-900 transition-colors hover:text-[#2A6AED] dark:text-slate-100 dark:hover:text-blue-400"
+                        >
+                          <h1 className="line-clamp-2 text-sm leading-snug font-bold sm:text-base">
+                            {s.testTitle}
+                          </h1>
+                        </Link>
+                        {s.seriesTitle && (
+                          <p className="truncate text-xs text-slate-500 dark:text-slate-400">
+                            Test Series: {s.seriesTitle}
+                          </p>
+                        )}
+                      </div>
                     </div>
                     <Badge
                       variant="outline"

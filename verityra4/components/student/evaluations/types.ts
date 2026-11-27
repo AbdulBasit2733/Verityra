@@ -2,6 +2,8 @@ export interface StudentEvaluationRow {
   submissionId: string
   testSeriesId: string
   testTitle: string
+  seriesTitle?: string | null
+  subject?: string | null
   attemptNumber: number
   status: string
   submittedAt: string

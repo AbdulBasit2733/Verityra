@@ -117,6 +117,9 @@ export interface WorkspaceResourceItem {
 export function StudentWorkspaceClient({
   testSeriesId,
   title,
+  seriesTitle,
+  subjectName,
+  childSubjectTests = [],
   maxMarks,
   studentInstructions,
   attemptsUsed,
@@ -127,6 +130,14 @@ export function StudentWorkspaceClient({
 }: {
   testSeriesId: string
   title: string
+  seriesTitle?: string | null
+  subjectName?: string | null
+  childSubjectTests?: Array<{
+    id: string
+    title: string
+    subject: string
+    maxMarks: number
+  }>
   maxMarks: number
   durationMinutes?: number
   studentInstructions: string
@@ -295,9 +306,24 @@ export function StudentWorkspaceClient({
             <h1 className="truncate text-xl font-extrabold tracking-tight text-foreground sm:text-2xl lg:text-3xl">
               {title}
             </h1>
+            {seriesTitle && (
+              <p className="truncate text-xs font-medium text-muted-foreground sm:text-sm">
+                {childSubjectTests.length > 1
+                  ? seriesTitle
+                  : `Test Series: ${seriesTitle}`}
+              </p>
+            )}
 
             {/* High-Priority Summary Badges: Replaces repetitive stat cards with high-density badges */}
             <div className="flex flex-wrap items-center gap-2">
+              {subjectName && (
+                <Badge
+                  variant="outline"
+                  className="border-purple-200 bg-purple-50/80 px-2.5 py-0.5 text-xs font-bold text-purple-700 dark:border-purple-900 dark:bg-purple-950/60 dark:text-purple-300"
+                >
+                  {subjectName}
+                </Badge>
+              )}
               <Badge
                 variant="outline"
                 className="gap-1.5 border-slate-200 bg-slate-50/80 px-2.5 py-0.5 text-xs font-semibold text-slate-700 dark:border-slate-800 dark:bg-slate-900/80 dark:text-slate-300"
@@ -486,10 +512,10 @@ export function StudentWorkspaceClient({
           >
             <UploadCloud className="mr-1.5 h-3.5 w-3.5" />
             <span className="sm:hidden">
-              Submit Booklet ({attemptsRemaining} left)
+              Submit Answer Sheet ({attemptsRemaining} left)
             </span>
             <span className="hidden sm:inline">
-              Submit Handwritten Booklet ({attemptsRemaining} left)
+              Submit Answer Sheet — Max 10 MB ({attemptsRemaining} left)
             </span>
           </TabsTrigger>
           <TabsTrigger
@@ -942,10 +968,27 @@ export function StudentWorkspaceClient({
         </TabsContent>
 
         {/* TAB 2: UPLOAD HANDWRITTEN BOOKLET */}
-        <TabsContent value="upload" className="pt-1">
+        <TabsContent value="upload" className="space-y-4 pt-1">
+          {childSubjectTests.length > 1 && (
+            <div className="space-y-2.5 rounded-md border border-blue-200 bg-blue-50/70 p-4 dark:border-blue-900 dark:bg-blue-950/40">
+              <p className="text-xs font-bold text-slate-900 sm:text-sm dark:text-slate-100">
+                Choose a Subject Test to submit its answer sheet (max 10 MB):
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {childSubjectTests.map((ct) => (
+                  <Link key={ct.id} href={`/student/tests/${ct.id}`}>
+                    <Button size="sm" variant="outline" className="bg-white dark:bg-slate-900">
+                      {ct.subject}: {ct.title} ({ct.maxMarks}M)
+                    </Button>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
           <div id="submission-upload-box">
             <SubmissionUploadForm
               testSeriesId={testSeriesId}
+              subjectTestTitle={title}
               attemptsUsed={attemptsUsed}
               maxAttempts={maxAttempts}
             />

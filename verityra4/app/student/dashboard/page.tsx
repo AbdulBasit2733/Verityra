@@ -1,5 +1,6 @@
 import { requireStudent, getPersistedCurrentUser } from "@/lib/auth-guard"
 import { prisma } from "@/lib/prisma"
+import { resolveSubjectAndSeriesDisplay } from "@/lib/student-test-display"
 import {
   StudentDashboardClient,
   StudentRegistrationRow,
@@ -25,15 +26,43 @@ export default async function StudentDashboardPage() {
         where: { userId: user.id },
         select: {
           id: true,
+          testId: true,
           testSeriesId: true,
           attemptsUsed: true,
           maxAttempts: true,
           registeredAt: true,
+          test: {
+            select: {
+              id: true,
+              title: true,
+              subject: true,
+              maxMarks: true,
+              durationMinutes: true,
+              testSeries: {
+                select: {
+                  id: true,
+                  title: true,
+                },
+              },
+            },
+          },
           testSeries: {
             select: {
+              id: true,
               title: true,
               maxMarks: true,
               durationMinutes: true,
+              tests: {
+                where: { isPublished: true },
+                orderBy: { order: "asc" },
+                select: {
+                  id: true,
+                  title: true,
+                  subject: true,
+                  maxMarks: true,
+                  durationMinutes: true,
+                },
+              },
             },
           },
           submissions: {
@@ -63,11 +92,22 @@ export default async function StudentDashboardPage() {
           attemptNumber: true,
           status: true,
           submittedAt: true,
-          test: { select: { id: true, title: true } },
+          test: {
+            select: { id: true, title: true, subject: true, maxMarks: true },
+          },
           testSeries: {
             select: {
               id: true,
               title: true,
+              maxMarks: true,
+              tests: {
+                select: {
+                  id: true,
+                  title: true,
+                  subject: true,
+                  maxMarks: true,
+                },
+              },
             },
           },
           evaluation: {
@@ -147,12 +187,23 @@ export default async function StudentDashboardPage() {
     (reg) => {
       const latestSub = reg.submissions?.[0]
       const latestEval = latestSub?.evaluation
+      const display = resolveSubjectAndSeriesDisplay({
+        test: reg.test,
+        testSeries: reg.test?.testSeries || reg.testSeries,
+        fallbackWorkspaceId: reg.testId || reg.testSeriesId,
+        fallbackTitle: "Subject Test",
+      })
       return {
         id: reg.id,
-        testSeriesId: reg.testSeriesId,
-        testTitle: reg.testSeries?.title || "Mock Examination",
-        maxMarks: reg.testSeries?.maxMarks || 250,
-        durationMinutes: reg.testSeries?.durationMinutes || 180,
+        testSeriesId: display.targetWorkspaceId,
+        testTitle: display.subjectTestTitle,
+        seriesTitle: display.seriesTitle,
+        subject: display.subject,
+        maxMarks: display.effectiveMaxMarks ?? reg.testSeries?.maxMarks ?? 100,
+        durationMinutes:
+          display.effectiveDurationMinutes ??
+          reg.testSeries?.durationMinutes ??
+          180,
         attemptsUsed: reg.attemptsUsed,
         maxAttempts: reg.maxAttempts,
         registeredAt: new Date(reg.registeredAt).toISOString(),
@@ -164,17 +215,29 @@ export default async function StudentDashboardPage() {
     }
   )
 
-  const submissionRows: StudentSubmissionRow[] = submissions.map((sub) => ({
-    id: sub.id,
-    testSeriesId: sub.test?.id || sub.testSeries?.id || sub.testSeriesId,
-    testTitle: sub.test?.title || sub.testSeries?.title || "Mock Examination",
-    attemptNumber: sub.attemptNumber,
-    status: sub.status,
-    submittedAt: new Date(sub.submittedAt).toISOString(),
-    totalMarksAwarded: sub.evaluation ? sub.evaluation.totalMarksAwarded : null,
-    maxMarks: sub.evaluation ? sub.evaluation.maxMarks : null,
-    percentage: sub.evaluation ? sub.evaluation.percentage : null,
-  }))
+  const submissionRows: StudentSubmissionRow[] = submissions.map((sub) => {
+    const display = resolveSubjectAndSeriesDisplay({
+      test: sub.test,
+      testSeries: sub.testSeries,
+      fallbackWorkspaceId: sub.test?.id || sub.testSeries?.id || sub.testSeriesId,
+      fallbackTitle: "Subject Test",
+    })
+    return {
+      id: sub.id,
+      testSeriesId: display.targetWorkspaceId,
+      testTitle: display.subjectTestTitle,
+      seriesTitle: display.seriesTitle,
+      subject: display.subject,
+      attemptNumber: sub.attemptNumber,
+      status: sub.status,
+      submittedAt: new Date(sub.submittedAt).toISOString(),
+      totalMarksAwarded: sub.evaluation ? sub.evaluation.totalMarksAwarded : null,
+      maxMarks:
+        display.effectiveMaxMarks ??
+        (sub.evaluation ? sub.evaluation.maxMarks : null),
+      percentage: sub.evaluation ? sub.evaluation.percentage : null,
+    }
+  })
 
   return (
     <StudentDashboardClient

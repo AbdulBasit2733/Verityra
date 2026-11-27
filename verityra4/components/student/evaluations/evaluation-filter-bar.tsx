@@ -40,7 +40,7 @@ export function EvaluationFilterBar({
         <Input
           value={query}
           onChange={(event) => onQueryChange(event.target.value)}
-          placeholder="Search test series"
+          placeholder="Search subject tests..."
           aria-label="Search evaluations"
           className="h-11 pl-9"
         />
@@ -64,10 +64,10 @@ export function EvaluationFilterBar({
         onValueChange={(value) => onSeriesChange(value ?? "ALL")}
       >
         <SelectTrigger className="h-11 w-full sm:w-56">
-          <SelectValue placeholder="Test series" />
+          <SelectValue placeholder="Subject test" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="ALL">All test series</SelectItem>
+          <SelectItem value="ALL">All subject tests</SelectItem>
           {seriesOptions.map((option) => (
             <SelectItem key={option.id} value={option.id}>
               {option.title}

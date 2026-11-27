@@ -3,6 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { Award, Clock3, FileCheck2, TrendingUp } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table"
@@ -37,9 +38,11 @@ export function StudentEvaluationsClient({
   const filtered = React.useMemo(
     () =>
       evaluations.filter((item) => {
+        const q = query.trim().toLowerCase()
         const matchesQuery =
-          !query.trim() ||
-          item.testTitle.toLowerCase().includes(query.trim().toLowerCase())
+          !q ||
+          item.testTitle.toLowerCase().includes(q) ||
+          (item.seriesTitle || "").toLowerCase().includes(q)
         const matchesStatus = status === "ALL" || item.status === status
         const matchesSeries = series === "ALL" || item.testSeriesId === series
         return matchesQuery && matchesStatus && matchesSeries
@@ -60,22 +63,53 @@ export function StudentEvaluationsClient({
     () => [
       {
         id: "test",
-        header: "Test series",
+        header: "Subject test",
         sortable: true,
         sortAccessor: (row) => row.testTitle,
         cell: (row) => (
-          <div className="min-w-0">
+          <div className="min-w-0 space-y-1 whitespace-normal">
+            {row.subject && (
+              <Badge variant="secondary" className="text-xs font-medium">
+                {row.subject}
+              </Badge>
+            )}
             <Link
               href={`/student/evaluations/${row.submissionId}`}
-              className="block max-w-xs truncate font-bold text-foreground transition-colors hover:text-primary"
+              className="block max-w-sm truncate text-sm font-bold leading-snug text-foreground transition-colors hover:text-primary"
             >
               {row.testTitle}
             </Link>
-            <span className="text-xs text-muted-foreground">
-              Attempt {row.attemptNumber}
-            </span>
+            <p className="text-xs text-muted-foreground tabular-nums">
+              Attempt #{row.attemptNumber}
+            </p>
           </div>
         ),
+      },
+      {
+        id: "score",
+        header: "Marks",
+        sortable: true,
+        sortAccessor: (row) => row.percentage ?? -1,
+        cell: (row) =>
+          row.score !== null ? (
+            <div className="space-y-0.5">
+              <p className="text-sm font-bold text-primary tabular-nums">
+                {row.score} / {row.maxMarks}
+              </p>
+              <p className="text-xs text-muted-foreground tabular-nums">
+                {row.percentage?.toFixed(1)}%
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-0.5">
+              <p className="text-sm font-semibold text-muted-foreground tabular-nums">
+                —{row.maxMarks ? ` / ${row.maxMarks}` : ""}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Pending evaluation
+              </p>
+            </div>
+          ),
       },
       {
         id: "status",
@@ -83,25 +117,6 @@ export function StudentEvaluationsClient({
         sortable: true,
         sortAccessor: (row) => row.status,
         cell: (row) => <EvaluationStatusBadge status={row.status} />,
-      },
-      {
-        id: "score",
-        header: "Score",
-        sortable: true,
-        sortAccessor: (row) => row.percentage ?? -1,
-        cell: (row) =>
-          row.score !== null ? (
-            <div>
-              <p className="font-bold text-foreground tabular-nums">
-                {row.score} / {row.maxMarks}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {row.percentage?.toFixed(1)}%
-              </p>
-            </div>
-          ) : (
-            <span className="text-sm text-muted-foreground">Not available</span>
-          ),
       },
       {
         id: "submitted",
@@ -142,7 +157,7 @@ export function StudentEvaluationsClient({
         <KpiStatCard
           label="Total submissions"
           value={evaluations.length}
-          subtext="Across your test series"
+          subtext="Across your subject tests"
           icon={FileCheck2}
         />
         <KpiStatCard

@@ -45,13 +45,13 @@ function validateAnswerSheetMetadata(
   fileSize: number
 ): string | null {
   if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
-    return `Unsupported file format (${mimeType || "unknown"}). Please upload a PDF or JPG/PNG image scan.`
+    return "Only PDF, JPG, PNG, or WebP files are allowed for your answer sheet."
   }
   if (!Number.isFinite(fileSize) || fileSize <= 0) {
-    return "The selected answer sheet file is empty. Please upload a valid scan."
+    return "This file is empty. Please upload a valid answer sheet (max 10 MB)."
   }
   if (fileSize > MAX_FILE_SIZE_BYTES) {
-    return `File size (${(fileSize / (1024 * 1024)).toFixed(2)} MB) exceeds the 10 MB maximum limit.`
+    return `Your answer sheet is ${(fileSize / (1024 * 1024)).toFixed(2)} MB, which is over the 10 MB limit. Please compress it to 10 MB or smaller.`
   }
   return null
 }

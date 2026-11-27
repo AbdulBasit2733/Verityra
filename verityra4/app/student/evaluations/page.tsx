@@ -1,5 +1,9 @@
 import { requireStudent } from "@/lib/auth-guard"
 import { prisma } from "@/lib/prisma"
+import {
+  resolveSubjectAndSeriesDisplay,
+  stripLeadingSeriesPrefix,
+} from "@/lib/student-test-display"
 import { StudentEvaluationsClient } from "@/components/student/evaluations/student-evaluations-client"
 import type { StudentEvaluationRow } from "@/components/student/evaluations/types"
 
@@ -20,12 +24,17 @@ export default async function StudentEvaluationsPage() {
         attemptNumber: true,
         status: true,
         submittedAt: true,
-        test: { select: { id: true, title: true, maxMarks: true } },
+        test: {
+          select: { id: true, title: true, subject: true, maxMarks: true },
+        },
         testSeries: {
           select: {
+            id: true,
             title: true,
             maxMarks: true,
-            tests: { select: { id: true, title: true, maxMarks: true } },
+            tests: {
+              select: { id: true, title: true, subject: true, maxMarks: true },
+            },
           },
         },
         evaluation: {
@@ -42,24 +51,28 @@ export default async function StudentEvaluationsPage() {
       },
     })
     evaluations = submissions.map((submission) => {
-      const effectiveTest =
-        submission.test ||
-        (submission.testSeries.tests.length === 1
-          ? submission.testSeries.tests[0]
-          : null)
+      const display = resolveSubjectAndSeriesDisplay({
+        test: submission.test,
+        testSeries: submission.testSeries,
+        fallbackWorkspaceId: submission.testSeriesId,
+      })
       return {
         submissionId: submission.id,
-        testSeriesId: effectiveTest?.id || submission.testSeriesId,
-        testTitle: effectiveTest?.title || submission.testSeries.title,
+        testSeriesId: display.targetWorkspaceId,
+        testTitle: stripLeadingSeriesPrefix(
+          display.subjectTestTitle,
+          submission.testSeries.title
+        ),
+        seriesTitle: null,
+        subject: display.subject,
         attemptNumber: submission.attemptNumber,
         status: submission.status,
         submittedAt: submission.submittedAt.toISOString(),
         evaluatedAt: submission.evaluation?.evaluatedAt?.toISOString() || null,
         score: submission.evaluation?.totalMarksAwarded ?? null,
         maxMarks:
-          effectiveTest?.maxMarks ??
+          display.effectiveMaxMarks ??
           submission.evaluation?.maxMarks ??
-          submission.testSeries.maxMarks ??
           null,
         percentage: submission.evaluation?.percentage ?? null,
         questionCount: submission.evaluation?._count.questions || 0,

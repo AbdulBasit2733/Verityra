@@ -5,6 +5,10 @@ import {
   createPrivateSignedUploadUrl,
   isSafeStorageObjectPath,
 } from "../lib/supabase"
+import {
+  flattenRegistrationsToSubjectTests,
+  resolveSubjectAndSeriesDisplay,
+} from "../lib/student-test-display"
 
 export function runSubmissionTests() {
   const suite = new TestSuite(
@@ -293,6 +297,183 @@ export function runSubmissionTests() {
         true
       )
       assert.equal(typeof createPrivateSignedUploadUrl, "function")
+    }
+  )
+
+  suite.test(
+    "Student Display Labels: Renders Subject Test title first, parent Test Series subtitle second, and promotes single-test series",
+    () => {
+      const explicitSubject = resolveSubjectAndSeriesDisplay({
+        test: {
+          id: "test-phys-1",
+          title: "Physics Full Mock 1",
+          subject: "Physics",
+          maxMarks: 70,
+        },
+        testSeries: {
+          id: "series-cbse-12",
+          title: "CBSE Class 12 Science All-India Series",
+          maxMarks: 350,
+        },
+      })
+      assert.equal(explicitSubject.subjectTestTitle, "Physics Full Mock 1")
+      assert.equal(
+        explicitSubject.seriesTitle,
+        "CBSE Class 12 Science All-India Series"
+      )
+      assert.equal(explicitSubject.targetWorkspaceId, "test-phys-1")
+      assert.equal(explicitSubject.effectiveMaxMarks, 70)
+
+      const singleChildSeries = resolveSubjectAndSeriesDisplay({
+        test: null,
+        testSeries: {
+          id: "series-maths-only",
+          title: "Class 10 Maths Booster",
+          maxMarks: 80,
+          tests: [
+            {
+              id: "test-maths-mock-1",
+              title: "Mathematics Standard Mock Paper 1",
+              subject: "Mathematics",
+              maxMarks: 80,
+            },
+          ],
+        },
+      })
+      assert.equal(
+        singleChildSeries.subjectTestTitle,
+        "Mathematics Standard Mock Paper 1"
+      )
+      assert.equal(singleChildSeries.seriesTitle, "Class 10 Maths Booster")
+      assert.equal(
+        singleChildSeries.targetWorkspaceId,
+        "test-maths-mock-1"
+      )
+
+      const multiBundle = resolveSubjectAndSeriesDisplay({
+        test: null,
+        testSeries: {
+          id: "series-bundle-1",
+          title: "CBSE Class 10 Complete Bundle",
+          maxMarks: 400,
+          tests: [
+            { id: "t1", title: "Maths Mock", subject: "Maths" },
+            { id: "t2", title: "Science Mock", subject: "Science" },
+          ],
+        },
+      })
+      assert.equal(multiBundle.isMultiSubjectBundle, true)
+      assert.equal(
+        multiBundle.subjectTestTitle,
+        "CBSE Class 10 Complete Bundle"
+      )
+      assert.ok(multiBundle.seriesTitle?.includes("choose a subject test"))
+    }
+  )
+
+  suite.test(
+    "Student Subject-Test Flattening & Marks: Expands bundles into deduplicated Subject Tests with latest evaluated marks",
+    () => {
+      const flattened = flattenRegistrationsToSubjectTests([
+        // Direct per-subject registration created after Attempt 1 & Attempt 2 on Maths
+        {
+          id: "reg-direct-maths",
+          testId: "test-maths",
+          testSeriesId: null,
+          attemptsUsed: 2,
+          maxAttempts: 3,
+          registeredAt: "2026-11-26T10:00:00Z",
+          hasCompletedPayment: false,
+          test: {
+            id: "test-maths",
+            title:
+              "Class 10th Urdu Medium Pre-Board Mock Exam Series 2026 — Mathematics Mock 1",
+            subject: "Mathematics",
+            price: 0,
+            maxMarks: 40,
+            durationMinutes: 120,
+            testSeries: {
+              id: "series-urdu-10",
+              title: "Class 10th Urdu Medium Pre-Board Mock Exam Series 2026",
+              standard: "10th",
+            },
+          },
+          submissions: [
+            {
+              id: "sub-m-2",
+              testId: "test-maths",
+              attemptNumber: 2,
+              status: "PROCESSING",
+              evaluation: null,
+            },
+            {
+              id: "sub-m-1",
+              testId: "test-maths",
+              attemptNumber: 1,
+              status: "COMPLETED",
+              evaluation: {
+                totalMarksAwarded: 34,
+                maxMarks: 40,
+                percentage: 85,
+              },
+            },
+          ],
+        },
+        // Parent bundle registration covering both Maths and Marathi
+        {
+          id: "reg-bundle-urdu",
+          testId: null,
+          testSeriesId: "series-urdu-10",
+          attemptsUsed: 1,
+          maxAttempts: 3,
+          registeredAt: "2026-11-25T10:00:00Z",
+          hasCompletedPayment: true,
+          testSeries: {
+            id: "series-urdu-10",
+            title: "Class 10th Urdu Medium Pre-Board Mock Exam Series 2026",
+            bundlePrice: 29900,
+            standard: "10th",
+            maxMarks: 80,
+            durationMinutes: 180,
+            tests: [
+              {
+                id: "test-maths",
+                title:
+                  "Class 10th Urdu Medium Pre-Board Mock Exam Series 2026 — Mathematics Mock 1",
+                subject: "Mathematics",
+                maxMarks: 40,
+                durationMinutes: 120,
+              },
+              {
+                id: "test-marathi",
+                title: "Class 10th Urdu Medium 1st Term Marathi Question Paper",
+                subject: "Marathi",
+                maxMarks: 80,
+                durationMinutes: 180,
+              },
+            ],
+          },
+          submissions: [],
+        },
+      ])
+
+      // Must produce exactly 2 individual Subject Test rows (deduplicated Maths + Marathi), zero bundle rows
+      assert.equal(flattened.length, 2)
+      assert.equal(flattened[0].testId, "test-maths")
+      // Leading Test Series prefix stripped cleanly
+      assert.equal(flattened[0].testTitle, "Mathematics Mock 1")
+      assert.equal(flattened[0].attemptsUsed, 2)
+      // Picks latest EVALUATED submission (Attempt 1 = 34/40) even while Attempt 2 is still PROCESSING
+      assert.equal(flattened[0].latestMarksAwarded, 34)
+      assert.equal(flattened[0].latestPercentage, 85)
+
+      assert.equal(flattened[1].testId, "test-marathi")
+      assert.equal(
+        flattened[1].testTitle,
+        "Class 10th Urdu Medium 1st Term Marathi Question Paper"
+      )
+      assert.equal(flattened[1].latestMarksAwarded, null)
+      assert.equal(flattened[1].maxMarks, 80)
     }
   )
 

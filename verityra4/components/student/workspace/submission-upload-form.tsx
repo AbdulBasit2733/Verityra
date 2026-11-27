@@ -52,10 +52,12 @@ type EvaluatingState = {
 
 export function SubmissionUploadForm({
   testSeriesId,
+  subjectTestTitle,
   attemptsUsed,
   maxAttempts,
 }: {
   testSeriesId: string
+  subjectTestTitle?: string
   attemptsUsed: number
   maxAttempts: number
 }) {
@@ -265,35 +267,39 @@ export function SubmissionUploadForm({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (fileError) {
-      toast.error("Cannot upload invalid file", { description: fileError })
+      toast.error("Please check your answer sheet file", {
+        description: fileError,
+      })
       return
     }
     if (!file) {
-      const msg = "Please select your scanned PDF or image booklet before submitting."
+      const msg =
+        "Please select your answer sheet file (PDF or image, max 10 MB) before submitting."
       setFileError(msg)
-      toast.warning("No answer booklet selected", { description: msg })
+      toast.warning("No answer sheet selected", { description: msg })
       return
     }
     if (!ALLOWED_SUBMISSION_TYPES.includes(file.type)) {
-      const msg = `Unsupported file format (${file.type}). Upload PDF, JPG, PNG, or WEBP.`
+      const msg =
+        "Only PDF, JPG, PNG, or WebP files are allowed. Please choose a valid answer sheet."
       setFileError(msg)
-      toast.error("Unsupported format", { description: msg })
+      toast.error("Invalid file format", { description: msg })
       return
     }
     if (file.size <= 0 || file.size > MAX_FILE_SIZE_BYTES) {
-      const msg = `File size (${(file.size / (1024 * 1024)).toFixed(2)} MB) exceeds the 10 MB maximum limit. Please compress your PDF before submitting.`
+      const msg = `Your file is ${(file.size / (1024 * 1024)).toFixed(2)} MB, which is over the 10 MB limit. Please compress your answer sheet to 10 MB or smaller and try again.`
       setFileError(msg)
-      toast.error("File size exceeded", { description: msg })
+      toast.error("Answer sheet must be 10 MB or smaller", { description: msg })
       return
     }
 
     const confirmed = await confirm({
-      title: `Submit Handwritten Attempt #${nextAttempt} of ${maxAttempts}?`,
-      description: `Uploading "${file.name}" will consume 1 of your ${
+      title: `Submit Answer Sheet — Attempt #${nextAttempt} of ${maxAttempts}?`,
+      description: `Uploading "${file.name}"${subjectTestTitle ? ` for "${subjectTestTitle}"` : ""} will use 1 of your ${
         maxAttempts - attemptsUsed
-      } remaining attempts for this test series. Please verify all pages are legible and upright.`,
-      confirmText: `Submit Attempt #${nextAttempt}`,
-      cancelText: "Review File",
+      } remaining attempts. Please make sure all pages are clear and upright.`,
+      confirmText: `Submit Answer Sheet`,
+      cancelText: "Check File Again",
       variant: "default",
       badgeText: `Attempt ${nextAttempt} of ${maxAttempts}`,
     })
@@ -375,12 +381,12 @@ export function SubmissionUploadForm({
       router.refresh()
     } catch (err) {
       showError({
-        title: "Unexpected Upload Error",
+        title: "Could Not Upload Answer Sheet",
         message:
           err instanceof Error && err.message
             ? err.message
-            : "An unexpected network or server error occurred during submission.",
-        code: "UPLOAD_EXCEPTION",
+            : "Could not upload your answer sheet. Please check your internet connection, make sure the file is 10 MB or smaller, and try again.",
+        code: "UPLOAD_FAILED",
       })
       setLoading(false)
     }
@@ -392,12 +398,13 @@ export function SubmissionUploadForm({
         <div className="flex items-center gap-2.5">
           <UploadCloud className="h-4.5 w-4.5 shrink-0 text-[#2A6AED]" />
           <div>
-            <h3 className="text-sm font-bold text-[#0F172A] sm:text-base">
-              Submit Attempt #{nextAttempt} of {maxAttempts}
+            <h3 className="text-sm font-bold text-foreground sm:text-base">
+              Submit Answer Sheet — Attempt #{nextAttempt} of {maxAttempts}
             </h3>
-            <p className="text-xs text-[#64748B]">
-              Upload your scanned handwritten response booklet (PDF or clear
-              image pages, max 10MB).
+            <p className="text-xs text-muted-foreground">
+              {subjectTestTitle
+                ? `Upload your handwritten answer sheet for "${subjectTestTitle}" as 1 PDF or image (JPG, PNG, WebP). Maximum size: 10 MB.`
+                : "Upload your handwritten answer sheet as 1 PDF or image (JPG, PNG, WebP). Maximum size: 10 MB."}
             </p>
           </div>
         </div>
@@ -506,7 +513,7 @@ export function SubmissionUploadForm({
             <p className="text-xs font-bold text-[#0F172A] transition-colors group-hover:text-[#2A6AED] sm:text-sm">
               {file
                 ? file.name
-                : "Click to select scanned handwritten answer sheet"}
+                : "Click to choose your answer sheet (PDF or Image — Max 10 MB)"}
             </p>
             <Input
               id="answerSheetFile"
@@ -516,25 +523,29 @@ export function SubmissionUploadForm({
                 const selectedFile = e.target.files?.[0] || null
                 if (!selectedFile) return
                 if (!ALLOWED_SUBMISSION_TYPES.includes(selectedFile.type)) {
-                  const msg = `Unsupported file format (${selectedFile.type || "unknown"}). Upload PDF, JPG, PNG, or WEBP.`
+                  const msg =
+                    "Only PDF, JPG, PNG, or WebP files are allowed for your answer sheet."
                   setFileError(msg)
-                  toast.error("Unsupported format", { description: msg })
+                  toast.error("Invalid file format", { description: msg })
                   e.currentTarget.value = ""
                   setFile(null)
                   return
                 }
                 if (selectedFile.size === 0) {
-                  const msg = "Selected file is empty (0 bytes)."
+                  const msg =
+                    "This file is empty. Please choose a valid answer sheet (max 10 MB)."
                   setFileError(msg)
-                  toast.error("Empty file rejected", { description: msg })
+                  toast.error("Empty file", { description: msg })
                   e.currentTarget.value = ""
                   setFile(null)
                   return
                 }
                 if (selectedFile.size > MAX_FILE_SIZE_BYTES) {
-                  const msg = `File size (${(selectedFile.size / (1024 * 1024)).toFixed(2)} MB) exceeds the 10 MB limit. Please compress your booklet to 10 MB or less.`
+                  const msg = `Your file is ${(selectedFile.size / (1024 * 1024)).toFixed(2)} MB, which is over the 10 MB limit. Please compress your answer sheet to 10 MB or smaller.`
                   setFileError(msg)
-                  toast.error("File exceeds 10 MB limit", { description: msg })
+                  toast.error("Answer sheet must be 10 MB or smaller", {
+                    description: msg,
+                  })
                   e.currentTarget.value = ""
                   setFile(null)
                   return
@@ -546,8 +557,8 @@ export function SubmissionUploadForm({
             />
             <p className="text-[11px] text-[#64748B] sm:text-xs">
               {file
-                ? `File size: ${(file.size / (1024 * 1024)).toFixed(2)} MB • Ready for encrypted submission`
-                : "PDF, JPG, PNG or WEBP up to 10MB • Upright orientation recommended"}
+                ? `Selected size: ${(file.size / (1024 * 1024)).toFixed(2)} MB (within 10 MB limit) • Ready to submit`
+                : "Allowed formats: PDF, JPG, PNG, WebP • Maximum file size: 10 MB"}
             </p>
           </div>
         </label>
@@ -659,8 +670,8 @@ export function SubmissionUploadForm({
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-[11px] text-[#64748B]">
-            * Submitting consumes 1 attempt allowance. Invalid file formats
-            rejected prior to storage do not consume an attempt.
+            * Submitting uses 1 attempt. Files rejected for wrong format or
+            being over 10 MB do not use an attempt.
           </p>
           <Button
             type="submit"
@@ -670,10 +681,10 @@ export function SubmissionUploadForm({
             {loading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Uploading Booklet...
+                Uploading Answer Sheet...
               </>
             ) : (
-              `Confirm & Submit Attempt #${nextAttempt}`
+              `Submit Answer Sheet (Attempt #${nextAttempt})`
             )}
           </Button>
         </div>
@@ -684,11 +695,11 @@ export function SubmissionUploadForm({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base font-bold">
               <Loader2 className="h-5 w-5 animate-spin text-[#2A6AED]" />
-              Uploading Answer Booklet...
+              Uploading Your Answer Sheet...
             </DialogTitle>
             <DialogDescription className="text-xs leading-relaxed">
-              Encrypting and uploading your handwritten submission to the
-              evaluation queue. Please do not close or refresh this page.
+              Uploading your answer sheet and starting AI evaluation. Please do
+              not close or refresh this page.
             </DialogDescription>
           </DialogHeader>
           {file && (
