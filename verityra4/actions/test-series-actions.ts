@@ -2,7 +2,13 @@
 
 import { getCurrentUser, resolvePersistedAdminActor } from "@/lib/auth-guard"
 import { prisma, isDatabaseConnected } from "@/lib/prisma"
-import { uploadPrivateFile } from "@/lib/supabase"
+import {
+  createPrivateSignedUploadUrl,
+  isSafeStorageObjectPath,
+  privateFileDownloadUrl,
+  privateFileExists,
+  uploadPrivateFile,
+} from "@/lib/supabase"
 import { Role, TestSeriesStatus, TestSeriesType } from "@prisma/client"
 import { revalidatePath } from "next/cache"
 import {
@@ -1050,6 +1056,125 @@ export async function updateSubjectTestAction(
   return { success: true, message: "Subject test updated successfully." }
 }
 
+export type SubjectTestDocumentRole = "paper" | "model" | "template"
+
+export type PreparedSubjectTestUploadItem =
+  | {
+      role: SubjectTestDocumentRole
+      mode: "signed"
+      signedUrl: string
+      storagePath: string
+    }
+  | {
+      role: SubjectTestDocumentRole
+      mode: "direct"
+    }
+
+const SUBJECT_TEST_ROLE_CONFIG: Record<
+  SubjectTestDocumentRole,
+  { label: string; prefix: string; maxBytes: number }
+> = {
+  paper: {
+    label: "Question paper",
+    prefix: "papers",
+    maxBytes: MAX_QUESTION_PAPER_BYTES,
+  },
+  model: {
+    label: "Model answer key",
+    prefix: "model-answers",
+    maxBytes: MAX_SUPPORTING_DOC_BYTES,
+  },
+  template: {
+    label: "Answer sheet template",
+    prefix: "templates",
+    maxBytes: MAX_SUPPORTING_DOC_BYTES,
+  },
+}
+
+function documentMetadataValidationError(
+  mimeType: string,
+  fileSize: number,
+  maxBytes = MAX_DOCUMENT_SIZE_BYTES
+): string | null {
+  if (!DOCUMENT_MIME_TYPES.includes(mimeType)) {
+    return "Upload a PDF or JPG, PNG, or WebP document."
+  }
+  const maxMb = Math.round(maxBytes / (1024 * 1024))
+  if (!Number.isFinite(fileSize) || fileSize <= 0 || fileSize > maxBytes) {
+    return `The document must be ${maxMb} MB or smaller and cannot be empty (received ${(fileSize / (1024 * 1024)).toFixed(2)} MB).`
+  }
+  return null
+}
+
+/**
+ * Server Action: Prepare Signed Upload URLs for Subject Test Documents (ADMIN ONLY)
+ * Allows admins to upload up to 5 MB Question Papers and 10 MB Model/Template PDFs
+ * directly to Supabase Storage without hitting Vercel's 4.5 MB request body limit.
+ */
+export async function prepareSubjectTestDocumentUploadsAction(input: {
+  testId?: string
+  files: Array<{
+    role: SubjectTestDocumentRole
+    fileName: string
+    mimeType: string
+    fileSize: number
+  }>
+}): Promise<
+  ActionResult<{
+    uploads: Partial<Record<SubjectTestDocumentRole, PreparedSubjectTestUploadItem>>
+  }>
+> {
+  const sessionUser = await getCurrentUser()
+  if (!sessionUser || sessionUser.role !== Role.ADMIN) {
+    return { success: false, error: "Unauthorized. Admin privileges required." }
+  }
+
+  const dbConnected = await isDatabaseConnected()
+  if (!dbConnected && process.env.NODE_ENV === "production") {
+    return { success: false, error: "Database temporarily unavailable." }
+  }
+
+  const cleanTestId = (input.testId || "").trim()
+  const folderScope = cleanTestId
+    ? `test-${cleanTestId}`
+    : `test-${Date.now().toString(36)}`
+  const now = Date.now()
+
+  const uploads: Partial<
+    Record<SubjectTestDocumentRole, PreparedSubjectTestUploadItem>
+  > = {}
+
+  for (const item of input.files) {
+    const roleCfg = SUBJECT_TEST_ROLE_CONFIG[item.role]
+    if (!roleCfg) continue
+
+    const metaErr = documentMetadataValidationError(
+      item.mimeType,
+      item.fileSize,
+      roleCfg.maxBytes
+    )
+    if (metaErr) {
+      return { success: false, error: `${roleCfg.label}: ${metaErr}` }
+    }
+
+    const storagePath = `${roleCfg.prefix}/${folderScope}/${now}-${safeDocumentName(item.fileName)}`
+    const signed = await createPrivateSignedUploadUrl(
+      "verityra-private",
+      storagePath
+    )
+    uploads[item.role] = signed
+      ? {
+          role: item.role,
+          mode: "signed",
+          signedUrl: signed.signedUrl,
+          storagePath: signed.path,
+        }
+      : { role: item.role, mode: "direct" }
+  }
+
+  return { success: true, data: { uploads } }
+}
+
 /**
  * Server Action: Create or Update Subject Test with real private file uploads (ADMIN ONLY)
  * Uploads question paper, model answer key, and answer sheet template to private storage
@@ -1107,6 +1232,16 @@ export async function saveSubjectTestFormAction(formData: FormData): Promise<
     templateFileRaw instanceof File && templateFileRaw.size > 0
       ? templateFileRaw
       : null
+
+  const uploadedPaperPath = (
+    (formData.get("uploadedPaperPath") as string) || ""
+  ).trim()
+  const uploadedModelPath = (
+    (formData.get("uploadedModelPath") as string) || ""
+  ).trim()
+  const uploadedTemplatePath = (
+    (formData.get("uploadedTemplatePath") as string) || ""
+  ).trim()
 
   if (!title || !subject) {
     return { success: false, error: "Test title and subject are required." }
@@ -1186,37 +1321,60 @@ export async function saveSubjectTestFormAction(formData: FormData): Promise<
   let uploadedModelUrl: string | undefined
   let uploadedTemplateUrl: string | undefined
 
+  const verifyOrUploadRole = async (
+    preUploadedPath: string,
+    rawFile: File | null,
+    prefix: string,
+    label: string
+  ): Promise<string | undefined> => {
+    if (preUploadedPath) {
+      const folderGuard = existingTest
+        ? `${prefix}/test-${existingTest.id}/`
+        : `${prefix}/`
+      if (!isSafeStorageObjectPath(preUploadedPath, folderGuard)) {
+        throw new Error(`${label}: Invalid pre-uploaded storage path.`)
+      }
+      const url = privateFileDownloadUrl("verityra-private", preUploadedPath)
+      const exists = await privateFileExists(url)
+      if (!exists) {
+        throw new Error(
+          `${label}: Uploaded document was not found in storage. Please upload again.`
+        )
+      }
+      return url
+    }
+    if (rawFile) {
+      const storagePath = `${prefix}/${folderScope}/${now}-${safeDocumentName(rawFile.name)}`
+      const res = await uploadPrivateFile(
+        "verityra-private",
+        storagePath,
+        Buffer.from(await rawFile.arrayBuffer()),
+        rawFile.type
+      )
+      return res.url
+    }
+    return undefined
+  }
+
   try {
-    if (paperFile) {
-      const storagePath = `papers/${folderScope}/${now}-${safeDocumentName(paperFile.name)}`
-      const res = await uploadPrivateFile(
-        "verityra-private",
-        storagePath,
-        Buffer.from(await paperFile.arrayBuffer()),
-        paperFile.type
-      )
-      uploadedPaperUrl = res.url
-    }
-    if (modelFile) {
-      const storagePath = `model-answers/${folderScope}/${now}-${safeDocumentName(modelFile.name)}`
-      const res = await uploadPrivateFile(
-        "verityra-private",
-        storagePath,
-        Buffer.from(await modelFile.arrayBuffer()),
-        modelFile.type
-      )
-      uploadedModelUrl = res.url
-    }
-    if (templateFile) {
-      const storagePath = `templates/${folderScope}/${now}-${safeDocumentName(templateFile.name)}`
-      const res = await uploadPrivateFile(
-        "verityra-private",
-        storagePath,
-        Buffer.from(await templateFile.arrayBuffer()),
-        templateFile.type
-      )
-      uploadedTemplateUrl = res.url
-    }
+    uploadedPaperUrl = await verifyOrUploadRole(
+      uploadedPaperPath,
+      paperFile,
+      "papers",
+      "Question paper"
+    )
+    uploadedModelUrl = await verifyOrUploadRole(
+      uploadedModelPath,
+      modelFile,
+      "model-answers",
+      "Model answer key"
+    )
+    uploadedTemplateUrl = await verifyOrUploadRole(
+      uploadedTemplatePath,
+      templateFile,
+      "templates",
+      "Answer sheet template"
+    )
   } catch (err: any) {
     console.error("[SUBJECT TEST DOCUMENT UPLOAD ERROR]", err)
     return {

@@ -15,7 +15,12 @@ import { SearchableCombobox } from "@/components/ui/searchable-combobox"
 import { MasterItem } from "@/lib/mock-masters"
 import { TestSeriesAttachmentOption } from "@/actions/question-paper-actions"
 import { normalizePrivateFileUrl } from "@/lib/file-urls"
-import { saveSubjectTestFormAction } from "@/actions/test-series-actions"
+import {
+  prepareSubjectTestDocumentUploadsAction,
+  saveSubjectTestFormAction,
+  type SubjectTestDocumentRole,
+} from "@/actions/test-series-actions"
+import { uploadFileToSignedUrl } from "@/lib/direct-upload"
 import { AdminPdfPreviewModal } from "@/components/admin/question-papers/admin-pdf-preview-modal"
 import {
   Sheet,
@@ -335,10 +340,66 @@ export function AdminCreateSubjectTestForm({
         String(clearTemplate && !answerSheetTemplateFile)
       )
 
-      if (paperFile) formData.append("paperFile", paperFile)
-      if (modelAnswerFile) formData.append("modelAnswerFile", modelAnswerFile)
+      const selectedDocs: Array<{
+        role: SubjectTestDocumentRole
+        file: File
+        formField: string
+        pathField: string
+      }> = []
+      if (paperFile) {
+        selectedDocs.push({
+          role: "paper",
+          file: paperFile,
+          formField: "paperFile",
+          pathField: "uploadedPaperPath",
+        })
+      }
+      if (modelAnswerFile) {
+        selectedDocs.push({
+          role: "model",
+          file: modelAnswerFile,
+          formField: "modelAnswerFile",
+          pathField: "uploadedModelPath",
+        })
+      }
       if (answerSheetTemplateFile) {
-        formData.append("answerSheetTemplateFile", answerSheetTemplateFile)
+        selectedDocs.push({
+          role: "template",
+          file: answerSheetTemplateFile,
+          formField: "answerSheetTemplateFile",
+          pathField: "uploadedTemplatePath",
+        })
+      }
+
+      if (selectedDocs.length > 0) {
+        const prepRes = await prepareSubjectTestDocumentUploadsAction({
+          testId: isEdit && initialData ? initialData.id : undefined,
+          files: selectedDocs.map((d) => ({
+            role: d.role,
+            fileName: d.file.name,
+            mimeType: d.file.type,
+            fileSize: d.file.size,
+          })),
+        })
+
+        if (!prepRes.success || !prepRes.data) {
+          throw new Error(
+            prepRes.error || "Failed to prepare secure document uploads."
+          )
+        }
+
+        const uploads = prepRes.data.uploads
+        await Promise.all(
+          selectedDocs.map(async (doc) => {
+            const slot = uploads[doc.role]
+            if (slot && slot.mode === "signed") {
+              await uploadFileToSignedUrl(slot.signedUrl, doc.file)
+              formData.append(doc.pathField, slot.storagePath)
+            } else {
+              formData.append(doc.formField, doc.file)
+            }
+          })
+        )
       }
 
       const res = await saveSubjectTestFormAction(formData)

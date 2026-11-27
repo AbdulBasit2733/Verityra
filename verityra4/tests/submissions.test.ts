@@ -1,6 +1,10 @@
 import assert from "node:assert/strict"
 import { TestSuite } from "./test-utils"
 import { SubmissionStatus } from "@prisma/client"
+import {
+  createPrivateSignedUploadUrl,
+  isSafeStorageObjectPath,
+} from "../lib/supabase"
 
 export function runSubmissionTests() {
   const suite = new TestSuite(
@@ -247,6 +251,48 @@ export function runSubmissionTests() {
 
       const scienceAttempt = reserveSubjectAttempt("test-science")
       assert.deepEqual(scienceAttempt, { ok: true, attemptNumber: 1 })
+    }
+  )
+
+  suite.test(
+    "Signed Upload Security: Rejects path traversal and cross-user paths while exposing signed upload helper",
+    () => {
+      assert.equal(
+        isSafeStorageObjectPath(
+          "submissions/series-1/user-1/attempt_1_test.pdf",
+          "submissions/series-1/user-1/"
+        ),
+        true
+      )
+      assert.equal(
+        isSafeStorageObjectPath(
+          "submissions/series-1/user-2/attempt_1_test.pdf",
+          "submissions/series-1/user-1/"
+        ),
+        false
+      )
+      assert.equal(
+        isSafeStorageObjectPath(
+          "submissions/series-1/user-1/../user-2/attempt_1_test.pdf",
+          "submissions/series-1/user-1/"
+        ),
+        false
+      )
+      assert.equal(
+        isSafeStorageObjectPath(
+          "/submissions/series-1/user-1/attempt_1_test.pdf",
+          "submissions/series-1/user-1/"
+        ),
+        false
+      )
+      assert.equal(
+        isSafeStorageObjectPath(
+          "papers/test-123/question.pdf",
+          "papers/test-123/"
+        ),
+        true
+      )
+      assert.equal(typeof createPrivateSignedUploadUrl, "function")
     }
   )
 

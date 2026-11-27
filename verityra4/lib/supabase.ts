@@ -88,6 +88,70 @@ import {
 } from "./file-urls"
 
 /**
+ * Validates that a pre-uploaded storage object path stays within an expected prefix
+ * and contains no directory traversal or absolute path segments.
+ */
+export function isSafeStorageObjectPath(
+  storagePath: string,
+  requiredPrefix: string
+): boolean {
+  if (!storagePath || !requiredPrefix) return false
+  const normalized = path.posix.normalize(storagePath.replace(/\\/g, "/"))
+  const normalizedPrefix = path.posix.normalize(requiredPrefix.replace(/\\/g, "/"))
+  if (
+    normalized.startsWith("../") ||
+    normalized === ".." ||
+    normalized.includes("/../") ||
+    path.posix.isAbsolute(normalized)
+  ) {
+    return false
+  }
+  return normalized.startsWith(normalizedPrefix) && normalized.length > normalizedPrefix.length
+}
+
+/**
+ * Issues a short-lived signed upload URL directly against Supabase Storage so
+ * browsers can upload multi-MB files without hitting Vercel's 4.5 MB request body limit.
+ * Returns null when Supabase is unconfigured (local disk fallback mode).
+ */
+export async function createPrivateSignedUploadUrl(
+  bucketName: string,
+  filePath: string
+): Promise<{
+  signedUrl: string
+  token: string
+  path: string
+  fileUrl: string
+} | null> {
+  if (!isSafeStorageObjectPath(filePath, filePath.split("/")[0] + "/")) {
+    throw new Error("Invalid storage upload path.")
+  }
+
+  const supabase = getSupabase()
+  if (!supabase) {
+    return null
+  }
+
+  const { data, error } = await supabase.storage
+    .from(bucketName)
+    .createSignedUploadUrl(filePath, { upsert: true })
+
+  if (error || !data?.signedUrl || !data?.token) {
+    console.error("[SUPABASE SIGNED UPLOAD ERROR]", error)
+    throw new Error(
+      `Failed to prepare secure storage upload: ${error?.message || "Unknown error"}`
+    )
+  }
+
+  return {
+    signedUrl: data.signedUrl,
+    token: data.token,
+    path: data.path,
+    fileUrl: privateFileDownloadUrl(bucketName, data.path),
+  }
+}
+
+/**
  * Checks whether a stored private file exists in Supabase Storage or local disk.
  * External https:// URLs are treated as available; malformed or missing objects return false.
  */

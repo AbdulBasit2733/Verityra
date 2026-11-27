@@ -6,7 +6,14 @@ import {
   PersistedUserLookupError,
 } from "@/lib/auth-guard"
 import { prisma, isDatabaseConnected, DB_TX_OPTIONS } from "@/lib/prisma"
-import { uploadPrivateFile } from "@/lib/supabase"
+import {
+  createPrivateSignedUploadUrl,
+  downloadPrivateFile,
+  isSafeStorageObjectPath,
+  privateFileDownloadUrl,
+  privateFileExists,
+  uploadPrivateFile,
+} from "@/lib/supabase"
 import {
   evaluateAnswerSheetWithGemini,
   getGeminiModelName,
@@ -32,6 +39,238 @@ const ALLOWED_MIME_TYPES = [
   "image/webp",
 ]
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024 // Allow multi-page scanned answer booklets up to 10 MB
+
+function validateAnswerSheetMetadata(
+  mimeType: string,
+  fileSize: number
+): string | null {
+  if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
+    return `Unsupported file format (${mimeType || "unknown"}). Please upload a PDF or JPG/PNG image scan.`
+  }
+  if (!Number.isFinite(fileSize) || fileSize <= 0) {
+    return "The selected answer sheet file is empty. Please upload a valid scan."
+  }
+  if (fileSize > MAX_FILE_SIZE_BYTES) {
+    return `File size (${(fileSize / (1024 * 1024)).toFixed(2)} MB) exceeds the 10 MB maximum limit.`
+  }
+  return null
+}
+
+async function resolveSubmissionContext(userId: string, testSeriesId: string) {
+  const childTest = await prisma.test.findUnique({
+    where: { id: testSeriesId },
+    select: {
+      id: true,
+      title: true,
+      subject: true,
+      maxMarks: true,
+      maxAttempts: true,
+      privateEvaluationInstructions: true,
+      questionPaperUrl: true,
+      modelAnswerUrl: true,
+      testSeriesId: true,
+    },
+  })
+
+  if (childTest && !childTest.testSeriesId) {
+    return {
+      ok: false as const,
+      error: "This subject test is not linked to an active test series yet.",
+    }
+  }
+
+  const resolvedTestSeriesId = childTest?.testSeriesId || testSeriesId
+
+  const [directTestRegistration, bundleRegistration] = await Promise.all([
+    childTest
+      ? prisma.testRegistration.findUnique({
+          where: {
+            userId_testId: {
+              userId,
+              testId: childTest.id,
+            },
+          },
+          include: {
+            testSeries: {
+              include: { papers: true, _count: { select: { tests: true } } },
+            },
+          },
+        })
+      : Promise.resolve(null),
+    prisma.testRegistration.findUnique({
+      where: {
+        userId_testSeriesId: {
+          userId,
+          testSeriesId: resolvedTestSeriesId,
+        },
+      },
+      include: {
+        testSeries: {
+          include: { papers: true, _count: { select: { tests: true } } },
+        },
+      },
+    }),
+  ])
+
+  const hasDirectAccess =
+    directTestRegistration?.status === RegistrationStatus.ACTIVE
+  const hasBundleAccess =
+    bundleRegistration?.status === RegistrationStatus.ACTIVE
+
+  if (!hasDirectAccess && !hasBundleAccess) {
+    return {
+      ok: false as const,
+      error:
+        "You are not registered for this test or your registration is inactive.",
+    }
+  }
+
+  const parentSeries =
+    bundleRegistration?.testSeries ||
+    directTestRegistration?.testSeries ||
+    (await prisma.testSeries.findUnique({
+      where: { id: resolvedTestSeriesId },
+      include: { papers: true, _count: { select: { tests: true } } },
+    }))
+
+  const now = new Date()
+  if (parentSeries?.endDate && now > parentSeries.endDate) {
+    return {
+      ok: false as const,
+      error: "The submission deadline for this test series has passed.",
+    }
+  }
+
+  return {
+    ok: true as const,
+    childTest,
+    resolvedTestSeriesId,
+    directTestRegistration,
+    bundleRegistration,
+    hasDirectAccess,
+    parentSeries,
+  }
+}
+
+export type PrepareAnswerSheetUploadResult =
+  | {
+      mode: "signed"
+      signedUrl: string
+      storagePath: string
+    }
+  | {
+      mode: "direct"
+    }
+
+/**
+ * Server Action: Authorize and issue a Direct-to-Supabase Signed Upload URL
+ * before sending any multi-MB PDF bytes, bypassing Vercel's 4.5 MB Server Action limit.
+ */
+export async function prepareAnswerSheetUploadAction(input: {
+  testSeriesId: string
+  fileName: string
+  mimeType: string
+  fileSize: number
+}): Promise<ActionResult<PrepareAnswerSheetUploadResult>> {
+  let user
+  try {
+    user = await getPersistedCurrentUser()
+  } catch (err) {
+    if (err instanceof PersistedUserLookupError) {
+      return {
+        success: false,
+        error: "Database temporarily unavailable. Please try again shortly.",
+      }
+    }
+    throw err
+  }
+
+  if (!user) {
+    return {
+      success: false,
+      error: "Authentication required to submit answers. Please sign in again.",
+    }
+  }
+
+  const testSeriesId = (input.testSeriesId || "").trim()
+  if (!testSeriesId) {
+    return { success: false, error: "Test series ID is required." }
+  }
+
+  const metaError = validateAnswerSheetMetadata(input.mimeType, input.fileSize)
+  if (metaError) {
+    return { success: false, error: metaError }
+  }
+
+  const dbConnected = await isDatabaseConnected()
+  if (!dbConnected) {
+    if (process.env.NODE_ENV === "production") {
+      return {
+        success: false,
+        error: "Database temporarily unavailable. Please try again shortly.",
+      }
+    }
+    return { success: true, data: { mode: "direct" } }
+  }
+
+  const ctx = await resolveSubmissionContext(user.id, testSeriesId)
+  if (!ctx.ok) {
+    return { success: false, error: ctx.error }
+  }
+
+  const attemptsUsed = ctx.childTest
+    ? ctx.directTestRegistration && ctx.hasDirectAccess
+      ? ctx.directTestRegistration.attemptsUsed
+      : ctx.bundleRegistration
+        ? await prisma.submission.count({
+            where: {
+              registrationId: ctx.bundleRegistration.id,
+              OR: [
+                { testId: ctx.childTest.id },
+                ...((ctx.parentSeries?._count?.tests || 0) <= 1
+                  ? [{ testId: null }]
+                  : []),
+              ],
+            },
+          })
+        : 0
+    : ctx.bundleRegistration!.attemptsUsed
+
+  const maxAttempts = ctx.childTest
+    ? ctx.directTestRegistration && ctx.hasDirectAccess
+      ? ctx.directTestRegistration.maxAttempts
+      : ctx.childTest.maxAttempts || ctx.bundleRegistration?.maxAttempts || 3
+    : ctx.bundleRegistration!.maxAttempts
+
+  if (attemptsUsed >= maxAttempts) {
+    return {
+      success: false,
+      error: `Attempt limit reached. You have utilized all ${maxAttempts} allowed submissions for this test.`,
+    }
+  }
+
+  const safeFileName = (
+    input.fileName.split(/[\\/]/).pop() || "answer-sheet"
+  ).replace(/[^\w.-]/g, "_")
+  const storagePath = `submissions/${ctx.resolvedTestSeriesId}/${user.id}/attempt_${attemptsUsed + 1}_${Date.now()}_${safeFileName}`
+
+  const signedSession = await createPrivateSignedUploadUrl(
+    "verityra-private",
+    storagePath
+  )
+  if (!signedSession) {
+    return { success: true, data: { mode: "direct" } }
+  }
+
+  return {
+    success: true,
+    data: {
+      mode: "signed",
+      signedUrl: signedSession.signedUrl,
+      storagePath: signedSession.path,
+    },
+  }
+}
 
 /**
  * Server Action: Submit Handwritten Answer Sheet
@@ -62,11 +301,27 @@ export async function submitAnswerSheetAction(
 
   const testSeriesIdValue = formData.get("testSeriesId")
   const fileValue = formData.get("file")
-  const testSeriesId =
-    typeof testSeriesIdValue === "string" ? testSeriesIdValue : ""
-  const file = fileValue instanceof File ? fileValue : null
+  const uploadedStoragePathValue = formData.get("uploadedStoragePath")
+  const mimeTypeValue = formData.get("mimeType")
+  const fileSizeValue = formData.get("fileSize")
 
-  if (!testSeriesId || !file) {
+  const testSeriesId =
+    typeof testSeriesIdValue === "string" ? testSeriesIdValue.trim() : ""
+  const file = fileValue instanceof File ? fileValue : null
+  const uploadedStoragePath =
+    typeof uploadedStoragePathValue === "string"
+      ? uploadedStoragePathValue.trim()
+      : ""
+  const effectiveMimeType = file
+    ? file.type
+    : typeof mimeTypeValue === "string"
+      ? mimeTypeValue.trim()
+      : ""
+  const effectiveFileSize = file
+    ? file.size
+    : Number(typeof fileSizeValue === "string" ? fileSizeValue : 0)
+
+  if (!testSeriesId || (!file && !uploadedStoragePath)) {
     return {
       success: false,
       error: "Test series ID and answer sheet file are required.",
@@ -74,25 +329,12 @@ export async function submitAnswerSheetAction(
   }
 
   // 1. File Type and Size Validation (Does NOT consume attempt if invalid)
-  if (!ALLOWED_MIME_TYPES.includes(file.type)) {
-    return {
-      success: false,
-      error: `Unsupported file format (${file.type}). Please upload a PDF or JPG/PNG image scan.`,
-    }
-  }
-
-  if (file.size <= 0) {
-    return {
-      success: false,
-      error: "The selected answer sheet file is empty. Please upload a valid scan.",
-    }
-  }
-
-  if (file.size > MAX_FILE_SIZE_BYTES) {
-    return {
-      success: false,
-      error: `File size (${(file.size / (1024 * 1024)).toFixed(2)} MB) exceeds the 10 MB maximum limit.`,
-    }
+  const metaError = validateAnswerSheetMetadata(
+    effectiveMimeType,
+    effectiveFileSize
+  )
+  if (metaError) {
+    return { success: false, error: metaError }
   }
 
   const dbConnected = await isDatabaseConnected()
@@ -111,77 +353,19 @@ export async function submitAnswerSheetAction(
   }
 
   // 2. Resolve optional Subject Test (Test.id) vs parent TestSeries and fetch registration
-  const childTest = await prisma.test.findUnique({
-    where: { id: testSeriesId },
-    select: {
-      id: true,
-      title: true,
-      subject: true,
-      maxMarks: true,
-      maxAttempts: true,
-      privateEvaluationInstructions: true,
-      questionPaperUrl: true,
-      modelAnswerUrl: true,
-      testSeriesId: true,
-    },
-  })
-
-  if (childTest && !childTest.testSeriesId) {
-    return {
-      success: false,
-      error: "This subject test is not linked to an active test series yet.",
-    }
+  const ctx = await resolveSubmissionContext(user.id, testSeriesId)
+  if (!ctx.ok) {
+    return { success: false, error: ctx.error }
   }
 
-  const resolvedTestSeriesId = childTest?.testSeriesId || testSeriesId
-
-  const [directTestRegistration, bundleRegistration] = await Promise.all([
-    childTest
-      ? prisma.testRegistration.findUnique({
-          where: {
-            userId_testId: {
-              userId: user.id,
-              testId: childTest.id,
-            },
-          },
-          include: {
-            testSeries: { include: { papers: true, _count: { select: { tests: true } } } },
-          },
-        })
-      : Promise.resolve(null),
-    prisma.testRegistration.findUnique({
-      where: {
-        userId_testSeriesId: {
-          userId: user.id,
-          testSeriesId: resolvedTestSeriesId,
-        },
-      },
-      include: {
-        testSeries: { include: { papers: true, _count: { select: { tests: true } } } },
-      },
-    }),
-  ])
-
-  const hasDirectAccess =
-    directTestRegistration?.status === RegistrationStatus.ACTIVE
-  const hasBundleAccess =
-    bundleRegistration?.status === RegistrationStatus.ACTIVE
-
-  if (!hasDirectAccess && !hasBundleAccess) {
-    return {
-      success: false,
-      error:
-        "You are not registered for this test or your registration is inactive.",
-    }
-  }
-
-  const parentSeries =
-    bundleRegistration?.testSeries ||
-    directTestRegistration?.testSeries ||
-    (await prisma.testSeries.findUnique({
-      where: { id: resolvedTestSeriesId },
-      include: { papers: true, _count: { select: { tests: true } } },
-    }))
+  const {
+    childTest,
+    resolvedTestSeriesId,
+    directTestRegistration,
+    bundleRegistration,
+    hasDirectAccess,
+    parentSeries,
+  } = ctx
 
   // Isolate per-Subject-Test 3-attempt quota so bundle students get independent attempts per subject
   let activeRegistration: {
@@ -242,37 +426,53 @@ export async function submitAnswerSheetAction(
     }
   }
 
-  // 4. Verify test window
-  const now = new Date()
-  if (parentSeries?.endDate && now > parentSeries.endDate) {
-    return {
-      success: false,
-      error: "The submission deadline for this test series has passed.",
-    }
-  }
-
-  // 5. Upload File Securely to Private Storage
-  const fileBytes = Buffer.from(await file.arrayBuffer())
-  const attemptToReserve = activeRegistration.attemptsUsed + 1
-  const safeFileName = (
-    file.name.split(/[\\/]/).pop() || "answer-sheet"
-  ).replace(/[^\w.-]/g, "_")
-  const storagePath = `submissions/${resolvedTestSeriesId}/${user.id}/attempt_${attemptToReserve}_${Date.now()}_${safeFileName}`
-
+  // 4. Persist / Verify Private Storage Reference
+  let fileBytes: Buffer | null = null
   let uploadedFileUrl: string
-  try {
-    const uploadResult = await uploadPrivateFile(
+
+  if (uploadedStoragePath) {
+    const requiredPrefix = `submissions/${resolvedTestSeriesId}/${user.id}/`
+    if (!isSafeStorageObjectPath(uploadedStoragePath, requiredPrefix)) {
+      return {
+        success: false,
+        error: "Invalid uploaded answer sheet storage path.",
+      }
+    }
+    const candidateUrl = privateFileDownloadUrl(
       "verityra-private",
-      storagePath,
-      fileBytes,
-      file.type
+      uploadedStoragePath
     )
-    uploadedFileUrl = uploadResult.url
-  } catch (err: any) {
-    console.error("[UPLOAD ERROR]", err)
-    return {
-      success: false,
-      error: "Failed to store answer sheet securely. Please try again.",
+    const exists = await privateFileExists(candidateUrl)
+    if (!exists) {
+      return {
+        success: false,
+        error:
+          "Uploaded answer sheet was not found in storage. Please upload again.",
+      }
+    }
+    uploadedFileUrl = candidateUrl
+  } else {
+    fileBytes = Buffer.from(await file!.arrayBuffer())
+    const attemptToReserve = activeRegistration.attemptsUsed + 1
+    const safeFileName = (
+      file!.name.split(/[\\/]/).pop() || "answer-sheet"
+    ).replace(/[^\w.-]/g, "_")
+    const storagePath = `submissions/${resolvedTestSeriesId}/${user.id}/attempt_${attemptToReserve}_${Date.now()}_${safeFileName}`
+
+    try {
+      const uploadResult = await uploadPrivateFile(
+        "verityra-private",
+        storagePath,
+        fileBytes,
+        effectiveMimeType
+      )
+      uploadedFileUrl = uploadResult.url
+    } catch (err: unknown) {
+      console.error("[UPLOAD ERROR]", err)
+      return {
+        success: false,
+        error: "Failed to store answer sheet securely. Please try again.",
+      }
     }
   }
 
@@ -306,8 +506,8 @@ export async function submitAnswerSheetAction(
           userId: user.id,
           attemptNumber: nextAttemptNumber,
           fileUrl: uploadedFileUrl,
-          fileType: file.type,
-          fileSizeBytes: file.size,
+          fileType: effectiveMimeType,
+          fileSizeBytes: effectiveFileSize,
           status: SubmissionStatus.PENDING,
         },
       })
@@ -365,7 +565,7 @@ export async function submitAnswerSheetAction(
     testSeriesId: targetSeriesId,
     userId: user.id,
     fileUrl: uploadedFileUrl,
-    mimeType: file.type,
+    mimeType: effectiveMimeType,
     runId: evaluationRun.id,
     runNumber: evaluationRun.runNumber,
   })
@@ -403,6 +603,12 @@ export async function submitAnswerSheetAction(
         maxMarks: effectiveMaxMarks,
       })
 
+      const resolvedStudentBytes =
+        fileBytes ||
+        (uploadedStoragePath
+          ? await downloadPrivateFile("verityra-private", uploadedStoragePath)
+          : undefined)
+
       const aiResult = await evaluateAnswerSheetWithGemini({
         testTitle: effectiveTitle,
         subject: childTest?.subject || null,
@@ -415,8 +621,8 @@ export async function submitAnswerSheetAction(
         questionPaperMimeType: questionPaperDoc?.mimeType || null,
         modelAnswerBuffer: modelAnswerDoc?.buffer || null,
         modelAnswerMimeType: modelAnswerDoc?.mimeType || null,
-        studentAnswerSheetBuffer: fileBytes,
-        studentAnswerSheetMimeType: file.type,
+        studentAnswerSheetBuffer: resolvedStudentBytes,
+        studentAnswerSheetMimeType: effectiveMimeType,
         studentAnswerSheetUrl: uploadedFileUrl,
       })
 

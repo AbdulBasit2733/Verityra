@@ -26,7 +26,11 @@ import {
   Image as ImageIcon,
   FileCheck,
 } from "lucide-react"
-import { submitAnswerSheetAction } from "@/actions/submission-actions"
+import {
+  prepareAnswerSheetUploadAction,
+  submitAnswerSheetAction,
+} from "@/actions/submission-actions"
+import { uploadFileToSignedUrl } from "@/lib/direct-upload"
 
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024
 const ALLOWED_SUBMISSION_TYPES = [
@@ -298,9 +302,35 @@ export function SubmissionUploadForm({
     setLoading(true)
 
     try {
+      const prep = await prepareAnswerSheetUploadAction({
+        testSeriesId,
+        fileName: file.name,
+        mimeType: file.type,
+        fileSize: file.size,
+      })
+
+      if (!prep.success || !prep.data) {
+        showError({
+          title: "Answer Sheet Submission Rejected",
+          message:
+            prep.error || "Unable to prepare your answer sheet upload.",
+          code: "SUBMISSION_REJECTED",
+        })
+        setLoading(false)
+        return
+      }
+
       const formData = new FormData()
       formData.append("testSeriesId", testSeriesId)
-      formData.append("file", file)
+
+      if (prep.data.mode === "signed") {
+        await uploadFileToSignedUrl(prep.data.signedUrl, file)
+        formData.append("uploadedStoragePath", prep.data.storagePath)
+        formData.append("mimeType", file.type)
+        formData.append("fileSize", String(file.size))
+      } else {
+        formData.append("file", file)
+      }
 
       const result = await submitAnswerSheetAction(formData)
 
@@ -343,11 +373,13 @@ export function SubmissionUploadForm({
         })
       }
       router.refresh()
-    } catch {
+    } catch (err) {
       showError({
         title: "Unexpected Upload Error",
         message:
-          "An unexpected network or server error occurred during submission.",
+          err instanceof Error && err.message
+            ? err.message
+            : "An unexpected network or server error occurred during submission.",
         code: "UPLOAD_EXCEPTION",
       })
       setLoading(false)
