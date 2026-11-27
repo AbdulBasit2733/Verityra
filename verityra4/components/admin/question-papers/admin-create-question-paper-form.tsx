@@ -24,6 +24,13 @@ import {
 } from "@/actions/question-paper-actions"
 import { EXAMINATION_STREAMS } from "@/lib/mock-question-papers"
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
   FileText,
   UploadCloud,
   Loader2,
@@ -33,6 +40,7 @@ import {
   X,
   FileCheck,
   Sparkles,
+  AlertTriangle,
   Link2,
 } from "lucide-react"
 
@@ -84,7 +92,9 @@ export function AdminCreateQuestionPaperForm({
   const [standalonePrice, setStandalonePrice] = React.useState("99")
 
   // File state
+  const MAX_QUESTION_PAPER_BYTES = 5 * 1024 * 1024
   const [file, setFile] = React.useState<File | null>(null)
+  const [fileError, setFileError] = React.useState<string | null>(null)
   const [isDragging, setIsDragging] = React.useState(false)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
 
@@ -98,17 +108,29 @@ export function AdminCreateQuestionPaperForm({
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0]
     if (selected) validateAndSetFile(selected)
+    e.target.value = ""
   }
 
   const validateAndSetFile = (f: File) => {
     if (f.type !== "application/pdf") {
-      toast.error("Invalid file format. Please upload a PDF document.")
+      const msg = `Invalid format (${f.type || "unknown"}). Please select a PDF document.`
+      setFileError(msg)
+      toast.error("Invalid file format", { description: msg })
       return
     }
-    if (f.size > 25 * 1024 * 1024) {
-      toast.error("File exceeds 25 MB limit.")
+    if (f.size === 0) {
+      const msg = "Selected PDF file is empty (0 bytes)."
+      setFileError(msg)
+      toast.error("Empty file rejected", { description: msg })
       return
     }
+    if (f.size > MAX_QUESTION_PAPER_BYTES) {
+      const msg = `Selected file (${(f.size / (1024 * 1024)).toFixed(2)} MB) exceeds the 5 MB Question Paper limit.`
+      setFileError(msg)
+      toast.error("File exceeds 5 MB limit", { description: msg })
+      return
+    }
+    setFileError(null)
     setFile(f)
   }
 
@@ -119,8 +141,22 @@ export function AdminCreateQuestionPaperForm({
       toast.error("Question paper title is required.")
       return
     }
+    if (fileError) {
+      toast.error("Fix document validation error before submitting", {
+        description: fileError,
+      })
+      return
+    }
     if (!file) {
-      toast.error("Please upload a PDF question paper document.")
+      const msg = "Please upload a PDF question paper document (max 5 MB)."
+      setFileError(msg)
+      toast.error(msg)
+      return
+    }
+    if (file.size === 0 || file.size > MAX_QUESTION_PAPER_BYTES) {
+      const msg = `Selected file (${(file.size / (1024 * 1024)).toFixed(2)} MB) exceeds the 5 MB limit.`
+      setFileError(msg)
+      toast.error("File exceeds 5 MB limit", { description: msg })
       return
     }
     if (attachToSeries && !selectedSeriesId) {
@@ -193,7 +229,7 @@ export function AdminCreateQuestionPaperForm({
               <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
                 <FileText className="h-4 w-4 text-primary" /> Question Paper PDF *
               </Label>
-              <span className="text-[11px] text-muted-foreground">Max 25 MB</span>
+              <span className="text-[11px] text-muted-foreground">Max 5 MB</span>
             </div>
 
             <div
@@ -254,12 +290,22 @@ export function AdminCreateQuestionPaperForm({
                       Drag and drop official PDF paper
                     </p>
                     <p className="text-[11px] text-muted-foreground">
-                      or click to browse your local device
+                      or click to browse your local device (PDF, max 5 MB)
                     </p>
                   </div>
                 </div>
               )}
             </div>
+
+            {fileError && (
+              <div
+                role="alert"
+                className="flex items-start gap-2 rounded-md border border-rose-300 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300"
+              >
+                <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                <span>{fileError}</span>
+              </div>
+            )}
           </div>
 
           {/* Test Series Attachment Section */}
@@ -533,7 +579,7 @@ export function AdminCreateQuestionPaperForm({
             </Link>
             <Button
               type="submit"
-              disabled={loading}
+              disabled={loading || Boolean(fileError)}
               size="sm"
               className="h-9 px-5 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold shadow-xs"
             >
@@ -552,6 +598,28 @@ export function AdminCreateQuestionPaperForm({
           </div>
         </div>
       </div>
+
+      <Dialog open={loading} onOpenChange={() => {}}>
+        <DialogContent showCloseButton={false} className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base font-bold">
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              Uploading Question Paper...
+            </DialogTitle>
+            <DialogDescription className="text-xs leading-relaxed">
+              Uploading your PDF to private storage and creating the question
+              paper record. Please wait without closing this page.
+            </DialogDescription>
+          </DialogHeader>
+          {file && (
+            <div className="rounded-md border border-border/60 bg-muted/30 p-3 text-xs">
+              <p className="truncate font-medium">
+                {file.name} ({(file.size / (1024 * 1024)).toFixed(2)} MB)
+              </p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </form>
   )
 }

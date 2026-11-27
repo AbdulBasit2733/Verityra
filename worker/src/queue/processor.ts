@@ -2,9 +2,15 @@ import { Worker, Job, Queue } from "bullmq"
 import { getRedisConnection, closeRedisConnection } from "./connection.js"
 import { prisma } from "../db/prisma.js"
 import {
+  buildBlueprintCachePath,
   evaluateAnswerSheetWithGemini,
+  extractQuestionPaperBlueprint,
   getGeminiModelName,
 } from "../ai/gemini-evaluator.js"
+import {
+  questionBlueprintSchema,
+  type QuestionBlueprint,
+} from "../ai/evaluation-schema.js"
 import {
   persistEvaluationRun,
   failEvaluationRun,
@@ -12,6 +18,7 @@ import {
 import {
   downloadPrivateFile,
   parsePrivateFileReference,
+  uploadPrivateFile,
 } from "../storage/supabase.js"
 // import { sendEvaluationReadyEmail } from "../email/mailer.js"
 import { EvaluationStatus, SubmissionStatus } from "@prisma/client"
@@ -66,6 +73,47 @@ async function tryDownloadOptionalPrivateFile(
     )
     return null
   }
+}
+
+async function getOrCreateQuestionBlueprint(params: {
+  questionPaperUrl: string | null
+  questionPaperDoc: { buffer: Buffer; mimeType: string } | null
+  testTitle: string
+  subject: string | null
+  maxMarks: number
+}): Promise<QuestionBlueprint | null> {
+  const { questionPaperUrl, questionPaperDoc, testTitle, subject, maxMarks } =
+    params
+  if (!questionPaperUrl || !questionPaperDoc) return null
+
+  const cachePath = buildBlueprintCachePath(questionPaperUrl, maxMarks)
+  try {
+    const cachedBuf = await downloadPrivateFile("verityra-private", cachePath)
+    const parsed = JSON.parse(cachedBuf.toString("utf8"))
+    const validated = questionBlueprintSchema.safeParse(parsed)
+    if (validated.success) {
+      return validated.data
+    }
+  } catch {
+    // Cache miss — extract once from the Question Paper PDF
+  }
+
+  const extracted = await extractQuestionPaperBlueprint({
+    questionPaperBuffer: questionPaperDoc.buffer,
+    questionPaperMimeType: questionPaperDoc.mimeType,
+    testTitle,
+    subject,
+    maxMarks,
+  })
+  if (extracted) {
+    await uploadPrivateFile(
+      "verityra-private",
+      cachePath,
+      Buffer.from(JSON.stringify(extracted), "utf8"),
+      "application/json"
+    ).catch(() => undefined)
+  }
+  return extracted
 }
 
 async function markEvaluationFailed(params: {
@@ -265,8 +313,16 @@ export function createEvaluationWorker(): Worker<EvaluationJobData> {
 
         await job.updateProgress(25)
 
+        const questionBlueprint = await getOrCreateQuestionBlueprint({
+          questionPaperUrl,
+          questionPaperDoc,
+          testTitle: effectiveTitle,
+          subject: effectiveSubject,
+          maxMarks: effectiveMaxMarks,
+        })
+
         console.log(
-          `[Worker] Running multimodal Gemini evaluation on ${buffer.length} bytes for submission ${submissionId} (maxMarks=${effectiveMaxMarks}, questionPaper=${Boolean(questionPaperDoc)}, modelAnswer=${Boolean(modelAnswerDoc)})`
+          `[Worker] Running Option-C 2-stage Gemini evaluation on ${buffer.length} bytes for submission ${submissionId} (maxMarks=${effectiveMaxMarks}, blueprintQs=${questionBlueprint?.questions.length ?? 0}, modelAnswer=${Boolean(modelAnswerDoc)})`
         )
         const aiResult = await evaluateAnswerSheetWithGemini({
           testTitle: effectiveTitle,
@@ -275,6 +331,7 @@ export function createEvaluationWorker(): Worker<EvaluationJobData> {
           maxMarks: effectiveMaxMarks,
           rubricContent: latestPaper?.rubricContent || null,
           privateEvaluationInstructions: effectiveInstructions,
+          questionBlueprint,
           questionPaperBuffer: questionPaperDoc?.buffer || null,
           questionPaperMimeType: questionPaperDoc?.mimeType || null,
           modelAnswerBuffer: modelAnswerDoc?.buffer || null,
@@ -388,6 +445,10 @@ export function createEvaluationWorker(): Worker<EvaluationJobData> {
       lockDuration: 15 * 60 * 1000, // 15 minutes for multimodal PDF evaluations
       stalledInterval: 60 * 1000,
       maxStalledCount: 2,
+      limiter: {
+        max: 5,
+        duration: 60 * 1000, // Throttle burst uploads to protect Gemini TPM/RPM limits
+      },
     }
   )
 

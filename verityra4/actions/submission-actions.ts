@@ -12,6 +12,7 @@ import {
   getGeminiModelName,
 } from "@/lib/ai/gemini-evaluator"
 import {
+  getOrCreateQuestionBlueprint,
   queueEvaluation,
   tryDownloadOptionalPrivateFile,
 } from "@/lib/queue/evaluation-queue"
@@ -30,7 +31,7 @@ const ALLOWED_MIME_TYPES = [
   "image/png",
   "image/webp",
 ]
-const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024 // Allow multi-page scanned answer booklets up to 25 MB
+const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024 // Allow multi-page scanned answer booklets up to 10 MB
 
 /**
  * Server Action: Submit Handwritten Answer Sheet
@@ -90,7 +91,7 @@ export async function submitAnswerSheetAction(
   if (file.size > MAX_FILE_SIZE_BYTES) {
     return {
       success: false,
-      error: `File size exceeds the 25MB limit (current: ${(file.size / (1024 * 1024)).toFixed(2)} MB).`,
+      error: `File size (${(file.size / (1024 * 1024)).toFixed(2)} MB) exceeds the 10 MB maximum limit.`,
     }
   }
 
@@ -386,14 +387,21 @@ export async function submitAnswerSheetAction(
         childTest?.privateEvaluationInstructions ||
         parentSeries?.privateEvaluationInstructions ||
         ""
+      const questionPaperUrl =
+        childTest?.questionPaperUrl || latestPaper?.fileUrl || null
       const [questionPaperDoc, modelAnswerDoc] = await Promise.all([
-        tryDownloadOptionalPrivateFile(
-          childTest?.questionPaperUrl || latestPaper?.fileUrl
-        ),
+        tryDownloadOptionalPrivateFile(questionPaperUrl),
         tryDownloadOptionalPrivateFile(
           childTest?.modelAnswerUrl || latestPaper?.modelAnswerUrl
         ),
       ])
+      const questionBlueprint = await getOrCreateQuestionBlueprint({
+        questionPaperUrl,
+        questionPaperDoc,
+        testTitle: effectiveTitle,
+        subject: childTest?.subject || null,
+        maxMarks: effectiveMaxMarks,
+      })
 
       const aiResult = await evaluateAnswerSheetWithGemini({
         testTitle: effectiveTitle,
@@ -402,6 +410,7 @@ export async function submitAnswerSheetAction(
         maxMarks: effectiveMaxMarks,
         rubricContent: latestPaper?.rubricContent || null,
         privateEvaluationInstructions: effectiveInstructions,
+        questionBlueprint,
         questionPaperBuffer: questionPaperDoc?.buffer || null,
         questionPaperMimeType: questionPaperDoc?.mimeType || null,
         modelAnswerBuffer: modelAnswerDoc?.buffer || null,

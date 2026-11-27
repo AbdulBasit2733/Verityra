@@ -5,6 +5,13 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { useConfirm } from "@/components/providers/confirm-dialog-provider"
 import { useGlobalError } from "@/components/providers/error-dialog-provider"
 import { toast } from "@/components/ui/sonner"
@@ -15,12 +22,19 @@ import {
   FileText,
   CheckCircle2,
   AlertCircle,
+  AlertTriangle,
   Image as ImageIcon,
   FileCheck,
 } from "lucide-react"
 import { submitAnswerSheetAction } from "@/actions/submission-actions"
 
-const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024
+const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024
+const ALLOWED_SUBMISSION_TYPES = [
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+]
 
 type EvaluatingState = {
   submissionId: string
@@ -45,6 +59,7 @@ export function SubmissionUploadForm({
   const confirm = useConfirm()
   const { showError } = useGlobalError()
   const [file, setFile] = useState<File | null>(null)
+  const [fileError, setFileError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [previewAcknowledged, setPreviewAcknowledged] = useState(false)
@@ -245,11 +260,26 @@ export function SubmissionUploadForm({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (fileError) {
+      toast.error("Cannot upload invalid file", { description: fileError })
+      return
+    }
     if (!file) {
-      toast.warning("No answer booklet selected", {
-        description:
-          "Please select your scanned PDF or image booklet before submitting.",
-      })
+      const msg = "Please select your scanned PDF or image booklet before submitting."
+      setFileError(msg)
+      toast.warning("No answer booklet selected", { description: msg })
+      return
+    }
+    if (!ALLOWED_SUBMISSION_TYPES.includes(file.type)) {
+      const msg = `Unsupported file format (${file.type}). Upload PDF, JPG, PNG, or WEBP.`
+      setFileError(msg)
+      toast.error("Unsupported format", { description: msg })
+      return
+    }
+    if (file.size <= 0 || file.size > MAX_FILE_SIZE_BYTES) {
+      const msg = `File size (${(file.size / (1024 * 1024)).toFixed(2)} MB) exceeds the 10 MB maximum limit. Please compress your PDF before submitting.`
+      setFileError(msg)
+      toast.error("File size exceeded", { description: msg })
       return
     }
 
@@ -335,7 +365,7 @@ export function SubmissionUploadForm({
             </h3>
             <p className="text-xs text-[#64748B]">
               Upload your scanned handwritten response booklet (PDF or clear
-              image pages, max 25MB).
+              image pages, max 10MB).
             </p>
           </div>
         </div>
@@ -452,15 +482,32 @@ export function SubmissionUploadForm({
               accept=".pdf,image/jpeg,image/png,image/webp"
               onChange={(e) => {
                 const selectedFile = e.target.files?.[0] || null
-                if (selectedFile && selectedFile.size > MAX_FILE_SIZE_BYTES) {
-                  toast.warning("File is too large", {
-                    description:
-                      "Please compress the scanned booklet to 25 MB or less before uploading.",
-                  })
+                if (!selectedFile) return
+                if (!ALLOWED_SUBMISSION_TYPES.includes(selectedFile.type)) {
+                  const msg = `Unsupported file format (${selectedFile.type || "unknown"}). Upload PDF, JPG, PNG, or WEBP.`
+                  setFileError(msg)
+                  toast.error("Unsupported format", { description: msg })
                   e.currentTarget.value = ""
                   setFile(null)
                   return
                 }
+                if (selectedFile.size === 0) {
+                  const msg = "Selected file is empty (0 bytes)."
+                  setFileError(msg)
+                  toast.error("Empty file rejected", { description: msg })
+                  e.currentTarget.value = ""
+                  setFile(null)
+                  return
+                }
+                if (selectedFile.size > MAX_FILE_SIZE_BYTES) {
+                  const msg = `File size (${(selectedFile.size / (1024 * 1024)).toFixed(2)} MB) exceeds the 10 MB limit. Please compress your booklet to 10 MB or less.`
+                  setFileError(msg)
+                  toast.error("File exceeds 10 MB limit", { description: msg })
+                  e.currentTarget.value = ""
+                  setFile(null)
+                  return
+                }
+                setFileError(null)
                 setFile(selectedFile)
               }}
               className="hidden"
@@ -468,10 +515,20 @@ export function SubmissionUploadForm({
             <p className="text-[11px] text-[#64748B] sm:text-xs">
               {file
                 ? `File size: ${(file.size / (1024 * 1024)).toFixed(2)} MB • Ready for encrypted submission`
-                : "PDF, JPG, PNG or WEBP up to 25MB • Upright orientation recommended"}
+                : "PDF, JPG, PNG or WEBP up to 10MB • Upright orientation recommended"}
             </p>
           </div>
         </label>
+
+        {fileError && (
+          <div
+            role="alert"
+            className="flex items-start gap-2 rounded-md border border-rose-300 bg-rose-50 px-3.5 py-2.5 text-xs font-medium text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300"
+          >
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>{fileError}</span>
+          </div>
+        )}
 
         {/* File Preview Section */}
         {file && (
@@ -575,13 +632,13 @@ export function SubmissionUploadForm({
           </p>
           <Button
             type="submit"
-            disabled={!file || loading || !previewAcknowledged}
+            disabled={!file || loading || !previewAcknowledged || Boolean(fileError)}
             className="h-10 w-full shrink-0 rounded-md bg-[#2A6AED] px-6 text-xs font-semibold text-white hover:bg-[#1E55C7] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:text-sm"
           >
             {loading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Encrypting & Evaluating...
+                Uploading Booklet...
               </>
             ) : (
               `Confirm & Submit Attempt #${nextAttempt}`
@@ -589,6 +646,28 @@ export function SubmissionUploadForm({
           </Button>
         </div>
       </form>
+
+      <Dialog open={loading} onOpenChange={() => {}}>
+        <DialogContent showCloseButton={false} className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base font-bold">
+              <Loader2 className="h-5 w-5 animate-spin text-[#2A6AED]" />
+              Uploading Answer Booklet...
+            </DialogTitle>
+            <DialogDescription className="text-xs leading-relaxed">
+              Encrypting and uploading your handwritten submission to the
+              evaluation queue. Please do not close or refresh this page.
+            </DialogDescription>
+          </DialogHeader>
+          {file && (
+            <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-xs dark:border-slate-800 dark:bg-slate-900">
+              <p className="truncate font-semibold text-slate-900 dark:text-slate-100">
+                {file.name} ({(file.size / (1024 * 1024)).toFixed(2)} MB)
+              </p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

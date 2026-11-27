@@ -68,3 +68,41 @@ export const aiEvaluationResponseSchema = z.object({
 
 export type AiEvaluationResult = z.infer<typeof aiEvaluationResponseSchema>
 export type QuestionScore = z.infer<typeof questionScoreSchema>
+
+export const questionBlueprintItemSchema = z.object({
+  questionNumber: z.string().min(1),
+  maxMarks: z.number().min(0),
+  topic: normalizeOptionalText("Core Concept"),
+  questionSummary: normalizeOptionalText("Question from official paper."),
+  hasInternalChoice: z.boolean().default(false),
+  markingCriteria: normalizeOptionalText(
+    "Step-wise concept accuracy, working, and final answer."
+  ),
+})
+
+export const questionBlueprintSchema = z.object({
+  totalMarks: z.number().min(0),
+  questions: z.array(questionBlueprintItemSchema).min(1),
+})
+
+export type QuestionBlueprintItem = z.infer<typeof questionBlueprintItemSchema>
+export type QuestionBlueprint = z.infer<typeof questionBlueprintSchema>
+
+export const scriptTranscriptionQuestionSchema = z.object({
+  questionNumber: z.string().min(1),
+  attempted: z.boolean().default(true),
+  selectedChoice: normalizeOptionalText(""),
+  transcribedWork: normalizeOptionalText("No response written."),
+  diagramsOrEquationsObserved: normalizeOptionalText(""),
+  isLegible: z.boolean().default(true),
+})
+
+export const scriptTranscriptionSchema = z.object({
+  detectedPageCount: z.number().int().min(1).optional(),
+  overallLegibility: z.boolean().default(true),
+  entries: z.array(scriptTranscriptionQuestionSchema),
+})
+
+export type ScriptTranscriptionResult = z.infer<
+  typeof scriptTranscriptionSchema
+>

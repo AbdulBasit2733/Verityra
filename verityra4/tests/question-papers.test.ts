@@ -24,10 +24,10 @@ function validateQuestionPaperInput(input: {
       error: "Only PDF documents are allowed for question papers.",
     }
   }
-  if (input.file.size <= 0 || input.file.size > 25 * 1024 * 1024) {
+  if (input.file.size <= 0 || input.file.size > 5 * 1024 * 1024) {
     return {
       valid: false,
-      error: "The document must be smaller than 25 MB and cannot be empty.",
+      error: "The question paper must be 5 MB or smaller and cannot be empty.",
     }
   }
   if (input.maxMarks !== undefined && input.maxMarks <= 0) {
@@ -93,15 +93,15 @@ export function runQuestionPaperTests() {
     )
   })
 
-  suite.test("Validation: Rejects files exceeding 25MB limit", () => {
+  suite.test("Validation: Rejects files exceeding 5MB limit", () => {
     const res = validateQuestionPaperInput({
       title: "High-Res Exam Scan",
-      file: { type: "application/pdf", size: 26 * 1024 * 1024 },
+      file: { type: "application/pdf", size: 6 * 1024 * 1024 },
     })
     assert.equal(res.valid, false)
     assert.equal(
       res.error,
-      "The document must be smaller than 25 MB and cannot be empty."
+      "The question paper must be 5 MB or smaller and cannot be empty."
     )
   })
 
@@ -113,7 +113,7 @@ export function runQuestionPaperTests() {
     assert.equal(res.valid, false)
     assert.equal(
       res.error,
-      "The document must be smaller than 25 MB and cannot be empty."
+      "The question paper must be 5 MB or smaller and cannot be empty."
     )
   })
 

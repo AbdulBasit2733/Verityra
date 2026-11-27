@@ -4,18 +4,26 @@ import { aiEvaluationResponseSchema } from "../lib/ai/evaluation-schema"
 import { EvaluationStatus } from "@prisma/client"
 import {
   assertGeminiApiKeyConfigured,
+  buildBlueprintCachePath,
   compareQuestionNumbers,
   DEFAULT_GEMINI_MODEL,
   extractAndParseJson,
   getGeminiModelName,
+  INLINE_DOC_THRESHOLD_BYTES,
   isRetryableGeminiStatus,
   normalizeEvaluationOutput,
+  reconcileWithBlueprint,
+  shouldUseFilesApi,
 } from "../lib/ai/gemini-evaluator"
 import {
   evaluateStaleJobDecision,
   isFinalBullMqAttempt,
   resolveEvaluationTargetMeta,
 } from "../lib/queue/evaluation-queue"
+import {
+  buildQuestionBreakdownTree,
+  parseHierarchicalQuestionNumber,
+} from "../lib/ai/question-breakdown"
 
 export function runEvaluationTests() {
   const suite = new TestSuite(
@@ -473,6 +481,250 @@ export function runEvaluationTests() {
       // Sum of question maxMarks (50) != configured 40 -> uncertaintyFlag must be true
       assert.equal(normalized.uncertaintyFlag, true)
       assert.equal(compareQuestionNumbers("Q2", "Q10") < 0, true)
+    }
+  )
+
+  suite.test(
+    "Option C Blueprint Gate: Fills skipped blueprint questions, locks maxMarks to 40, and flags fallback runs",
+    () => {
+      const blueprint = {
+        totalMarks: 40,
+        questions: [
+          {
+            questionNumber: "Q1",
+            maxMarks: 10,
+            topic: "Quadratics",
+            questionSummary: "Solve discriminant problem",
+            hasInternalChoice: false,
+            markingCriteria: "Correct formula + roots",
+          },
+          {
+            questionNumber: "Q2",
+            maxMarks: 15,
+            topic: "Triangles",
+            questionSummary: "Prove BPT",
+            hasInternalChoice: true,
+            markingCriteria: "Diagram + proof steps",
+          },
+          {
+            questionNumber: "Q3",
+            maxMarks: 15,
+            topic: "Trigonometry",
+            questionSummary: "Heights and distances",
+            hasInternalChoice: false,
+            markingCriteria: "Diagram + trigonometric ratio",
+          },
+        ],
+      }
+
+      // Simulate AI accidentally giving wrong maxMarks (50) and skipping unattempted Q3
+      const partialAi = aiEvaluationResponseSchema.parse({
+        generalFeedback: "Partial check.",
+        legibilityWarning: false,
+        uncertaintyFlag: false,
+        questions: [
+          {
+            questionNumber: "1",
+            maxMarks: 50,
+            marksAwarded: 8,
+            feedback: "Correct method.",
+          },
+          {
+            questionNumber: "Q2",
+            maxMarks: 15,
+            marksAwarded: 12,
+            feedback: "Proof is sound.",
+          },
+        ],
+      })
+
+      const reconciled = reconcileWithBlueprint(partialAi, blueprint, 40, {
+        fallbackUsed: true,
+      })
+
+      assert.equal(reconciled.questions.length, 3)
+      assert.deepEqual(
+        reconciled.questions.map((q) => q.maxMarks),
+        [10, 15, 15]
+      )
+      assert.equal(reconciled.questions[2].questionNumber, "Q3")
+      assert.equal(reconciled.questions[2].marksAwarded, 0)
+      assert.equal(reconciled.uncertaintyFlag, true)
+      assert.ok(
+        reconciled.generalFeedback.includes("Fallback Model Notice")
+      )
+    }
+  )
+
+  suite.test(
+    "Option C Infrastructure Helpers: Selects Files API above 4MB and derives stable blueprint cache paths",
+    () => {
+      assert.equal(
+        shouldUseFilesApi(Buffer.alloc(INLINE_DOC_THRESHOLD_BYTES)),
+        false
+      )
+      assert.equal(
+        shouldUseFilesApi(Buffer.alloc(INLINE_DOC_THRESHOLD_BYTES + 1)),
+        true
+      )
+
+      const pathA = buildBlueprintCachePath("papers/test-1.pdf", 40)
+      const pathB = buildBlueprintCachePath("papers/test-1.pdf", 80)
+      const pathA2 = buildBlueprintCachePath("papers/test-1.pdf", 40)
+      assert.equal(pathA, pathA2)
+      assert.notEqual(pathA, pathB)
+      assert.ok(pathA.startsWith("blueprints/bp-"))
+    }
+  )
+
+  suite.test(
+    "Hierarchical Breakdown: Sorts Q1.A.1..Q1.B.10, groups Section A (3) & Section B (2) cleanly, and reconciles Q1(a)(1)",
+    () => {
+      const unordered = [
+        "Q1.B.2",
+        "Q1.A.10",
+        "Q2",
+        "Q1.A.2",
+        "Q1.B.1",
+        "Q1.A.1",
+        "Q10",
+      ]
+      const sorted = [...unordered].sort(compareQuestionNumbers)
+      assert.deepEqual(sorted, [
+        "Q1.A.1",
+        "Q1.A.2",
+        "Q1.A.10",
+        "Q1.B.1",
+        "Q1.B.2",
+        "Q2",
+        "Q10",
+      ])
+
+      const parsed = parseHierarchicalQuestionNumber("Q1(a)(2)")
+      assert.equal(parsed.canonicalNumber, "Q1.A.2")
+      assert.equal(parsed.parentKey, "Q1")
+      assert.equal(parsed.sectionKey, "A")
+
+      const groups = buildQuestionBreakdownTree([
+        {
+          id: "b2",
+          questionNumber: "Q1.B.2",
+          maxMarks: 4,
+          marksAwarded: 0,
+          feedback: "Wrong Answer — Incorrect boundary condition used.",
+          missingConcepts: "Newton cooling boundary equation.",
+          scoreExplanation: "Formula mismatch; zero marks awarded.",
+          isLegible: true,
+        },
+        {
+          id: "a1",
+          questionNumber: "Q1.A.1",
+          maxMarks: 2,
+          marksAwarded: 2,
+          feedback: "Well-Justified — Accurate definition and units.",
+          missingConcepts: null,
+          scoreBand: "GOOD",
+          isLegible: true,
+        },
+        {
+          id: "a2",
+          questionNumber: "Q1.A.2",
+          maxMarks: 2,
+          marksAwarded: 1,
+          feedback: "Insufficient Depth for Marks — Only one line written.",
+          missingConcepts: "Derivation steps.",
+          scoreBand: "PARTIAL",
+          isLegible: true,
+        },
+        {
+          id: "a3",
+          questionNumber: "Q1.A.3",
+          maxMarks: 2,
+          marksAwarded: 0,
+          feedback: "Not Attempted — Left blank.",
+          missingConcepts: "Full derivation.",
+          isLegible: true,
+        },
+        {
+          id: "b1",
+          questionNumber: "Q1.B.1",
+          maxMarks: 4,
+          marksAwarded: 3,
+          feedback: "Partially Correct — Good steps, minor sign error.",
+          missingConcepts: "Sign check.",
+          scoreBand: "GOOD",
+          isLegible: true,
+        },
+        {
+          id: "q2",
+          questionNumber: "Q2",
+          maxMarks: 6,
+          marksAwarded: 5,
+          feedback: "Strong proof.",
+          missingConcepts: null,
+          scoreBand: "GOOD",
+          isLegible: true,
+        },
+      ])
+
+      assert.equal(groups.length, 2)
+      assert.equal(groups[0].parentKey, "Q1")
+      assert.equal(groups[0].hasSections, true)
+      assert.equal(groups[0].questionCount, 5)
+      assert.equal(groups[0].awarded, 6)
+      assert.equal(groups[0].max, 14)
+
+      assert.equal(groups[0].sections[0].sectionLabel, "Section A")
+      assert.equal(groups[0].sections[0].items.length, 3)
+      assert.equal(groups[0].sections[0].items[2].verdict.label, "Not Attempted")
+
+      assert.equal(groups[0].sections[1].sectionLabel, "Section B")
+      assert.equal(groups[0].sections[1].items.length, 2)
+      assert.equal(groups[0].sections[1].items[1].verdict.label, "Wrong Answer")
+
+      // Flat parent Q2 has no section header
+      assert.equal(groups[1].parentKey, "Q2")
+      assert.equal(groups[1].hasSections, false)
+
+      // Blueprint reconciliation matches Q1(a)(1) -> Q1.A.1 and fills missing Q1.B.1
+      const blueprint = {
+        totalMarks: 6,
+        questions: [
+          {
+            questionNumber: "Q1.A.1",
+            maxMarks: 2,
+            topic: "Thermodynamics",
+            questionSummary: "First law statement",
+            hasInternalChoice: false,
+            markingCriteria: "State equation and sign convention",
+          },
+          {
+            questionNumber: "Q1.B.1",
+            maxMarks: 4,
+            topic: "Radiation",
+            questionSummary: "Stefan Boltzmann law",
+            hasInternalChoice: false,
+            markingCriteria: "Formula + derivation",
+          },
+        ],
+      }
+      const aiResponse = aiEvaluationResponseSchema.parse({
+        generalFeedback: "Check.",
+        questions: [
+          {
+            questionNumber: "Q1(a)(1)",
+            maxMarks: 2,
+            marksAwarded: 2,
+            feedback: "Well-Justified — Clear law stated.",
+          },
+        ],
+      })
+      const reconciled = reconcileWithBlueprint(aiResponse, blueprint, 6)
+      assert.equal(reconciled.questions.length, 2)
+      assert.equal(reconciled.questions[0].questionNumber, "Q1.A.1")
+      assert.equal(reconciled.questions[0].marksAwarded, 2)
+      assert.equal(reconciled.questions[1].questionNumber, "Q1.B.1")
+      assert.equal(reconciled.questions[1].marksAwarded, 0)
     }
   )
 

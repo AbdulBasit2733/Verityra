@@ -2,9 +2,15 @@ import { Queue, Worker, Job } from "bullmq"
 import { getRedisConnection, getWorkerRedisConnection } from "./connection"
 import { prisma } from "@/lib/prisma"
 import {
+  buildBlueprintCachePath,
   evaluateAnswerSheetWithGemini,
+  extractQuestionPaperBlueprint,
   getGeminiModelName,
 } from "@/lib/ai/gemini-evaluator"
+import {
+  questionBlueprintSchema,
+  type QuestionBlueprint,
+} from "@/lib/ai/evaluation-schema"
 import { invalidateLeaderboardCache, invalidateAdminAnalyticsCache } from "@/lib/cache"
 // import { sendEvaluationReadyEmail } from "@/lib/email"
 import { EvaluationStatus, SubmissionStatus } from "@prisma/client"
@@ -12,7 +18,11 @@ import {
   failEvaluationRun,
   persistEvaluationRun,
 } from "@/lib/evaluation/evaluation-run-service"
-import { downloadPrivateFile, parsePrivateFileReference } from "@/lib/supabase"
+import {
+  downloadPrivateFile,
+  parsePrivateFileReference,
+  uploadPrivateFile,
+} from "@/lib/supabase"
 
 export interface EvaluationJobData {
   submissionId: string
@@ -65,10 +75,10 @@ export async function tryDownloadOptionalPrivateFile(
     if (!ref || ref.bucket !== "verityra-private") return null
     const buffer = await downloadPrivateFile(ref.bucket, ref.filePath)
     if (!buffer || buffer.length === 0) return null
-    return {
-      buffer,
-      mimeType: inferDocumentMimeType(ref.filePath),
-    }
+  return {
+    buffer,
+    mimeType: inferDocumentMimeType(ref.filePath),
+  }
   } catch (err) {
     console.warn(
       `[Queue] Optional evaluation reference file unavailable (${fileUrl}):`,
@@ -76,6 +86,47 @@ export async function tryDownloadOptionalPrivateFile(
     )
     return null
   }
+}
+
+export async function getOrCreateQuestionBlueprint(params: {
+  questionPaperUrl: string | null
+  questionPaperDoc: { buffer: Buffer; mimeType: string } | null
+  testTitle: string
+  subject: string | null
+  maxMarks: number
+}): Promise<QuestionBlueprint | null> {
+  const { questionPaperUrl, questionPaperDoc, testTitle, subject, maxMarks } =
+    params
+  if (!questionPaperUrl || !questionPaperDoc) return null
+
+  const cachePath = buildBlueprintCachePath(questionPaperUrl, maxMarks)
+  try {
+    const cachedBuf = await downloadPrivateFile("verityra-private", cachePath)
+    const parsed = JSON.parse(cachedBuf.toString("utf8"))
+    const validated = questionBlueprintSchema.safeParse(parsed)
+    if (validated.success) {
+      return validated.data
+    }
+  } catch {
+    // Cache miss — extract once from Question Paper PDF
+  }
+
+  const extracted = await extractQuestionPaperBlueprint({
+    questionPaperBuffer: questionPaperDoc.buffer,
+    questionPaperMimeType: questionPaperDoc.mimeType,
+    testTitle,
+    subject,
+    maxMarks,
+  })
+  if (extracted) {
+    await uploadPrivateFile(
+      "verityra-private",
+      cachePath,
+      Buffer.from(JSON.stringify(extracted), "utf8"),
+      "application/json"
+    ).catch(() => undefined)
+  }
+  return extracted
 }
 
 export function resolveEvaluationTargetMeta(submission: {
@@ -406,9 +457,17 @@ export function createEvaluationWorker(): Worker<EvaluationJobData> | null {
         // Update job progress
         await job.updateProgress(20)
 
-        // Run AI evaluation
+        const questionBlueprint = await getOrCreateQuestionBlueprint({
+          questionPaperUrl: targetMeta.questionPaperUrl,
+          questionPaperDoc,
+          testTitle: targetMeta.title,
+          subject: targetMeta.subject,
+          maxMarks: targetMeta.maxMarks,
+        })
+
+        // Run Option-C AI evaluation
         console.log(
-          `[Worker] Running AI evaluation for submission ${submissionId} (maxMarks=${targetMeta.maxMarks})`
+          `[Worker] Running Option-C AI evaluation for submission ${submissionId} (maxMarks=${targetMeta.maxMarks}, blueprintQs=${questionBlueprint?.questions.length ?? 0})`
         )
         const aiResult = await evaluateAnswerSheetWithGemini({
           testTitle: targetMeta.title,
@@ -418,6 +477,7 @@ export function createEvaluationWorker(): Worker<EvaluationJobData> | null {
           rubricContent: targetMeta.rubricContent,
           privateEvaluationInstructions:
             targetMeta.privateEvaluationInstructions,
+          questionBlueprint,
           questionPaperBuffer: questionPaperDoc?.buffer || null,
           questionPaperMimeType: questionPaperDoc?.mimeType || null,
           modelAnswerBuffer: modelAnswerDoc?.buffer || null,

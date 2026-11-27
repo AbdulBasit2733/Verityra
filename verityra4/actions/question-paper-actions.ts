@@ -8,14 +8,14 @@ import { revalidatePath } from "next/cache"
 import { ActionResult } from "./auth-actions"
 
 const DOCUMENT_MIME_TYPES = ["application/pdf"]
-const MAX_DOCUMENT_SIZE_BYTES = 25 * 1024 * 1024
+const MAX_DOCUMENT_SIZE_BYTES = 5 * 1024 * 1024
 
 function documentValidationError(file: File): string | null {
   if (!DOCUMENT_MIME_TYPES.includes(file.type)) {
     return "Only PDF documents are allowed for question papers."
   }
   if (file.size === 0 || file.size > MAX_DOCUMENT_SIZE_BYTES) {
-    return "The document must be smaller than 25 MB and cannot be empty."
+    return "The question paper must be 5 MB or smaller and cannot be empty."
   }
   return null
 }

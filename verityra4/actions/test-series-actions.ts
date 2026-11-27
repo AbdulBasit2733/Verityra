@@ -17,14 +17,20 @@ const DOCUMENT_MIME_TYPES = [
   "image/png",
   "image/webp",
 ]
-const MAX_DOCUMENT_SIZE_BYTES = 25 * 1024 * 1024
+const MAX_QUESTION_PAPER_BYTES = 5 * 1024 * 1024
+const MAX_SUPPORTING_DOC_BYTES = 10 * 1024 * 1024
+const MAX_DOCUMENT_SIZE_BYTES = MAX_SUPPORTING_DOC_BYTES
 
-function documentValidationError(file: File): string | null {
+function documentValidationError(
+  file: File,
+  maxBytes = MAX_DOCUMENT_SIZE_BYTES
+): string | null {
   if (!DOCUMENT_MIME_TYPES.includes(file.type)) {
     return "Upload a PDF or JPG, PNG, or WebP document."
   }
-  if (file.size === 0 || file.size > MAX_DOCUMENT_SIZE_BYTES) {
-    return "The document must be smaller than 25 MB and cannot be empty."
+  const maxMb = Math.round(maxBytes / (1024 * 1024))
+  if (file.size === 0 || file.size > maxBytes) {
+    return `The document must be ${maxMb} MB or smaller and cannot be empty (received ${(file.size / (1024 * 1024)).toFixed(2)} MB).`
   }
   return null
 }
@@ -1131,13 +1137,13 @@ export async function saveSubjectTestFormAction(formData: FormData): Promise<
     }
   }
 
-  for (const [label, file] of [
-    ["Question paper", paperFile],
-    ["Model answer key", modelFile],
-    ["Answer sheet template", templateFile],
+  for (const [label, file, maxBytes] of [
+    ["Question paper", paperFile, MAX_QUESTION_PAPER_BYTES],
+    ["Model answer key", modelFile, MAX_SUPPORTING_DOC_BYTES],
+    ["Answer sheet template", templateFile, MAX_SUPPORTING_DOC_BYTES],
   ] as const) {
     if (file) {
-      const fileErr = documentValidationError(file)
+      const fileErr = documentValidationError(file, maxBytes)
       if (fileErr) return { success: false, error: `${label}: ${fileErr}` }
     }
   }

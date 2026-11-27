@@ -54,6 +54,7 @@ export function parsePrivateFileReference(
       "model-answers",
       "question-papers",
       "tests",
+      "blueprints",
     ].includes(firstSegment)
   ) {
     return { bucket: "verityra-private", filePath: fileUrl }

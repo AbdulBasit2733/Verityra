@@ -16,14 +16,14 @@ export function runSubmissionTests() {
     "image/png",
     "image/webp",
   ]
-  const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024 // 25 MB
+  const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024 // 10 MB
 
   suite.test("File Validation: Allows standard PDF and image formats", () => {
     function validateFile(mimeType: string, sizeBytes: number) {
       if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
         return { valid: false, error: "UNSUPPORTED_MIME_TYPE" }
       }
-      if (sizeBytes > MAX_FILE_SIZE_BYTES) {
+      if (sizeBytes <= 0 || sizeBytes > MAX_FILE_SIZE_BYTES) {
         return { valid: false, error: "FILE_TOO_LARGE" }
       }
       return { valid: true }
@@ -37,7 +37,7 @@ export function runSubmissionTests() {
     assert.equal(validateFile("application/x-msdownload", 1000).valid, false)
     assert.equal(validateFile("application/zip", 1000).valid, false)
     assert.equal(validateFile("text/javascript", 1000).valid, false)
-    assert.equal(validateFile("application/pdf", 26 * 1024 * 1024).valid, false)
+    assert.equal(validateFile("application/pdf", 11 * 1024 * 1024).valid, false)
   })
 
   suite.test(

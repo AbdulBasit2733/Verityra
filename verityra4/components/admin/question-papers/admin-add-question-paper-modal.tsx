@@ -72,10 +72,11 @@ export function AdminAddQuestionPaperModal({
         })
         return
       }
-      if (selected.size > 25 * 1024 * 1024) {
+      if (selected.size === 0 || selected.size > 5 * 1024 * 1024) {
         toast.error("File size exceeded", {
-          description: "Maximum PDF size is 25 MB.",
+          description: `Selected file (${(selected.size / (1024 * 1024)).toFixed(2)} MB) must be non-empty and 5 MB or smaller.`,
         })
+        e.target.value = ""
         return
       }
       setFile(selected)
@@ -93,9 +94,9 @@ export function AdminAddQuestionPaperModal({
         })
         return
       }
-      if (dropped.size > 25 * 1024 * 1024) {
+      if (dropped.size === 0 || dropped.size > 5 * 1024 * 1024) {
         toast.error("File size exceeded", {
-          description: "Maximum PDF size is 25 MB.",
+          description: `Selected file (${(dropped.size / (1024 * 1024)).toFixed(2)} MB) must be non-empty and 5 MB or smaller.`,
         })
         return
       }

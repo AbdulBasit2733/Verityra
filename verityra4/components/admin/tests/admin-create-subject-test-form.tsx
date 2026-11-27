@@ -18,6 +18,21 @@ import { normalizePrivateFileUrl } from "@/lib/file-urls"
 import { saveSubjectTestFormAction } from "@/actions/test-series-actions"
 import { AdminPdfPreviewModal } from "@/components/admin/question-papers/admin-pdf-preview-modal"
 import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
   AlertTriangle,
   FileText,
   UploadCloud,
@@ -32,6 +47,7 @@ import {
   ShieldAlert,
   Download,
   Eye,
+  FolderOpen,
 } from "lucide-react"
 
 const ALLOWED_DOCUMENT_TYPES = [
@@ -40,7 +56,8 @@ const ALLOWED_DOCUMENT_TYPES = [
   "image/png",
   "image/webp",
 ]
-const MAX_DOCUMENT_BYTES = 25 * 1024 * 1024
+const MAX_QUESTION_PAPER_BYTES = 5 * 1024 * 1024 // 5 MB max for Question Paper
+const MAX_SUPPORTING_DOC_BYTES = 10 * 1024 * 1024 // 10 MB max for Model Answer / Answer Sheet Template
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024 * 1024) {
@@ -183,6 +200,12 @@ export function AdminCreateSubjectTestForm({
     model: Boolean(documentStatus?.modelMissing),
     template: Boolean(documentStatus?.templateMissing),
   })
+  const [docsSheetOpen, setDocsSheetOpen] = React.useState(false)
+  const [docErrors, setDocErrors] = React.useState<{
+    paper?: string | null
+    model?: string | null
+    template?: string | null
+  }>({})
 
   const subjectOptions = React.useMemo(
     () =>
@@ -229,6 +252,41 @@ export function AdminCreateSubjectTestForm({
     if (attachToSeries && !testSeriesId) {
       toast.error("Please select a target Test Series bundle to attach, or uncheck the toggle.")
       return
+    }
+
+    if (docErrors.paper || docErrors.model || docErrors.template) {
+      setDocsSheetOpen(true)
+      toast.error("Fix document validation errors before submitting", {
+        description:
+          docErrors.paper ||
+          docErrors.model ||
+          docErrors.template ||
+          "Please verify selected files.",
+      })
+      return
+    }
+
+    const preSubmitChecks: Array<[File | null, number, string]> = [
+      [paperFile, MAX_QUESTION_PAPER_BYTES, "Question Paper PDF (max 5 MB)"],
+      [
+        modelAnswerFile,
+        MAX_SUPPORTING_DOC_BYTES,
+        "Model Answer Key PDF (max 10 MB)",
+      ],
+      [
+        answerSheetTemplateFile,
+        MAX_SUPPORTING_DOC_BYTES,
+        "Answer Sheet Template PDF (max 10 MB)",
+      ],
+    ]
+    for (const [f, limit, label] of preSubmitChecks) {
+      if (f && (!ALLOWED_DOCUMENT_TYPES.includes(f.type) || f.size <= 0 || f.size > limit)) {
+        setDocsSheetOpen(true)
+        toast.error(`${label} is invalid`, {
+          description: `Selected file "${f.name}" (${formatFileSize(f.size)}) violates the format or size limit.`,
+        })
+        return
+      }
     }
 
     const confirmed = await confirm({
@@ -346,97 +404,124 @@ export function AdminCreateSubjectTestForm({
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* 12-Column Split View Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Column: Exam Documents & Series Attachment (5 cols) */}
+        {/* Left Column: Exam Documents Sheet Trigger & Series Attachment (5 cols) */}
         <div className="lg:col-span-5 space-y-5">
-          {/* Document Uploads */}
+          {/* Document Summary Card + Shadcn Sheet Trigger */}
           <div className="rounded-lg border border-border/80 bg-card p-5 space-y-4">
-            <div className="border-b border-border/60 pb-3 flex items-center justify-between">
+            <div className="border-b border-border/60 pb-3 flex items-center justify-between gap-2">
               <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                 <FileText className="h-4 w-4 text-primary" /> Examination Documents
               </h3>
               <span className="text-[11px] text-muted-foreground">
-                PDF or Image · Max 25 MB
+                Paper 5 MB · Key/Sheet 10 MB
               </span>
             </div>
 
-            <DocumentUploadSlot
-              id="paper-upload"
-              label="Question Paper PDF"
-              hint="Mandatory for Candidates"
-              hintTone="primary"
-              emptyTitle="Upload official question paper PDF"
-              emptySubtitle="Drag & drop or click to browse (PDF/JPG/PNG)"
-              file={paperFile}
-              existingUrl={existingPaperUrl}
-              isMissing={Boolean(missingFlags.paper && !clearPaper)}
-              onSelectFile={(f) => {
-                setPaperFile(f)
-                setClearPaper(false)
-              }}
-              onClearPending={() => setPaperFile(null)}
-              onRemoveExisting={() => {
-                setExistingPaperUrl(null)
-                setClearPaper(true)
-              }}
-              onPreview={(url) =>
-                setPreviewDoc({
-                  title: `${title || subject || "Subject Test"} — Question Paper`,
-                  fileUrl: url,
-                })
-              }
-            />
+            <div className="space-y-2.5">
+              {[
+                {
+                  key: "paper",
+                  label: "Question Paper PDF",
+                  limitLabel: "Max 5 MB",
+                  file: paperFile,
+                  url: existingPaperUrl,
+                  missing: Boolean(missingFlags.paper && !clearPaper),
+                  error: docErrors.paper,
+                  previewTitle: `${title || subject || "Subject Test"} — Question Paper`,
+                },
+                {
+                  key: "model",
+                  label: "Model Answer Key PDF",
+                  limitLabel: "Max 10 MB",
+                  file: modelAnswerFile,
+                  url: existingModelUrl,
+                  missing: Boolean(missingFlags.model && !clearModel),
+                  error: docErrors.model,
+                  previewTitle: `${title || subject || "Subject Test"} — Model Answer Key`,
+                },
+                {
+                  key: "template",
+                  label: "Answer Sheet Template PDF",
+                  limitLabel: "Max 10 MB",
+                  file: answerSheetTemplateFile,
+                  url: existingTemplateUrl,
+                  missing: Boolean(missingFlags.template && !clearTemplate),
+                  error: docErrors.template,
+                  previewTitle: `${title || subject || "Subject Test"} — Answer Sheet Template`,
+                },
+              ].map((doc) => (
+                <div
+                  key={doc.key}
+                  className="flex items-center justify-between gap-2 rounded-md border border-border/60 bg-muted/20 px-3 py-2.5"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-xs font-semibold text-foreground">
+                      {doc.label}
+                    </p>
+                    <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+                      {doc.file
+                        ? `Ready: ${doc.file.name} (${formatFileSize(doc.file.size)})`
+                        : doc.url
+                          ? extractReadableFilename(doc.url, doc.label)
+                          : `Not uploaded · ${doc.limitLabel}`}
+                    </p>
+                    {doc.error && (
+                      <p className="mt-0.5 text-[11px] font-medium text-rose-600">
+                        {doc.error}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    {doc.file ? (
+                      <Badge className="h-5 border-0 bg-emerald-600 px-2 text-[10px] font-bold text-white">
+                        Ready
+                      </Badge>
+                    ) : doc.missing ? (
+                      <Badge className="h-5 border-0 bg-amber-600 px-2 text-[10px] font-bold text-white">
+                        Missing
+                      </Badge>
+                    ) : doc.url ? (
+                      <>
+                        <Badge
+                          variant="outline"
+                          className="h-5 border-emerald-300 bg-emerald-50 px-2 text-[10px] font-semibold text-emerald-700"
+                        >
+                          Saved
+                        </Badge>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            setPreviewDoc({
+                              title: doc.previewTitle,
+                              fileUrl: doc.url!,
+                            })
+                          }
+                          className="h-7 px-2 text-[11px] font-semibold text-primary"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                        </Button>
+                      </>
+                    ) : (
+                      <Badge variant="outline" className="h-5 px-2 text-[10px]">
+                        Empty
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
 
-            <DocumentUploadSlot
-              id="model-upload"
-              label="Model Answer Key PDF (Optional)"
-              hint="For AI Reference"
-              emptyTitle="Upload model answer key PDF"
-              emptySubtitle="Drag & drop or click to browse"
-              file={modelAnswerFile}
-              existingUrl={existingModelUrl}
-              isMissing={Boolean(missingFlags.model && !clearModel)}
-              onSelectFile={(f) => {
-                setModelAnswerFile(f)
-                setClearModel(false)
-              }}
-              onClearPending={() => setModelAnswerFile(null)}
-              onRemoveExisting={() => {
-                setExistingModelUrl(null)
-                setClearModel(true)
-              }}
-              onPreview={(url) =>
-                setPreviewDoc({
-                  title: `${title || subject || "Subject Test"} — Model Answer Key`,
-                  fileUrl: url,
-                })
-              }
-            />
-
-            <DocumentUploadSlot
-              id="template-upload"
-              label="Answer Sheet Template PDF (Optional)"
-              hint="For Candidate Printout"
-              emptyTitle="Upload blank margin template PDF"
-              emptySubtitle="Drag & drop or click to browse"
-              file={answerSheetTemplateFile}
-              existingUrl={existingTemplateUrl}
-              isMissing={Boolean(missingFlags.template && !clearTemplate)}
-              onSelectFile={(f) => {
-                setAnswerSheetTemplateFile(f)
-                setClearTemplate(false)
-              }}
-              onClearPending={() => setAnswerSheetTemplateFile(null)}
-              onRemoveExisting={() => {
-                setExistingTemplateUrl(null)
-                setClearTemplate(true)
-              }}
-              onPreview={(url) =>
-                setPreviewDoc({
-                  title: `${title || subject || "Subject Test"} — Answer Sheet Template`,
-                  fileUrl: url,
-                })
-              }
-            />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setDocsSheetOpen(true)}
+              className="h-9 w-full justify-center gap-2 border-primary/40 text-xs font-semibold text-primary hover:bg-primary/5"
+            >
+              <FolderOpen className="h-4 w-4" />
+              Open Examination Documents
+            </Button>
           </div>
 
           {/* Test Series Attachment */}
@@ -709,6 +794,184 @@ export function AdminCreateSubjectTestForm({
         </div>
       </div>
 
+      <Sheet open={docsSheetOpen} onOpenChange={setDocsSheetOpen}>
+        <SheetContent side="right" className="w-full sm:max-w-lg">
+          <SheetHeader className="border-b border-border/60 pb-4 text-left">
+            <SheetTitle className="flex items-center gap-2 text-base font-bold">
+              <FileText className="h-4 w-4 text-primary" />
+              Examination Documents
+            </SheetTitle>
+            <SheetDescription className="text-xs">
+              Upload official PDFs or clear scans. Question Paper max size is 5
+              MB; Model Answer Key and Answer Sheet Template max size is 10 MB.
+            </SheetDescription>
+          </SheetHeader>
+
+          <div className="my-5 space-y-5">
+            <DocumentUploadSlot
+              id="paper-upload"
+              label="Question Paper PDF"
+              hint="Mandatory · Max 5 MB"
+              hintTone="primary"
+              emptyTitle="Upload official question paper PDF"
+              emptySubtitle="Drag & drop or click to browse (PDF/JPG/PNG · Max 5 MB)"
+              maxBytes={MAX_QUESTION_PAPER_BYTES}
+              maxSizeLabel="5 MB"
+              file={paperFile}
+              existingUrl={existingPaperUrl}
+              isMissing={Boolean(missingFlags.paper && !clearPaper)}
+              errorMessage={docErrors.paper || null}
+              onValidationError={(err) =>
+                setDocErrors((prev) => ({ ...prev, paper: err }))
+              }
+              onSelectFile={(f) => {
+                setPaperFile(f)
+                setClearPaper(false)
+                setDocErrors((prev) => ({ ...prev, paper: null }))
+              }}
+              onClearPending={() => {
+                setPaperFile(null)
+                setDocErrors((prev) => ({ ...prev, paper: null }))
+              }}
+              onRemoveExisting={() => {
+                setExistingPaperUrl(null)
+                setClearPaper(true)
+                setDocErrors((prev) => ({ ...prev, paper: null }))
+              }}
+              onPreview={(url) =>
+                setPreviewDoc({
+                  title: `${title || subject || "Subject Test"} — Question Paper`,
+                  fileUrl: url,
+                })
+              }
+            />
+
+            <DocumentUploadSlot
+              id="model-upload"
+              label="Model Answer Key PDF (Optional)"
+              hint="AI Reference · Max 10 MB"
+              emptyTitle="Upload model answer key PDF"
+              emptySubtitle="Drag & drop or click to browse (PDF/JPG/PNG · Max 10 MB)"
+              maxBytes={MAX_SUPPORTING_DOC_BYTES}
+              maxSizeLabel="10 MB"
+              file={modelAnswerFile}
+              existingUrl={existingModelUrl}
+              isMissing={Boolean(missingFlags.model && !clearModel)}
+              errorMessage={docErrors.model || null}
+              onValidationError={(err) =>
+                setDocErrors((prev) => ({ ...prev, model: err }))
+              }
+              onSelectFile={(f) => {
+                setModelAnswerFile(f)
+                setClearModel(false)
+                setDocErrors((prev) => ({ ...prev, model: null }))
+              }}
+              onClearPending={() => {
+                setModelAnswerFile(null)
+                setDocErrors((prev) => ({ ...prev, model: null }))
+              }}
+              onRemoveExisting={() => {
+                setExistingModelUrl(null)
+                setClearModel(true)
+                setDocErrors((prev) => ({ ...prev, model: null }))
+              }}
+              onPreview={(url) =>
+                setPreviewDoc({
+                  title: `${title || subject || "Subject Test"} — Model Answer Key`,
+                  fileUrl: url,
+                })
+              }
+            />
+
+            <DocumentUploadSlot
+              id="template-upload"
+              label="Answer Sheet Template PDF (Optional)"
+              hint="Printable Template · Max 10 MB"
+              emptyTitle="Upload blank margin template PDF"
+              emptySubtitle="Drag & drop or click to browse (PDF/JPG/PNG · Max 10 MB)"
+              maxBytes={MAX_SUPPORTING_DOC_BYTES}
+              maxSizeLabel="10 MB"
+              file={answerSheetTemplateFile}
+              existingUrl={existingTemplateUrl}
+              isMissing={Boolean(missingFlags.template && !clearTemplate)}
+              errorMessage={docErrors.template || null}
+              onValidationError={(err) =>
+                setDocErrors((prev) => ({ ...prev, template: err }))
+              }
+              onSelectFile={(f) => {
+                setAnswerSheetTemplateFile(f)
+                setClearTemplate(false)
+                setDocErrors((prev) => ({ ...prev, template: null }))
+              }}
+              onClearPending={() => {
+                setAnswerSheetTemplateFile(null)
+                setDocErrors((prev) => ({ ...prev, template: null }))
+              }}
+              onRemoveExisting={() => {
+                setExistingTemplateUrl(null)
+                setClearTemplate(true)
+                setDocErrors((prev) => ({ ...prev, template: null }))
+              }}
+              onPreview={(url) =>
+                setPreviewDoc({
+                  title: `${title || subject || "Subject Test"} — Answer Sheet Template`,
+                  fileUrl: url,
+                })
+              }
+            />
+          </div>
+
+          <SheetFooter className="border-t border-border/60 pt-4">
+            <Button
+              type="button"
+              onClick={() => setDocsSheetOpen(false)}
+              className="h-9 w-full text-xs font-semibold sm:w-auto"
+            >
+              Done ({[paperFile, modelAnswerFile, answerSheetTemplateFile].filter(Boolean).length} pending upload)
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
+
+      <Dialog open={loading} onOpenChange={() => {}}>
+        <DialogContent showCloseButton={false} className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base font-bold">
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              {paperFile || modelAnswerFile || answerSheetTemplateFile
+                ? "Uploading Examination Documents..."
+                : "Saving Subject Test..."}
+            </DialogTitle>
+            <DialogDescription className="text-xs leading-relaxed">
+              Please wait while files are validated and encrypted into private
+              storage. Do not close or refresh this tab.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 rounded-md border border-border/60 bg-muted/30 p-3 text-xs">
+            {paperFile && (
+              <p className="truncate font-medium">
+                Question Paper: {paperFile.name} ({formatFileSize(paperFile.size)})
+              </p>
+            )}
+            {modelAnswerFile && (
+              <p className="truncate font-medium">
+                Model Answer: {modelAnswerFile.name} ({formatFileSize(modelAnswerFile.size)})
+              </p>
+            )}
+            {answerSheetTemplateFile && (
+              <p className="truncate font-medium">
+                Answer Template: {answerSheetTemplateFile.name} ({formatFileSize(answerSheetTemplateFile.size)})
+              </p>
+            )}
+            {!paperFile && !modelAnswerFile && !answerSheetTemplateFile && (
+              <p className="text-muted-foreground">
+                Updating test configuration and rubric rules...
+              </p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {previewDoc && (
         <AdminPdfPreviewModal
           open={Boolean(previewDoc)}
@@ -728,9 +991,13 @@ function DocumentUploadSlot({
   hintTone = "muted",
   emptyTitle,
   emptySubtitle,
+  maxBytes,
+  maxSizeLabel,
   file,
   existingUrl,
   isMissing,
+  errorMessage,
+  onValidationError,
   onSelectFile,
   onClearPending,
   onRemoveExisting,
@@ -742,9 +1009,13 @@ function DocumentUploadSlot({
   hintTone?: "primary" | "muted"
   emptyTitle: string
   emptySubtitle: string
+  maxBytes: number
+  maxSizeLabel: string
   file: File | null
   existingUrl: string | null
   isMissing: boolean
+  errorMessage?: string | null
+  onValidationError?: (error: string | null) => void
   onSelectFile: (file: File) => void
   onClearPending: () => void
   onRemoveExisting: () => void
@@ -756,17 +1027,24 @@ function DocumentUploadSlot({
   const validateAndAccept = (candidate?: File | null) => {
     if (!candidate) return
     if (!ALLOWED_DOCUMENT_TYPES.includes(candidate.type)) {
-      toast.error("Unsupported file format", {
-        description: "Upload a PDF or JPG, PNG, or WebP document.",
-      })
+      const msg = `Unsupported format (${candidate.type || "unknown"}). Upload PDF, JPG, PNG, or WebP.`
+      onValidationError?.(msg)
+      toast.error("Unsupported file format", { description: msg })
       return
     }
-    if (candidate.size === 0 || candidate.size > MAX_DOCUMENT_BYTES) {
-      toast.error("File size error", {
-        description: "Document must be non-empty and smaller than 25 MB.",
-      })
+    if (candidate.size === 0) {
+      const msg = "Selected file is empty (0 bytes)."
+      onValidationError?.(msg)
+      toast.error("Empty file rejected", { description: msg })
       return
     }
+    if (candidate.size > maxBytes) {
+      const msg = `Selected file (${formatFileSize(candidate.size)}) exceeds the ${maxSizeLabel} maximum limit.`
+      onValidationError?.(msg)
+      toast.error("File too large", { description: msg })
+      return
+    }
+    onValidationError?.(null)
     onSelectFile(candidate)
   }
 
@@ -970,6 +1248,16 @@ function DocumentUploadSlot({
           <span className="mt-0.5 text-[10px] text-muted-foreground">
             {emptySubtitle}
           </span>
+        </div>
+      )}
+
+      {errorMessage && (
+        <div
+          role="alert"
+          className="flex items-start gap-2 rounded-md border border-rose-300 bg-rose-50 px-3 py-2 text-[11px] font-medium text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300"
+        >
+          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <span>{errorMessage}</span>
         </div>
       )}
     </div>

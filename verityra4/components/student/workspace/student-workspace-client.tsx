@@ -8,22 +8,20 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-  DataTable,
-  DataTableColumn,
-  DataTableFilter,
-} from "@/components/ui/data-table"
+import { Input } from "@/components/ui/input"
 import { FormattedDate } from "@/components/ui/date-picker"
 import { toast } from "@/components/ui/sonner"
+import {
+  buildQuestionBreakdownTree,
+  type QuestionVerdict,
+} from "@/lib/ai/question-breakdown"
 import { cn } from "@/lib/utils"
-import { ExamWorkspaceTimer } from "@/components/student/workspace/exam-workspace-timer"
 import {
   AlertTriangle,
   ArrowLeft,
   Award,
   BookOpen,
   CheckCircle2,
-  Clock,
   Download,
   Eye,
   FileCheck2,
@@ -31,6 +29,7 @@ import {
   Info,
   Lock,
   Printer,
+  Search,
   Sparkles,
   UploadCloud,
 } from "lucide-react"
@@ -48,6 +47,19 @@ const SubmissionUploadForm = dynamic(
     ),
   }
 )
+
+const VERDICT_BADGE_STYLES: Record<QuestionVerdict["tone"], string> = {
+  muted:
+    "border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300",
+  danger:
+    "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900 dark:bg-rose-950/60 dark:text-rose-300",
+  warning:
+    "border-orange-200 bg-orange-50 text-orange-800 dark:border-orange-900 dark:bg-orange-950/60 dark:text-orange-300",
+  amber:
+    "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950/60 dark:text-amber-300",
+  success:
+    "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/60 dark:text-emerald-300",
+}
 
 export interface WorkspaceQuestionScore {
   id: string
@@ -106,7 +118,6 @@ export function StudentWorkspaceClient({
   testSeriesId,
   title,
   maxMarks,
-  durationMinutes,
   studentInstructions,
   attemptsUsed,
   maxAttempts,
@@ -117,7 +128,7 @@ export function StudentWorkspaceClient({
   testSeriesId: string
   title: string
   maxMarks: number
-  durationMinutes: number
+  durationMinutes?: number
   studentInstructions: string
   attemptsUsed: number
   maxAttempts: number
@@ -169,8 +180,11 @@ export function StudentWorkspaceClient({
   const selectedRun = activeSubmission?.evaluationRuns?.find(
     (run) => run.runNumber === selectedRunNumber
   )
-  const reportQuestions =
-    selectedRun?.questions || activeSubmission?.evaluation?.questions || []
+  const reportQuestions = React.useMemo(
+    () =>
+      selectedRun?.questions || activeSubmission?.evaluation?.questions || [],
+    [selectedRun, activeSubmission]
+  )
 
   const [downloadingUrl, setDownloadingUrl] = React.useState<string | null>(null)
 
@@ -230,130 +244,44 @@ export function StudentWorkspaceClient({
     testSeriesId.startsWith("upsc-") ||
     testSeriesId === "test-1"
 
-  const questionColumns: DataTableColumn<WorkspaceQuestionScore>[] =
-    React.useMemo(
-      () => [
-        {
-          id: "questionNumber",
-          header: "Question",
-          sortable: true,
-          sortAccessor: (q) => {
-            const match = q.questionNumber.match(/\d+/)
-            return match ? parseInt(match[0], 10) : q.questionNumber
-          },
-          searchAccessor: (q) =>
-            `${q.questionNumber} ${q.feedback} ${q.missingConcepts || ""}`,
-          className: "w-24 font-bold text-[#2A6AED] dark:text-blue-400",
-          cell: (q) => q.questionNumber,
-        },
-        {
-          id: "score",
-          header: "Awarded / Max",
-          sortable: true,
-          sortAccessor: (q) => q.marksAwarded,
-          className: "w-36",
-          cell: (q) => {
-            const ratio =
-              q.maxMarks > 0
-                ? Math.round((q.marksAwarded / q.maxMarks) * 100)
-                : 0
-            return (
-              <div className="space-y-0.5">
-                <span className="font-extrabold text-slate-900 dark:text-slate-100">
-                  {q.marksAwarded} / {q.maxMarks}
-                </span>
-                <span className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-                  {ratio}% credit
-                </span>
-              </div>
-            )
-          },
-        },
-        {
-          id: "feedback",
-          header: "Rubric Evaluation Feedback",
-          sortable: false,
-          className: "whitespace-normal min-w-[260px]",
-          cell: (q) => (
-            <p className="text-xs leading-relaxed text-slate-800 sm:text-sm dark:text-slate-200">
-              {q.feedback}
-            </p>
-          ),
-        },
-        {
-          id: "missingConcepts",
-          header: "Improvement Notes & Omissions",
-          sortable: false,
-          className: "whitespace-normal min-w-[240px]",
-          cell: (q) =>
-            q.missingConcepts ? (
-              <p className="rounded-sm border border-amber-200 bg-amber-50 p-2.5 text-xs leading-relaxed text-amber-900 dark:border-amber-900 dark:bg-amber-950/60 dark:text-amber-300">
-                {q.missingConcepts}
-              </p>
-            ) : (
-              <span className="text-xs text-slate-400 italic">
-                No omissions identified
-              </span>
-            ),
-        },
-        {
-          id: "legibility",
-          header: "Legibility",
-          sortable: true,
-          sortAccessor: (q) => (q.isLegible ? 1 : 0),
-          className: "w-28 text-center",
-          cell: (q) =>
-            q.isLegible ? (
-              <Badge
-                variant="outline"
-                className="rounded-sm border-emerald-200 bg-emerald-50 text-[10px] font-semibold text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-400"
-              >
-                Clear
-              </Badge>
-            ) : (
-              <Badge
-                variant="outline"
-                className="rounded-sm border-amber-200 bg-amber-50 text-[10px] font-semibold text-amber-700 dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-400"
-              >
-                Unclear
-              </Badge>
-            ),
-        },
-      ],
-      []
-    )
+  const [questionQuery, setQuestionQuery] = React.useState("")
+  const [bandFilter, setBandFilter] = React.useState<
+    "ALL" | "HIGH" | "MEDIUM" | "LOW"
+  >("ALL")
+  const [legibilityFilter, setLegibilityFilter] = React.useState<
+    "ALL" | "CLEAR" | "UNCLEAR"
+  >("ALL")
 
-  const questionFilters: DataTableFilter<WorkspaceQuestionScore>[] =
-    React.useMemo(
-      () => [
-        {
-          id: "scoreBand",
-          label: "Score Band",
-          accessor: (q) => {
-            const ratio =
-              q.maxMarks > 0 ? (q.marksAwarded / q.maxMarks) * 100 : 0
-            if (ratio >= 70) return "HIGH"
-            if (ratio >= 40) return "MEDIUM"
-            return "LOW"
-          },
-          options: [
-            { label: "High Marks (≥ 70%)", value: "HIGH" },
-            { label: "Medium Marks (40–69%)", value: "MEDIUM" },
-            { label: "Low Marks (< 40%)", value: "LOW" },
-          ],
-        },
-        {
-          id: "legibility",
-          label: "Legibility",
-          accessor: (q) => (q.isLegible ? "CLEAR" : "UNCLEAR"),
-          options: [
-            { label: "Clear Script", value: "CLEAR" },
-            { label: "Unclear Script", value: "UNCLEAR" },
-          ],
-        },
-      ],
-      []
-    )
+  const filteredQuestions = React.useMemo(() => {
+    const query = questionQuery.trim().toLowerCase()
+    return reportQuestions.filter((q) => {
+      const ratio = q.maxMarks > 0 ? (q.marksAwarded / q.maxMarks) * 100 : 0
+      const band = ratio >= 70 ? "HIGH" : ratio >= 40 ? "MEDIUM" : "LOW"
+      if (bandFilter !== "ALL" && band !== bandFilter) return false
+      if (legibilityFilter === "CLEAR" && !q.isLegible) return false
+      if (legibilityFilter === "UNCLEAR" && q.isLegible) return false
+      if (!query) return true
+
+      const searchable = [
+        q.questionNumber,
+        q.feedback,
+        q.scoreExplanation,
+        q.strengths,
+        q.missingConcepts,
+        q.examinerExpectation,
+        q.improvementAdvice,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase()
+      return searchable.includes(query)
+    })
+  }, [reportQuestions, questionQuery, bandFilter, legibilityFilter])
+
+  const breakdownGroups = React.useMemo(
+    () => buildQuestionBreakdownTree(filteredQuestions),
+    [filteredQuestions]
+  )
 
   return (
     <div className="space-y-5">
@@ -370,14 +298,6 @@ export function StudentWorkspaceClient({
 
             {/* High-Priority Summary Badges: Replaces repetitive stat cards with high-density badges */}
             <div className="flex flex-wrap items-center gap-2">
-              <Badge
-                variant="outline"
-                className="gap-1.5 border-slate-200 bg-slate-50/80 px-2.5 py-0.5 text-xs font-semibold text-slate-700 dark:border-slate-800 dark:bg-slate-900/80 dark:text-slate-300"
-              >
-                <Clock className="h-3.5 w-3.5 text-[#2A6AED] dark:text-blue-400" />
-                <span>{durationMinutes} Mins</span>
-              </Badge>
-
               <Badge
                 variant="outline"
                 className="gap-1.5 border-slate-200 bg-slate-50/80 px-2.5 py-0.5 text-xs font-semibold text-slate-700 dark:border-slate-800 dark:bg-slate-900/80 dark:text-slate-300"
@@ -522,33 +442,8 @@ export function StudentWorkspaceClient({
             )}
           </div>
 
-          {/* Right: Exam Timer Trigger (opens shadcn Sheet) & Upload Quick Nav */}
+          {/* Right: Upload Quick Nav */}
           <div className="flex shrink-0 items-center gap-2 self-end sm:self-center">
-            <ExamWorkspaceTimer
-              variant="compact"
-              testSeriesId={testSeriesId}
-              durationMinutes={durationMinutes}
-              currentAttemptNumber={selectedAttemptNumber}
-              onNavigateToUpload={() => {
-                setActiveTab("upload")
-                setTimeout(() => {
-                  const uploadEl = document.getElementById(
-                    "submission-upload-box"
-                  )
-                  if (uploadEl) {
-                    const prefersReducedMotion =
-                      typeof window !== "undefined" &&
-                      window.matchMedia("(prefers-reduced-motion: reduce)")
-                        .matches
-                    uploadEl.scrollIntoView({
-                      behavior: prefersReducedMotion ? "auto" : "smooth",
-                      block: "center",
-                    })
-                  }
-                }, 50)
-              }}
-            />
-
             {attemptsRemaining > 0 && activeTab !== "upload" && (
               <Button
                 type="button"
@@ -755,101 +650,285 @@ export function StudentWorkspaceClient({
                     </div>
                   )}
 
-                  {/* Question-by-Question DataTable */}
-                  <div className="space-y-3">
-                    <h3 className="text-sm font-bold text-slate-900 sm:text-base dark:text-slate-100">
-                      Question-by-Question Rubric Scoring
-                    </h3>
-                    <DataTable
-                      data={reportQuestions}
-                      columns={questionColumns}
-                      keyExtractor={(q) => q.id}
-                      searchPlaceholder="Search questions, feedback, or missing concepts..."
-                      filters={questionFilters}
-                      defaultSortColumn="questionNumber"
-                      defaultSortDirection="asc"
-                      defaultPageSize={10}
-                      showSerialNumber={true}
-                      renderCard={(q, idx, serialNumber) => {
-                        const ratio =
-                          q.maxMarks > 0
-                            ? Math.round((q.marksAwarded / q.maxMarks) * 100)
-                            : 0
-                        return (
-                          <div className="space-y-3 rounded-md border border-border bg-background p-4 shadow-none sm:p-5">
-                            <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5 dark:border-slate-800/80">
+                  {/* Question-by-Question Hierarchical Breakdown */}
+                  <div className="space-y-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <h3 className="text-sm font-bold text-slate-900 sm:text-base dark:text-slate-100">
+                          Question-by-Question Rubric Breakdown
+                        </h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          Showing {filteredQuestions.length} of{" "}
+                          {reportQuestions.length} evaluated question items
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        <div className="relative w-full sm:w-64">
+                          <Search className="pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                          <Input
+                            value={questionQuery}
+                            onChange={(e) => setQuestionQuery(e.target.value)}
+                            placeholder="Search Q1.A.1, verdict, concepts..."
+                            className="h-8 pl-8 text-xs"
+                          />
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-1">
+                          {(
+                            [
+                              { id: "ALL", label: "All" },
+                              { id: "HIGH", label: "High ≥70%" },
+                              { id: "MEDIUM", label: "Partial 40–69%" },
+                              { id: "LOW", label: "Low <40%" },
+                            ] as const
+                          ).map((item) => (
+                            <Button
+                              key={item.id}
+                              type="button"
+                              size="sm"
+                              variant={
+                                bandFilter === item.id ? "default" : "outline"
+                              }
+                              onClick={() => setBandFilter(item.id)}
+                              className="h-8 px-2.5 text-[11px]"
+                            >
+                              {item.label}
+                            </Button>
+                          ))}
+
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={
+                              legibilityFilter === "UNCLEAR"
+                                ? "default"
+                                : "outline"
+                            }
+                            onClick={() =>
+                              setLegibilityFilter((prev) =>
+                                prev === "UNCLEAR" ? "ALL" : "UNCLEAR"
+                              )
+                            }
+                            className="h-8 px-2.5 text-[11px]"
+                          >
+                            {legibilityFilter === "UNCLEAR"
+                              ? "Unclear Only"
+                              : "Filter Unclear"}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {breakdownGroups.length === 0 ? (
+                      <div className="rounded-md border border-slate-200/80 bg-white p-8 text-center dark:border-slate-800 dark:bg-slate-900">
+                        <p className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                          No itemized question scores available
+                        </p>
+                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                          Adjust your search or score band filter to view
+                          question breakdown items.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {breakdownGroups.map((group) => (
+                          <div
+                            key={group.parentKey}
+                            className="overflow-hidden rounded-md border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900"
+                          >
+                            {/* Parent Question Header */}
+                            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/80 bg-slate-50/90 px-4 py-3 dark:border-slate-800 dark:bg-slate-950/60">
+                              <div className="flex items-center gap-2.5">
+                                <Badge className="rounded-sm border-0 bg-[#2A6AED] px-2 py-0.5 text-xs font-bold text-white">
+                                  {group.parentKey}
+                                </Badge>
+                                <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                                  {group.parentLabel}
+                                </span>
+                                <span className="text-xs text-slate-500 dark:text-slate-400">
+                                  ({group.questionCount}{" "}
+                                  {group.questionCount === 1
+                                    ? "question"
+                                    : "questions"}
+                                  )
+                                </span>
+                              </div>
                               <div className="flex items-center gap-2">
-                                <span className="inline-flex h-6 w-6 items-center justify-center rounded-sm bg-blue-50 text-[11px] font-bold text-[#2A6AED] dark:bg-blue-950/60 dark:text-blue-400">
-                                  {q.questionNumber}
-                                </span>
                                 <span className="text-sm font-extrabold text-[#2A6AED] dark:text-blue-400">
-                                  {q.marksAwarded} / {q.maxMarks} marks
+                                  {group.awarded} / {group.max} marks
                                 </span>
-                                <span className="text-[11px] font-semibold text-slate-400">
-                                  ({ratio}% credit)
-                                </span>
-                                {q.scoreBand && (
-                                  <Badge
-                                    variant="outline"
-                                    className="text-[10px]"
-                                  >
-                                    {q.scoreBand}
-                                  </Badge>
-                                )}
+                                <Badge
+                                  variant="outline"
+                                  className="rounded-sm text-[11px] font-semibold"
+                                >
+                                  {group.percentage}%
+                                </Badge>
                               </div>
-                              <Badge
-                                variant="outline"
-                                className={
-                                  q.isLegible
-                                    ? "rounded-sm border-emerald-200 bg-emerald-50 text-[10px] font-semibold text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-400"
-                                    : "rounded-sm border-amber-200 bg-amber-50 text-[10px] font-semibold text-amber-700 dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-400"
-                                }
-                              >
-                                {q.isLegible ? "Clear Script" : "Unclear"}
-                              </Badge>
                             </div>
 
-                            <div className="space-y-1">
-                              <span className="block text-[11px] font-bold text-slate-400">
-                                Rubric Feedback
-                              </span>
-                              <p className="text-xs leading-relaxed text-slate-800 sm:text-sm dark:text-slate-200">
-                                {q.scoreExplanation || q.feedback}
-                              </p>
+                            {/* Sections & Sub-questions */}
+                            <div className="divide-y divide-slate-200/80 dark:divide-slate-800">
+                              {group.sections.map((section) => (
+                                <div
+                                  key={`${group.parentKey}-${section.sectionKey ?? "flat"}`}
+                                  className="divide-y divide-slate-100 dark:divide-slate-800/80"
+                                >
+                                  {group.hasSections && section.sectionLabel && (
+                                    <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-50/40 px-4 py-2 text-xs dark:bg-slate-900/80">
+                                      <div className="flex items-center gap-2">
+                                        <span className="h-2 w-2 rounded-full bg-[#2A6AED]" />
+                                        <span className="font-bold tracking-wide text-slate-800 uppercase dark:text-slate-200">
+                                          {section.sectionLabel}
+                                        </span>
+                                        <span className="text-slate-500 dark:text-slate-400">
+                                          · {section.items.length} sub-questions
+                                        </span>
+                                      </div>
+                                      <span className="font-bold text-slate-700 dark:text-slate-300">
+                                        {section.awarded} / {section.max} marks (
+                                        {section.percentage}%)
+                                      </span>
+                                    </div>
+                                  )}
+
+                                  {section.items.map((leaf) => {
+                                    const q = leaf.question
+                                    const hasDistinctScoreExplanation =
+                                      Boolean(q.scoreExplanation?.trim()) &&
+                                      q.scoreExplanation?.trim() !==
+                                        q.feedback?.trim()
+
+                                    return (
+                                      <div
+                                        key={q.id}
+                                        className="space-y-3 p-4 sm:p-5"
+                                      >
+                                        <div className="flex flex-wrap items-center justify-between gap-2">
+                                          <div className="flex flex-wrap items-center gap-2">
+                                            <span className="inline-flex items-center justify-center rounded-sm bg-blue-50 px-2 py-0.5 text-xs font-extrabold text-[#2A6AED] dark:bg-blue-950/70 dark:text-blue-300">
+                                              {leaf.parsed.canonicalNumber ||
+                                                q.questionNumber}
+                                            </span>
+                                            <span className="text-sm font-extrabold text-slate-900 dark:text-slate-100">
+                                              {q.marksAwarded} / {q.maxMarks}{" "}
+                                              marks
+                                            </span>
+                                            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                                              ({leaf.percentage}% credit)
+                                            </span>
+                                            <Badge
+                                              variant="outline"
+                                              className={cn(
+                                                "rounded-sm text-[11px] font-bold",
+                                                VERDICT_BADGE_STYLES[
+                                                  leaf.verdict.tone
+                                                ]
+                                              )}
+                                            >
+                                              {leaf.verdict.label}
+                                            </Badge>
+                                          </div>
+
+                                          <Badge
+                                            variant="outline"
+                                            className={
+                                              q.isLegible
+                                                ? "rounded-sm border-emerald-200 bg-emerald-50 text-[10px] font-semibold text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-400"
+                                                : "rounded-sm border-amber-200 bg-amber-50 text-[10px] font-semibold text-amber-700 dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-400"
+                                            }
+                                          >
+                                            {q.isLegible
+                                              ? "Clear Script"
+                                              : "Unclear"}
+                                          </Badge>
+                                        </div>
+
+                                        {/* Evaluation Verdict, Context & Length Justification */}
+                                        <div className="space-y-2">
+                                          <div>
+                                            <span className="mb-0.5 block text-[11px] font-bold text-slate-400">
+                                              Answer Summary & Rubric Feedback
+                                            </span>
+                                            <p className="text-xs leading-relaxed text-slate-800 sm:text-sm dark:text-slate-200">
+                                              {q.feedback}
+                                            </p>
+                                          </div>
+
+                                          {hasDistinctScoreExplanation && (
+                                            <div className="rounded-sm border border-slate-200/80 bg-slate-50/70 px-3 py-2 dark:border-slate-800 dark:bg-slate-950/40">
+                                              <span className="mb-0.5 block text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                                                Marks, Length & Context
+                                                Justification
+                                              </span>
+                                              <p className="text-xs leading-relaxed text-slate-700 dark:text-slate-300">
+                                                {q.scoreExplanation}
+                                              </p>
+                                            </div>
+                                          )}
+                                        </div>
+
+                                        {/* Detailed Sub-Cards */}
+                                        {(q.strengths ||
+                                          q.missingConcepts ||
+                                          q.examinerExpectation ||
+                                          q.improvementAdvice) && (
+                                          <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                                            {q.strengths && (
+                                              <div className="rounded-sm border border-emerald-200/80 bg-emerald-50/70 p-2.5 text-xs text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-200">
+                                                <span className="mb-0.5 block text-[11px] font-bold">
+                                                  Strengths
+                                                </span>
+                                                <p className="leading-relaxed">
+                                                  {q.strengths}
+                                                </p>
+                                              </div>
+                                            )}
+
+                                            {q.missingConcepts && (
+                                              <div className="rounded-sm border border-amber-200/80 bg-amber-50/80 p-2.5 text-xs text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
+                                                <span className="mb-0.5 block text-[11px] font-bold">
+                                                  Missing Concepts & Omissions
+                                                </span>
+                                                <p className="leading-relaxed">
+                                                  {q.missingConcepts}
+                                                </p>
+                                              </div>
+                                            )}
+
+                                            {q.examinerExpectation && (
+                                              <div className="rounded-sm border border-blue-200/80 bg-blue-50/70 p-2.5 text-xs text-blue-900 dark:border-blue-900/60 dark:bg-blue-950/30 dark:text-blue-200">
+                                                <span className="mb-0.5 block text-[11px] font-bold">
+                                                  Examiner Expectation
+                                                </span>
+                                                <p className="leading-relaxed">
+                                                  {q.examinerExpectation}
+                                                </p>
+                                              </div>
+                                            )}
+
+                                            {q.improvementAdvice && (
+                                              <div className="rounded-sm border border-indigo-200/80 bg-indigo-50/70 p-2.5 text-xs text-indigo-900 dark:border-indigo-900/60 dark:bg-indigo-950/30 dark:text-indigo-200">
+                                                <span className="mb-0.5 block text-[11px] font-bold">
+                                                  How to Improve
+                                                </span>
+                                                <p className="leading-relaxed">
+                                                  {q.improvementAdvice}
+                                                </p>
+                                              </div>
+                                            )}
+                                          </div>
+                                        )}
+                                      </div>
+                                    )
+                                  })}
+                                </div>
+                              ))}
                             </div>
-
-                            {q.strengths && (
-                              <p className="rounded-sm bg-emerald-50 p-2 text-xs text-emerald-800">
-                                Strengths: {q.strengths}
-                              </p>
-                            )}
-                            {q.examinerExpectation && (
-                              <p className="rounded-sm bg-blue-50 p-2 text-xs text-blue-800">
-                                Examiner expected: {q.examinerExpectation}
-                              </p>
-                            )}
-                            {q.improvementAdvice && (
-                              <p className="rounded-sm bg-indigo-50 p-2 text-xs text-indigo-800">
-                                How to improve: {q.improvementAdvice}
-                              </p>
-                            )}
-
-                            {q.missingConcepts && (
-                              <div className="pt-1">
-                                <span className="mb-1 block text-[11px] font-bold text-amber-700 dark:text-amber-400">
-                                  Improvement & Omissions
-                                </span>
-                                <p className="rounded-md border border-amber-200 bg-amber-50 p-2.5 text-xs leading-relaxed text-amber-900 dark:border-amber-900 dark:bg-amber-950/60 dark:text-amber-300">
-                                  {q.missingConcepts}
-                                </p>
-                              </div>
-                            )}
                           </div>
-                        )
-                      }}
-                      emptyTitle="No itemized question scores available"
-                      emptyDescription="Adjust your search or score band filter to view question rows."
-                    />
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               ) : (

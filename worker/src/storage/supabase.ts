@@ -60,6 +60,7 @@ export function parsePrivateFileReference(
       "submissions",
       "model-answers",
       "tests",
+      "blueprints",
     ].includes(firstSegment)
   ) {
     return { bucket: "verityra-private", filePath: fileUrl }
@@ -97,4 +98,34 @@ export async function downloadPrivateFile(
   throw new Error(
     `File ${filePath} could not be retrieved from private storage.`
   )
+}
+
+export async function uploadPrivateFile(
+  bucketName: string,
+  filePath: string,
+  fileBuffer: Buffer,
+  contentType: string
+): Promise<string> {
+  const supabase = getSupabase()
+  if (supabase) {
+    const { data, error } = await supabase.storage
+      .from(bucketName)
+      .upload(filePath, fileBuffer, {
+        contentType,
+        upsert: true,
+      })
+    if (!error && data?.path) {
+      return `${bucketName}/${data.path}`
+    }
+    if (error) {
+      console.warn(
+        `[Worker:Storage] Supabase upload warning for ${filePath}: ${error.message}. Falling back to local cache.`
+      )
+    }
+  }
+
+  const fullPath = path.resolve(LOCAL_STORAGE_DIR, bucketName, filePath)
+  await fs.promises.mkdir(path.dirname(fullPath), { recursive: true })
+  await fs.promises.writeFile(fullPath, fileBuffer)
+  return `${bucketName}/${filePath}`
 }

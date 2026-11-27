@@ -44,7 +44,7 @@ export const config: WorkerConfig = {
   port: parseInt(process.env.PORT || "8080", 10),
   workerConcurrency: Math.max(
     1,
-    parseInt(process.env.WORKER_CONCURRENCY || "3", 10)
+    parseInt(process.env.WORKER_CONCURRENCY || "2", 10)
   ),
   recoveryIntervalMs: Math.max(
     60_000,
